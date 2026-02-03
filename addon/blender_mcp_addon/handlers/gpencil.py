@@ -89,7 +89,8 @@ def handle_layer(params: Dict[str, Any]) -> Dict[str, Any]:
     color = params.get("color")
     
     obj = bpy.data.objects.get(gpencil_name)
-    if not obj or obj.type != 'GPENCIL':
+    # Blender 5.0+ 可能使用 GREASEPENCIL 而不是 GPENCIL
+    if not obj or obj.type not in ('GPENCIL', 'GREASEPENCIL'):
         return {
             "success": False,
             "error": {"code": "NOT_GPENCIL", "message": f"不是油笔对象: {gpencil_name}"}
@@ -171,7 +172,7 @@ def handle_frame(params: Dict[str, Any]) -> Dict[str, Any]:
     target_frame = params.get("target_frame")
     
     obj = bpy.data.objects.get(gpencil_name)
-    if not obj or obj.type != 'GPENCIL':
+    if not obj or obj.type not in ('GPENCIL', 'GREASEPENCIL'):
         return {
             "success": False,
             "error": {"code": "NOT_GPENCIL", "message": f"不是油笔对象: {gpencil_name}"}
@@ -246,7 +247,7 @@ def handle_draw(params: Dict[str, Any]) -> Dict[str, Any]:
     line_width = params.get("line_width", 10)
     
     obj = bpy.data.objects.get(gpencil_name)
-    if not obj or obj.type != 'GPENCIL':
+    if not obj or obj.type not in ('GPENCIL', 'GREASEPENCIL'):
         return {
             "success": False,
             "error": {"code": "NOT_GPENCIL", "message": f"不是油笔对象: {gpencil_name}"}
@@ -307,7 +308,7 @@ def handle_material(params: Dict[str, Any]) -> Dict[str, Any]:
     fill_color = params.get("fill_color")
     
     obj = bpy.data.objects.get(gpencil_name)
-    if not obj or obj.type != 'GPENCIL':
+    if not obj or obj.type not in ('GPENCIL', 'GREASEPENCIL'):
         return {
             "success": False,
             "error": {"code": "NOT_GPENCIL", "message": f"不是油笔对象: {gpencil_name}"}
@@ -355,7 +356,7 @@ def handle_modifier(params: Dict[str, Any]) -> Dict[str, Any]:
     settings = params.get("settings", {})
     
     obj = bpy.data.objects.get(gpencil_name)
-    if not obj or obj.type != 'GPENCIL':
+    if not obj or obj.type not in ('GPENCIL', 'GREASEPENCIL'):
         return {
             "success": False,
             "error": {"code": "NOT_GPENCIL", "message": f"不是油笔对象: {gpencil_name}"}
@@ -411,7 +412,7 @@ def handle_effect(params: Dict[str, Any]) -> Dict[str, Any]:
     effect_name = params.get("effect_name")
     
     obj = bpy.data.objects.get(gpencil_name)
-    if not obj or obj.type != 'GPENCIL':
+    if not obj or obj.type not in ('GPENCIL', 'GREASEPENCIL'):
         return {
             "success": False,
             "error": {"code": "NOT_GPENCIL", "message": f"不是油笔对象: {gpencil_name}"}
@@ -455,7 +456,7 @@ def handle_convert(params: Dict[str, Any]) -> Dict[str, Any]:
     keep_original = params.get("keep_original", True)
     
     obj = bpy.data.objects.get(gpencil_name)
-    if not obj or obj.type != 'GPENCIL':
+    if not obj or obj.type not in ('GPENCIL', 'GREASEPENCIL'):
         return {
             "success": False,
             "error": {"code": "NOT_GPENCIL", "message": f"不是油笔对象: {gpencil_name}"}

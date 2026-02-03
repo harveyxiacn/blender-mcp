@@ -413,17 +413,20 @@ def test_texture_paint_tools(tester):
 def test_gpencil_tools(tester):
     """Test grease pencil tools"""
     print("\n--- Testing GPENCIL tools ---")
-    tester.cmd('gpencil', 'create', {'name': 'TestGPencil', 'location': [30, 0, 0]})
-    tester.cmd('gpencil', 'layer', {'gpencil_name': 'TestGPencil', 'action': 'ADD', 'layer_name': 'TestLayer'})
+    # 创建油笔并获取实际名称
+    success, result = tester.cmd('gpencil', 'create', {'name': 'TestGPencil', 'location': [30, 0, 0]})
+    gpencil_name = result.get('data', {}).get('object_name', 'TestGPencil') if success else 'TestGPencil'
+    
+    tester.cmd('gpencil', 'layer', {'gpencil_name': gpencil_name, 'action': 'ADD', 'layer_name': 'TestLayer'})
     tester.cmd('gpencil', 'material', {
-        'gpencil_name': 'TestGPencil',
+        'gpencil_name': gpencil_name,
         'name': 'GPMat',
         'stroke_color': [0, 0, 1, 1]
     })
     tester.cmd('gpencil', 'draw', {
-        'gpencil_name': 'TestGPencil',
-        'layer_name': 'TestLayer',
-        'points': [[0, 0, 0], [1, 1, 0], [2, 0, 0]],
+        'gpencil_name': gpencil_name,
+        'layer_name': 'GP_Layer',  # Blender 5.0 默认图层名
+        'points': [[30, 0, 0], [31, 1, 0], [32, 0, 0]],
         'line_width': 10
     })
 
