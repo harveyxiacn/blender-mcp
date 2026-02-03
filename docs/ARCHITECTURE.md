@@ -91,7 +91,7 @@ blender_mcp/
 ├── __init__.py           # 包初始化
 ├── server.py             # MCP 服务器主入口
 ├── connection.py         # Blender 连接管理
-├── tools/                # 工具定义（36个模块，114+工具）
+├── tools/                # 工具定义（43个模块，155+工具）
 │   ├── __init__.py
 │   ├── scene.py          # 场景管理工具
 │   ├── object.py         # 对象操作工具
@@ -128,7 +128,14 @@ blender_mcp/
 │   ├── mocap.py          # 动作捕捉
 │   ├── preferences.py    # 偏好设置
 │   ├── external.py       # 外部集成
-│   └── ai_assist.py      # AI辅助
+│   ├── ai_assist.py      # AI辅助
+│   ├── versioning.py     # 版本控制
+│   ├── ai_generation.py  # AI生成
+│   ├── vr_ar.py          # VR/AR支持
+│   ├── substance.py      # Substance集成
+│   ├── zbrush.py         # ZBrush集成
+│   ├── cloud_render.py   # 云渲染
+│   └── collaboration.py  # 实时协作
 ├── models/               # Pydantic 模型
 │   ├── __init__.py
 │   ├── common.py         # 通用模型
@@ -155,7 +162,7 @@ blender_mcp_addon/
 ├── __init__.py           # 插件入口和注册
 ├── server.py             # 通信服务器
 ├── executor.py           # 命令执行器
-├── handlers/             # 命令处理器（36个模块）
+├── handlers/             # 命令处理器（43个模块）
 │   ├── __init__.py
 │   ├── scene.py          # 场景处理器
 │   ├── object.py         # 对象处理器
@@ -192,7 +199,14 @@ blender_mcp_addon/
 │   ├── mocap.py          # 动作捕捉处理器
 │   ├── preferences.py    # 偏好设置处理器
 │   ├── external.py       # 外部集成处理器
-│   └── ai_assist.py      # AI辅助处理器
+│   ├── ai_assist.py      # AI辅助处理器
+│   ├── versioning.py     # 版本控制处理器
+│   ├── ai_generation.py  # AI生成处理器
+│   ├── vr_ar.py          # VR/AR处理器
+│   ├── substance.py      # Substance处理器
+│   ├── zbrush.py         # ZBrush处理器
+│   ├── cloud_render.py   # 云渲染处理器
+│   └── collaboration.py  # 协作处理器
 ├── operators/            # Blender 操作符
 │   └── __init__.py
 └── panels/               # UI 面板
@@ -504,6 +518,8 @@ async def execute_script(params: ScriptInput) -> str:
 ## 11. 功能实现状态
 
 ### 已完成功能 ✅
+
+**基础功能（12个模块）**
 - [x] 场景管理（scene）
 - [x] 对象操作（object）
 - [x] 网格建模（modeling）
@@ -514,7 +530,17 @@ async def execute_script(params: ScriptInput) -> str:
 - [x] 角色系统（character, character_template）
 - [x] 骨骼绑定（rigging, auto_rig）
 - [x] 渲染系统（render）
-- [x] 物理模拟（physics, simulation）
+- [x] 实用工具（utility）
+- [x] 导出功能（export）
+
+**扩展功能 - 第一批（7个模块）**
+- [x] 物理模拟（physics）
+- [x] 高级场景（scene_advanced）
+- [x] 批量操作（batch）
+- [x] 曲线建模（curves）
+- [x] 动画预设（animation_preset）
+
+**扩展功能 - 第二批（7个模块）**
 - [x] 雕刻工具（sculpt）
 - [x] UV映射（uv）
 - [x] 纹理绘制（texture_paint）
@@ -522,21 +548,34 @@ async def execute_script(params: ScriptInput) -> str:
 - [x] 合成器（compositor）
 - [x] 视频编辑（vse）
 - [x] 油笔/2D动画（gpencil）
+
+**扩展功能 - 第三批（6个模块）**
+- [x] 高级模拟（simulation）
 - [x] 毛发系统（hair）
 - [x] 资产管理（assets）
 - [x] 插件管理（addons）
 - [x] 世界环境（world）
 - [x] 约束系统（constraints）
+
+**扩展功能 - 第四批（4个模块）**
 - [x] 动作捕捉（mocap）
 - [x] 偏好设置（preferences）
 - [x] 外部集成（external）- Unity、Unreal、Godot导出
 - [x] AI辅助功能（ai_assist）
 
+**扩展功能 - 第五批（7个模块）**
+- [x] 版本控制（versioning）
+- [x] AI 生成（ai_generation）- 纹理、材质、参考图
+- [x] VR/AR 场景支持（vr_ar）
+- [x] Substance 连接（substance）
+- [x] ZBrush 连接（zbrush）
+- [x] 云渲染集成（cloud_render）
+- [x] 实时协作编辑（collaboration）- 简化版
+
 ### 未来规划
-- [ ] VR/AR 场景支持
-- [ ] 实时协作编辑
-- [ ] 云渲染集成
-- [ ] AI 辅助建模（与 Stable Diffusion 等集成）
-- [ ] 版本控制支持
-- [ ] Substance 连接
-- [ ] ZBrush 连接
+- [ ] 完整的实时多人协作（WebRTC）
+- [ ] AI 模型生成（集成 InstantMesh/TripoSR）
+- [ ] 语音控制接口
+- [ ] 自然语言场景描述自动生成
+- [ ] Houdini 连接
+- [ ] Maya 连接

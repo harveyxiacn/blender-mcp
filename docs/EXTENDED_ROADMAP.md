@@ -65,6 +65,16 @@
 35. **external** - 外部集成（Unity、Unreal、Godot）✅
 36. **ai_assist** - AI辅助功能 ✅
 
+### 扩展工具 - 第五批 (7个类别) ✅
+
+37. **versioning** - 版本控制（保存、恢复、分支）✅
+38. **ai_generation** - AI 生成（纹理、材质、参考图）✅
+39. **vr_ar** - VR/AR 场景支持 ✅
+40. **substance** - Substance Painter 集成 ✅
+41. **zbrush** - ZBrush/GoZ 连接 ✅
+42. **cloud_render** - 云渲染集成 ✅
+43. **collaboration** - 实时协作编辑（简化版）✅
+
 ---
 
 ## 工具详情
@@ -309,6 +319,117 @@ AI特化的辅助工具。
 - blender_ai_list_issues         # 检测问题 ✅
 ```
 
+### 18. versioning（版本控制）✅
+
+Blender 场景版本管理。
+
+```python
+已实现工具:
+- blender_version_init           # 初始化版本控制 ✅
+- blender_version_save           # 保存版本快照 ✅
+- blender_version_list           # 列出所有版本 ✅
+- blender_version_restore        # 恢复到指定版本 ✅
+- blender_version_compare        # 比较两个版本 ✅
+- blender_version_branch         # 创建分支 ✅
+- blender_version_branches       # 列出分支 ✅
+- blender_version_switch_branch  # 切换分支 ✅
+- blender_version_delete         # 删除版本 ✅
+- blender_version_info           # 版本详情 ✅
+```
+
+### 19. ai_generation（AI 生成）✅
+
+AI 辅助内容生成。
+
+```python
+已实现工具:
+- blender_ai_config              # 配置 AI 服务 ✅
+- blender_ai_texture_generate    # 生成纹理 ✅
+- blender_ai_concept_art         # 生成概念图 ✅
+- blender_ai_material_from_text  # 文本生成材质 ✅
+- blender_ai_upscale_texture     # 纹理放大 ✅
+- blender_ai_remove_background   # 背景移除 ✅
+- blender_ai_image_to_reference  # 生成参考图 ✅
+```
+
+### 20. vr_ar（VR/AR 支持）✅
+
+VR/AR 场景创建和导出。
+
+```python
+已实现工具:
+- blender_vr_setup               # VR 场景配置 ✅
+- blender_vr_camera              # VR 相机 ✅
+- blender_vr_export              # VR 格式导出 ✅
+- blender_ar_marker              # AR 标记点 ✅
+- blender_xr_interaction         # XR 交互配置 ✅
+- blender_vr_preview_start       # 启动 VR 预览 ✅
+- blender_vr_preview_stop        # 停止 VR 预览 ✅
+- blender_panorama_render        # 360 全景渲染 ✅
+```
+
+### 21. substance（Substance 集成）✅
+
+与 Substance Painter 集成。
+
+```python
+已实现工具:
+- blender_substance_export       # 导出到 Substance ✅
+- blender_substance_import       # 导入纹理 ✅
+- blender_substance_link         # 建立实时链接 ✅
+- blender_substance_unlink       # 断开链接 ✅
+- blender_substance_bake         # 烘焙准备 ✅
+- blender_substance_detect       # 检测安装 ✅
+```
+
+### 22. zbrush（ZBrush 集成）✅
+
+与 ZBrush 集成（支持 GoZ）。
+
+```python
+已实现工具:
+- blender_zbrush_export          # 导出到 ZBrush ✅
+- blender_zbrush_import          # 从 ZBrush 导入 ✅
+- blender_zbrush_goz_send        # GoZ 发送 ✅
+- blender_zbrush_goz_receive     # GoZ 接收 ✅
+- blender_zbrush_maps            # 导入贴图 ✅
+- blender_zbrush_decimate_export # 减面导出 ✅
+- blender_zbrush_detect          # 检测安装 ✅
+```
+
+### 23. cloud_render（云渲染）✅
+
+云渲染和渲染农场集成。
+
+```python
+已实现工具:
+- blender_cloud_render_setup     # 配置服务 ✅
+- blender_cloud_render_submit    # 提交任务 ✅
+- blender_cloud_render_status    # 查询状态 ✅
+- blender_cloud_render_cancel    # 取消任务 ✅
+- blender_cloud_render_download  # 下载结果 ✅
+- blender_render_farm_local      # 本地农场配置 ✅
+- blender_render_farm_discover   # 发现节点 ✅
+- blender_cloud_render_estimate  # 估算时间 ✅
+```
+
+### 24. collaboration（实时协作）✅
+
+简化的场景同步协作。
+
+```python
+已实现工具:
+- blender_collab_host            # 启动会话 ✅
+- blender_collab_join            # 加入会话 ✅
+- blender_collab_leave           # 离开会话 ✅
+- blender_collab_sync            # 同步状态 ✅
+- blender_collab_lock            # 锁定对象 ✅
+- blender_collab_unlock          # 解锁对象 ✅
+- blender_collab_chat            # 协作消息 ✅
+- blender_collab_status          # 协作状态 ✅
+- blender_collab_users           # 用户列表 ✅
+```
+
 ---
 
 ## 工具实现优先级矩阵
@@ -331,6 +452,13 @@ AI特化的辅助工具。
 | P3 | preferences | ✅ | 低 | 低 | 低 |
 | P3 | external_integration | ✅ | 中 | 中 | 高 |
 | P3 | ai_assist | ✅ | 高 | 高 | 极高 |
+| P4 | versioning | ✅ | 中 | 中 | 高 |
+| P4 | ai_generation | ✅ | 中 | 中 | 高 |
+| P4 | vr_ar | ✅ | 低 | 中 | 中 |
+| P4 | substance | ✅ | 中 | 中 | 中 |
+| P4 | zbrush | ✅ | 中 | 中 | 中 |
+| P4 | cloud_render | ✅ | 中 | 高 | 中 |
+| P4 | collaboration | ✅ | 中 | 高 | 高 |
 
 ---
 
@@ -365,6 +493,8 @@ AI特化的辅助工具。
 
 **所有计划工具已全部实现！** 🎉
 
+**当前状态：43 个模块 / 155+ 工具**
+
 AI 现在可以通过 Blender MCP：
 
 1. **创建任意3D模型** - 从基础几何体到复杂角色 ✅
@@ -375,18 +505,23 @@ AI 现在可以通过 Blender MCP：
 6. **资产管理** - 组织、复用、导出 ✅
 7. **外部集成** - 与游戏引擎（Unity、Unreal、Godot）协作 ✅
 8. **AI辅助分析** - 场景描述、优化建议、问题检测 ✅
+9. **版本控制** - 保存、恢复、分支管理 ✅
+10. **AI 内容生成** - 纹理、材质、参考图 ✅
+11. **VR/AR 支持** - VR 场景、360 渲染、AR 标记 ✅
+12. **外部软件集成** - Substance Painter、ZBrush ✅
+13. **云渲染** - 任务提交、本地农场、进度监控 ✅
+14. **协作编辑** - 会话管理、对象锁定、状态同步 ✅
 
-Blender MCP 现已成为一个强大的 3D 创作助手，能够根据用户的自然语言描述完成几乎所有 Blender 操作！
+Blender MCP 现已成为一个**完整的 3D 创作生态系统**，能够根据用户的自然语言描述完成几乎所有 Blender 操作！
 
 ---
 
 ## 未来可能的扩展方向
 
-### 进阶功能（未来版本）
-- VR/AR 场景支持
-- 实时协作编辑
-- 云渲染集成
-- AI 辅助建模（与 Stable Diffusion 等集成）
-- 版本控制支持
-- Substance 连接
-- ZBrush 连接
+### 进阶功能（远期）
+- 完整的实时多人协作（WebRTC）
+- AI 模型生成（集成 InstantMesh/TripoSR）
+- 语音控制接口
+- 自然语言场景描述自动生成
+- Houdini 连接
+- Maya 连接

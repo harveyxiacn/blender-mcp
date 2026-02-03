@@ -12,14 +12,19 @@ Blender MCP (Model Context Protocol) enables AI assistants to control Blender di
 
 ### Features
 
-- **Full Blender Control**: 114+ tools covering all major Blender functionality
+- **Full Blender Control**: 155+ tools across 43 modules covering all Blender functionality
 - **Multi-IDE Support**: Works with Cursor, Antigravity, Windsurf, and any MCP-compatible IDE
 - **Complete 3D Pipeline**: Modeling, sculpting, UV mapping, texturing, materials, lighting, animation, rendering
 - **Character Creation**: Templates, auto-rigging, facial features, hair systems, clothing
 - **Animation System**: Keyframe animation, motion capture import, physics simulation
 - **Post-Production**: Compositor nodes, video editing (VSE), 2D animation (Grease Pencil)
 - **Game Engine Integration**: Optimized export for Unity, Unreal Engine, and Godot
-- **AI Assistance**: Scene analysis, optimization suggestions, auto-material creation
+- **External Software Integration**: Substance Painter, ZBrush/GoZ connectivity
+- **VR/AR Support**: VR scene setup, stereo cameras, 360° panorama rendering, AR markers
+- **Version Control**: Scene versioning, branching, comparison, and restoration
+- **Cloud Rendering**: Render farm integration, job management, progress monitoring
+- **Real-time Collaboration**: Session hosting, object locking, state synchronization
+- **AI Assistance**: Scene analysis, optimization suggestions, AI-powered texture/material generation
 
 ### Quick Start
 
@@ -70,14 +75,19 @@ Blender MCP（模型上下文协议）使 AI 助手能够从 Cursor、Antigravit
 
 ### 功能特性
 
-- **完整的 Blender 控制**：114+ 工具，覆盖 Blender 所有主要功能
+- **完整的 Blender 控制**：155+ 工具，43 个模块，覆盖 Blender 所有功能
 - **多 IDE 支持**：支持 Cursor、Antigravity、Windsurf 及任何兼容 MCP 的 IDE
 - **完整 3D 流程**：建模、雕刻、UV展开、纹理绘制、材质、灯光、动画、渲染
 - **角色创建**：模板、自动绑定、面部特征、毛发系统、服装
 - **动画系统**：关键帧动画、动作捕捉导入、物理模拟
 - **后期制作**：合成器节点、视频编辑（VSE）、2D动画（油笔）
 - **游戏引擎集成**：优化导出到 Unity、Unreal Engine、Godot
-- **AI 辅助**：场景分析、优化建议、自动材质创建
+- **外部软件集成**：Substance Painter、ZBrush/GoZ 连接
+- **VR/AR 支持**：VR 场景配置、立体相机、360° 全景渲染、AR 标记
+- **版本控制**：场景版本管理、分支、比较、恢复
+- **云渲染**：渲染农场集成、任务管理、进度监控
+- **实时协作**：会话托管、对象锁定、状态同步
+- **AI 辅助**：场景分析、优化建议、AI 驱动的纹理/材质生成
 
 ### 快速开始
 
