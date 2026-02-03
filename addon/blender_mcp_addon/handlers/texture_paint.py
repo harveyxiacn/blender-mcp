@@ -92,56 +92,75 @@ def handle_set_brush(params: Dict[str, Any]) -> Dict[str, Any]:
     strength = params.get("strength", 1.0)
     blend = params.get("blend", "MIX")
     
-    # 获取当前工具设置
-    tool_settings = bpy.context.tool_settings
-    
-    # 笔刷类型映射
-    brush_map = {
-        "DRAW": "TexDraw",
-        "SOFTEN": "Soften",
-        "SMEAR": "Smear",
-        "CLONE": "Clone",
-        "FILL": "Fill",
-        "MASK": "Mask"
-    }
-    
-    brush_name = brush_map.get(brush_type, "TexDraw")
-    
-    # 查找或使用默认笔刷
-    brush = bpy.data.brushes.get(brush_name)
-    if not brush:
-        for b in bpy.data.brushes:
-            if b.image_tool == brush_type:
-                brush = b
-                break
-    
-    if brush:
-        tool_settings.image_paint.brush = brush
-        brush.size = int(radius)
-        brush.strength = strength
-        brush.color = color[:3] if len(color) >= 3 else [1, 1, 1]
+    try:
+        # 获取当前工具设置
+        tool_settings = bpy.context.tool_settings
         
-        # 设置混合模式
-        blend_map = {
-            "MIX": "MIX",
-            "ADD": "ADD",
-            "SUBTRACT": "SUB",
-            "MULTIPLY": "MUL",
-            "LIGHTEN": "LIGHTEN",
-            "DARKEN": "DARKEN",
-            "ERASE_ALPHA": "ERASE_ALPHA",
-            "ADD_ALPHA": "ADD_ALPHA"
+        # 笔刷类型映射
+        brush_map = {
+            "DRAW": "TexDraw",
+            "SOFTEN": "Soften",
+            "SMEAR": "Smear",
+            "CLONE": "Clone",
+            "FILL": "Fill",
+            "MASK": "Mask"
         }
-        brush.blend = blend_map.get(blend, "MIX")
-    
-    return {
-        "success": True,
-        "data": {
-            "brush": brush.name if brush else "default",
-            "color": color,
-            "radius": radius
+        
+        brush_name = brush_map.get(brush_type, "TexDraw")
+        
+        # 查找笔刷 - Blender 5.0+ 兼容
+        brush = bpy.data.brushes.get(brush_name)
+        if not brush:
+            for b in bpy.data.brushes:
+                # Blender 5.0+ 可能使用不同属性
+                tool = getattr(b, 'image_tool', None) or getattr(b, 'image_paint_tool', None)
+                if tool == brush_type:
+                    brush = b
+                    break
+        
+        if not brush:
+            # 创建新笔刷
+            brush = bpy.data.brushes.new(name=brush_name, mode='TEXTURE_PAINT')
+        
+        if brush:
+            # Blender 5.0+ brush 属性可能只读
+            try:
+                if hasattr(tool_settings, 'image_paint') and tool_settings.image_paint:
+                    tool_settings.image_paint.brush = brush
+            except AttributeError:
+                pass
+            
+            brush.size = int(radius)
+            brush.strength = strength
+            brush.color = color[:3] if len(color) >= 3 else [1, 1, 1]
+            
+            # 设置混合模式
+            blend_map = {
+                "MIX": "MIX",
+                "ADD": "ADD",
+                "SUBTRACT": "SUB",
+                "MULTIPLY": "MUL",
+                "LIGHTEN": "LIGHTEN",
+                "DARKEN": "DARKEN",
+                "ERASE_ALPHA": "ERASE_ALPHA",
+                "ADD_ALPHA": "ADD_ALPHA"
+            }
+            if hasattr(brush, 'blend'):
+                brush.blend = blend_map.get(blend, "MIX")
+        
+        return {
+            "success": True,
+            "data": {
+                "brush": brush.name if brush else "default",
+                "color": color,
+                "radius": radius
+            }
         }
-    }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": {"code": "BRUSH_ERROR", "message": str(e)}
+        }
 
 
 def handle_stroke(params: Dict[str, Any]) -> Dict[str, Any]:

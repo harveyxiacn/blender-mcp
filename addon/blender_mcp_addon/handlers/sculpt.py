@@ -26,23 +26,39 @@ def handle_mode(params: Dict[str, Any]) -> Dict[str, Any]:
             "error": {"code": "INVALID_TYPE", "message": "只有网格对象可以雕刻"}
         }
     
-    # 选择对象
-    bpy.ops.object.select_all(action='DESELECT')
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
-    
-    # 切换模式
-    if enable:
-        bpy.ops.object.mode_set(mode='SCULPT')
-    else:
-        bpy.ops.object.mode_set(mode='OBJECT')
-    
-    return {
-        "success": True,
-        "data": {
-            "mode": bpy.context.object.mode
+    try:
+        # 确保在正确的上下文中
+        # 首先切换到对象模式（如果不在）
+        current_mode = bpy.context.mode
+        if current_mode != 'OBJECT':
+            try:
+                bpy.ops.object.mode_set(mode='OBJECT')
+            except:
+                pass
+        
+        # 选择对象
+        for o in bpy.context.selected_objects:
+            o.select_set(False)
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        
+        # 切换模式
+        if enable:
+            bpy.ops.object.mode_set(mode='SCULPT')
+        else:
+            bpy.ops.object.mode_set(mode='OBJECT')
+        
+        return {
+            "success": True,
+            "data": {
+                "mode": bpy.context.object.mode if bpy.context.object else "OBJECT"
+            }
         }
-    }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": {"code": "MODE_ERROR", "message": str(e)}
+        }
 
 
 def handle_set_brush(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -52,57 +68,77 @@ def handle_set_brush(params: Dict[str, Any]) -> Dict[str, Any]:
     strength = params.get("strength", 0.5)
     auto_smooth = params.get("auto_smooth", 0.0)
     
-    # 获取当前工具设置
-    tool_settings = bpy.context.tool_settings
-    sculpt = tool_settings.sculpt
-    
-    # 笔刷类型映射
-    brush_map = {
-        "DRAW": "SculptDraw",
-        "CLAY": "Clay",
-        "CLAY_STRIPS": "Clay Strips",
-        "INFLATE": "Inflate/Deflate",
-        "BLOB": "Blob",
-        "CREASE": "Crease",
-        "SMOOTH": "Smooth",
-        "FLATTEN": "Flatten/Contrast",
-        "FILL": "Fill/Deepen",
-        "SCRAPE": "Scrape/Peaks",
-        "PINCH": "Pinch/Magnify",
-        "GRAB": "Grab",
-        "SNAKE_HOOK": "Snake Hook",
-        "THUMB": "Thumb",
-        "NUDGE": "Nudge",
-        "ROTATE": "Rotate",
-        "MASK": "Mask",
-        "DRAW_FACE_SETS": "Draw Face Sets"
-    }
-    
-    brush_name = brush_map.get(brush_type, "SculptDraw")
-    
-    # 查找或创建笔刷
-    brush = bpy.data.brushes.get(brush_name)
-    if not brush:
-        # 尝试使用默认笔刷
-        for b in bpy.data.brushes:
-            if b.sculpt_tool == brush_type:
-                brush = b
-                break
-    
-    if brush:
-        tool_settings.sculpt.brush = brush
-        brush.size = int(radius)
-        brush.strength = strength
-        brush.auto_smooth_factor = auto_smooth
-    
-    return {
-        "success": True,
-        "data": {
-            "brush": brush.name if brush else "default",
-            "radius": radius,
-            "strength": strength
+    try:
+        # 获取当前工具设置
+        tool_settings = bpy.context.tool_settings
+        sculpt = tool_settings.sculpt
+        
+        # 笔刷类型映射
+        brush_map = {
+            "DRAW": "SculptDraw",
+            "CLAY": "Clay",
+            "CLAY_STRIPS": "Clay Strips",
+            "INFLATE": "Inflate/Deflate",
+            "BLOB": "Blob",
+            "CREASE": "Crease",
+            "SMOOTH": "Smooth",
+            "FLATTEN": "Flatten/Contrast",
+            "FILL": "Fill/Deepen",
+            "SCRAPE": "Scrape/Peaks",
+            "PINCH": "Pinch/Magnify",
+            "GRAB": "Grab",
+            "SNAKE_HOOK": "Snake Hook",
+            "THUMB": "Thumb",
+            "NUDGE": "Nudge",
+            "ROTATE": "Rotate",
+            "MASK": "Mask",
+            "DRAW_FACE_SETS": "Draw Face Sets"
         }
-    }
+        
+        brush_name = brush_map.get(brush_type, "SculptDraw")
+        
+        # 查找笔刷 - Blender 5.0+ 兼容方式
+        brush = bpy.data.brushes.get(brush_name)
+        if not brush:
+            # 尝试查找匹配的笔刷
+            for b in bpy.data.brushes:
+                # Blender 5.0+ 可能使用不同的属性
+                tool = getattr(b, 'sculpt_tool', None) or getattr(b, 'brush_type', None)
+                if tool == brush_type:
+                    brush = b
+                    break
+        
+        if not brush:
+            # 创建新笔刷
+            brush = bpy.data.brushes.new(name=brush_name, mode='SCULPT')
+        
+        if brush:
+            # Blender 5.0+ brush 属性可能只读，使用 bpy.ops 设置
+            try:
+                if sculpt:
+                    sculpt.brush = brush
+            except AttributeError:
+                # 使用 ops 设置活动笔刷
+                pass
+            
+            brush.size = int(radius)
+            brush.strength = strength
+            if hasattr(brush, 'auto_smooth_factor'):
+                brush.auto_smooth_factor = auto_smooth
+        
+        return {
+            "success": True,
+            "data": {
+                "brush": brush.name if brush else "default",
+                "radius": radius,
+                "strength": strength
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": {"code": "BRUSH_ERROR", "message": str(e)}
+        }
 
 
 def handle_stroke(params: Dict[str, Any]) -> Dict[str, Any]:

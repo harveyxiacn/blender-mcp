@@ -14,42 +14,81 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
     location = params.get("location", [0, 0, 0])
     stroke_depth_order = params.get("stroke_depth_order", "3D")
     
-    # 创建油笔数据
-    gpd = bpy.data.grease_pencils.new(name)
-    
-    # 创建对象
-    obj = bpy.data.objects.new(name, gpd)
-    obj.location = location
-    
-    # 设置深度顺序
-    if stroke_depth_order == "2D":
-        gpd.stroke_depth_order = '2D'
-    else:
-        gpd.stroke_depth_order = '3D'
-    
-    # 链接到场景
-    bpy.context.collection.objects.link(obj)
-    
-    # 选择对象
-    bpy.ops.object.select_all(action='DESELECT')
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
-    
-    # 添加默认图层
-    layer = gpd.layers.new("Layer", set_active=True)
-    
-    # 添加默认材质
-    mat = bpy.data.materials.new(name=f"{name}_Material")
-    bpy.data.materials.create_gpencil_data(mat)
-    obj.data.materials.append(mat)
-    
-    return {
-        "success": True,
-        "data": {
-            "object_name": obj.name,
-            "layer_name": layer.info
+    try:
+        # 确保在对象模式
+        if bpy.context.mode != 'OBJECT':
+            try:
+                bpy.ops.object.mode_set(mode='OBJECT')
+            except:
+                pass
+        
+        # Blender 5.0+ 油笔数据类型可能不同
+        # 尝试使用 grease_pencils_v3 或 grease_pencils
+        gpd = None
+        try:
+            gpd = bpy.data.grease_pencils.new(name)
+        except:
+            # Blender 5.0+ 可能使用新 API
+            pass
+        
+        if gpd:
+            # 创建对象
+            obj = bpy.data.objects.new(name, gpd)
+            obj.location = location
+            
+            # 设置深度顺序
+            if hasattr(gpd, 'stroke_depth_order'):
+                if stroke_depth_order == "2D":
+                    gpd.stroke_depth_order = '2D'
+                else:
+                    gpd.stroke_depth_order = '3D'
+            
+            # 链接到场景
+            bpy.context.collection.objects.link(obj)
+            
+            # 选择对象（不使用 ops）
+            for o in bpy.context.selected_objects:
+                o.select_set(False)
+            obj.select_set(True)
+            bpy.context.view_layer.objects.active = obj
+            
+            # 添加默认图层 - Blender 5.0 v3 API
+            layer = gpd.layers.new("Layer", set_active=True)
+            
+            # 获取图层名称 - v3 使用 name 而不是 info
+            layer_name = getattr(layer, 'info', None) or getattr(layer, 'name', 'Layer')
+            
+            # 添加默认材质
+            mat = bpy.data.materials.new(name=f"{name}_Material")
+            bpy.data.materials.create_gpencil_data(mat)
+            obj.data.materials.append(mat)
+            
+            return {
+                "success": True,
+                "data": {
+                    "object_name": obj.name,
+                    "layer_name": layer_name
+                }
+            }
+        else:
+            # Blender 5.0+ 使用新的 Grease Pencil v3
+            # 使用 bpy.ops 创建
+            bpy.ops.object.gpencil_add(location=location, type='EMPTY')
+            obj = bpy.context.active_object
+            obj.name = name
+            
+            return {
+                "success": True,
+                "data": {
+                    "object_name": obj.name,
+                    "note": "Created using Grease Pencil v3 API"
+                }
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": {"code": "CREATE_ERROR", "message": str(e)}
         }
-    }
 
 
 def handle_layer(params: Dict[str, Any]) -> Dict[str, Any]:
