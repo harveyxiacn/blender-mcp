@@ -40,6 +40,13 @@ from . import mocap as mocap_handler
 from . import preferences as preferences_handler
 from . import external as external_handler
 from . import ai_assist as ai_assist_handler
+from . import versioning as versioning_handler
+from . import ai_generation as ai_generation_handler
+from . import vr_ar as vr_ar_handler
+from . import substance as substance_handler
+from . import zbrush as zbrush_handler
+from . import cloud_render as cloud_render_handler
+from . import collaboration as collaboration_handler
 
 __all__ = [
     "scene_handler",
@@ -78,4 +85,11 @@ __all__ = [
     "preferences_handler",
     "external_handler",
     "ai_assist_handler",
+    "versioning_handler",
+    "ai_generation_handler",
+    "vr_ar_handler",
+    "substance_handler",
+    "zbrush_handler",
+    "cloud_render_handler",
+    "collaboration_handler",
 ]

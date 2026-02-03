@@ -40,6 +40,13 @@ from blender_mcp.tools.mocap import register_mocap_tools
 from blender_mcp.tools.preferences import register_preferences_tools
 from blender_mcp.tools.external import register_external_tools
 from blender_mcp.tools.ai_assist import register_ai_assist_tools
+from blender_mcp.tools.versioning import register_versioning_tools
+from blender_mcp.tools.ai_generation import register_ai_generation_tools
+from blender_mcp.tools.vr_ar import register_vr_ar_tools
+from blender_mcp.tools.substance import register_substance_tools
+from blender_mcp.tools.zbrush import register_zbrush_tools
+from blender_mcp.tools.cloud_render import register_cloud_render_tools
+from blender_mcp.tools.collaboration import register_collaboration_tools
 
 __all__ = [
     "register_scene_tools",
@@ -78,4 +85,11 @@ __all__ = [
     "register_preferences_tools",
     "register_external_tools",
     "register_ai_assist_tools",
+    "register_versioning_tools",
+    "register_ai_generation_tools",
+    "register_vr_ar_tools",
+    "register_substance_tools",
+    "register_zbrush_tools",
+    "register_cloud_render_tools",
+    "register_collaboration_tools",
 ]

@@ -48,6 +48,13 @@ from blender_mcp.tools import (
     register_preferences_tools,
     register_external_tools,
     register_ai_assist_tools,
+    register_versioning_tools,
+    register_ai_generation_tools,
+    register_vr_ar_tools,
+    register_substance_tools,
+    register_zbrush_tools,
+    register_cloud_render_tools,
+    register_collaboration_tools,
 )
 
 logger = logging.getLogger(__name__)
@@ -209,6 +216,27 @@ class BlenderMCPServer:
         
         # AI辅助工具
         register_ai_assist_tools(self.mcp, self)
+        
+        # 版本控制工具
+        register_versioning_tools(self.mcp, self)
+        
+        # AI生成工具
+        register_ai_generation_tools(self.mcp, self)
+        
+        # VR/AR工具
+        register_vr_ar_tools(self.mcp, self)
+        
+        # Substance连接工具
+        register_substance_tools(self.mcp, self)
+        
+        # ZBrush连接工具
+        register_zbrush_tools(self.mcp, self)
+        
+        # 云渲染工具
+        register_cloud_render_tools(self.mcp, self)
+        
+        # 协作工具
+        register_collaboration_tools(self.mcp, self)
         
         logger.info("所有工具注册完成")
     

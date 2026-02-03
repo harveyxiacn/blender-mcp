@@ -587,6 +587,68 @@ def test_ai_assist_tools(tester):
     tester.cmd('ai_assist', 'suggest_optimization', {'target': 'performance'})
 
 
+def test_versioning_tools(tester):
+    """Test versioning tools"""
+    print("\n--- Testing VERSIONING tools ---")
+    tester.cmd('versioning', 'init', {})
+    tester.cmd('versioning', 'save', {'name': 'test_v1', 'description': 'Test version'})
+    tester.cmd('versioning', 'list', {'branch': 'main'})
+    tester.cmd('versioning', 'branches', {})
+
+
+def test_ai_generation_tools(tester):
+    """Test AI generation tools"""
+    print("\n--- Testing AI_GENERATION tools ---")
+    tester.cmd('ai_generation', 'config', {'provider': 'local'})
+    tester.cmd('object', 'create', {'type': 'CUBE', 'name': 'AIGenCube', 'location': [70, 0, 0]})
+    tester.cmd('ai_generation', 'material_from_text', {
+        'description': 'rusty metal',
+        'object_name': 'AIGenCube'
+    })
+
+
+def test_vr_ar_tools(tester):
+    """Test VR/AR tools"""
+    print("\n--- Testing VR_AR tools ---")
+    tester.cmd('vr_ar', 'setup', {'xr_runtime': 'OPENXR', 'floor_height': 0})
+    tester.cmd('vr_ar', 'camera', {'camera_type': 'stereo', 'ipd': 0.064})
+    tester.cmd('vr_ar', 'ar_marker', {'marker_name': 'TestMarker', 'marker_type': 'image', 'size': 0.1})
+
+
+def test_substance_tools(tester):
+    """Test Substance tools"""
+    print("\n--- Testing SUBSTANCE tools ---")
+    tester.cmd('substance', 'detect', {})
+
+
+def test_zbrush_tools(tester):
+    """Test ZBrush tools"""
+    print("\n--- Testing ZBRUSH tools ---")
+    tester.cmd('zbrush', 'detect', {})
+
+
+def test_cloud_render_tools(tester):
+    """Test cloud render tools"""
+    print("\n--- Testing CLOUD_RENDER tools ---")
+    tester.cmd('cloud_render', 'setup', {'service': 'local'})
+    tester.cmd('cloud_render', 'discover', {})
+    tester.cmd('cloud_render', 'estimate', {
+        'frame_count': 100,
+        'samples': 128,
+        'resolution_x': 1920,
+        'resolution_y': 1080
+    })
+
+
+def test_collaboration_tools(tester):
+    """Test collaboration tools"""
+    print("\n--- Testing COLLABORATION tools ---")
+    tester.cmd('collaboration', 'status', {})
+    tester.cmd('collaboration', 'host', {'session_name': 'TestSession', 'port': 9877})
+    tester.cmd('collaboration', 'users', {})
+    tester.cmd('collaboration', 'leave', {})
+
+
 def test_render_tools(tester):
     """Test render tools"""
     print("\n--- Testing RENDER tools ---")
@@ -653,6 +715,13 @@ def main():
         test_preferences_tools(tester)
         test_external_tools(tester)
         test_ai_assist_tools(tester)
+        test_versioning_tools(tester)
+        test_ai_generation_tools(tester)
+        test_vr_ar_tools(tester)
+        test_substance_tools(tester)
+        test_zbrush_tools(tester)
+        test_cloud_render_tools(tester)
+        test_collaboration_tools(tester)
         
         # Print summary
         passed, failed = tester.print_summary()

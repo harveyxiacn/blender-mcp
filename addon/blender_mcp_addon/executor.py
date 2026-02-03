@@ -46,6 +46,13 @@ from .handlers import (
     preferences_handler,
     external_handler,
     ai_assist_handler,
+    versioning_handler,
+    ai_generation_handler,
+    vr_ar_handler,
+    substance_handler,
+    zbrush_handler,
+    cloud_render_handler,
+    collaboration_handler,
 )
 
 
@@ -92,6 +99,13 @@ class CommandExecutor:
             "preferences": preferences_handler,
             "external": external_handler,
             "ai_assist": ai_assist_handler,
+            "versioning": versioning_handler,
+            "ai_generation": ai_generation_handler,
+            "vr_ar": vr_ar_handler,
+            "substance": substance_handler,
+            "zbrush": zbrush_handler,
+            "cloud_render": cloud_render_handler,
+            "collaboration": collaboration_handler,
             "system": self,  # 系统命令由自己处理
         }
     
