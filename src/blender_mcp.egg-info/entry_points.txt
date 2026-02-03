@@ -1,0 +1,2 @@
+[console_scripts]
+blender-mcp = blender_mcp.__main__:main

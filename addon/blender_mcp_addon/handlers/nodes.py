@@ -1,0 +1,432 @@
+"""
+节点系统处理器
+
+处理着色器节点、几何节点、合成器节点的创建和编辑命令。
+"""
+
+from typing import Any, Dict, List
+import bpy
+
+
+# 着色器预设配置
+SHADER_PRESETS = {
+    "pbr_basic": {
+        "nodes": [
+            {"type": "ShaderNodeBsdfPrincipled", "name": "Principled BSDF", "location": [0, 0]},
+        ],
+        "connections": [],
+        "values": {
+            "Principled BSDF": {"Roughness": 0.5, "Metallic": 0.0}
+        }
+    },
+    "glass": {
+        "nodes": [
+            {"type": "ShaderNodeBsdfGlass", "name": "Glass BSDF", "location": [0, 0]},
+        ],
+        "connections": [
+            ["Glass BSDF", "BSDF", "Material Output", "Surface"]
+        ],
+        "values": {
+            "Glass BSDF": {"Roughness": 0.0, "IOR": 1.45}
+        }
+    },
+    "metal": {
+        "nodes": [
+            {"type": "ShaderNodeBsdfPrincipled", "name": "Principled BSDF", "location": [0, 0]},
+        ],
+        "connections": [],
+        "values": {
+            "Principled BSDF": {"Metallic": 1.0, "Roughness": 0.3}
+        }
+    },
+    "emission": {
+        "nodes": [
+            {"type": "ShaderNodeEmission", "name": "Emission", "location": [0, 0]},
+        ],
+        "connections": [
+            ["Emission", "Emission", "Material Output", "Surface"]
+        ],
+        "values": {
+            "Emission": {"Strength": 5.0}
+        }
+    },
+    "subsurface": {
+        "nodes": [
+            {"type": "ShaderNodeBsdfPrincipled", "name": "Principled BSDF", "location": [0, 0]},
+        ],
+        "connections": [],
+        "values": {
+            "Principled BSDF": {"Subsurface Weight": 0.3, "Subsurface Radius": [1.0, 0.2, 0.1]}
+        }
+    },
+    "toon": {
+        "nodes": [
+            {"type": "ShaderNodeBsdfToon", "name": "Toon BSDF", "location": [0, 0]},
+            {"type": "ShaderNodeShaderToRGB", "name": "Shader to RGB", "location": [200, 0]},
+        ],
+        "connections": [
+            ["Toon BSDF", "BSDF", "Shader to RGB", "Shader"],
+        ],
+        "values": {
+            "Toon BSDF": {"Size": 0.5, "Smooth": 0.1}
+        }
+    },
+}
+
+
+def _get_node_tree(target: str):
+    """获取节点树"""
+    # 检查是否是材质
+    if target in bpy.data.materials:
+        mat = bpy.data.materials[target]
+        if not mat.use_nodes:
+            mat.use_nodes = True
+        return mat.node_tree, "SHADER"
+    
+    # 检查是否是合成器
+    if target == "compositor":
+        bpy.context.scene.use_nodes = True
+        return bpy.context.scene.node_tree, "COMPOSITOR"
+    
+    # 检查是否是对象（几何节点）
+    if target in bpy.data.objects:
+        obj = bpy.data.objects[target]
+        for mod in obj.modifiers:
+            if mod.type == 'NODES':
+                if mod.node_group:
+                    return mod.node_group, "GEOMETRY"
+        return None, None
+    
+    return None, None
+
+
+def handle_add(params: Dict[str, Any]) -> Dict[str, Any]:
+    """添加节点"""
+    target = params.get("target")
+    node_type = params.get("node_type")
+    location = params.get("location", [0, 0])
+    name = params.get("name")
+    
+    node_tree, tree_type = _get_node_tree(target)
+    if not node_tree:
+        return {
+            "success": False,
+            "error": {"code": "TARGET_NOT_FOUND", "message": f"目标不存在或没有节点树: {target}"}
+        }
+    
+    # 创建节点
+    try:
+        node = node_tree.nodes.new(type=node_type)
+        node.location = location
+        if name:
+            node.name = name
+            node.label = name
+        
+        return {
+            "success": True,
+            "data": {
+                "node_name": node.name
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": {"code": "NODE_CREATE_ERROR", "message": str(e)}
+        }
+
+
+def handle_connect(params: Dict[str, Any]) -> Dict[str, Any]:
+    """连接节点"""
+    target = params.get("target")
+    from_node = params.get("from_node")
+    from_socket = params.get("from_socket")
+    to_node = params.get("to_node")
+    to_socket = params.get("to_socket")
+    
+    node_tree, tree_type = _get_node_tree(target)
+    if not node_tree:
+        return {
+            "success": False,
+            "error": {"code": "TARGET_NOT_FOUND", "message": f"目标不存在: {target}"}
+        }
+    
+    # 获取节点
+    source = node_tree.nodes.get(from_node)
+    dest = node_tree.nodes.get(to_node)
+    
+    if not source:
+        return {
+            "success": False,
+            "error": {"code": "NODE_NOT_FOUND", "message": f"源节点不存在: {from_node}"}
+        }
+    
+    if not dest:
+        return {
+            "success": False,
+            "error": {"code": "NODE_NOT_FOUND", "message": f"目标节点不存在: {to_node}"}
+        }
+    
+    # 获取插槽
+    try:
+        if isinstance(from_socket, int):
+            output = source.outputs[from_socket]
+        else:
+            output = source.outputs.get(from_socket) or source.outputs[from_socket]
+        
+        if isinstance(to_socket, int):
+            input_socket = dest.inputs[to_socket]
+        else:
+            input_socket = dest.inputs.get(to_socket) or dest.inputs[to_socket]
+        
+        # 创建连接
+        node_tree.links.new(output, input_socket)
+        
+        return {
+            "success": True,
+            "data": {}
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": {"code": "CONNECT_ERROR", "message": str(e)}
+        }
+
+
+def handle_set_value(params: Dict[str, Any]) -> Dict[str, Any]:
+    """设置节点值"""
+    target = params.get("target")
+    node_name = params.get("node_name")
+    input_name = params.get("input_name")
+    value = params.get("value")
+    
+    node_tree, tree_type = _get_node_tree(target)
+    if not node_tree:
+        return {
+            "success": False,
+            "error": {"code": "TARGET_NOT_FOUND", "message": f"目标不存在: {target}"}
+        }
+    
+    node = node_tree.nodes.get(node_name)
+    if not node:
+        return {
+            "success": False,
+            "error": {"code": "NODE_NOT_FOUND", "message": f"节点不存在: {node_name}"}
+        }
+    
+    try:
+        input_socket = node.inputs.get(input_name)
+        if input_socket:
+            input_socket.default_value = value
+        else:
+            # 尝试作为属性设置
+            if hasattr(node, input_name):
+                setattr(node, input_name, value)
+        
+        return {
+            "success": True,
+            "data": {}
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": {"code": "SET_VALUE_ERROR", "message": str(e)}
+        }
+
+
+def handle_shader_preset(params: Dict[str, Any]) -> Dict[str, Any]:
+    """应用着色器预设"""
+    material_name = params.get("material_name")
+    preset = params.get("preset", "pbr_basic")
+    color = params.get("color")
+    
+    # 获取或创建材质
+    mat = bpy.data.materials.get(material_name)
+    if not mat:
+        mat = bpy.data.materials.new(name=material_name)
+    
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    
+    # 清除现有节点（保留输出节点）
+    output_node = None
+    for node in list(nodes):
+        if node.type == 'OUTPUT_MATERIAL':
+            output_node = node
+        else:
+            nodes.remove(node)
+    
+    if not output_node:
+        output_node = nodes.new('ShaderNodeOutputMaterial')
+        output_node.location = [300, 0]
+    
+    preset_config = SHADER_PRESETS.get(preset, SHADER_PRESETS["pbr_basic"])
+    
+    # 创建节点
+    created_nodes = {}
+    for node_config in preset_config["nodes"]:
+        node = nodes.new(type=node_config["type"])
+        node.name = node_config["name"]
+        node.label = node_config["name"]
+        node.location = node_config["location"]
+        created_nodes[node_config["name"]] = node
+    
+    # 设置值
+    for node_name, values in preset_config.get("values", {}).items():
+        node = created_nodes.get(node_name)
+        if node:
+            for input_name, value in values.items():
+                if input_name in node.inputs:
+                    node.inputs[input_name].default_value = value
+    
+    # 设置颜色
+    if color:
+        for node in created_nodes.values():
+            if "Base Color" in node.inputs:
+                node.inputs["Base Color"].default_value = color
+            elif "Color" in node.inputs:
+                node.inputs["Color"].default_value = color
+    
+    # 创建连接
+    for conn in preset_config.get("connections", []):
+        from_node = created_nodes.get(conn[0])
+        to_node = nodes.get(conn[2]) if conn[2] == "Material Output" else created_nodes.get(conn[2])
+        if from_node and to_node:
+            try:
+                links.new(from_node.outputs[conn[1]], to_node.inputs[conn[3]])
+            except:
+                pass
+    
+    # 连接到输出
+    main_node = list(created_nodes.values())[0] if created_nodes else None
+    if main_node:
+        if "BSDF" in main_node.outputs:
+            links.new(main_node.outputs["BSDF"], output_node.inputs["Surface"])
+        elif "Emission" in main_node.outputs:
+            links.new(main_node.outputs["Emission"], output_node.inputs["Surface"])
+        elif "Shader" in main_node.outputs:
+            links.new(main_node.outputs["Shader"], output_node.inputs["Surface"])
+    
+    return {
+        "success": True,
+        "data": {
+            "material_name": mat.name,
+            "preset": preset
+        }
+    }
+
+
+def handle_geonodes_add(params: Dict[str, Any]) -> Dict[str, Any]:
+    """添加几何节点修改器"""
+    object_name = params.get("object_name")
+    modifier_name = params.get("modifier_name", "GeometryNodes")
+    
+    obj = bpy.data.objects.get(object_name)
+    if not obj:
+        return {
+            "success": False,
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+        }
+    
+    # 添加几何节点修改器
+    modifier = obj.modifiers.new(name=modifier_name, type='NODES')
+    
+    # 创建新的节点组
+    node_group = bpy.data.node_groups.new(name=modifier_name, type='GeometryNodeTree')
+    modifier.node_group = node_group
+    
+    # 添加输入输出节点
+    input_node = node_group.nodes.new('NodeGroupInput')
+    input_node.location = [-200, 0]
+    
+    output_node = node_group.nodes.new('NodeGroupOutput')
+    output_node.location = [200, 0]
+    
+    # 添加几何输入输出
+    node_group.interface.new_socket(name="Geometry", in_out='INPUT', socket_type='NodeSocketGeometry')
+    node_group.interface.new_socket(name="Geometry", in_out='OUTPUT', socket_type='NodeSocketGeometry')
+    
+    # 连接输入到输出
+    node_group.links.new(input_node.outputs[0], output_node.inputs[0])
+    
+    return {
+        "success": True,
+        "data": {
+            "modifier_name": modifier.name,
+            "node_group": node_group.name
+        }
+    }
+
+
+def handle_geonodes_preset(params: Dict[str, Any]) -> Dict[str, Any]:
+    """应用几何节点预设"""
+    object_name = params.get("object_name")
+    preset = params.get("preset", "scatter")
+    preset_params = params.get("params", {})
+    
+    obj = bpy.data.objects.get(object_name)
+    if not obj:
+        return {
+            "success": False,
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+        }
+    
+    # 添加几何节点修改器
+    modifier = obj.modifiers.new(name=f"GeoNodes_{preset}", type='NODES')
+    node_group = bpy.data.node_groups.new(name=f"{preset}_nodes", type='GeometryNodeTree')
+    modifier.node_group = node_group
+    
+    nodes = node_group.nodes
+    links = node_group.links
+    
+    # 添加输入输出
+    input_node = nodes.new('NodeGroupInput')
+    input_node.location = [-400, 0]
+    
+    output_node = nodes.new('NodeGroupOutput')
+    output_node.location = [400, 0]
+    
+    node_group.interface.new_socket(name="Geometry", in_out='INPUT', socket_type='NodeSocketGeometry')
+    node_group.interface.new_socket(name="Geometry", in_out='OUTPUT', socket_type='NodeSocketGeometry')
+    
+    if preset == "scatter":
+        # 散布预设
+        distribute = nodes.new('GeometryNodeDistributePointsOnFaces')
+        distribute.location = [0, 100]
+        
+        instance = nodes.new('GeometryNodeInstanceOnPoints')
+        instance.location = [200, 0]
+        
+        join = nodes.new('GeometryNodeJoinGeometry')
+        join.location = [400, 0]
+        
+        links.new(input_node.outputs[0], distribute.inputs["Mesh"])
+        links.new(distribute.outputs["Points"], instance.inputs["Points"])
+        links.new(input_node.outputs[0], join.inputs["Geometry"])
+        links.new(instance.outputs["Instances"], join.inputs["Geometry"])
+        links.new(join.outputs["Geometry"], output_node.inputs[0])
+        
+    elif preset == "array":
+        # 阵列预设
+        mesh_line = nodes.new('GeometryNodeMeshLine')
+        mesh_line.location = [0, 0]
+        mesh_line.inputs["Count"].default_value = preset_params.get("count", 5)
+        
+        instance = nodes.new('GeometryNodeInstanceOnPoints')
+        instance.location = [200, 0]
+        
+        links.new(mesh_line.outputs["Mesh"], instance.inputs["Points"])
+        links.new(input_node.outputs[0], instance.inputs["Instance"])
+        links.new(instance.outputs["Instances"], output_node.inputs[0])
+        
+    else:
+        # 默认直通
+        links.new(input_node.outputs[0], output_node.inputs[0])
+    
+    return {
+        "success": True,
+        "data": {
+            "preset": preset,
+            "node_group": node_group.name
+        }
+    }

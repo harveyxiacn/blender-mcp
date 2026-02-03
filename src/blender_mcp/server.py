@@ -24,6 +24,17 @@ from blender_mcp.tools import (
     register_render_tools,
     register_utility_tools,
     register_export_tools,
+    register_character_template_tools,
+    register_auto_rig_tools,
+    register_animation_preset_tools,
+    register_physics_tools,
+    register_scene_advanced_tools,
+    register_batch_tools,
+    register_curve_tools,
+    register_uv_tools,
+    register_node_tools,
+    register_compositor_tools,
+    register_video_editing_tools,
 )
 
 logger = logging.getLogger(__name__)
@@ -113,6 +124,39 @@ class BlenderMCPServer:
         
         # 导出工具
         register_export_tools(self.mcp, self)
+        
+        # 角色模板工具
+        register_character_template_tools(self.mcp, self)
+        
+        # 自动骨骼绑定工具
+        register_auto_rig_tools(self.mcp, self)
+        
+        # 预设动画工具
+        register_animation_preset_tools(self.mcp, self)
+        
+        # 物理模拟工具
+        register_physics_tools(self.mcp, self)
+        
+        # 场景增强工具
+        register_scene_advanced_tools(self.mcp, self)
+        
+        # 批量处理工具
+        register_batch_tools(self.mcp, self)
+        
+        # 曲线建模工具
+        register_curve_tools(self.mcp, self)
+        
+        # UV映射工具
+        register_uv_tools(self.mcp, self)
+        
+        # 节点系统工具
+        register_node_tools(self.mcp, self)
+        
+        # 合成器工具
+        register_compositor_tools(self.mcp, self)
+        
+        # 视频编辑工具
+        register_video_editing_tools(self.mcp, self)
         
         logger.info("所有工具注册完成")
     

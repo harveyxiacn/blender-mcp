@@ -21,18 +21,6 @@ from .handlers import (
     rigging_handler,
     render_handler,
     utility_handler,
-    export_handler,
-    character_template_handler,
-    auto_rig_handler,
-    animation_preset_handler,
-    physics_handler,
-    scene_advanced_handler,
-    batch_handler,
-    curves_handler,
-    uv_handler,
-    nodes_handler,
-    compositor_handler,
-    vse_handler,
 )
 
 
@@ -54,18 +42,6 @@ class CommandExecutor:
             "rigging": rigging_handler,
             "render": render_handler,
             "utility": utility_handler,
-            "export": export_handler,
-            "character_template": character_template_handler,
-            "auto_rig": auto_rig_handler,
-            "animation_preset": animation_preset_handler,
-            "physics": physics_handler,
-            "scene_advanced": scene_advanced_handler,
-            "batch": batch_handler,
-            "curves": curves_handler,
-            "uv": uv_handler,
-            "nodes": nodes_handler,
-            "compositor": compositor_handler,
-            "vse": vse_handler,
             "system": self,  # 系统命令由自己处理
         }
     
