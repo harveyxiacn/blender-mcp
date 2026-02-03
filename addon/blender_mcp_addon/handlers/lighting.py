@@ -116,6 +116,31 @@ def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def handle_set_energy(params: Dict[str, Any]) -> Dict[str, Any]:
+    """设置灯光强度"""
+    name = params.get("name")
+    energy = params.get("energy", 1000.0)
+    
+    obj = bpy.data.objects.get(name)
+    if not obj or obj.type != 'LIGHT':
+        return {
+            "success": False,
+            "error": {
+                "code": "LIGHT_NOT_FOUND",
+                "message": f"灯光不存在: {name}"
+            }
+        }
+    
+    obj.data.energy = energy
+    
+    return {
+        "success": True,
+        "data": {
+            "energy": energy
+        }
+    }
+
+
 def handle_hdri_setup(params: Dict[str, Any]) -> Dict[str, Any]:
     """设置 HDRI 环境光"""
     hdri_path = params.get("hdri_path")

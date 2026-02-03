@@ -196,3 +196,16 @@ def handle_redo(params: Dict[str, Any]) -> Dict[str, Any]:
         "success": True,
         "data": {}
     }
+
+
+def handle_get_blender_version(params: Dict[str, Any]) -> Dict[str, Any]:
+    """获取 Blender 版本"""
+    return {
+        "success": True,
+        "data": {
+            "version": list(bpy.app.version),
+            "version_string": bpy.app.version_string,
+            "build_date": bpy.app.build_date.decode() if hasattr(bpy.app, 'build_date') else "",
+            "build_platform": bpy.app.build_platform.decode() if hasattr(bpy.app, 'build_platform') else ""
+        }
+    }

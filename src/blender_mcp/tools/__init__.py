@@ -27,6 +27,9 @@ from blender_mcp.tools.uv_mapping import register_uv_tools
 from blender_mcp.tools.nodes import register_node_tools
 from blender_mcp.tools.compositor import register_compositor_tools
 from blender_mcp.tools.video_editing import register_video_editing_tools
+from blender_mcp.tools.sculpting import register_sculpting_tools
+from blender_mcp.tools.texture_painting import register_texture_painting_tools
+from blender_mcp.tools.grease_pencil import register_grease_pencil_tools
 
 __all__ = [
     "register_scene_tools",
@@ -52,4 +55,7 @@ __all__ = [
     "register_node_tools",
     "register_compositor_tools",
     "register_video_editing_tools",
+    "register_sculpting_tools",
+    "register_texture_painting_tools",
+    "register_grease_pencil_tools",
 ]

@@ -33,6 +33,9 @@ from .handlers import (
     nodes_handler,
     compositor_handler,
     vse_handler,
+    sculpt_handler,
+    texture_paint_handler,
+    gpencil_handler,
 )
 
 
@@ -66,6 +69,9 @@ class CommandExecutor:
             "nodes": nodes_handler,
             "compositor": compositor_handler,
             "vse": vse_handler,
+            "sculpt": sculpt_handler,
+            "texture_paint": texture_paint_handler,
+            "gpencil": gpencil_handler,
             "system": self,  # 系统命令由自己处理
         }
     

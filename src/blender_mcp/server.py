@@ -35,6 +35,9 @@ from blender_mcp.tools import (
     register_node_tools,
     register_compositor_tools,
     register_video_editing_tools,
+    register_sculpting_tools,
+    register_texture_painting_tools,
+    register_grease_pencil_tools,
 )
 
 logger = logging.getLogger(__name__)
@@ -157,6 +160,15 @@ class BlenderMCPServer:
         
         # 视频编辑工具
         register_video_editing_tools(self.mcp, self)
+        
+        # 雕刻工具
+        register_sculpting_tools(self.mcp, self)
+        
+        # 纹理绘制工具
+        register_texture_painting_tools(self.mcp, self)
+        
+        # 油笔/2D动画工具
+        register_grease_pencil_tools(self.mcp, self)
         
         logger.info("所有工具注册完成")
     

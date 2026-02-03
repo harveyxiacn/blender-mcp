@@ -75,14 +75,15 @@ def handle_circle(params: Dict[str, Any]) -> Dict[str, Any]:
     name = params.get("name", "Circle")
     radius = params.get("radius", 1.0)
     location = params.get("location", [0, 0, 0])
-    fill_mode = params.get("fill_mode", "NONE")
+    fill_mode = params.get("fill_mode", "FULL")
     
     bpy.ops.curve.primitive_bezier_circle_add(radius=radius, location=location)
     curve_obj = bpy.context.active_object
     curve_obj.name = name
     
-    # 设置填充模式
-    curve_obj.data.fill_mode = fill_mode
+    # 设置填充模式 (FULL, BACK, FRONT, HALF)
+    if fill_mode in ('FULL', 'BACK', 'FRONT', 'HALF'):
+        curve_obj.data.fill_mode = fill_mode
     
     return {
         "success": True,

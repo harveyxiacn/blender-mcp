@@ -27,6 +27,9 @@ from . import uv as uv_handler
 from . import nodes as nodes_handler
 from . import compositor as compositor_handler
 from . import vse as vse_handler
+from . import sculpt as sculpt_handler
+from . import texture_paint as texture_paint_handler
+from . import gpencil as gpencil_handler
 
 __all__ = [
     "scene_handler",
@@ -52,4 +55,7 @@ __all__ = [
     "nodes_handler",
     "compositor_handler",
     "vse_handler",
+    "sculpt_handler",
+    "texture_paint_handler",
+    "gpencil_handler",
 ]

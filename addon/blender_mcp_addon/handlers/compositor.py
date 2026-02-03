@@ -9,9 +9,26 @@ import bpy
 
 
 def _ensure_compositor():
-    """确保合成器已启用"""
-    bpy.context.scene.use_nodes = True
-    return bpy.context.scene.node_tree
+    """确保合成器已启用并返回节点树"""
+    scene = bpy.context.scene
+    
+    # 启用合成器节点
+    scene.use_nodes = True
+    
+    # 合成器节点树需要通过 scene.node_tree 访问
+    # 但某些版本需要先启用才能访问
+    node_tree = getattr(scene, 'node_tree', None)
+    
+    if node_tree is None:
+        # 尝试创建默认设置
+        scene.use_nodes = False
+        scene.use_nodes = True
+        node_tree = getattr(scene, 'node_tree', None)
+    
+    if node_tree is None:
+        raise RuntimeError("无法创建合成器节点树")
+    
+    return node_tree
 
 
 def _get_or_create_node(nodes, node_type, name, location=[0, 0]):
@@ -32,40 +49,47 @@ def handle_enable(params: Dict[str, Any]) -> Dict[str, Any]:
     enable = params.get("enable", True)
     use_backdrop = params.get("use_backdrop", True)
     
-    bpy.context.scene.use_nodes = enable
-    
-    if enable:
-        node_tree = bpy.context.scene.node_tree
+    try:
+        scene = bpy.context.scene
+        scene.use_nodes = enable
         
-        # 确保有基本节点
-        nodes = node_tree.nodes
+        if enable:
+            node_tree = _ensure_compositor()
+            
+            # 确保有基本节点
+            nodes = node_tree.nodes
+            
+            # 渲染层节点
+            render_layers = None
+            composite = None
+            
+            for node in nodes:
+                if node.type == 'R_LAYERS':
+                    render_layers = node
+                elif node.type == 'COMPOSITE':
+                    composite = node
+            
+            if not render_layers:
+                render_layers = nodes.new('CompositorNodeRLayers')
+                render_layers.location = [-200, 0]
+            
+            if not composite:
+                composite = nodes.new('CompositorNodeComposite')
+                composite.location = [400, 0]
+            
+            # 连接
+            if not composite.inputs['Image'].is_linked:
+                node_tree.links.new(render_layers.outputs['Image'], composite.inputs['Image'])
         
-        # 渲染层节点
-        render_layers = None
-        composite = None
-        
-        for node in nodes:
-            if node.type == 'R_LAYERS':
-                render_layers = node
-            elif node.type == 'COMPOSITE':
-                composite = node
-        
-        if not render_layers:
-            render_layers = nodes.new('CompositorNodeRLayers')
-            render_layers.location = [-200, 0]
-        
-        if not composite:
-            composite = nodes.new('CompositorNodeComposite')
-            composite.location = [400, 0]
-        
-        # 连接
-        if not composite.inputs['Image'].is_linked:
-            node_tree.links.new(render_layers.outputs['Image'], composite.inputs['Image'])
-    
-    return {
-        "success": True,
-        "data": {}
-    }
+        return {
+            "success": True,
+            "data": {}
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": {"code": "COMPOSITOR_ERROR", "message": str(e)}
+        }
 
 
 def handle_preset(params: Dict[str, Any]) -> Dict[str, Any]:
