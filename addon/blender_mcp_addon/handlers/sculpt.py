@@ -113,14 +113,8 @@ def handle_set_brush(params: Dict[str, Any]) -> Dict[str, Any]:
             brush = bpy.data.brushes.new(name=brush_name, mode='SCULPT')
         
         if brush:
-            # Blender 5.0+ brush 属性可能只读，使用 bpy.ops 设置
-            try:
-                if sculpt:
-                    sculpt.brush = brush
-            except AttributeError:
-                # 使用 ops 设置活动笔刷
-                pass
-            
+            # Blender 5.0+ brush 是只读的，需要使用不同方式
+            # 直接设置笔刷属性
             brush.size = int(radius)
             brush.strength = strength
             if hasattr(brush, 'auto_smooth_factor'):

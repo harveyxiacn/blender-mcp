@@ -123,13 +123,8 @@ def handle_set_brush(params: Dict[str, Any]) -> Dict[str, Any]:
             brush = bpy.data.brushes.new(name=brush_name, mode='TEXTURE_PAINT')
         
         if brush:
-            # Blender 5.0+ brush 属性可能只读
-            try:
-                if hasattr(tool_settings, 'image_paint') and tool_settings.image_paint:
-                    tool_settings.image_paint.brush = brush
-            except AttributeError:
-                pass
-            
+            # Blender 5.0+ brush 属性是只读的
+            # 直接设置笔刷属性
             brush.size = int(radius)
             brush.strength = strength
             brush.color = color[:3] if len(color) >= 3 else [1, 1, 1]

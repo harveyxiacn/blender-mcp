@@ -22,41 +22,44 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
             except:
                 pass
         
-        # Blender 5.0+ 油笔数据类型可能不同
-        # 尝试使用 grease_pencils_v3 或 grease_pencils
-        gpd = None
+        # Blender 5.0+ 使用新的 Grease Pencil v3 API
+        # 首先尝试使用 bpy.ops
         try:
+            bpy.ops.object.gpencil_add(location=location, type='EMPTY')
+            obj = bpy.context.active_object
+            obj.name = name
+            
+            # 获取图层名称（Blender 5.0+ 使用 name 而不是 info）
+            layer_name = "Layer"
+            if hasattr(obj.data, 'layers') and len(obj.data.layers) > 0:
+                layer = obj.data.layers[0]
+                layer_name = getattr(layer, 'name', getattr(layer, 'info', 'Layer'))
+            
+            return {
+                "success": True,
+                "data": {
+                    "object_name": obj.name,
+                    "layer_name": layer_name
+                }
+            }
+        except Exception as ops_error:
+            # 回退到旧 API
             gpd = bpy.data.grease_pencils.new(name)
-        except:
-            # Blender 5.0+ 可能使用新 API
-            pass
-        
-        if gpd:
-            # 创建对象
             obj = bpy.data.objects.new(name, gpd)
             obj.location = location
-            
-            # 设置深度顺序
-            if hasattr(gpd, 'stroke_depth_order'):
-                if stroke_depth_order == "2D":
-                    gpd.stroke_depth_order = '2D'
-                else:
-                    gpd.stroke_depth_order = '3D'
             
             # 链接到场景
             bpy.context.collection.objects.link(obj)
             
-            # 选择对象（不使用 ops）
+            # 选择对象
             for o in bpy.context.selected_objects:
                 o.select_set(False)
             obj.select_set(True)
             bpy.context.view_layer.objects.active = obj
             
-            # 添加默认图层 - Blender 5.0 v3 API
+            # 添加默认图层
             layer = gpd.layers.new("Layer", set_active=True)
-            
-            # 获取图层名称 - v3 使用 name 而不是 info
-            layer_name = getattr(layer, 'info', None) or getattr(layer, 'name', 'Layer')
+            layer_name = getattr(layer, 'name', getattr(layer, 'info', 'Layer'))
             
             # 添加默认材质
             mat = bpy.data.materials.new(name=f"{name}_Material")
@@ -68,20 +71,6 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
                 "data": {
                     "object_name": obj.name,
                     "layer_name": layer_name
-                }
-            }
-        else:
-            # Blender 5.0+ 使用新的 Grease Pencil v3
-            # 使用 bpy.ops 创建
-            bpy.ops.object.gpencil_add(location=location, type='EMPTY')
-            obj = bpy.context.active_object
-            obj.name = name
-            
-            return {
-                "success": True,
-                "data": {
-                    "object_name": obj.name,
-                    "note": "Created using Grease Pencil v3 API"
                 }
             }
     except Exception as e:
@@ -108,56 +97,69 @@ def handle_layer(params: Dict[str, Any]) -> Dict[str, Any]:
     
     gpd = obj.data
     
-    if action == "ADD":
-        layer = gpd.layers.new(layer_name, set_active=True)
-        if color:
-            layer.channel_color = color[:3] if len(color) >= 3 else [0, 0, 0]
-        
-        return {
-            "success": True,
-            "data": {
-                "layer_name": layer.info,
-                "action": "ADD"
-            }
-        }
-    
-    elif action == "REMOVE":
-        layer = gpd.layers.get(layer_name)
-        if layer:
-            gpd.layers.remove(layer)
-            return {
-                "success": True,
-                "data": {"action": "REMOVE"}
-            }
-        return {
-            "success": False,
-            "error": {"code": "LAYER_NOT_FOUND", "message": f"图层不存在: {layer_name}"}
-        }
-    
-    elif action == "RENAME":
-        layer = gpd.layers.get(layer_name)
-        if layer and new_name:
-            layer.info = new_name
+    try:
+        if action == "ADD":
+            layer = gpd.layers.new(layer_name, set_active=True)
+            if color and hasattr(layer, 'channel_color'):
+                layer.channel_color = color[:3] if len(color) >= 3 else [0, 0, 0]
+            
+            # Blender 5.0+ 使用 name 而不是 info
+            result_name = getattr(layer, 'name', getattr(layer, 'info', layer_name))
+            
             return {
                 "success": True,
                 "data": {
-                    "old_name": layer_name,
-                    "new_name": new_name
+                    "layer_name": result_name,
+                    "action": "ADD"
                 }
             }
+        
+        elif action == "REMOVE":
+            layer = gpd.layers.get(layer_name)
+            if layer:
+                gpd.layers.remove(layer)
+                return {
+                    "success": True,
+                    "data": {"action": "REMOVE"}
+                }
+            return {
+                "success": False,
+                "error": {"code": "LAYER_NOT_FOUND", "message": f"图层不存在: {layer_name}"}
+            }
+        
+        elif action == "RENAME":
+            layer = gpd.layers.get(layer_name)
+            if layer and new_name:
+                # Blender 5.0+ 使用 name
+                if hasattr(layer, 'name'):
+                    layer.name = new_name
+                elif hasattr(layer, 'info'):
+                    layer.info = new_name
+                return {
+                    "success": True,
+                    "data": {
+                        "old_name": layer_name,
+                        "new_name": new_name
+                    }
+                }
+            return {
+                "success": False,
+                "error": {"code": "RENAME_FAILED", "message": "重命名失败"}
+            }
+        
+        elif action == "MOVE":
+            # 移动图层顺序
+            pass
+        
         return {
             "success": False,
-            "error": {"code": "RENAME_FAILED", "message": "重命名失败"}
+            "error": {"code": "INVALID_ACTION", "message": f"未知操作: {action}"}
         }
-    
-    elif action == "MOVE":
-        # 移动图层顺序
-        pass
-    
-    return {
-        "success": False,
-        "error": {"code": "INVALID_ACTION", "message": f"未知操作: {action}"}
-    }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": {"code": "LAYER_ERROR", "message": str(e)}
+        }
 
 
 def handle_frame(params: Dict[str, Any]) -> Dict[str, Any]:
