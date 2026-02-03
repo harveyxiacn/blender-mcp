@@ -213,11 +213,12 @@ def handle_material(params: Dict[str, Any]) -> Dict[str, Any]:
             links.new(bsdf.outputs['BSDF'], output.inputs['Surface'])
         
         # 分配材质到粒子系统
+        obj.data.materials.append(mat)
+        
         if len(obj.particle_systems) > 0:
             ps = obj.particle_systems[-1]
-            ps.settings.material_slot = len(obj.data.materials)
-        
-        obj.data.materials.append(mat)
+            # Blender 5.0: material_slot 需要材质槽名称字符串
+            ps.settings.material_slot = mat.name
         
         return {
             "success": True,

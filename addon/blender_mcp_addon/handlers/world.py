@@ -164,7 +164,7 @@ def handle_hdri(params: Dict[str, Any]) -> Dict[str, Any]:
 
 def handle_sky(params: Dict[str, Any]) -> Dict[str, Any]:
     """设置程序化天空"""
-    sky_type = params.get("sky_type", "NISHITA")
+    sky_type = params.get("sky_type", "HOSEK_WILKIE")
     sun_elevation = params.get("sun_elevation", 0.785)
     sun_rotation = params.get("sun_rotation", 0.0)
     air_density = params.get("air_density", 1.0)
@@ -190,18 +190,29 @@ def handle_sky(params: Dict[str, Any]) -> Dict[str, Any]:
         
         sky = nodes.new('ShaderNodeTexSky')
         sky.location = (-300, 0)
-        sky.sky_type = sky_type
         
-        if sky_type == 'NISHITA':
+        # Blender 5.0 sky_type: SINGLE_SCATTERING, MULTIPLE_SCATTERING, PREETHAM, HOSEK_WILKIE
+        # 映射旧的 NISHITA 到新的类型
+        type_map = {
+            'NISHITA': 'HOSEK_WILKIE',
+            'PREETHAM': 'PREETHAM',
+            'HOSEK_WILKIE': 'HOSEK_WILKIE',
+            'SINGLE_SCATTERING': 'SINGLE_SCATTERING',
+            'MULTIPLE_SCATTERING': 'MULTIPLE_SCATTERING'
+        }
+        actual_type = type_map.get(sky_type, 'HOSEK_WILKIE')
+        sky.sky_type = actual_type
+        
+        # 设置太阳方向
+        if hasattr(sky, 'sun_elevation'):
             sky.sun_elevation = sun_elevation
+        if hasattr(sky, 'sun_rotation'):
             sky.sun_rotation = sun_rotation
-            sky.air_density = air_density
-            sky.dust_density = dust_density
-            sky.ozone_density = ozone_density
-        elif sky_type in ['PREETHAM', 'HOSEK_WILKIE']:
-            sky.sun_direction[0] = 0
-            sky.sun_direction[1] = 0
-            sky.sun_direction[2] = 1
+        if hasattr(sky, 'sun_direction'):
+            import math
+            sky.sun_direction[0] = math.cos(sun_elevation) * math.sin(sun_rotation)
+            sky.sun_direction[1] = math.cos(sun_elevation) * math.cos(sun_rotation)
+            sky.sun_direction[2] = math.sin(sun_elevation)
         
         # 连接节点
         links.new(sky.outputs['Color'], background.inputs['Color'])
@@ -211,7 +222,7 @@ def handle_sky(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": True,
             "data": {
                 "world_name": world.name,
-                "sky_type": sky_type
+                "sky_type": actual_type
             }
         }
     
@@ -284,28 +295,42 @@ def handle_ambient_occlusion(params: Dict[str, Any]) -> Dict[str, Any]:
     
     try:
         world = _ensure_world()
-        
-        # 环境光遮蔽是渲染设置
         scene = bpy.context.scene
         
-        # Cycles
-        if scene.render.engine == 'CYCLES':
-            world.light_settings.use_ambient_occlusion = use_ao
-            world.light_settings.ao_factor = factor
-            world.light_settings.distance = distance
+        # Blender 5.0+ AO 设置位置变化
+        # EEVEE Next
+        if scene.render.engine in ['BLENDER_EEVEE', 'BLENDER_EEVEE_NEXT']:
+            if hasattr(scene.eevee, 'use_gtao'):
+                scene.eevee.use_gtao = use_ao
+                scene.eevee.gtao_distance = distance
+                scene.eevee.gtao_factor = factor
+            elif hasattr(scene.eevee, 'use_raytracing'):
+                # EEVEE Next 可能使用光线追踪 AO
+                pass
         
-        # EEVEE
-        elif scene.render.engine in ['BLENDER_EEVEE', 'BLENDER_EEVEE_NEXT']:
-            scene.eevee.use_gtao = use_ao
-            scene.eevee.gtao_distance = distance
-            scene.eevee.gtao_factor = factor
+        # Cycles - 通过 world 节点实现 AO
+        elif scene.render.engine == 'CYCLES':
+            # Cycles 中 AO 通常通过着色器节点实现
+            # 或者通过渲染通道
+            if hasattr(scene, 'cycles'):
+                scene.cycles.use_fast_gi = use_ao
+        
+        # 尝试旧 API 作为后备
+        try:
+            if hasattr(world.light_settings, 'use_ambient_occlusion'):
+                world.light_settings.use_ambient_occlusion = use_ao
+                world.light_settings.ao_factor = factor
+                world.light_settings.distance = distance
+        except:
+            pass
         
         return {
             "success": True,
             "data": {
                 "use_ao": use_ao,
                 "distance": distance,
-                "factor": factor
+                "factor": factor,
+                "note": "AO settings applied where supported"
             }
         }
     

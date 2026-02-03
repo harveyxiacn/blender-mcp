@@ -431,6 +431,117 @@ def test_gpencil_tools(tester):
     })
 
 
+def test_simulation_tools(tester):
+    """Test simulation tools (fluid, smoke, ocean)"""
+    print("\n--- Testing SIMULATION tools ---")
+    # 创建域对象
+    tester.cmd('object', 'create', {'type': 'CUBE', 'name': 'SimDomain', 'location': [35, 0, 2], 'scale': [2, 2, 2]})
+    tester.cmd('object', 'create', {'type': 'SPHERE', 'name': 'SimFlow', 'location': [35, 0, 3], 'scale': [0.3, 0.3, 0.3]})
+    tester.cmd('object', 'create', {'type': 'PLANE', 'name': 'OceanPlane', 'location': [40, 0, 0], 'scale': [3, 3, 1]})
+    
+    tester.cmd('simulation', 'fluid_domain', {
+        'object_name': 'SimDomain',
+        'domain_type': 'LIQUID',
+        'resolution': 32
+    })
+    tester.cmd('simulation', 'fluid_flow', {
+        'object_name': 'SimFlow',
+        'flow_type': 'INFLOW'
+    })
+    tester.cmd('simulation', 'ocean', {
+        'object_name': 'OceanPlane',
+        'resolution': 5,
+        'spatial_size': 20
+    })
+
+
+def test_hair_tools(tester):
+    """Test hair/fur tools"""
+    print("\n--- Testing HAIR tools ---")
+    tester.cmd('object', 'create', {'type': 'SPHERE', 'name': 'HairSphere', 'location': [45, 0, 0]})
+    
+    tester.cmd('hair', 'add', {
+        'object_name': 'HairSphere',
+        'name': 'TestHair',
+        'hair_length': 0.2,
+        'hair_count': 500
+    })
+    tester.cmd('hair', 'settings', {
+        'object_name': 'HairSphere',
+        'hair_length': 0.3
+    })
+    tester.cmd('hair', 'children', {
+        'object_name': 'HairSphere',
+        'child_type': 'INTERPOLATED',
+        'child_count': 5
+    })
+    tester.cmd('hair', 'material', {
+        'object_name': 'HairSphere',
+        'color': [0.2, 0.1, 0.05, 1.0]
+    })
+
+
+def test_assets_tools(tester):
+    """Test asset management tools"""
+    print("\n--- Testing ASSETS tools ---")
+    tester.cmd('object', 'create', {'type': 'CUBE', 'name': 'AssetCube', 'location': [50, 0, 0]})
+    
+    tester.cmd('assets', 'mark', {
+        'object_name': 'AssetCube',
+        'description': 'Test asset',
+        'tags': ['test']
+    })
+    tester.cmd('assets', 'catalog', {'action': 'LIST'})
+    tester.cmd('assets', 'search', {'query': 'asset'})
+    tester.cmd('assets', 'preview', {'object_name': 'AssetCube'})
+    tester.cmd('assets', 'clear', {'object_name': 'AssetCube'})
+
+
+def test_addons_tools(tester):
+    """Test addon management tools"""
+    print("\n--- Testing ADDONS tools ---")
+    tester.cmd('addons', 'list', {})
+    tester.cmd('addons', 'info', {'addon_name': 'blender_mcp_addon'})
+
+
+def test_world_tools(tester):
+    """Test world/environment tools"""
+    print("\n--- Testing WORLD tools ---")
+    tester.cmd('world', 'create', {'name': 'TestWorld', 'use_nodes': True})
+    tester.cmd('world', 'background', {'color': [0.1, 0.2, 0.4], 'strength': 1.0})
+    tester.cmd('world', 'sky', {'sky_type': 'NISHITA', 'sun_elevation': 0.5})
+    tester.cmd('world', 'fog', {'use_fog': True, 'density': 0.005})
+    tester.cmd('world', 'ambient_occlusion', {'use_ao': True, 'distance': 1.0})
+
+
+def test_constraints_tools(tester):
+    """Test constraint tools"""
+    print("\n--- Testing CONSTRAINTS tools ---")
+    tester.cmd('object', 'create', {'type': 'CUBE', 'name': 'ConstraintCube', 'location': [55, 0, 0]})
+    tester.cmd('object', 'create', {'type': 'EMPTY', 'name': 'ConstraintTarget', 'location': [55, 2, 0]})
+    
+    tester.cmd('constraints', 'copy_location', {
+        'object_name': 'ConstraintCube',
+        'target': 'ConstraintTarget',
+        'influence': 0.5
+    })
+    tester.cmd('constraints', 'copy_rotation', {
+        'object_name': 'ConstraintCube',
+        'target': 'ConstraintTarget'
+    })
+    tester.cmd('constraints', 'track_to', {
+        'object_name': 'ConstraintCube',
+        'target': 'ConstraintTarget'
+    })
+    tester.cmd('constraints', 'limit', {
+        'object_name': 'ConstraintCube',
+        'limit_type': 'LOCATION',
+        'min_x': -5,
+        'max_x': 5
+    })
+    tester.cmd('constraints', 'list', {'object_name': 'ConstraintCube'})
+
+
 def test_render_tools(tester):
     """Test render tools"""
     print("\n--- Testing RENDER tools ---")
@@ -486,6 +597,14 @@ def main():
         test_sculpt_tools(tester)
         test_texture_paint_tools(tester)
         test_gpencil_tools(tester)
+        
+        # New modules
+        test_simulation_tools(tester)
+        test_hair_tools(tester)
+        test_assets_tools(tester)
+        test_addons_tools(tester)
+        test_world_tools(tester)
+        test_constraints_tools(tester)
         
         # Print summary
         passed, failed = tester.print_summary()

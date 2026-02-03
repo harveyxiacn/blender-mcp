@@ -54,8 +54,8 @@ def handle_fluid_domain(params: Dict[str, Any]) -> Dict[str, Any]:
 def handle_fluid_flow(params: Dict[str, Any]) -> Dict[str, Any]:
     """设置流体流入/流出"""
     object_name = params.get("object_name")
-    flow_type = params.get("flow_type", "INFLOW")
-    flow_behavior = params.get("flow_behavior", "GEOMETRY")
+    flow_type = params.get("flow_type", "LIQUID")  # Blender 5.0: SMOKE, BOTH, FIRE, LIQUID
+    flow_behavior = params.get("flow_behavior", "INFLOW")  # INFLOW, OUTFLOW, GEOMETRY
     use_initial_velocity = params.get("use_initial_velocity", False)
     velocity = params.get("velocity", [0, 0, 0])
     
@@ -72,8 +72,20 @@ def handle_fluid_flow(params: Dict[str, Any]) -> Dict[str, Any]:
         mod.fluid_type = 'FLOW'
         
         settings = mod.flow_settings
-        settings.flow_type = flow_type
-        settings.flow_behavior = flow_behavior
+        # Blender 5.0: flow_type 是物质类型 (SMOKE, BOTH, FIRE, LIQUID)
+        # flow_behavior 是行为 (INFLOW, OUTFLOW, GEOMETRY)
+        
+        # 映射旧的 INFLOW 到新的 API
+        if flow_type == "INFLOW":
+            settings.flow_type = 'LIQUID'
+            settings.flow_behavior = 'INFLOW'
+        elif flow_type == "OUTFLOW":
+            settings.flow_type = 'LIQUID'
+            settings.flow_behavior = 'OUTFLOW'
+        else:
+            settings.flow_type = flow_type
+            settings.flow_behavior = flow_behavior
+        
         settings.use_initial_velocity = use_initial_velocity
         
         if use_initial_velocity:
@@ -83,7 +95,8 @@ def handle_fluid_flow(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": True,
             "data": {
                 "object_name": obj.name,
-                "flow_type": flow_type
+                "flow_type": settings.flow_type,
+                "flow_behavior": settings.flow_behavior
             }
         }
     except Exception as e:
