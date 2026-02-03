@@ -21,6 +21,7 @@ from .handlers import (
     rigging_handler,
     render_handler,
     utility_handler,
+    export_handler,
 )
 
 
@@ -42,6 +43,7 @@ class CommandExecutor:
             "rigging": rigging_handler,
             "render": render_handler,
             "utility": utility_handler,
+            "export": export_handler,
             "system": self,  # 系统命令由自己处理
         }
     

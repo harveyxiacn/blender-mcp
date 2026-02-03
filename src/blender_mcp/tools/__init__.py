@@ -15,6 +15,7 @@ from blender_mcp.tools.character import register_character_tools
 from blender_mcp.tools.rigging import register_rigging_tools
 from blender_mcp.tools.render import register_render_tools
 from blender_mcp.tools.utility import register_utility_tools
+from blender_mcp.tools.export import register_export_tools
 
 __all__ = [
     "register_scene_tools",
@@ -28,4 +29,5 @@ __all__ = [
     "register_rigging_tools",
     "register_render_tools",
     "register_utility_tools",
+    "register_export_tools",
 ]

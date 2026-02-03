@@ -15,6 +15,7 @@ from . import character as character_handler
 from . import rigging as rigging_handler
 from . import render as render_handler
 from . import utility as utility_handler
+from . import export as export_handler
 
 __all__ = [
     "scene_handler",
@@ -28,4 +29,5 @@ __all__ = [
     "rigging_handler",
     "render_handler",
     "utility_handler",
+    "export_handler",
 ]

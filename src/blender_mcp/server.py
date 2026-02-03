@@ -23,6 +23,7 @@ from blender_mcp.tools import (
     register_rigging_tools,
     register_render_tools,
     register_utility_tools,
+    register_export_tools,
 )
 
 logger = logging.getLogger(__name__)
@@ -109,6 +110,9 @@ class BlenderMCPServer:
         
         # 实用工具
         register_utility_tools(self.mcp, self)
+        
+        # 导出工具
+        register_export_tools(self.mcp, self)
         
         logger.info("所有工具注册完成")
     
