@@ -12,11 +12,14 @@ Blender MCP (Model Context Protocol) enables AI assistants to control Blender di
 
 ### Features
 
-- **Full Blender Control**: Scene management, object manipulation, modeling, materials, lighting, animation, and rendering
+- **Full Blender Control**: 114+ tools covering all major Blender functionality
 - **Multi-IDE Support**: Works with Cursor, Antigravity, Windsurf, and any MCP-compatible IDE
-- **Character Creation**: Build humanoid meshes with facial features and rigging
-- **Animation System**: Keyframe animation with various interpolation types
-- **Rendering**: Support for Cycles, EEVEE, and EEVEE Next
+- **Complete 3D Pipeline**: Modeling, sculpting, UV mapping, texturing, materials, lighting, animation, rendering
+- **Character Creation**: Templates, auto-rigging, facial features, hair systems, clothing
+- **Animation System**: Keyframe animation, motion capture import, physics simulation
+- **Post-Production**: Compositor nodes, video editing (VSE), 2D animation (Grease Pencil)
+- **Game Engine Integration**: Optimized export for Unity, Unreal Engine, and Godot
+- **AI Assistance**: Scene analysis, optimization suggestions, auto-material creation
 
 ### Quick Start
 
@@ -67,11 +70,14 @@ Blender MCP（模型上下文协议）使 AI 助手能够从 Cursor、Antigravit
 
 ### 功能特性
 
-- **完整的 Blender 控制**：场景管理、对象操作、建模、材质、灯光、动画和渲染
+- **完整的 Blender 控制**：114+ 工具，覆盖 Blender 所有主要功能
 - **多 IDE 支持**：支持 Cursor、Antigravity、Windsurf 及任何兼容 MCP 的 IDE
-- **角色创建**：构建人形网格、面部特征和骨骼绑定
-- **动画系统**：关键帧动画，支持多种插值类型
-- **渲染支持**：支持 Cycles、EEVEE 和 EEVEE Next
+- **完整 3D 流程**：建模、雕刻、UV展开、纹理绘制、材质、灯光、动画、渲染
+- **角色创建**：模板、自动绑定、面部特征、毛发系统、服装
+- **动画系统**：关键帧动画、动作捕捉导入、物理模拟
+- **后期制作**：合成器节点、视频编辑（VSE）、2D动画（油笔）
+- **游戏引擎集成**：优化导出到 Unity、Unreal Engine、Godot
+- **AI 辅助**：场景分析、优化建议、自动材质创建
 
 ### 快速开始
 

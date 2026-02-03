@@ -90,7 +90,7 @@ def handle_describe_scene(params: Dict[str, Any]) -> Dict[str, Any]:
                     "name": action.name,
                     "frame_range": list(action.frame_range)
                 }
-                if detail_level == "high":
+                if detail_level == "high" and hasattr(action, 'fcurves'):
                     anim_info["fcurve_count"] = len(action.fcurves)
                 animations.append(anim_info)
             

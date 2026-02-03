@@ -60,6 +60,12 @@ Blender MCP (Model Context Protocol) 是一个允许 AI 助手（如 Claude、GP
 │  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐   │   │
 │  │  │灯光相机 │ │角色系统 │ │骨骼绑定│ │ 渲染   │ │资产管理 │   │   │
 │  │  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘   │   │
+│  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐   │   │
+│  │  │ 雕刻   │ │UV/纹理  │ │节点系统│ │合成/VSE │ │ 模拟   │   │   │
+│  │  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘   │   │
+│  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐   │   │
+│  │  │毛发系统 │ │约束系统 │ │外部集成│ │AI辅助  │ │偏好设置 │   │   │
+│  │  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘   │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
@@ -85,7 +91,7 @@ blender_mcp/
 ├── __init__.py           # 包初始化
 ├── server.py             # MCP 服务器主入口
 ├── connection.py         # Blender 连接管理
-├── tools/                # 工具定义
+├── tools/                # 工具定义（36个模块，114+工具）
 │   ├── __init__.py
 │   ├── scene.py          # 场景管理工具
 │   ├── object.py         # 对象操作工具
@@ -96,7 +102,33 @@ blender_mcp/
 │   ├── camera.py         # 相机工具
 │   ├── character.py      # 角色系统工具
 │   ├── rigging.py        # 骨骼绑定工具
-│   └── render.py         # 渲染工具
+│   ├── render.py         # 渲染工具
+│   ├── utility.py        # 实用工具
+│   ├── export.py         # 导出工具
+│   ├── character_template.py  # 角色模板
+│   ├── auto_rig.py       # 自动绑定
+│   ├── animation_preset.py    # 动画预设
+│   ├── physics.py        # 物理模拟
+│   ├── scene_advanced.py # 高级场景
+│   ├── batch.py          # 批量操作
+│   ├── curves.py         # 曲线建模
+│   ├── sculpt.py         # 雕刻工具
+│   ├── uv.py             # UV映射
+│   ├── texture_paint.py  # 纹理绘制
+│   ├── nodes.py          # 节点系统
+│   ├── compositor.py     # 合成器
+│   ├── vse.py            # 视频编辑
+│   ├── gpencil.py        # 油笔/2D动画
+│   ├── simulation.py     # 高级模拟
+│   ├── hair.py           # 毛发系统
+│   ├── assets.py         # 资产管理
+│   ├── addons.py         # 插件管理
+│   ├── world.py          # 世界环境
+│   ├── constraints.py    # 约束系统
+│   ├── mocap.py          # 动作捕捉
+│   ├── preferences.py    # 偏好设置
+│   ├── external.py       # 外部集成
+│   └── ai_assist.py      # AI辅助
 ├── models/               # Pydantic 模型
 │   ├── __init__.py
 │   ├── common.py         # 通用模型
@@ -121,10 +153,9 @@ Blender 插件负责在 Blender 内部执行操作：
 ```
 blender_mcp_addon/
 ├── __init__.py           # 插件入口和注册
-├── preferences.py        # 插件设置面板
 ├── server.py             # 通信服务器
 ├── executor.py           # 命令执行器
-├── handlers/             # 命令处理器
+├── handlers/             # 命令处理器（36个模块）
 │   ├── __init__.py
 │   ├── scene.py          # 场景处理器
 │   ├── object.py         # 对象处理器
@@ -135,18 +166,37 @@ blender_mcp_addon/
 │   ├── camera.py         # 相机处理器
 │   ├── character.py      # 角色处理器
 │   ├── rigging.py        # 骨骼处理器
-│   └── render.py         # 渲染处理器
+│   ├── render.py         # 渲染处理器
+│   ├── utility.py        # 实用工具处理器
+│   ├── export.py         # 导出处理器
+│   ├── character_template.py  # 角色模板处理器
+│   ├── auto_rig.py       # 自动绑定处理器
+│   ├── animation_preset.py    # 动画预设处理器
+│   ├── physics.py        # 物理模拟处理器
+│   ├── scene_advanced.py # 高级场景处理器
+│   ├── batch.py          # 批量操作处理器
+│   ├── curves.py         # 曲线处理器
+│   ├── sculpt.py         # 雕刻处理器
+│   ├── uv.py             # UV处理器
+│   ├── texture_paint.py  # 纹理绘制处理器
+│   ├── nodes.py          # 节点处理器
+│   ├── compositor.py     # 合成器处理器
+│   ├── vse.py            # 视频编辑处理器
+│   ├── gpencil.py        # 油笔处理器
+│   ├── simulation.py     # 模拟处理器
+│   ├── hair.py           # 毛发处理器
+│   ├── assets.py         # 资产处理器
+│   ├── addons.py         # 插件处理器
+│   ├── world.py          # 世界环境处理器
+│   ├── constraints.py    # 约束处理器
+│   ├── mocap.py          # 动作捕捉处理器
+│   ├── preferences.py    # 偏好设置处理器
+│   ├── external.py       # 外部集成处理器
+│   └── ai_assist.py      # AI辅助处理器
 ├── operators/            # Blender 操作符
-│   ├── __init__.py
-│   └── server_ops.py     # 服务器控制操作符
-├── panels/               # UI 面板
-│   ├── __init__.py
-│   └── main_panel.py     # 主控制面板
-└── utils/                # 工具函数
-    ├── __init__.py
-    ├── mesh.py           # 网格工具
-    ├── transform.py      # 变换工具
-    └── material.py       # 材质工具
+│   └── __init__.py
+└── panels/               # UI 面板
+    └── __init__.py
 ```
 
 ## 4. 通信协议
@@ -451,11 +501,42 @@ async def execute_script(params: ScriptInput) -> str:
 | 4.0 - 4.2 | 支持 | 完整功能 |
 | 5.0+ | 完全支持 | 推荐版本，支持新特性 |
 
-## 11. 未来规划
+## 11. 功能实现状态
 
+### 已完成功能 ✅
+- [x] 场景管理（scene）
+- [x] 对象操作（object）
+- [x] 网格建模（modeling）
+- [x] 材质系统（material）
+- [x] 灯光系统（lighting）
+- [x] 相机系统（camera）
+- [x] 动画系统（animation）
+- [x] 角色系统（character, character_template）
+- [x] 骨骼绑定（rigging, auto_rig）
+- [x] 渲染系统（render）
+- [x] 物理模拟（physics, simulation）
+- [x] 雕刻工具（sculpt）
+- [x] UV映射（uv）
+- [x] 纹理绘制（texture_paint）
+- [x] 节点系统（nodes）
+- [x] 合成器（compositor）
+- [x] 视频编辑（vse）
+- [x] 油笔/2D动画（gpencil）
+- [x] 毛发系统（hair）
+- [x] 资产管理（assets）
+- [x] 插件管理（addons）
+- [x] 世界环境（world）
+- [x] 约束系统（constraints）
+- [x] 动作捕捉（mocap）
+- [x] 偏好设置（preferences）
+- [x] 外部集成（external）- Unity、Unreal、Godot导出
+- [x] AI辅助功能（ai_assist）
+
+### 未来规划
 - [ ] VR/AR 场景支持
 - [ ] 实时协作编辑
 - [ ] 云渲染集成
 - [ ] AI 辅助建模（与 Stable Diffusion 等集成）
-- [ ] 资产库集成
 - [ ] 版本控制支持
+- [ ] Substance 连接
+- [ ] ZBrush 连接
