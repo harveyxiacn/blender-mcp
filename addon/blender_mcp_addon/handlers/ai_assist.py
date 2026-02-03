@@ -509,8 +509,9 @@ def handle_scene_statistics(params: Dict[str, Any]) -> Dict[str, Any]:
         
         # 动画统计
         for action in bpy.data.actions:
-            for fcurve in action.fcurves:
-                stats["animations"]["total_keyframes"] += len(fcurve.keyframe_points)
+            if hasattr(action, 'fcurves'):
+                for fcurve in action.fcurves:
+                    stats["animations"]["total_keyframes"] += len(fcurve.keyframe_points)
         
         return {
             "success": True,
