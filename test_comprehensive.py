@@ -542,6 +542,51 @@ def test_constraints_tools(tester):
     tester.cmd('constraints', 'list', {'object_name': 'ConstraintCube'})
 
 
+def test_preferences_tools(tester):
+    """Test preferences tools"""
+    print("\n--- Testing PREFERENCES tools ---")
+    tester.cmd('preferences', 'get', {'category': 'view', 'key': 'show_splash'})
+    tester.cmd('preferences', 'viewport', {'show_floor': True, 'show_axis_z': True})
+    tester.cmd('preferences', 'system', {'undo_steps': 64})
+
+
+def test_external_tools(tester):
+    """Test external integration tools"""
+    print("\n--- Testing EXTERNAL tools ---")
+    # 创建测试对象
+    tester.cmd('object', 'create', {'type': 'CUBE', 'name': 'ExportCube', 'location': [60, 0, 0]})
+    
+    # 测试批量导出（使用临时目录）
+    import tempfile
+    import os
+    temp_dir = tempfile.mkdtemp()
+    
+    tester.cmd('external', 'batch_export', {
+        'output_dir': temp_dir,
+        'format': 'FBX',
+        'separate_files': True,
+        'objects': ['ExportCube']
+    })
+
+
+def test_ai_assist_tools(tester):
+    """Test AI assist tools"""
+    print("\n--- Testing AI_ASSIST tools ---")
+    tester.cmd('ai_assist', 'describe_scene', {'detail_level': 'medium'})
+    tester.cmd('ai_assist', 'scene_statistics', {'include_hidden': False})
+    tester.cmd('ai_assist', 'list_issues', {})
+    
+    # 创建测试对象并分析
+    tester.cmd('object', 'create', {'type': 'SPHERE', 'name': 'AnalyzeSphere', 'location': [65, 0, 0]})
+    tester.cmd('ai_assist', 'analyze_object', {'object_name': 'AnalyzeSphere'})
+    tester.cmd('ai_assist', 'auto_material', {
+        'object_name': 'AnalyzeSphere',
+        'description': 'metal gold',
+        'style': 'realistic'
+    })
+    tester.cmd('ai_assist', 'suggest_optimization', {'target': 'performance'})
+
+
 def test_render_tools(tester):
     """Test render tools"""
     print("\n--- Testing RENDER tools ---")
@@ -605,6 +650,9 @@ def main():
         test_addons_tools(tester)
         test_world_tools(tester)
         test_constraints_tools(tester)
+        test_preferences_tools(tester)
+        test_external_tools(tester)
+        test_ai_assist_tools(tester)
         
         # Print summary
         passed, failed = tester.print_summary()

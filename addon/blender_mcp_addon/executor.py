@@ -42,6 +42,10 @@ from .handlers import (
     addons_handler,
     world_handler,
     constraints_handler,
+    mocap_handler,
+    preferences_handler,
+    external_handler,
+    ai_assist_handler,
 )
 
 
@@ -84,6 +88,10 @@ class CommandExecutor:
             "addons": addons_handler,
             "world": world_handler,
             "constraints": constraints_handler,
+            "mocap": mocap_handler,
+            "preferences": preferences_handler,
+            "external": external_handler,
+            "ai_assist": ai_assist_handler,
             "system": self,  # 系统命令由自己处理
         }
     

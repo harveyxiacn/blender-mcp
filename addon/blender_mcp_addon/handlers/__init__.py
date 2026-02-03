@@ -36,6 +36,10 @@ from . import assets as assets_handler
 from . import addons as addons_handler
 from . import world as world_handler
 from . import constraints as constraints_handler
+from . import mocap as mocap_handler
+from . import preferences as preferences_handler
+from . import external as external_handler
+from . import ai_assist as ai_assist_handler
 
 __all__ = [
     "scene_handler",
@@ -70,4 +74,8 @@ __all__ = [
     "addons_handler",
     "world_handler",
     "constraints_handler",
+    "mocap_handler",
+    "preferences_handler",
+    "external_handler",
+    "ai_assist_handler",
 ]

@@ -44,6 +44,10 @@ from blender_mcp.tools import (
     register_addon_tools,
     register_world_tools,
     register_constraint_tools,
+    register_mocap_tools,
+    register_preferences_tools,
+    register_external_tools,
+    register_ai_assist_tools,
 )
 
 logger = logging.getLogger(__name__)
@@ -193,6 +197,18 @@ class BlenderMCPServer:
         
         # 约束系统工具
         register_constraint_tools(self.mcp, self)
+        
+        # 动作捕捉工具
+        register_mocap_tools(self.mcp, self)
+        
+        # 偏好设置工具
+        register_preferences_tools(self.mcp, self)
+        
+        # 外部集成工具
+        register_external_tools(self.mcp, self)
+        
+        # AI辅助工具
+        register_ai_assist_tools(self.mcp, self)
         
         logger.info("所有工具注册完成")
     

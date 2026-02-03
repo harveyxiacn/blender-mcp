@@ -36,6 +36,10 @@ from blender_mcp.tools.assets import register_asset_tools
 from blender_mcp.tools.addons import register_addon_tools
 from blender_mcp.tools.world import register_world_tools
 from blender_mcp.tools.constraints import register_constraint_tools
+from blender_mcp.tools.mocap import register_mocap_tools
+from blender_mcp.tools.preferences import register_preferences_tools
+from blender_mcp.tools.external import register_external_tools
+from blender_mcp.tools.ai_assist import register_ai_assist_tools
 
 __all__ = [
     "register_scene_tools",
@@ -70,4 +74,8 @@ __all__ = [
     "register_addon_tools",
     "register_world_tools",
     "register_constraint_tools",
+    "register_mocap_tools",
+    "register_preferences_tools",
+    "register_external_tools",
+    "register_ai_assist_tools",
 ]
