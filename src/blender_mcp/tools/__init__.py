@@ -30,6 +30,12 @@ from blender_mcp.tools.video_editing import register_video_editing_tools
 from blender_mcp.tools.sculpting import register_sculpting_tools
 from blender_mcp.tools.texture_painting import register_texture_painting_tools
 from blender_mcp.tools.grease_pencil import register_grease_pencil_tools
+from blender_mcp.tools.simulation import register_simulation_tools
+from blender_mcp.tools.hair import register_hair_tools
+from blender_mcp.tools.assets import register_asset_tools
+from blender_mcp.tools.addons import register_addon_tools
+from blender_mcp.tools.world import register_world_tools
+from blender_mcp.tools.constraints import register_constraint_tools
 
 __all__ = [
     "register_scene_tools",
@@ -58,4 +64,10 @@ __all__ = [
     "register_sculpting_tools",
     "register_texture_painting_tools",
     "register_grease_pencil_tools",
+    "register_simulation_tools",
+    "register_hair_tools",
+    "register_asset_tools",
+    "register_addon_tools",
+    "register_world_tools",
+    "register_constraint_tools",
 ]

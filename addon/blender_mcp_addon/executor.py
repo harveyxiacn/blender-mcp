@@ -36,6 +36,12 @@ from .handlers import (
     sculpt_handler,
     texture_paint_handler,
     gpencil_handler,
+    simulation_handler,
+    hair_handler,
+    assets_handler,
+    addons_handler,
+    world_handler,
+    constraints_handler,
 )
 
 
@@ -72,6 +78,12 @@ class CommandExecutor:
             "sculpt": sculpt_handler,
             "texture_paint": texture_paint_handler,
             "gpencil": gpencil_handler,
+            "simulation": simulation_handler,
+            "hair": hair_handler,
+            "assets": assets_handler,
+            "addons": addons_handler,
+            "world": world_handler,
+            "constraints": constraints_handler,
             "system": self,  # 系统命令由自己处理
         }
     

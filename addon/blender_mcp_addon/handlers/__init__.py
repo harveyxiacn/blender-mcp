@@ -30,6 +30,12 @@ from . import vse as vse_handler
 from . import sculpt as sculpt_handler
 from . import texture_paint as texture_paint_handler
 from . import gpencil as gpencil_handler
+from . import simulation as simulation_handler
+from . import hair as hair_handler
+from . import assets as assets_handler
+from . import addons as addons_handler
+from . import world as world_handler
+from . import constraints as constraints_handler
 
 __all__ = [
     "scene_handler",
@@ -58,4 +64,10 @@ __all__ = [
     "sculpt_handler",
     "texture_paint_handler",
     "gpencil_handler",
+    "simulation_handler",
+    "hair_handler",
+    "assets_handler",
+    "addons_handler",
+    "world_handler",
+    "constraints_handler",
 ]

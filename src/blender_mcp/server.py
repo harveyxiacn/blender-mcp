@@ -38,6 +38,12 @@ from blender_mcp.tools import (
     register_sculpting_tools,
     register_texture_painting_tools,
     register_grease_pencil_tools,
+    register_simulation_tools,
+    register_hair_tools,
+    register_asset_tools,
+    register_addon_tools,
+    register_world_tools,
+    register_constraint_tools,
 )
 
 logger = logging.getLogger(__name__)
@@ -169,6 +175,24 @@ class BlenderMCPServer:
         
         # 油笔/2D动画工具
         register_grease_pencil_tools(self.mcp, self)
+        
+        # 高级模拟工具（流体、烟雾、海洋）
+        register_simulation_tools(self.mcp, self)
+        
+        # 毛发系统工具
+        register_hair_tools(self.mcp, self)
+        
+        # 资产管理工具
+        register_asset_tools(self.mcp, self)
+        
+        # 插件管理工具
+        register_addon_tools(self.mcp, self)
+        
+        # 世界/环境工具
+        register_world_tools(self.mcp, self)
+        
+        # 约束系统工具
+        register_constraint_tools(self.mcp, self)
         
         logger.info("所有工具注册完成")
     

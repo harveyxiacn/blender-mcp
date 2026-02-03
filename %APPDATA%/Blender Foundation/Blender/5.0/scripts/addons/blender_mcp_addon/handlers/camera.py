@@ -144,7 +144,17 @@ def handle_look_at(params: Dict[str, Any]) -> Dict[str, Any]:
 
 def handle_set_active(params: Dict[str, Any]) -> Dict[str, Any]:
     """设置活动相机"""
-    camera_name = params.get("camera_name")
+    # 支持 camera_name 或 name 参数
+    camera_name = params.get("camera_name") or params.get("name")
+    
+    if not camera_name:
+        return {
+            "success": False,
+            "error": {
+                "code": "MISSING_PARAM",
+                "message": "需要指定 camera_name 或 name 参数"
+            }
+        }
     
     obj = bpy.data.objects.get(camera_name)
     if not obj or obj.type != 'CAMERA':
@@ -160,5 +170,7 @@ def handle_set_active(params: Dict[str, Any]) -> Dict[str, Any]:
     
     return {
         "success": True,
-        "data": {}
+        "data": {
+            "camera_name": camera_name
+        }
     }

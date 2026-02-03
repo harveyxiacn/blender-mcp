@@ -182,3 +182,21 @@ def handle_set_settings(params: Dict[str, Any]) -> Dict[str, Any]:
             "scene_name": scene.name
         }
     }
+
+
+def handle_set_frame_range(params: Dict[str, Any]) -> Dict[str, Any]:
+    """设置帧范围"""
+    start = params.get("start", 1)
+    end = params.get("end", 250)
+    
+    scene = bpy.context.scene
+    scene.frame_start = start
+    scene.frame_end = end
+    
+    return {
+        "success": True,
+        "data": {
+            "frame_start": scene.frame_start,
+            "frame_end": scene.frame_end
+        }
+    }

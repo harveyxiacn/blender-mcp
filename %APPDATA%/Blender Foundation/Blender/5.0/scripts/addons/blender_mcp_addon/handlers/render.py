@@ -158,3 +158,79 @@ def handle_preview(params: Dict[str, Any]) -> Dict[str, Any]:
         "success": True,
         "data": {}
     }
+
+
+def handle_set_engine(params: Dict[str, Any]) -> Dict[str, Any]:
+    """设置渲染引擎"""
+    engine = params.get("engine", "CYCLES")
+    
+    scene = bpy.context.scene
+    
+    # 有效的引擎列表
+    valid_engines = ['CYCLES', 'BLENDER_EEVEE', 'BLENDER_EEVEE_NEXT', 'BLENDER_WORKBENCH']
+    
+    if engine not in valid_engines:
+        return {
+            "success": False,
+            "error": {
+                "code": "INVALID_ENGINE",
+                "message": f"无效的渲染引擎: {engine}. 有效值: {valid_engines}"
+            }
+        }
+    
+    scene.render.engine = engine
+    
+    return {
+        "success": True,
+        "data": {
+            "engine": scene.render.engine
+        }
+    }
+
+
+def handle_set_resolution(params: Dict[str, Any]) -> Dict[str, Any]:
+    """设置渲染分辨率"""
+    width = params.get("width", 1920)
+    height = params.get("height", 1080)
+    percentage = params.get("percentage", 100)
+    
+    scene = bpy.context.scene
+    render = scene.render
+    
+    render.resolution_x = width
+    render.resolution_y = height
+    render.resolution_percentage = percentage
+    
+    return {
+        "success": True,
+        "data": {
+            "width": render.resolution_x,
+            "height": render.resolution_y,
+            "percentage": render.resolution_percentage
+        }
+    }
+
+
+def handle_set_samples(params: Dict[str, Any]) -> Dict[str, Any]:
+    """设置渲染采样"""
+    samples = params.get("samples", 128)
+    
+    scene = bpy.context.scene
+    render = scene.render
+    
+    if render.engine == 'CYCLES':
+        scene.cycles.samples = samples
+        actual_samples = scene.cycles.samples
+    elif render.engine in ['BLENDER_EEVEE', 'BLENDER_EEVEE_NEXT']:
+        scene.eevee.taa_render_samples = samples
+        actual_samples = scene.eevee.taa_render_samples
+    else:
+        actual_samples = samples
+    
+    return {
+        "success": True,
+        "data": {
+            "samples": actual_samples,
+            "engine": render.engine
+        }
+    }
