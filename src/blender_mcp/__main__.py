@@ -26,16 +26,17 @@ from rich.logging import RichHandler
 from blender_mcp import __version__
 from blender_mcp.server import BlenderMCPServer
 
-console = Console()
+# 使用 stderr 避免干扰 MCP stdio 通信
+console = Console(file=sys.stderr)
 
 
 def setup_logging(level: str) -> None:
-    """配置日志系统"""
+    """配置日志系统（输出到 stderr，避免干扰 MCP stdio）"""
     logging.basicConfig(
         level=getattr(logging, level.upper()),
         format="%(message)s",
         datefmt="[%X]",
-        handlers=[RichHandler(console=console, rich_tracebacks=True)]
+        handlers=[RichHandler(console=console, rich_tracebacks=True, show_path=False)]
     )
 
 
@@ -70,6 +71,7 @@ def main(
         
         try:
             if transport == "stdio":
+                # stdio 模式：stdout 用于 MCP 协议，日志输出到 stderr
                 console.print(f"[green]启动 Blender MCP 服务器 (stdio 模式)[/green]")
                 console.print(f"[dim]Blender 连接: {host}:{port}[/dim]")
                 asyncio.run(server.run_stdio())
