@@ -77,6 +77,50 @@ class AnimationBakeInput(BaseModel):
     bake_scale: bool = Field(default=True, description="烘焙缩放")
 
 
+class ActionCreateInput(BaseModel):
+    """创建动作输入"""
+    armature_name: str = Field(..., description="骨架名称")
+    action_name: str = Field(default="Action", description="动作名称")
+    fake_user: bool = Field(default=True, description="设置假用户（防止被清理）")
+
+
+class BoneKeyframe(BaseModel):
+    """骨骼关键帧数据"""
+    frame: int = Field(..., description="帧号")
+    bone: str = Field(..., description="骨骼名称")
+    location: Optional[list] = Field(default=None, description="位置 [x, y, z]")
+    rotation: Optional[list] = Field(default=None, description="旋转欧拉角 [x, y, z]")
+    rotation_quaternion: Optional[list] = Field(default=None, description="四元数旋转 [w, x, y, z]")
+    scale: Optional[list] = Field(default=None, description="缩放 [x, y, z]")
+
+
+class ActionCreateFromPosesInput(BaseModel):
+    """从姿势创建动作输入"""
+    armature_name: str = Field(..., description="骨架名称")
+    action_name: str = Field(default="Action", description="动作名称")
+    keyframes: list = Field(..., description="关键帧数据列表 [{frame, bone, location, rotation, scale}, ...]")
+    fake_user: bool = Field(default=True, description="设置假用户")
+
+
+class ActionListInput(BaseModel):
+    """列出动作输入"""
+    armature_name: Optional[str] = Field(default=None, description="骨架名称（可选）")
+
+
+class ActionAssignInput(BaseModel):
+    """分配动作输入"""
+    armature_name: str = Field(..., description="骨架名称")
+    action_name: str = Field(..., description="动作名称")
+
+
+class NLAPushActionInput(BaseModel):
+    """推送动作到 NLA 输入"""
+    armature_name: str = Field(..., description="骨架名称")
+    action_name: Optional[str] = Field(default=None, description="动作名称（为空使用当前动作）")
+    track_name: str = Field(default="NLATrack", description="NLA 轨道名称")
+    start_frame: int = Field(default=1, description="开始帧")
+
+
 # ==================== 工具注册 ====================
 
 def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
@@ -301,3 +345,198 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             return f"已为 '{params.object_name}' 烘焙动画"
         else:
             return f"烘焙动画失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    # ==================== 动画动作工具 ====================
+    
+    @mcp.tool(
+        name="blender_action_create",
+        annotations={
+            "title": "创建动画动作",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False
+        }
+    )
+    async def blender_action_create(params: ActionCreateInput) -> str:
+        """创建新的动画动作。
+        
+        动作是一组关键帧数据，可以在不同骨架之间复用。
+        
+        Args:
+            params: 骨架名称、动作名称
+            
+        Returns:
+            创建结果
+        """
+        result = await server.execute_command(
+            "animation", "action_create",
+            {
+                "armature_name": params.armature_name,
+                "action_name": params.action_name,
+                "fake_user": params.fake_user
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            return f"已创建动作 '{data.get('action_name', params.action_name)}' 并分配给 '{params.armature_name}'"
+        else:
+            return f"创建动作失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_action_create_from_poses",
+        annotations={
+            "title": "从姿势创建动作",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False
+        }
+    )
+    async def blender_action_create_from_poses(params: ActionCreateFromPosesInput) -> str:
+        """从姿势列表批量创建动画关键帧。
+        
+        用于快速创建动画序列，如待机、击球、跳跃等动作。
+        
+        关键帧格式：
+        [{
+            "frame": 帧号,
+            "bone": "骨骼名称",
+            "location": [x, y, z],      # 可选
+            "rotation": [x, y, z],       # 欧拉角，可选
+            "rotation_quaternion": [w, x, y, z],  # 四元数，可选
+            "scale": [x, y, z]           # 可选
+        }, ...]
+        
+        Args:
+            params: 骨架名称、动作名称、关键帧列表
+            
+        Returns:
+            创建结果
+        """
+        result = await server.execute_command(
+            "animation", "action_create_from_poses",
+            {
+                "armature_name": params.armature_name,
+                "action_name": params.action_name,
+                "keyframes": params.keyframes,
+                "fake_user": params.fake_user
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            bones = data.get("bones_animated", [])
+            return f"已创建动作 '{data.get('action_name', params.action_name)}'，包含 {data.get('keyframe_count', 0)} 个关键帧，涉及骨骼: {', '.join(bones) if bones else 'N/A'}"
+        else:
+            return f"创建动作失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_action_list",
+        annotations={
+            "title": "列出动画动作",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False
+        }
+    )
+    async def blender_action_list(params: ActionListInput) -> str:
+        """列出所有动画动作。
+        
+        Args:
+            params: 可选的骨架名称过滤
+            
+        Returns:
+            动作列表
+        """
+        result = await server.execute_command(
+            "animation", "action_list",
+            {"armature_name": params.armature_name}
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            actions = data.get("actions", [])
+            
+            if not actions:
+                return "没有找到任何动作"
+            
+            lines = ["# 动画动作列表", ""]
+            for action in actions:
+                status = "📌" if action.get("fake_user") else "  "
+                lines.append(f"{status} **{action['name']}** (帧: {action['frame_start']:.0f}-{action['frame_end']:.0f})")
+            
+            return "\n".join(lines)
+        else:
+            return f"获取动作列表失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_action_assign",
+        annotations={
+            "title": "分配动画动作",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False
+        }
+    )
+    async def blender_action_assign(params: ActionAssignInput) -> str:
+        """将动画动作分配给骨架。
+        
+        Args:
+            params: 骨架名称、动作名称
+            
+        Returns:
+            分配结果
+        """
+        result = await server.execute_command(
+            "animation", "action_assign",
+            {
+                "armature_name": params.armature_name,
+                "action_name": params.action_name
+            }
+        )
+        
+        if result.get("success"):
+            return f"已将动作 '{params.action_name}' 分配给 '{params.armature_name}'"
+        else:
+            return f"分配动作失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_nla_push_action",
+        annotations={
+            "title": "推送动作到 NLA",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False
+        }
+    )
+    async def blender_nla_push_action(params: NLAPushActionInput) -> str:
+        """将动作推送到 NLA 轨道。
+        
+        NLA（非线性动画）允许混合和排列多个动作。
+        
+        Args:
+            params: 骨架名称、动作名称、轨道名称、开始帧
+            
+        Returns:
+            推送结果
+        """
+        result = await server.execute_command(
+            "animation", "nla_push_action",
+            {
+                "armature_name": params.armature_name,
+                "action_name": params.action_name,
+                "track_name": params.track_name,
+                "start_frame": params.start_frame
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            return f"已将动作 '{data.get('action_name', 'N/A')}' 推送到 NLA 轨道 '{data.get('track_name', params.track_name)}'"
+        else:
+            return f"推送动作失败: {result.get('error', {}).get('message', '未知错误')}"

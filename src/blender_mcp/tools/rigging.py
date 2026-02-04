@@ -72,6 +72,72 @@ class WeightPaintInput(BaseModel):
     auto_normalize: bool = Field(default=True, description="自动归一化权重")
 
 
+class BindType(str, Enum):
+    """绑定类型"""
+    AUTO = "AUTO"           # 自动权重（推荐）
+    ENVELOPE = "ENVELOPE"   # 包络线权重
+    EMPTY = "EMPTY"         # 仅绑定，不设置权重
+
+
+class ArmatureBindInput(BaseModel):
+    """骨架绑定输入"""
+    mesh_name: str = Field(..., description="网格对象名称")
+    armature_name: str = Field(..., description="骨架对象名称")
+    bind_type: BindType = Field(
+        default=BindType.AUTO,
+        description="绑定类型: AUTO(自动权重), ENVELOPE(包络线权重), EMPTY(仅绑定)"
+    )
+    preserve_volume: bool = Field(
+        default=True,
+        description="保持体积（防止关节处变形过度）"
+    )
+
+
+class VertexGroupCreateInput(BaseModel):
+    """创建顶点组输入"""
+    object_name: str = Field(..., description="对象名称")
+    group_name: str = Field(..., description="顶点组名称")
+    vertex_indices: Optional[List[int]] = Field(default=None, description="顶点索引列表")
+    weight: float = Field(default=1.0, description="权重值 (0.0-1.0)", ge=0, le=1)
+
+
+class VertexGroupAssignMode(str, Enum):
+    """顶点组分配模式"""
+    REPLACE = "REPLACE"     # 替换
+    ADD = "ADD"             # 添加
+    SUBTRACT = "SUBTRACT"   # 减去
+
+
+class VertexGroupAssignInput(BaseModel):
+    """分配顶点到顶点组输入"""
+    object_name: str = Field(..., description="对象名称")
+    group_name: str = Field(..., description="顶点组名称")
+    vertex_indices: List[int] = Field(..., description="顶点索引列表")
+    weight: float = Field(default=1.0, description="权重值 (0.0-1.0)", ge=0, le=1)
+    mode: VertexGroupAssignMode = Field(default=VertexGroupAssignMode.REPLACE, description="分配模式")
+
+
+class ConstraintType(str, Enum):
+    """约束类型"""
+    IK = "IK"
+    COPY_ROTATION = "COPY_ROTATION"
+    COPY_LOCATION = "COPY_LOCATION"
+    COPY_TRANSFORMS = "COPY_TRANSFORMS"
+    LIMIT_ROTATION = "LIMIT_ROTATION"
+    LIMIT_LOCATION = "LIMIT_LOCATION"
+    DAMPED_TRACK = "DAMPED_TRACK"
+    STRETCH_TO = "STRETCH_TO"
+    FLOOR = "FLOOR"
+
+
+class BoneConstraintAddInput(BaseModel):
+    """添加骨骼约束输入"""
+    armature_name: str = Field(..., description="骨架名称")
+    bone_name: str = Field(..., description="骨骼名称")
+    constraint_type: ConstraintType = Field(..., description="约束类型")
+    settings: Optional[dict] = Field(default=None, description="约束设置")
+
+
 # ==================== 工具注册 ====================
 
 def register_rigging_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
@@ -297,3 +363,154 @@ def register_rigging_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             return f"已为 '{params.mesh_name}' 计算骨骼权重"
         else:
             return f"权重绘制失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_armature_bind",
+        annotations={
+            "title": "骨架绑定",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False
+        }
+    )
+    async def blender_armature_bind(params: ArmatureBindInput) -> str:
+        """将网格绑定到骨架。
+        
+        支持自动权重、包络线权重或仅绑定三种模式。
+        
+        Args:
+            params: 网格名称、骨架名称、绑定类型
+            
+        Returns:
+            绑定结果
+        """
+        result = await server.execute_command(
+            "rigging", "armature_bind",
+            {
+                "mesh_name": params.mesh_name,
+                "armature_name": params.armature_name,
+                "bind_type": params.bind_type.value,
+                "preserve_volume": params.preserve_volume
+            }
+        )
+        
+        if result.get("success"):
+            bind_names = {
+                "AUTO": "自动权重",
+                "ENVELOPE": "包络线权重",
+                "EMPTY": "仅绑定"
+            }
+            return f"已将 '{params.mesh_name}' 绑定到 '{params.armature_name}'（{bind_names.get(params.bind_type.value, params.bind_type.value)}）"
+        else:
+            return f"绑定失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_vertex_group_create",
+        annotations={
+            "title": "创建顶点组",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False
+        }
+    )
+    async def blender_vertex_group_create(params: VertexGroupCreateInput) -> str:
+        """创建顶点组。
+        
+        顶点组用于骨骼权重、材质分配等。
+        
+        Args:
+            params: 对象名称、组名称、顶点列表
+            
+        Returns:
+            创建结果
+        """
+        result = await server.execute_command(
+            "rigging", "vertex_group_create",
+            {
+                "object_name": params.object_name,
+                "group_name": params.group_name,
+                "vertex_indices": params.vertex_indices or [],
+                "weight": params.weight
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            return f"已创建顶点组 '{data.get('group_name', params.group_name)}'（索引: {data.get('group_index', 'N/A')}）"
+        else:
+            return f"创建顶点组失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_vertex_group_assign",
+        annotations={
+            "title": "分配顶点到顶点组",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False
+        }
+    )
+    async def blender_vertex_group_assign(params: VertexGroupAssignInput) -> str:
+        """将顶点分配到顶点组。
+        
+        Args:
+            params: 对象名称、组名称、顶点列表、权重、模式
+            
+        Returns:
+            分配结果
+        """
+        result = await server.execute_command(
+            "rigging", "vertex_group_assign",
+            {
+                "object_name": params.object_name,
+                "group_name": params.group_name,
+                "vertex_indices": params.vertex_indices,
+                "weight": params.weight,
+                "mode": params.mode.value
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            return f"已将 {data.get('assigned_count', len(params.vertex_indices))} 个顶点分配到 '{params.group_name}'"
+        else:
+            return f"分配顶点失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_bone_constraint_add",
+        annotations={
+            "title": "添加骨骼约束",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False
+        }
+    )
+    async def blender_bone_constraint_add(params: BoneConstraintAddInput) -> str:
+        """为骨骼添加约束。
+        
+        支持 IK、复制旋转、复制位置等多种约束类型。
+        
+        Args:
+            params: 骨架名称、骨骼名称、约束类型、设置
+            
+        Returns:
+            添加结果
+        """
+        result = await server.execute_command(
+            "rigging", "bone_constraint_add",
+            {
+                "armature_name": params.armature_name,
+                "bone_name": params.bone_name,
+                "constraint_type": params.constraint_type.value,
+                "settings": params.settings or {}
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            return f"已为骨骼 '{params.bone_name}' 添加 {params.constraint_type.value} 约束"
+        else:
+            return f"添加约束失败: {result.get('error', {}).get('message', '未知错误')}"

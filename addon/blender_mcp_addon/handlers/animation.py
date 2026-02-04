@@ -226,3 +226,308 @@ def handle_bake(params: Dict[str, Any]) -> Dict[str, Any]:
         "success": True,
         "data": {}
     }
+
+
+def handle_action_create(params: Dict[str, Any]) -> Dict[str, Any]:
+    """创建动画动作
+    
+    Args:
+        params:
+            - armature_name: 骨架名称
+            - action_name: 动作名称
+            - fake_user: 是否设置假用户（防止被清理）
+    """
+    armature_name = params.get("armature_name")
+    action_name = params.get("action_name", "Action")
+    fake_user = params.get("fake_user", True)
+    
+    obj = bpy.data.objects.get(armature_name)
+    if not obj or obj.type != 'ARMATURE':
+        return {
+            "success": False,
+            "error": {
+                "code": "ARMATURE_NOT_FOUND",
+                "message": f"骨架不存在: {armature_name}"
+            }
+        }
+    
+    # 创建动作
+    action = bpy.data.actions.new(name=action_name)
+    action.use_fake_user = fake_user
+    
+    # 分配给骨架
+    if not obj.animation_data:
+        obj.animation_data_create()
+    obj.animation_data.action = action
+    
+    return {
+        "success": True,
+        "data": {
+            "action_name": action.name,
+            "armature_name": obj.name
+        }
+    }
+
+
+def handle_action_create_from_poses(params: Dict[str, Any]) -> Dict[str, Any]:
+    """从姿势创建动画动作
+    
+    批量创建动画关键帧序列。
+    
+    Args:
+        params:
+            - armature_name: 骨架名称
+            - action_name: 动作名称
+            - keyframes: 关键帧数据列表
+                [
+                    {
+                        "frame": int,           # 帧号
+                        "bone": str,            # 骨骼名称
+                        "location": [x,y,z],    # 位置（可选）
+                        "rotation": [x,y,z],    # 旋转欧拉角（可选）
+                        "rotation_quaternion": [w,x,y,z],  # 四元数旋转（可选）
+                        "scale": [x,y,z]        # 缩放（可选）
+                    },
+                    ...
+                ]
+            - fake_user: 是否设置假用户
+    """
+    armature_name = params.get("armature_name")
+    action_name = params.get("action_name", "Action")
+    keyframes = params.get("keyframes", [])
+    fake_user = params.get("fake_user", True)
+    
+    obj = bpy.data.objects.get(armature_name)
+    if not obj or obj.type != 'ARMATURE':
+        return {
+            "success": False,
+            "error": {
+                "code": "ARMATURE_NOT_FOUND",
+                "message": f"骨架不存在: {armature_name}"
+            }
+        }
+    
+    # 创建动作
+    action = bpy.data.actions.new(name=action_name)
+    action.use_fake_user = fake_user
+    
+    # 分配给骨架
+    if not obj.animation_data:
+        obj.animation_data_create()
+    obj.animation_data.action = action
+    
+    # 切换到姿势模式
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.mode_set(mode='POSE')
+    
+    keyframe_count = 0
+    bones_animated = set()
+    
+    try:
+        for kf_data in keyframes:
+            frame = kf_data.get("frame", 1)
+            bone_name = kf_data.get("bone")
+            
+            if not bone_name:
+                continue
+            
+            pose_bone = obj.pose.bones.get(bone_name)
+            if not pose_bone:
+                continue
+            
+            bones_animated.add(bone_name)
+            
+            # 设置位置
+            if "location" in kf_data:
+                pose_bone.location = kf_data["location"]
+                pose_bone.keyframe_insert(data_path="location", frame=frame)
+                keyframe_count += 1
+            
+            # 设置旋转（欧拉角）
+            if "rotation" in kf_data:
+                pose_bone.rotation_mode = 'XYZ'
+                pose_bone.rotation_euler = kf_data["rotation"]
+                pose_bone.keyframe_insert(data_path="rotation_euler", frame=frame)
+                keyframe_count += 1
+            
+            # 设置旋转（四元数）
+            if "rotation_quaternion" in kf_data:
+                pose_bone.rotation_mode = 'QUATERNION'
+                pose_bone.rotation_quaternion = kf_data["rotation_quaternion"]
+                pose_bone.keyframe_insert(data_path="rotation_quaternion", frame=frame)
+                keyframe_count += 1
+            
+            # 设置缩放
+            if "scale" in kf_data:
+                pose_bone.scale = kf_data["scale"]
+                pose_bone.keyframe_insert(data_path="scale", frame=frame)
+                keyframe_count += 1
+        
+        bpy.ops.object.mode_set(mode='OBJECT')
+        
+        return {
+            "success": True,
+            "data": {
+                "action_name": action.name,
+                "armature_name": obj.name,
+                "keyframe_count": keyframe_count,
+                "bones_animated": list(bones_animated)
+            }
+        }
+    
+    except Exception as e:
+        bpy.ops.object.mode_set(mode='OBJECT')
+        return {
+            "success": False,
+            "error": {
+                "code": "KEYFRAME_ERROR",
+                "message": str(e)
+            }
+        }
+
+
+def handle_action_list(params: Dict[str, Any]) -> Dict[str, Any]:
+    """列出所有动作
+    
+    Args:
+        params:
+            - armature_name: 可选，只列出特定骨架的动作
+    """
+    armature_name = params.get("armature_name")
+    
+    actions = []
+    for action in bpy.data.actions:
+        action_info = {
+            "name": action.name,
+            "frame_start": action.frame_range[0],
+            "frame_end": action.frame_range[1],
+            "fake_user": action.use_fake_user,
+            "users": action.users
+        }
+        actions.append(action_info)
+    
+    return {
+        "success": True,
+        "data": {
+            "actions": actions,
+            "total": len(actions)
+        }
+    }
+
+
+def handle_action_assign(params: Dict[str, Any]) -> Dict[str, Any]:
+    """将动作分配给骨架
+    
+    Args:
+        params:
+            - armature_name: 骨架名称
+            - action_name: 动作名称
+    """
+    armature_name = params.get("armature_name")
+    action_name = params.get("action_name")
+    
+    obj = bpy.data.objects.get(armature_name)
+    if not obj or obj.type != 'ARMATURE':
+        return {
+            "success": False,
+            "error": {
+                "code": "ARMATURE_NOT_FOUND",
+                "message": f"骨架不存在: {armature_name}"
+            }
+        }
+    
+    action = bpy.data.actions.get(action_name)
+    if not action:
+        return {
+            "success": False,
+            "error": {
+                "code": "ACTION_NOT_FOUND",
+                "message": f"动作不存在: {action_name}"
+            }
+        }
+    
+    if not obj.animation_data:
+        obj.animation_data_create()
+    obj.animation_data.action = action
+    
+    return {
+        "success": True,
+        "data": {
+            "armature_name": obj.name,
+            "action_name": action.name
+        }
+    }
+
+
+def handle_nla_push_action(params: Dict[str, Any]) -> Dict[str, Any]:
+    """将动作推送到 NLA 轨道
+    
+    Args:
+        params:
+            - armature_name: 骨架名称
+            - action_name: 动作名称（可选，默认使用当前动作）
+            - track_name: NLA 轨道名称
+            - start_frame: 开始帧
+    """
+    armature_name = params.get("armature_name")
+    action_name = params.get("action_name")
+    track_name = params.get("track_name", "NLATrack")
+    start_frame = params.get("start_frame", 1)
+    
+    obj = bpy.data.objects.get(armature_name)
+    if not obj or obj.type != 'ARMATURE':
+        return {
+            "success": False,
+            "error": {
+                "code": "ARMATURE_NOT_FOUND",
+                "message": f"骨架不存在: {armature_name}"
+            }
+        }
+    
+    if not obj.animation_data:
+        return {
+            "success": False,
+            "error": {
+                "code": "NO_ANIMATION_DATA",
+                "message": "骨架没有动画数据"
+            }
+        }
+    
+    # 获取动作
+    if action_name:
+        action = bpy.data.actions.get(action_name)
+        if not action:
+            return {
+                "success": False,
+                "error": {
+                    "code": "ACTION_NOT_FOUND",
+                    "message": f"动作不存在: {action_name}"
+                }
+            }
+    else:
+        action = obj.animation_data.action
+        if not action:
+            return {
+                "success": False,
+                "error": {
+                    "code": "NO_ACTION",
+                    "message": "骨架没有当前动作"
+                }
+            }
+    
+    # 创建 NLA 轨道
+    track = obj.animation_data.nla_tracks.new()
+    track.name = track_name
+    
+    # 创建 NLA 条带
+    strip = track.strips.new(action.name, start_frame, action)
+    
+    return {
+        "success": True,
+        "data": {
+            "armature_name": obj.name,
+            "action_name": action.name,
+            "track_name": track.name,
+            "strip_name": strip.name
+        }
+    }

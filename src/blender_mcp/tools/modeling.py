@@ -132,6 +132,76 @@ class BooleanOperationInput(BaseModel):
     hide_target: bool = Field(default=True, description="隐藏目标对象")
 
 
+# ==================== 形态键输入模型 ====================
+
+class ShapeKeyCreateInput(BaseModel):
+    """创建形态键输入"""
+    object_name: str = Field(..., description="对象名称")
+    key_name: str = Field(default="Key", description="形态键名称")
+    from_mix: bool = Field(default=False, description="从当前混合状态创建")
+
+
+class ShapeKeyEditInput(BaseModel):
+    """编辑形态键输入"""
+    object_name: str = Field(..., description="对象名称")
+    key_name: str = Field(..., description="形态键名称")
+    value: Optional[float] = Field(default=None, description="形态键值 (0.0-1.0)", ge=0, le=1)
+    mute: Optional[bool] = Field(default=None, description="是否静音")
+    vertex_offsets: Optional[List[dict]] = Field(
+        default=None,
+        description="顶点偏移列表 [{\"index\": int, \"offset\": [x, y, z]}, ...]"
+    )
+
+
+class ShapeKeyDeleteInput(BaseModel):
+    """删除形态键输入"""
+    object_name: str = Field(..., description="对象名称")
+    key_name: str = Field(..., description="形态键名称")
+
+
+class ShapeKeyListInput(BaseModel):
+    """列出形态键输入"""
+    object_name: str = Field(..., description="对象名称")
+
+
+class ExpressionType(str, Enum):
+    """表情类型"""
+    SMILE = "smile"
+    FROWN = "frown"
+    SURPRISE = "surprise"
+    ANGRY = "angry"
+    SAD = "sad"
+    BLINK_L = "blink_l"
+    BLINK_R = "blink_r"
+    BLINK = "blink"
+    MOUTH_OPEN = "mouth_open"
+    MOUTH_WIDE = "mouth_wide"
+
+
+class ShapeKeyCreateExpressionInput(BaseModel):
+    """创建表情形态键集输入"""
+    object_name: str = Field(..., description="对象名称")
+    expressions: List[ExpressionType] = Field(
+        default=[ExpressionType.SMILE, ExpressionType.BLINK, ExpressionType.SURPRISE, ExpressionType.ANGRY],
+        description="要创建的表情类型列表"
+    )
+
+
+class MeshAssignMaterialToFacesInput(BaseModel):
+    """给特定面分配材质输入"""
+    object_name: str = Field(..., description="对象名称")
+    face_indices: List[int] = Field(..., description="面索引列表")
+    material_slot: Optional[int] = Field(default=None, description="材质槽索引")
+    material_name: Optional[str] = Field(default=None, description="材质名称（与material_slot二选一）")
+
+
+class SelectFacesByMaterialInput(BaseModel):
+    """按材质选择面输入"""
+    object_name: str = Field(..., description="对象名称")
+    material_slot: Optional[int] = Field(default=None, description="材质槽索引")
+    material_name: Optional[str] = Field(default=None, description="材质名称（与material_slot二选一）")
+
+
 # ==================== 工具注册 ====================
 
 def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
@@ -437,3 +507,266 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             return f"布尔{op_names.get(params.operation.value, params.operation.value)}运算完成"
         else:
             return f"布尔运算失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    # ==================== 形态键工具 ====================
+    
+    @mcp.tool(
+        name="blender_shapekey_create",
+        annotations={
+            "title": "创建形态键",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False
+        }
+    )
+    async def blender_shapekey_create(params: ShapeKeyCreateInput) -> str:
+        """创建形态键。
+        
+        用于创建表情控制、面部动画等变形效果。
+        首次调用会自动创建基础形态键（Basis）。
+        
+        Args:
+            params: 对象名称和形态键名称
+            
+        Returns:
+            创建结果
+        """
+        result = await server.execute_command(
+            "modeling", "shapekey_create",
+            {
+                "object_name": params.object_name,
+                "key_name": params.key_name,
+                "from_mix": params.from_mix
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            return f"已创建形态键 '{data.get('key_name', params.key_name)}' (索引: {data.get('key_index', 'N/A')})"
+        else:
+            return f"创建形态键失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_shapekey_edit",
+        annotations={
+            "title": "编辑形态键",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False
+        }
+    )
+    async def blender_shapekey_edit(params: ShapeKeyEditInput) -> str:
+        """编辑形态键属性。
+        
+        可以设置形态键的值、静音状态，以及应用顶点偏移。
+        
+        Args:
+            params: 编辑参数
+            
+        Returns:
+            编辑结果
+        """
+        result = await server.execute_command(
+            "modeling", "shapekey_edit",
+            {
+                "object_name": params.object_name,
+                "key_name": params.key_name,
+                "value": params.value,
+                "mute": params.mute,
+                "vertex_offsets": params.vertex_offsets or []
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            return f"已编辑形态键 '{params.key_name}'，当前值: {data.get('value', 'N/A')}"
+        else:
+            return f"编辑形态键失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_shapekey_delete",
+        annotations={
+            "title": "删除形态键",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": False,
+            "openWorldHint": False
+        }
+    )
+    async def blender_shapekey_delete(params: ShapeKeyDeleteInput) -> str:
+        """删除形态键。
+        
+        Args:
+            params: 对象名称和形态键名称
+            
+        Returns:
+            删除结果
+        """
+        result = await server.execute_command(
+            "modeling", "shapekey_delete",
+            {
+                "object_name": params.object_name,
+                "key_name": params.key_name
+            }
+        )
+        
+        if result.get("success"):
+            return f"已删除形态键 '{params.key_name}'"
+        else:
+            return f"删除形态键失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_shapekey_list",
+        annotations={
+            "title": "列出形态键",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False
+        }
+    )
+    async def blender_shapekey_list(params: ShapeKeyListInput) -> str:
+        """列出对象的所有形态键。
+        
+        Args:
+            params: 对象名称
+            
+        Returns:
+            形态键列表
+        """
+        result = await server.execute_command(
+            "modeling", "shapekey_list",
+            {"object_name": params.object_name}
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            keys = data.get("shape_keys", [])
+            
+            if not keys:
+                return f"对象 '{params.object_name}' 没有形态键"
+            
+            lines = [f"# {params.object_name} 的形态键", ""]
+            for key in keys:
+                status = "🔇" if key.get("mute") else "🔊"
+                lines.append(f"- {status} **{key['name']}** (索引: {key['index']}, 值: {key['value']:.2f})")
+            
+            return "\n".join(lines)
+        else:
+            return f"获取形态键列表失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_shapekey_create_expressions",
+        annotations={
+            "title": "创建表情形态键集",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False
+        }
+    )
+    async def blender_shapekey_create_expressions(params: ShapeKeyCreateExpressionInput) -> str:
+        """为角色创建一组常用表情形态键。
+        
+        快速创建微笑、惊讶、闭眼等表情形态键框架。
+        
+        Args:
+            params: 对象名称和表情类型列表
+            
+        Returns:
+            创建结果
+        """
+        result = await server.execute_command(
+            "modeling", "shapekey_create_expression",
+            {
+                "object_name": params.object_name,
+                "expressions": [e.value for e in params.expressions]
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            created = data.get("created_keys", [])
+            if created:
+                return f"已创建 {len(created)} 个表情形态键: {', '.join(created)}"
+            else:
+                return "所有指定的表情形态键已存在，未创建新的形态键"
+        else:
+            return f"创建表情形态键失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    # ==================== 面材质分配工具 ====================
+    
+    @mcp.tool(
+        name="blender_mesh_assign_material_to_faces",
+        annotations={
+            "title": "给特定面分配材质",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False
+        }
+    )
+    async def blender_mesh_assign_material_to_faces(params: MeshAssignMaterialToFacesInput) -> str:
+        """给网格的特定面分配材质。
+        
+        用于给队服的领口、袖口等特定区域分配不同材质。
+        
+        Args:
+            params: 对象名称、面索引列表、材质槽或材质名称
+            
+        Returns:
+            分配结果
+        """
+        result = await server.execute_command(
+            "modeling", "mesh_assign_material_to_faces",
+            {
+                "object_name": params.object_name,
+                "face_indices": params.face_indices,
+                "material_slot": params.material_slot,
+                "material_name": params.material_name
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            return f"已将 {data.get('assigned_faces', len(params.face_indices))} 个面分配到材质槽 {data.get('material_slot', 'N/A')}"
+        else:
+            return f"分配材质失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_select_faces_by_material",
+        annotations={
+            "title": "按材质选择面",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False
+        }
+    )
+    async def blender_select_faces_by_material(params: SelectFacesByMaterialInput) -> str:
+        """按材质选择网格面。
+        
+        选择使用特定材质的所有面。
+        
+        Args:
+            params: 对象名称和材质槽或材质名称
+            
+        Returns:
+            选择结果
+        """
+        result = await server.execute_command(
+            "modeling", "select_faces_by_material",
+            {
+                "object_name": params.object_name,
+                "material_slot": params.material_slot,
+                "material_name": params.material_name
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            return f"已选择 {data.get('selected_faces', 0)} 个使用材质槽 {data.get('material_slot', 'N/A')} 的面"
+        else:
+            return f"选择面失败: {result.get('error', {}).get('message', '未知错误')}"

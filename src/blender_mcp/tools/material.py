@@ -106,6 +106,67 @@ class MaterialDeleteInput(BaseModel):
     material_name: str = Field(..., description="材质名称")
 
 
+class NodeType(str, Enum):
+    """节点类型"""
+    SSS = "SSS"                     # 次表面散射配置
+    EMISSION = "EMISSION"           # 发光配置
+    MIX_RGB = "MIX_RGB"             # 混合 RGB
+    COLOR_RAMP = "COLOR_RAMP"       # 颜色渐变
+    NOISE_TEXTURE = "NOISE_TEXTURE" # 噪波纹理
+    IMAGE_TEXTURE = "IMAGE_TEXTURE" # 图像纹理
+    NORMAL_MAP = "NORMAL_MAP"       # 法线贴图
+    BUMP = "BUMP"                   # 凹凸贴图
+
+
+class MaterialNodeAddInput(BaseModel):
+    """添加材质节点输入"""
+    material_name: str = Field(..., description="材质名称")
+    node_type: NodeType = Field(..., description="节点类型")
+    settings: Optional[dict] = Field(
+        default=None,
+        description="节点设置（如 SSS: {subsurface: 0.3}, EMISSION: {color: [1,1,1], strength: 1.0}）"
+    )
+    connect_to: Optional[dict] = Field(
+        default=None,
+        description="连接配置 {input: 'Base Color', output: 'Color'}"
+    )
+    location: Optional[List[float]] = Field(default=None, description="节点位置 [x, y]")
+
+
+class TextureApplyInput(BaseModel):
+    """应用纹理贴图输入"""
+    material_name: str = Field(..., description="材质名称")
+    image_path: str = Field(..., description="图片文件路径")
+    mapping_type: TextureMapping = Field(default=TextureMapping.UV, description="映射类型")
+    texture_type: TextureType = Field(default=TextureType.COLOR, description="纹理用途")
+
+
+class SkinTone(str, Enum):
+    """肤色类型"""
+    LIGHT = "LIGHT"     # 浅肤色
+    MEDIUM = "MEDIUM"   # 中等肤色
+    DARK = "DARK"       # 深肤色
+    CUSTOM = "CUSTOM"   # 自定义
+
+
+class CreateSkinMaterialInput(BaseModel):
+    """创建皮肤材质输入"""
+    name: str = Field(default="SkinMaterial", description="材质名称")
+    skin_tone: SkinTone = Field(default=SkinTone.MEDIUM, description="肤色类型")
+    custom_color: Optional[List[float]] = Field(
+        default=None,
+        description="自定义颜色（当 skin_tone 为 CUSTOM 时使用）"
+    )
+
+
+class CreateToonMaterialInput(BaseModel):
+    """创建卡通材质输入"""
+    name: str = Field(default="ToonMaterial", description="材质名称")
+    color: List[float] = Field(default=[0.8, 0.8, 0.8, 1.0], description="基础颜色")
+    shadow_color: Optional[List[float]] = Field(default=None, description="阴影颜色")
+    outline: bool = Field(default=False, description="是否添加描边效果")
+
+
 # ==================== 工具注册 ====================
 
 def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
@@ -343,3 +404,158 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             return f"已删除材质 '{params.material_name}'"
         else:
             return f"删除材质失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_material_node_add",
+        annotations={
+            "title": "添加材质节点",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False
+        }
+    )
+    async def blender_material_node_add(params: MaterialNodeAddInput) -> str:
+        """添加高级材质节点。
+        
+        支持 SSS（次表面散射）、Emission（发光）等节点，
+        用于创建皮肤材质或发光的乒乓球等效果。
+        
+        Args:
+            params: 材质名称、节点类型、设置
+            
+        Returns:
+            添加结果
+        """
+        result = await server.execute_command(
+            "material", "node_add",
+            {
+                "material_name": params.material_name,
+                "node_type": params.node_type.value,
+                "settings": params.settings or {},
+                "connect_to": params.connect_to,
+                "location": params.location or [-300, 0]
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            return f"已为材质 '{params.material_name}' 添加 {params.node_type.value} 节点"
+        else:
+            return f"添加节点失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_texture_apply",
+        annotations={
+            "title": "应用纹理贴图",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True
+        }
+    )
+    async def blender_texture_apply(params: TextureApplyInput) -> str:
+        """应用纹理贴图到材质。
+        
+        支持多种纹理类型和映射方式，可用于添加国旗、队服Logo等。
+        
+        Args:
+            params: 材质名称、图片路径、映射类型、纹理用途
+            
+        Returns:
+            应用结果
+        """
+        result = await server.execute_command(
+            "material", "texture_apply",
+            {
+                "material_name": params.material_name,
+                "image_path": params.image_path,
+                "mapping_type": params.mapping_type.value,
+                "texture_type": params.texture_type.value
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            return f"已将纹理 '{data.get('image_name', 'N/A')}' 应用到材质 '{params.material_name}'"
+        else:
+            return f"应用纹理失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_create_skin_material",
+        annotations={
+            "title": "创建皮肤材质",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False
+        }
+    )
+    async def blender_create_skin_material(params: CreateSkinMaterialInput) -> str:
+        """创建预设的皮肤材质。
+        
+        包含次表面散射（SSS）效果，适用于 Q 版角色皮肤。
+        
+        Args:
+            params: 材质名称、肤色类型
+            
+        Returns:
+            创建结果
+        """
+        result = await server.execute_command(
+            "material", "create_skin_material",
+            {
+                "name": params.name,
+                "skin_tone": params.skin_tone.value,
+                "custom_color": params.custom_color
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            tone_names = {
+                "LIGHT": "浅肤色",
+                "MEDIUM": "中等肤色",
+                "DARK": "深肤色",
+                "CUSTOM": "自定义"
+            }
+            return f"已创建{tone_names.get(params.skin_tone.value)}皮肤材质 '{data.get('material_name', params.name)}'"
+        else:
+            return f"创建皮肤材质失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_create_toon_material",
+        annotations={
+            "title": "创建卡通材质",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False
+        }
+    )
+    async def blender_create_toon_material(params: CreateToonMaterialInput) -> str:
+        """创建卡通风格材质。
+        
+        适用于 Q 版角色的风格化卡通渲染。
+        
+        Args:
+            params: 材质名称、颜色、描边选项
+            
+        Returns:
+            创建结果
+        """
+        result = await server.execute_command(
+            "material", "create_toon_material",
+            {
+                "name": params.name,
+                "color": params.color,
+                "shadow_color": params.shadow_color,
+                "outline": params.outline
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            return f"已创建卡通材质 '{data.get('material_name', params.name)}'"
+        else:
+            return f"创建卡通材质失败: {result.get('error', {}).get('message', '未知错误')}"

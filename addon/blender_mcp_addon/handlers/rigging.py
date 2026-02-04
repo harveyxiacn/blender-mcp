@@ -351,3 +351,264 @@ def handle_weight_paint(params: Dict[str, Any]) -> Dict[str, Any]:
         "success": True,
         "data": {}
     }
+
+
+def handle_armature_bind(params: Dict[str, Any]) -> Dict[str, Any]:
+    """将网格绑定到骨架
+    
+    Args:
+        params:
+            - mesh_name: 网格对象名称
+            - armature_name: 骨架对象名称
+            - bind_type: 绑定类型
+                - AUTO: 自动权重（推荐）
+                - ENVELOPE: 包络线权重
+                - EMPTY: 仅绑定，不设置权重
+            - preserve_volume: 是否保持体积（防止关节处变形过度）
+    """
+    mesh_name = params.get("mesh_name")
+    armature_name = params.get("armature_name")
+    bind_type = params.get("bind_type", "AUTO")
+    preserve_volume = params.get("preserve_volume", True)
+    
+    mesh_obj = bpy.data.objects.get(mesh_name)
+    arm_obj = bpy.data.objects.get(armature_name)
+    
+    if not mesh_obj or mesh_obj.type != 'MESH':
+        return {
+            "success": False,
+            "error": {
+                "code": "MESH_NOT_FOUND",
+                "message": f"网格不存在: {mesh_name}"
+            }
+        }
+    
+    if not arm_obj or arm_obj.type != 'ARMATURE':
+        return {
+            "success": False,
+            "error": {
+                "code": "ARMATURE_NOT_FOUND",
+                "message": f"骨架不存在: {armature_name}"
+            }
+        }
+    
+    # 确保在对象模式
+    if bpy.context.mode != 'OBJECT':
+        bpy.ops.object.mode_set(mode='OBJECT')
+    
+    # 选择网格和骨架（网格先选，骨架作为活动对象）
+    bpy.ops.object.select_all(action='DESELECT')
+    mesh_obj.select_set(True)
+    arm_obj.select_set(True)
+    bpy.context.view_layer.objects.active = arm_obj
+    
+    # 根据绑定类型执行绑定
+    try:
+        if bind_type == "AUTO":
+            bpy.ops.object.parent_set(type='ARMATURE_AUTO')
+        elif bind_type == "ENVELOPE":
+            bpy.ops.object.parent_set(type='ARMATURE_ENVELOPE')
+        elif bind_type == "EMPTY":
+            bpy.ops.object.parent_set(type='ARMATURE')
+        else:
+            return {
+                "success": False,
+                "error": {
+                    "code": "INVALID_BIND_TYPE",
+                    "message": f"不支持的绑定类型: {bind_type}"
+                }
+            }
+        
+        # 设置骨架修改器的保持体积选项
+        if preserve_volume:
+            for mod in mesh_obj.modifiers:
+                if mod.type == 'ARMATURE' and mod.object == arm_obj:
+                    mod.use_deform_preserve_volume = True
+                    break
+        
+        return {
+            "success": True,
+            "data": {
+                "mesh_name": mesh_obj.name,
+                "armature_name": arm_obj.name,
+                "bind_type": bind_type,
+                "preserve_volume": preserve_volume
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": {
+                "code": "BIND_ERROR",
+                "message": str(e)
+            }
+        }
+
+
+def handle_vertex_group_create(params: Dict[str, Any]) -> Dict[str, Any]:
+    """创建顶点组
+    
+    Args:
+        params:
+            - object_name: 对象名称
+            - group_name: 顶点组名称
+            - vertex_indices: 顶点索引列表（可选）
+            - weight: 权重值（0.0-1.0）
+    """
+    object_name = params.get("object_name")
+    group_name = params.get("group_name")
+    vertex_indices = params.get("vertex_indices", [])
+    weight = params.get("weight", 1.0)
+    
+    obj = bpy.data.objects.get(object_name)
+    if not obj or obj.type != 'MESH':
+        return {
+            "success": False,
+            "error": {
+                "code": "OBJECT_NOT_FOUND",
+                "message": f"网格对象不存在: {object_name}"
+            }
+        }
+    
+    # 创建顶点组
+    vg = obj.vertex_groups.new(name=group_name)
+    
+    # 如果指定了顶点，添加到组中
+    if vertex_indices:
+        vg.add(vertex_indices, weight, 'REPLACE')
+    
+    return {
+        "success": True,
+        "data": {
+            "object_name": obj.name,
+            "group_name": vg.name,
+            "group_index": vg.index
+        }
+    }
+
+
+def handle_vertex_group_assign(params: Dict[str, Any]) -> Dict[str, Any]:
+    """分配顶点到顶点组
+    
+    Args:
+        params:
+            - object_name: 对象名称
+            - group_name: 顶点组名称
+            - vertex_indices: 顶点索引列表
+            - weight: 权重值（0.0-1.0）
+            - mode: 分配模式（REPLACE, ADD, SUBTRACT）
+    """
+    object_name = params.get("object_name")
+    group_name = params.get("group_name")
+    vertex_indices = params.get("vertex_indices", [])
+    weight = params.get("weight", 1.0)
+    mode = params.get("mode", "REPLACE")
+    
+    obj = bpy.data.objects.get(object_name)
+    if not obj or obj.type != 'MESH':
+        return {
+            "success": False,
+            "error": {
+                "code": "OBJECT_NOT_FOUND",
+                "message": f"网格对象不存在: {object_name}"
+            }
+        }
+    
+    vg = obj.vertex_groups.get(group_name)
+    if not vg:
+        return {
+            "success": False,
+            "error": {
+                "code": "GROUP_NOT_FOUND",
+                "message": f"顶点组不存在: {group_name}"
+            }
+        }
+    
+    # 分配顶点
+    vg.add(vertex_indices, weight, mode)
+    
+    return {
+        "success": True,
+        "data": {
+            "object_name": obj.name,
+            "group_name": vg.name,
+            "assigned_count": len(vertex_indices)
+        }
+    }
+
+
+def handle_bone_constraint_add(params: Dict[str, Any]) -> Dict[str, Any]:
+    """为骨骼添加约束
+    
+    Args:
+        params:
+            - armature_name: 骨架名称
+            - bone_name: 骨骼名称
+            - constraint_type: 约束类型（IK, COPY_ROTATION, COPY_LOCATION, LIMIT_ROTATION等）
+            - settings: 约束设置
+    """
+    armature_name = params.get("armature_name")
+    bone_name = params.get("bone_name")
+    constraint_type = params.get("constraint_type")
+    settings = params.get("settings", {})
+    
+    obj = bpy.data.objects.get(armature_name)
+    if not obj or obj.type != 'ARMATURE':
+        return {
+            "success": False,
+            "error": {
+                "code": "ARMATURE_NOT_FOUND",
+                "message": f"骨架不存在: {armature_name}"
+            }
+        }
+    
+    # 切换到姿势模式
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.mode_set(mode='POSE')
+    
+    pose_bone = obj.pose.bones.get(bone_name)
+    if not pose_bone:
+        bpy.ops.object.mode_set(mode='OBJECT')
+        return {
+            "success": False,
+            "error": {
+                "code": "BONE_NOT_FOUND",
+                "message": f"骨骼不存在: {bone_name}"
+            }
+        }
+    
+    # 添加约束
+    try:
+        constraint = pose_bone.constraints.new(type=constraint_type)
+        
+        # 应用设置
+        for key, value in settings.items():
+            if hasattr(constraint, key):
+                # 处理对象引用
+                if key in ['target', 'pole_target'] and isinstance(value, str):
+                    target_obj = bpy.data.objects.get(value)
+                    if target_obj:
+                        setattr(constraint, key, target_obj)
+                else:
+                    setattr(constraint, key, value)
+        
+        bpy.ops.object.mode_set(mode='OBJECT')
+        
+        return {
+            "success": True,
+            "data": {
+                "armature_name": obj.name,
+                "bone_name": bone_name,
+                "constraint_name": constraint.name,
+                "constraint_type": constraint_type
+            }
+        }
+    except Exception as e:
+        bpy.ops.object.mode_set(mode='OBJECT')
+        return {
+            "success": False,
+            "error": {
+                "code": "CONSTRAINT_ERROR",
+                "message": str(e)
+            }
+        }

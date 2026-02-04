@@ -462,3 +462,171 @@ def handle_join(params: Dict[str, Any]) -> Dict[str, Any]:
             "result_object": bpy.context.active_object.name
         }
     }
+
+
+def handle_set_origin(params: Dict[str, Any]) -> Dict[str, Any]:
+    """设置对象原点
+    
+    Args:
+        params:
+            - name: 对象名称
+            - origin_type: 原点类型
+                - GEOMETRY: 原点到几何中心
+                - CURSOR: 原点到 3D 游标
+                - BOTTOM: 原点到底部中心（脚底）
+                - CENTER_OF_MASS: 原点到质心
+                - CENTER_OF_VOLUME: 原点到体积中心
+            - center: 几何中心计算方式（MEDIAN, BOUNDS）
+    """
+    name = params.get("name")
+    origin_type = params.get("origin_type", "GEOMETRY")
+    center = params.get("center", "MEDIAN")
+    
+    obj = bpy.data.objects.get(name)
+    if not obj:
+        return {
+            "success": False,
+            "error": {
+                "code": "OBJECT_NOT_FOUND",
+                "message": f"对象不存在: {name}"
+            }
+        }
+    
+    # 保存当前选择和活动对象
+    original_active = bpy.context.view_layer.objects.active
+    original_selected = [o for o in bpy.context.selected_objects]
+    
+    # 选择目标对象
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    
+    try:
+        if origin_type == "GEOMETRY":
+            # 原点到几何中心
+            bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center=center)
+        elif origin_type == "CURSOR":
+            # 原点到 3D 游标
+            bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
+        elif origin_type == "BOTTOM":
+            # 原点到底部中心（用于角色，脚底）
+            if obj.type == 'MESH':
+                # 获取对象的边界框
+                bbox = [obj.matrix_world @ mathutils.Vector(corner) for corner in obj.bound_box]
+                # 找到最低点
+                min_z = min(v.z for v in bbox)
+                # 计算底部中心
+                center_x = sum(v.x for v in bbox) / 8
+                center_y = sum(v.y for v in bbox) / 8
+                
+                # 保存当前游标位置
+                cursor_loc = bpy.context.scene.cursor.location.copy()
+                
+                # 将游标移动到底部中心
+                bpy.context.scene.cursor.location = (center_x, center_y, min_z)
+                
+                # 设置原点到游标
+                bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
+                
+                # 恢复游标位置
+                bpy.context.scene.cursor.location = cursor_loc
+            else:
+                return {
+                    "success": False,
+                    "error": {
+                        "code": "INVALID_TYPE",
+                        "message": "BOTTOM 原点类型仅支持网格对象"
+                    }
+                }
+        elif origin_type == "CENTER_OF_MASS":
+            # 原点到质心（表面）
+            bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
+        elif origin_type == "CENTER_OF_VOLUME":
+            # 原点到体积中心
+            bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_VOLUME', center='MEDIAN')
+        else:
+            return {
+                "success": False,
+                "error": {
+                    "code": "INVALID_ORIGIN_TYPE",
+                    "message": f"不支持的原点类型: {origin_type}"
+                }
+            }
+        
+        # 恢复选择
+        bpy.ops.object.select_all(action='DESELECT')
+        for o in original_selected:
+            if o:
+                o.select_set(True)
+        if original_active:
+            bpy.context.view_layer.objects.active = original_active
+        
+        return {
+            "success": True,
+            "data": {
+                "object_name": obj.name,
+                "origin_type": origin_type,
+                "new_origin": list(obj.location)
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": {
+                "code": "SET_ORIGIN_ERROR",
+                "message": str(e)
+            }
+        }
+
+
+def handle_apply_transform(params: Dict[str, Any]) -> Dict[str, Any]:
+    """应用变换
+    
+    Args:
+        params:
+            - name: 对象名称
+            - location: 应用位置
+            - rotation: 应用旋转
+            - scale: 应用缩放
+    """
+    name = params.get("name")
+    apply_location = params.get("location", False)
+    apply_rotation = params.get("rotation", False)
+    apply_scale = params.get("scale", True)
+    
+    obj = bpy.data.objects.get(name)
+    if not obj:
+        return {
+            "success": False,
+            "error": {
+                "code": "OBJECT_NOT_FOUND",
+                "message": f"对象不存在: {name}"
+            }
+        }
+    
+    # 选择对象
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    
+    try:
+        bpy.ops.object.transform_apply(
+            location=apply_location,
+            rotation=apply_rotation,
+            scale=apply_scale
+        )
+        
+        return {
+            "success": True,
+            "data": {
+                "object_name": obj.name
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": {
+                "code": "APPLY_TRANSFORM_ERROR",
+                "message": str(e)
+            }
+        }

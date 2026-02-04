@@ -156,6 +156,33 @@ class ObjectJoinInput(BaseModel):
     target: Optional[str] = Field(default=None, description="目标对象（合并到此对象）")
 
 
+class OriginType(str, Enum):
+    """原点类型"""
+    GEOMETRY = "GEOMETRY"           # 原点到几何中心
+    CURSOR = "CURSOR"               # 原点到 3D 游标
+    BOTTOM = "BOTTOM"               # 原点到底部中心（脚底）
+    CENTER_OF_MASS = "CENTER_OF_MASS"       # 原点到质心
+    CENTER_OF_VOLUME = "CENTER_OF_VOLUME"   # 原点到体积中心
+
+
+class ObjectSetOriginInput(BaseModel):
+    """设置原点输入"""
+    name: str = Field(..., description="对象名称")
+    origin_type: OriginType = Field(
+        default=OriginType.GEOMETRY,
+        description="原点类型: GEOMETRY(几何中心), CURSOR(3D游标), BOTTOM(底部中心/脚底), CENTER_OF_MASS(质心), CENTER_OF_VOLUME(体积中心)"
+    )
+    center: str = Field(default="MEDIAN", description="几何中心计算方式: MEDIAN 或 BOUNDS")
+
+
+class ObjectApplyTransformInput(BaseModel):
+    """应用变换输入"""
+    name: str = Field(..., description="对象名称")
+    location: bool = Field(default=False, description="应用位置")
+    rotation: bool = Field(default=False, description="应用旋转")
+    scale: bool = Field(default=True, description="应用缩放")
+
+
 # ==================== 工具注册 ====================
 
 def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
@@ -568,3 +595,82 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             return f"已将 {len(params.objects)} 个对象合并为 '{target}'"
         else:
             return f"合并失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_object_set_origin",
+        annotations={
+            "title": "设置原点",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False
+        }
+    )
+    async def blender_object_set_origin(params: ObjectSetOriginInput) -> str:
+        """设置对象的原点位置。
+        
+        支持多种原点设置方式，包括几何中心、3D游标、底部中心（适用于角色脚底）等。
+        
+        Args:
+            params: 对象名称和原点类型
+            
+        Returns:
+            设置结果
+        """
+        result = await server.execute_command(
+            "object", "set_origin",
+            {
+                "name": params.name,
+                "origin_type": params.origin_type.value,
+                "center": params.center
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            return f"已将 '{params.name}' 的原点设置为 {params.origin_type.value}，新原点位置: {data.get('new_origin', 'N/A')}"
+        else:
+            return f"设置原点失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_object_apply_transform",
+        annotations={
+            "title": "应用变换",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False
+        }
+    )
+    async def blender_object_apply_transform(params: ObjectApplyTransformInput) -> str:
+        """应用对象的变换（位置、旋转、缩放）。
+        
+        将变换数据应用到网格数据中，重置对象变换为默认值。
+        
+        Args:
+            params: 对象名称和要应用的变换类型
+            
+        Returns:
+            应用结果
+        """
+        result = await server.execute_command(
+            "object", "apply_transform",
+            {
+                "name": params.name,
+                "location": params.location,
+                "rotation": params.rotation,
+                "scale": params.scale
+            }
+        )
+        
+        if result.get("success"):
+            applied = []
+            if params.location:
+                applied.append("位置")
+            if params.rotation:
+                applied.append("旋转")
+            if params.scale:
+                applied.append("缩放")
+            return f"已应用 '{params.name}' 的变换: {', '.join(applied) if applied else '无'}"
+        else:
+            return f"应用变换失败: {result.get('error', {}).get('message', '未知错误')}"
