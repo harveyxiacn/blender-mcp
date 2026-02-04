@@ -135,29 +135,7 @@ def register_external_tools(mcp: FastMCP, server):
         )
         return await server.send_command("external", "godot_export", params.model_dump())
     
-    @mcp.tool()
-    async def blender_batch_export(
-        output_dir: str,
-        format: str = "FBX",
-        separate_files: bool = True,
-        objects: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
-        """
-        批量导出多个对象
-        
-        Args:
-            output_dir: 输出目录
-            format: 导出格式 (FBX, GLTF, OBJ)
-            separate_files: 每个对象导出为单独文件
-            objects: 要导出的对象列表
-        """
-        params = BatchExportInput(
-            output_dir=output_dir,
-            format=format,
-            separate_files=separate_files,
-            objects=objects
-        )
-        return await server.send_command("external", "batch_export", params.model_dump())
+    # 注意：blender_batch_export 已移至 batch.py 避免重复注册
     
     @mcp.tool()
     async def blender_collection_export(

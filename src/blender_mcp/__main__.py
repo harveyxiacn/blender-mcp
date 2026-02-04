@@ -74,12 +74,12 @@ def main(
                 # stdio 模式：stdout 用于 MCP 协议，日志输出到 stderr
                 console.print(f"[green]启动 Blender MCP 服务器 (stdio 模式)[/green]")
                 console.print(f"[dim]Blender 连接: {host}:{port}[/dim]")
-                asyncio.run(server.run_stdio())
+                server.run_stdio()  # 同步调用
             else:
                 console.print(f"[green]启动 Blender MCP 服务器 (HTTP 模式)[/green]")
                 console.print(f"[dim]HTTP 端口: {http_port}[/dim]")
                 console.print(f"[dim]Blender 连接: {host}:{port}[/dim]")
-                asyncio.run(server.run_http(http_port))
+                server.run_http(http_port)  # 同步调用
         except KeyboardInterrupt:
             console.print("\n[yellow]服务器已停止[/yellow]")
         except Exception as e:

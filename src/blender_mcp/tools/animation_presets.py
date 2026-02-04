@@ -226,40 +226,4 @@ def register_animation_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") ->
         else:
             return f"设置失败: {result.get('error', {}).get('message', '未知错误')}"
     
-    @mcp.tool(
-        name="blender_animation_bake",
-        annotations={
-            "title": "烘焙动画",
-            "readOnlyHint": False,
-            "destructiveHint": True,
-            "idempotentHint": True,
-            "openWorldHint": False
-        }
-    )
-    async def blender_animation_bake(params: AnimationBakeInput) -> str:
-        """烘焙动画到关键帧。
-        
-        将约束和程序化动画转换为实际关键帧。
-        
-        Args:
-            params: 对象、帧范围、烘焙类型等
-            
-        Returns:
-            烘焙结果
-        """
-        result = await server.execute_command(
-            "animation_preset", "bake",
-            {
-                "object_name": params.object_name,
-                "frame_start": params.frame_start,
-                "frame_end": params.frame_end,
-                "bake_types": params.bake_types,
-                "clear_constraints": params.clear_constraints
-            }
-        )
-        
-        if result.get("success"):
-            frames = params.frame_end - params.frame_start + 1
-            return f"成功烘焙 '{params.object_name}' 的动画 ({frames} 帧)"
-        else:
-            return f"烘焙失败: {result.get('error', {}).get('message', '未知错误')}"
+    # 注意：blender_animation_bake 已移至 animation.py 避免重复注册

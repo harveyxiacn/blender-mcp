@@ -276,19 +276,19 @@ class BlenderMCPServer:
                 }
             }
     
-    async def run_stdio(self) -> None:
-        """以 stdio 模式运行服务器"""
+    def run_stdio(self) -> None:
+        """以 stdio 模式运行服务器（同步方法）"""
         logger.info("启动 stdio 传输")
-        await self.mcp.run()
+        self.mcp.run(transport="stdio")
     
-    async def run_http(self, port: int = 8080) -> None:
-        """以 HTTP 模式运行服务器
+    def run_http(self, port: int = 8080) -> None:
+        """以 HTTP 模式运行服务器（同步方法）
         
         Args:
             port: HTTP 服务端口
         """
         logger.info(f"启动 HTTP 传输，端口: {port}")
-        await self.mcp.run(transport="streamable_http", port=port)
+        self.mcp.run(transport="streamable-http")
     
     async def shutdown(self) -> None:
         """关闭服务器"""
