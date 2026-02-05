@@ -49,6 +49,48 @@ class MCP_PT_MainPanel(bpy.types.Panel):
         col.label(text="3. 通过 AI 助手控制 Blender")
 
 
+class MCP_PT_DevPanel(bpy.types.Panel):
+    """MCP 开发者面板"""
+    bl_label = "开发者工具"
+    bl_idname = "MCP_PT_dev_panel"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = 'MCP'
+    bl_parent_id = "MCP_PT_main_panel"
+    bl_options = {'DEFAULT_CLOSED'}
+    
+    @classmethod
+    def poll(cls, context):
+        # 仅在设置了开发源代码路径时显示
+        prefs = context.preferences.addons.get("blender_mcp_addon")
+        return prefs and prefs.preferences.dev_source_path
+    
+    def draw(self, context):
+        layout = self.layout
+        prefs = context.preferences.addons.get("blender_mcp_addon")
+        
+        if prefs and prefs.preferences.dev_source_path:
+            # 显示源代码路径
+            box = layout.box()
+            box.label(text="源代码目录:", icon='FILE_FOLDER')
+            col = box.column(align=True)
+            col.scale_y = 0.8
+            # 分行显示长路径
+            path = prefs.preferences.dev_source_path
+            col.label(text=path if len(path) < 40 else f"...{path[-37:]}")
+            
+            # 热更新按钮
+            layout.separator()
+            layout.operator("mcp.hot_reload", text="热更新", icon='FILE_REFRESH')
+            
+            # 提示
+            layout.separator()
+            col = layout.column(align=True)
+            col.scale_y = 0.7
+            col.label(text="提示: 修改源代码后点击热更新")
+            col.label(text="无需重启 Blender 即可应用更改")
+
+
 class MCP_PT_InfoPanel(bpy.types.Panel):
     """MCP 信息面板"""
     bl_label = "场景信息"
@@ -73,6 +115,7 @@ class MCP_PT_InfoPanel(bpy.types.Panel):
 classes = [
     MCP_PT_MainPanel,
     MCP_PT_InfoPanel,
+    MCP_PT_DevPanel,
 ]
 
 

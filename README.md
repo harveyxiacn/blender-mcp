@@ -47,6 +47,32 @@ python -m blender_mcp install-addon
 }
 ```
 
+### Manual Addon Installation
+
+If you need to install the addon manually:
+
+```bash
+# Build the addon zip file
+python build_addon.py
+
+# Output: dist/blender_mcp_addon.zip
+```
+
+Then in Blender:
+1. Edit → Preferences → Add-ons
+2. Click "Install..."
+3. Select `dist/blender_mcp_addon.zip`
+4. Enable "Blender MCP" addon
+
+### Hot Reload (For Developers)
+
+The addon supports hot reload for development:
+
+1. Open Blender → Edit → Preferences → Add-ons → Blender MCP
+2. Set "Dev Source Path" to your local addon source directory (e.g., `E:\Projects\blender-mcp\addon\blender_mcp_addon`)
+3. Use the "Hot Reload" button in the MCP panel (View3D → Sidebar → MCP → Developer Tools) or in Preferences
+4. Changes are applied immediately without restarting Blender
+
 ### Documentation
 
 - [Installation Guide](docs/INSTALLATION.md)
@@ -109,6 +135,32 @@ python -m blender_mcp install-addon
   }
 }
 ```
+
+### 手动安装插件
+
+如需手动安装插件：
+
+```bash
+# 打包插件 zip 文件
+python build_addon.py
+
+# 输出: dist/blender_mcp_addon.zip
+```
+
+然后在 Blender 中：
+1. 编辑 → 偏好设置 → 插件
+2. 点击「安装...」
+3. 选择 `dist/blender_mcp_addon.zip`
+4. 启用「Blender MCP」插件
+
+### 热更新（开发者功能）
+
+插件支持热更新，方便开发调试：
+
+1. 打开 Blender → 编辑 → 偏好设置 → 插件 → Blender MCP
+2. 设置「开发源代码目录」为本地源码目录（如 `E:\Projects\blender-mcp\addon\blender_mcp_addon`）
+3. 在 MCP 面板中使用「热更新」按钮（视图3D → 侧边栏 → MCP → 开发者工具）或在偏好设置中使用
+4. 修改代码后无需重启 Blender 即可生效
 
 ### 文档
 

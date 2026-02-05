@@ -58,10 +58,36 @@ class MCP_OT_RestartServer(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCP_OT_HotReload(bpy.types.Operator):
+    """热更新 - 从源代码目录更新addon"""
+    bl_idname = "mcp.hot_reload"
+    bl_label = "热更新"
+    bl_description = "从开发源代码目录更新addon代码并重新加载"
+    
+    def execute(self, context):
+        # 导入热更新函数
+        from .. import hot_reload
+        
+        success, message = hot_reload()
+        
+        if success:
+            self.report({'INFO'}, message)
+        else:
+            self.report({'ERROR'}, message)
+        
+        return {'FINISHED'}
+    
+    @classmethod
+    def poll(cls, context):
+        prefs = context.preferences.addons.get("blender_mcp_addon")
+        return prefs and prefs.preferences.dev_source_path
+
+
 classes = [
     MCP_OT_StartServer,
     MCP_OT_StopServer,
     MCP_OT_RestartServer,
+    MCP_OT_HotReload,
 ]
 
 
