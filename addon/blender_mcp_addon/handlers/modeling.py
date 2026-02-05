@@ -878,3 +878,740 @@ def handle_select_faces_by_material(params: Dict[str, Any]) -> Dict[str, Any]:
             "selected_faces": selected_count
         }
     }
+
+
+# ==================== 生产标准优化工具 ====================
+
+# 平台三角形限制配置
+PLATFORM_LIMITS = {
+    "MOBILE": {"min": 500, "max": 2000, "recommended": 1500},
+    "PC_CONSOLE": {"min": 2000, "max": 50000, "recommended": 20000},
+    "CINEMATIC": {"min": 0, "max": float('inf'), "recommended": 100000},
+    "VR": {"min": 1000, "max": 10000, "recommended": 5000}
+}
+
+
+def handle_mesh_analyze(params: Dict[str, Any]) -> Dict[str, Any]:
+    """分析网格拓扑质量
+    
+    Args:
+        params:
+            - object_name: 对象名称
+            - target_platform: 目标平台
+    """
+    import bmesh
+    
+    object_name = params.get("object_name")
+    target_platform = params.get("target_platform", "PC_CONSOLE")
+    
+    obj = bpy.data.objects.get(object_name)
+    if not obj:
+        return {
+            "success": False,
+            "error": {
+                "code": "OBJECT_NOT_FOUND",
+                "message": f"对象不存在: {object_name}"
+            }
+        }
+    
+    if obj.type != 'MESH':
+        return {
+            "success": False,
+            "error": {
+                "code": "INVALID_TYPE",
+                "message": "只支持网格对象"
+            }
+        }
+    
+    mesh = obj.data
+    
+    # 基础统计
+    vertex_count = len(mesh.vertices)
+    edge_count = len(mesh.edges)
+    face_count = len(mesh.polygons)
+    
+    # 计算三角形数量和面类型分布
+    tris = 0
+    quads = 0
+    ngons = 0
+    triangle_count = 0
+    
+    for poly in mesh.polygons:
+        vert_count = len(poly.vertices)
+        if vert_count == 3:
+            tris += 1
+            triangle_count += 1
+        elif vert_count == 4:
+            quads += 1
+            triangle_count += 2  # 一个四边形 = 2个三角形
+        else:
+            ngons += 1
+            triangle_count += vert_count - 2  # N-gon转三角形数量
+    
+    # 计算百分比
+    total_faces = max(face_count, 1)
+    tris_percent = (tris / total_faces) * 100
+    quads_percent = (quads / total_faces) * 100
+    ngons_percent = (ngons / total_faces) * 100
+    
+    # 使用bmesh进行高级分析
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    
+    # 检测问题
+    issues = []
+    
+    # 非流形边
+    non_manifold_edges = [e for e in bm.edges if not e.is_manifold]
+    if non_manifold_edges:
+        issues.append(f"非流形边: {len(non_manifold_edges)} 条")
+    
+    # 非流形顶点
+    non_manifold_verts = [v for v in bm.verts if not v.is_manifold]
+    if non_manifold_verts:
+        issues.append(f"非流形顶点: {len(non_manifold_verts)} 个")
+    
+    # 孤立顶点
+    loose_verts = [v for v in bm.verts if not v.link_edges]
+    if loose_verts:
+        issues.append(f"孤立顶点: {len(loose_verts)} 个")
+    
+    # 孤立边
+    loose_edges = [e for e in bm.edges if not e.link_faces]
+    if loose_edges:
+        issues.append(f"孤立边: {len(loose_edges)} 条")
+    
+    # 退化面（面积为0）
+    degenerate_faces = [f for f in bm.faces if f.calc_area() < 1e-8]
+    if degenerate_faces:
+        issues.append(f"退化面: {len(degenerate_faces)} 个")
+    
+    # N-gon警告
+    if ngons > 0:
+        issues.append(f"包含N-gon，可能导致变形问题")
+    
+    # 检查法线一致性（简单检查是否有反向法线）
+    # 通过检查面法线方向的一致性
+    
+    bm.free()
+    
+    # 平台兼容性检查
+    limits = PLATFORM_LIMITS.get(target_platform, PLATFORM_LIMITS["PC_CONSOLE"])
+    platform_passed = limits["min"] <= triangle_count <= limits["max"]
+    
+    suggestion = ""
+    if triangle_count > limits["max"]:
+        suggestion = f"面数过高，建议使用网格优化工具减少到 {limits['recommended']} 以下"
+    elif triangle_count < limits["min"]:
+        suggestion = f"面数过低，可能需要增加细节"
+    
+    # 计算质量评分（0-100）
+    quality_score = 100
+    
+    # N-gon惩罚
+    if ngons_percent > 0:
+        quality_score -= min(20, ngons_percent)
+    
+    # 问题惩罚
+    quality_score -= min(30, len(issues) * 5)
+    
+    # 平台兼容性惩罚
+    if not platform_passed:
+        quality_score -= 20
+    
+    # 四边形奖励（游戏和动画中首选）
+    if quads_percent > 80:
+        quality_score = min(100, quality_score + 10)
+    
+    quality_score = max(0, quality_score)
+    
+    return {
+        "success": True,
+        "data": {
+            "stats": {
+                "vertices": vertex_count,
+                "edges": edge_count,
+                "faces": face_count,
+                "triangles": triangle_count
+            },
+            "face_types": {
+                "tris": tris,
+                "tris_percent": tris_percent,
+                "quads": quads,
+                "quads_percent": quads_percent,
+                "ngons": ngons,
+                "ngons_percent": ngons_percent
+            },
+            "platform_check": {
+                "passed": platform_passed,
+                "min_tris": limits["min"],
+                "max_tris": limits["max"] if limits["max"] != float('inf') else "无限制",
+                "suggestion": suggestion
+            },
+            "issues": issues,
+            "quality_score": int(quality_score)
+        }
+    }
+
+
+def handle_mesh_optimize(params: Dict[str, Any]) -> Dict[str, Any]:
+    """优化网格（减面）
+    
+    Args:
+        params:
+            - object_name: 对象名称
+            - target_triangles: 目标三角形数量
+            - target_platform: 目标平台
+            - preserve_uvs: 保留UV
+            - preserve_normals: 保留法线
+            - symmetry: 保持对称性
+    """
+    object_name = params.get("object_name")
+    target_triangles = params.get("target_triangles")
+    target_platform = params.get("target_platform", "PC_CONSOLE")
+    preserve_uvs = params.get("preserve_uvs", True)
+    preserve_normals = params.get("preserve_normals", True)
+    symmetry = params.get("symmetry", False)
+    
+    obj = bpy.data.objects.get(object_name)
+    if not obj:
+        return {
+            "success": False,
+            "error": {
+                "code": "OBJECT_NOT_FOUND",
+                "message": f"对象不存在: {object_name}"
+            }
+        }
+    
+    if obj.type != 'MESH':
+        return {
+            "success": False,
+            "error": {
+                "code": "INVALID_TYPE",
+                "message": "只支持网格对象"
+            }
+        }
+    
+    # 计算原始三角形数量
+    original_triangles = sum(len(p.vertices) - 2 for p in obj.data.polygons)
+    
+    # 确定目标三角形数量
+    if target_triangles is None:
+        limits = PLATFORM_LIMITS.get(target_platform, PLATFORM_LIMITS["PC_CONSOLE"])
+        target_triangles = limits["recommended"]
+    
+    # 计算需要的减面比例
+    if original_triangles <= target_triangles:
+        return {
+            "success": True,
+            "data": {
+                "original_triangles": original_triangles,
+                "optimized_triangles": original_triangles,
+                "reduction_percent": 0,
+                "message": "面数已在目标范围内，无需优化"
+            }
+        }
+    
+    ratio = target_triangles / original_triangles
+    
+    # 添加Decimate修改器
+    decimate = obj.modifiers.new(name="MCP_Decimate", type='DECIMATE')
+    decimate.decimate_type = 'COLLAPSE'
+    decimate.ratio = ratio
+    
+    # 设置UV和法线保留
+    if preserve_uvs:
+        decimate.use_collapse_triangulate = False
+    
+    if symmetry:
+        decimate.use_symmetry = True
+        decimate.symmetry_axis = 'X'
+    
+    # 应用修改器
+    bpy.context.view_layer.objects.active = obj
+    if bpy.context.mode != 'OBJECT':
+        bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.object.modifier_apply(modifier=decimate.name)
+    
+    # 计算优化后的三角形数量
+    optimized_triangles = sum(len(p.vertices) - 2 for p in obj.data.polygons)
+    reduction_percent = ((original_triangles - optimized_triangles) / original_triangles) * 100
+    
+    return {
+        "success": True,
+        "data": {
+            "original_triangles": original_triangles,
+            "optimized_triangles": optimized_triangles,
+            "reduction_percent": reduction_percent
+        }
+    }
+
+
+def handle_mesh_cleanup(params: Dict[str, Any]) -> Dict[str, Any]:
+    """清理网格
+    
+    Args:
+        params:
+            - object_name: 对象名称
+            - merge_distance: 合并距离
+            - remove_doubles: 移除重复顶点
+            - dissolve_degenerate: 溶解退化几何体
+            - fix_non_manifold: 修复非流形
+            - recalculate_normals: 重新计算法线
+            - remove_loose: 移除孤立几何体
+    """
+    import bmesh
+    
+    object_name = params.get("object_name")
+    merge_distance = params.get("merge_distance", 0.0001)
+    remove_doubles = params.get("remove_doubles", True)
+    dissolve_degenerate = params.get("dissolve_degenerate", True)
+    fix_non_manifold = params.get("fix_non_manifold", True)
+    recalculate_normals = params.get("recalculate_normals", True)
+    remove_loose = params.get("remove_loose", True)
+    
+    obj = bpy.data.objects.get(object_name)
+    if not obj:
+        return {
+            "success": False,
+            "error": {
+                "code": "OBJECT_NOT_FOUND",
+                "message": f"对象不存在: {object_name}"
+            }
+        }
+    
+    if obj.type != 'MESH':
+        return {
+            "success": False,
+            "error": {
+                "code": "INVALID_TYPE",
+                "message": "只支持网格对象"
+            }
+        }
+    
+    # 选择对象并进入编辑模式
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    
+    original_verts = len(obj.data.vertices)
+    fixed_issues = 0
+    
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    
+    # 移除重复顶点
+    if remove_doubles:
+        result = bpy.ops.mesh.remove_doubles(threshold=merge_distance)
+        # 统计移除的顶点在后面计算
+    
+    # 溶解退化几何体
+    if dissolve_degenerate:
+        bpy.ops.mesh.dissolve_degenerate(threshold=0.0001)
+        fixed_issues += 1
+    
+    # 移除孤立几何体
+    if remove_loose:
+        bpy.ops.mesh.delete_loose(use_verts=True, use_edges=True, use_faces=False)
+        fixed_issues += 1
+    
+    # 重新计算法线
+    if recalculate_normals:
+        bpy.ops.mesh.normals_make_consistent(inside=False)
+        fixed_issues += 1
+    
+    # 修复非流形（尝试填充孔洞）
+    if fix_non_manifold:
+        # 选择非流形几何体
+        bpy.ops.mesh.select_all(action='DESELECT')
+        bpy.ops.mesh.select_non_manifold()
+        # 尝试填充小孔洞
+        try:
+            bpy.ops.mesh.fill_holes(sides=4)
+            fixed_issues += 1
+        except:
+            pass  # 如果没有选中的非流形边，则跳过
+    
+    bpy.ops.object.mode_set(mode='OBJECT')
+    
+    # 计算移除的顶点数
+    removed_verts = original_verts - len(obj.data.vertices)
+    
+    return {
+        "success": True,
+        "data": {
+            "object_name": obj.name,
+            "removed_vertices": removed_verts,
+            "fixed_issues": fixed_issues
+        }
+    }
+
+
+def handle_tris_to_quads(params: Dict[str, Any]) -> Dict[str, Any]:
+    """三角形转四边形
+    
+    Args:
+        params:
+            - object_name: 对象名称
+            - max_angle: 最大角度
+            - compare_uvs: 比较UV
+            - compare_vcol: 比较顶点色
+            - compare_materials: 比较材质
+    """
+    object_name = params.get("object_name")
+    max_angle = params.get("max_angle", 40.0)
+    compare_uvs = params.get("compare_uvs", True)
+    compare_vcol = params.get("compare_vcol", True)
+    compare_materials = params.get("compare_materials", True)
+    
+    obj = bpy.data.objects.get(object_name)
+    if not obj:
+        return {
+            "success": False,
+            "error": {
+                "code": "OBJECT_NOT_FOUND",
+                "message": f"对象不存在: {object_name}"
+            }
+        }
+    
+    if obj.type != 'MESH':
+        return {
+            "success": False,
+            "error": {
+                "code": "INVALID_TYPE",
+                "message": "只支持网格对象"
+            }
+        }
+    
+    # 记录原始面数
+    original_faces = len(obj.data.polygons)
+    original_tris = sum(1 for p in obj.data.polygons if len(p.vertices) == 3)
+    
+    # 选择对象并进入编辑模式
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.mode_set(mode='EDIT')
+    
+    # 选择所有面
+    bpy.ops.mesh.select_all(action='SELECT')
+    
+    # 转换三角形为四边形
+    import math
+    bpy.ops.mesh.tris_convert_to_quads(
+        face_threshold=math.radians(max_angle),
+        shape_threshold=math.radians(max_angle),
+        uvs=compare_uvs,
+        vcols=compare_vcol,
+        seam=False,
+        sharp=False,
+        materials=compare_materials
+    )
+    
+    bpy.ops.object.mode_set(mode='OBJECT')
+    
+    # 计算转换后的面数
+    new_faces = len(obj.data.polygons)
+    converted = original_faces - new_faces  # 每对三角形转换为一个四边形会减少一个面
+    
+    return {
+        "success": True,
+        "data": {
+            "object_name": obj.name,
+            "original_tris": original_tris,
+            "converted_faces": converted
+        }
+    }
+
+
+def handle_lod_generate(params: Dict[str, Any]) -> Dict[str, Any]:
+    """生成LOD（细节层次）
+    
+    Args:
+        params:
+            - object_name: 对象名称
+            - lod_levels: LOD级别数量
+            - ratio_step: 每级减少比例
+            - create_collection: 是否创建集合
+    """
+    object_name = params.get("object_name")
+    lod_levels = params.get("lod_levels", 3)
+    ratio_step = params.get("ratio_step", 0.5)
+    create_collection = params.get("create_collection", True)
+    
+    obj = bpy.data.objects.get(object_name)
+    if not obj:
+        return {
+            "success": False,
+            "error": {
+                "code": "OBJECT_NOT_FOUND",
+                "message": f"对象不存在: {object_name}"
+            }
+        }
+    
+    if obj.type != 'MESH':
+        return {
+            "success": False,
+            "error": {
+                "code": "INVALID_TYPE",
+                "message": "只支持网格对象"
+            }
+        }
+    
+    # 创建LOD集合
+    if create_collection:
+        lod_collection_name = f"{obj.name}_LOD"
+        if lod_collection_name not in bpy.data.collections:
+            lod_collection = bpy.data.collections.new(lod_collection_name)
+            bpy.context.scene.collection.children.link(lod_collection)
+        else:
+            lod_collection = bpy.data.collections[lod_collection_name]
+    
+    lod_objects = []
+    original_triangles = sum(len(p.vertices) - 2 for p in obj.data.polygons)
+    
+    # LOD0 是原始模型
+    lod_objects.append({
+        "name": f"{obj.name}_LOD0",
+        "triangles": original_triangles,
+        "level": 0
+    })
+    
+    # 复制原始对象作为LOD0
+    lod0 = obj.copy()
+    lod0.data = obj.data.copy()
+    lod0.name = f"{obj.name}_LOD0"
+    if create_collection:
+        lod_collection.objects.link(lod0)
+    else:
+        bpy.context.scene.collection.objects.link(lod0)
+    
+    # 生成其他LOD级别
+    current_ratio = 1.0
+    for level in range(1, lod_levels + 1):
+        current_ratio *= ratio_step
+        
+        # 复制原始对象
+        lod_obj = obj.copy()
+        lod_obj.data = obj.data.copy()
+        lod_obj.name = f"{obj.name}_LOD{level}"
+        
+        if create_collection:
+            lod_collection.objects.link(lod_obj)
+        else:
+            bpy.context.scene.collection.objects.link(lod_obj)
+        
+        # 添加Decimate修改器
+        decimate = lod_obj.modifiers.new(name="LOD_Decimate", type='DECIMATE')
+        decimate.decimate_type = 'COLLAPSE'
+        decimate.ratio = current_ratio
+        
+        # 应用修改器
+        bpy.context.view_layer.objects.active = lod_obj
+        bpy.ops.object.modifier_apply(modifier=decimate.name)
+        
+        # 计算三角形数
+        lod_triangles = sum(len(p.vertices) - 2 for p in lod_obj.data.polygons)
+        
+        lod_objects.append({
+            "name": lod_obj.name,
+            "triangles": lod_triangles,
+            "level": level
+        })
+        
+        # 偏移位置以便查看
+        lod_obj.location.x = obj.location.x + (level * 3)
+    
+    return {
+        "success": True,
+        "data": {
+            "original_object": obj.name,
+            "lod_objects": lod_objects,
+            "collection": lod_collection.name if create_collection else None
+        }
+    }
+
+
+def handle_smart_subdivide(params: Dict[str, Any]) -> Dict[str, Any]:
+    """智能细分
+    
+    Args:
+        params:
+            - object_name: 对象名称
+            - levels: 细分级别
+            - render_levels: 渲染级别
+            - use_creases: 使用折痕边
+            - apply_smooth: 应用平滑着色
+            - quality: 质量等级
+    """
+    object_name = params.get("object_name")
+    levels = params.get("levels", 1)
+    render_levels = params.get("render_levels", levels)
+    use_creases = params.get("use_creases", True)
+    apply_smooth = params.get("apply_smooth", False)
+    quality = params.get("quality", 3)
+    
+    obj = bpy.data.objects.get(object_name)
+    if not obj:
+        return {
+            "success": False,
+            "error": {
+                "code": "OBJECT_NOT_FOUND",
+                "message": f"对象不存在: {object_name}"
+            }
+        }
+    
+    if obj.type != 'MESH':
+        return {
+            "success": False,
+            "error": {
+                "code": "INVALID_TYPE",
+                "message": "只支持网格对象"
+            }
+        }
+    
+    # 选择对象
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    
+    # 如果使用折痕边，先自动检测并标记锐边
+    if use_creases:
+        if bpy.context.mode != 'EDIT':
+            bpy.ops.object.mode_set(mode='EDIT')
+        
+        import bmesh
+        bm = bmesh.from_edit_mesh(obj.data)
+        
+        # 获取或创建折痕层
+        crease_layer = bm.edges.layers.crease.verify()
+        
+        # 根据质量设置角度阈值
+        angle_threshold = {1: 60, 2: 45, 3: 30, 4: 20, 5: 10}.get(quality, 30)
+        
+        import math
+        for edge in bm.edges:
+            if len(edge.link_faces) == 2:
+                angle = edge.calc_face_angle()
+                if angle and math.degrees(angle) > angle_threshold:
+                    edge[crease_layer] = 1.0
+        
+        bmesh.update_edit_mesh(obj.data)
+        bpy.ops.object.mode_set(mode='OBJECT')
+    
+    # 添加细分曲面修改器
+    subsurf = obj.modifiers.new(name="MCP_Subdivision", type='SUBSURF')
+    subsurf.levels = levels
+    subsurf.render_levels = render_levels
+    subsurf.subdivision_type = 'CATMULL_CLARK'
+    subsurf.use_creases = use_creases
+    subsurf.quality = quality
+    
+    # 应用平滑着色
+    if apply_smooth:
+        bpy.ops.object.shade_smooth()
+    
+    return {
+        "success": True,
+        "data": {
+            "object_name": obj.name,
+            "viewport_levels": levels,
+            "render_levels": render_levels,
+            "modifier_name": subsurf.name
+        }
+    }
+
+
+def handle_auto_smooth(params: Dict[str, Any]) -> Dict[str, Any]:
+    """自动平滑
+    
+    Args:
+        params:
+            - object_name: 对象名称
+            - angle: 平滑角度阈值
+            - use_sharp_edges: 对锐边使用硬边
+    """
+    import math
+    
+    object_name = params.get("object_name")
+    angle = params.get("angle", 30.0)
+    use_sharp_edges = params.get("use_sharp_edges", True)
+    
+    obj = bpy.data.objects.get(object_name)
+    if not obj:
+        return {
+            "success": False,
+            "error": {
+                "code": "OBJECT_NOT_FOUND",
+                "message": f"对象不存在: {object_name}"
+            }
+        }
+    
+    if obj.type != 'MESH':
+        return {
+            "success": False,
+            "error": {
+                "code": "INVALID_TYPE",
+                "message": "只支持网格对象"
+            }
+        }
+    
+    # 选择对象
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    
+    # 应用平滑着色
+    bpy.ops.object.shade_smooth()
+    
+    # 设置自动平滑
+    # Blender 4.0+使用不同的方式设置自动平滑
+    try:
+        # 尝试Blender 4.0+的方式
+        obj.data.use_auto_smooth = True
+        obj.data.auto_smooth_angle = math.radians(angle)
+    except AttributeError:
+        # Blender 4.1+使用修改器方式
+        # 检查是否已有自动平滑修改器
+        smooth_mod = None
+        for mod in obj.modifiers:
+            if mod.type == 'SMOOTH_BY_ANGLE':
+                smooth_mod = mod
+                break
+        
+        if not smooth_mod:
+            smooth_mod = obj.modifiers.new(name="AutoSmooth", type='SMOOTH_BY_ANGLE')
+        
+        if smooth_mod:
+            smooth_mod.angle = math.radians(angle)
+    
+    # 如果需要，标记锐边
+    if use_sharp_edges:
+        import bmesh
+        
+        if bpy.context.mode != 'EDIT':
+            bpy.ops.object.mode_set(mode='EDIT')
+        
+        bm = bmesh.from_edit_mesh(obj.data)
+        
+        angle_rad = math.radians(angle)
+        sharp_count = 0
+        
+        for edge in bm.edges:
+            if len(edge.link_faces) == 2:
+                face_angle = edge.calc_face_angle()
+                if face_angle and face_angle > angle_rad:
+                    edge.smooth = False
+                    sharp_count += 1
+        
+        bmesh.update_edit_mesh(obj.data)
+        bpy.ops.object.mode_set(mode='OBJECT')
+    
+    return {
+        "success": True,
+        "data": {
+            "object_name": obj.name,
+            "smooth_angle": angle,
+            "sharp_edges_marked": sharp_count if use_sharp_edges else 0
+        }
+    }

@@ -167,6 +167,88 @@ class CreateToonMaterialInput(BaseModel):
     outline: bool = Field(default=False, description="是否添加描边效果")
 
 
+# ==================== 生产标准优化输入模型 ====================
+
+class GameEngine(str, Enum):
+    """目标游戏引擎"""
+    UNITY = "UNITY"                 # Unity引擎
+    UNREAL = "UNREAL"               # Unreal引擎
+    GODOT = "GODOT"                 # Godot引擎
+    GENERIC = "GENERIC"             # 通用glTF
+    BLENDER = "BLENDER"             # Blender Eevee/Cycles
+
+
+class MaterialAnalyzeInput(BaseModel):
+    """材质分析输入"""
+    material_name: str = Field(..., description="材质名称")
+    target_engine: GameEngine = Field(default=GameEngine.GENERIC, description="目标游戏引擎")
+
+
+class MaterialOptimizeInput(BaseModel):
+    """材质优化输入"""
+    material_name: str = Field(..., description="材质名称")
+    target_engine: GameEngine = Field(default=GameEngine.GENERIC, description="目标游戏引擎")
+    fix_metallic: bool = Field(default=True, description="修复金属度值（确保为0或1）")
+    fix_color_space: bool = Field(default=True, description="修复纹理色彩空间")
+    combine_textures: bool = Field(default=False, description="合并纹理通道（ORM/RMA）")
+
+
+class PBRMaterialCreateInput(BaseModel):
+    """创建标准PBR材质输入"""
+    model_config = ConfigDict(str_strip_whitespace=True)
+    
+    name: str = Field(..., description="材质名称", min_length=1, max_length=100)
+    target_engine: GameEngine = Field(default=GameEngine.GENERIC, description="目标游戏引擎")
+    
+    # PBR基础属性
+    base_color: Optional[List[float]] = Field(
+        default=None,
+        description="基础颜色 [r, g, b, a]，值范围 0-1"
+    )
+    metallic: float = Field(default=0.0, description="金属度（生产标准：0=非金属，1=金属）", ge=0, le=1)
+    roughness: float = Field(default=0.5, description="粗糙度", ge=0, le=1)
+    
+    # 纹理路径（可选）
+    base_color_texture: Optional[str] = Field(default=None, description="基础颜色贴图路径")
+    normal_texture: Optional[str] = Field(default=None, description="法线贴图路径")
+    metallic_texture: Optional[str] = Field(default=None, description="金属度贴图路径")
+    roughness_texture: Optional[str] = Field(default=None, description="粗糙度贴图路径")
+    ao_texture: Optional[str] = Field(default=None, description="环境光遮蔽贴图路径")
+    emission_texture: Optional[str] = Field(default=None, description="自发光贴图路径")
+    
+    # 额外设置
+    emission_strength: float = Field(default=0.0, description="自发光强度", ge=0)
+    alpha_mode: BlendMode = Field(default=BlendMode.OPAQUE, description="透明度模式")
+    double_sided: bool = Field(default=False, description="双面渲染")
+    
+    @field_validator("base_color")
+    @classmethod
+    def validate_base_color(cls, v):
+        if v is not None:
+            if len(v) not in [3, 4]:
+                raise ValueError("颜色必须包含 3 或 4 个分量")
+            if any(c < 0 or c > 1 for c in v):
+                raise ValueError("颜色分量必须在 0-1 范围内")
+        return v
+
+
+class TextureColorSpaceInput(BaseModel):
+    """纹理色彩空间设置输入"""
+    material_name: str = Field(..., description="材质名称")
+    auto_detect: bool = Field(default=True, description="自动检测并修复色彩空间")
+
+
+class MaterialBakeTexturesInput(BaseModel):
+    """烘焙材质纹理输入"""
+    material_name: str = Field(..., description="材质名称")
+    output_directory: str = Field(..., description="输出目录路径")
+    resolution: int = Field(default=1024, description="纹理分辨率", ge=64, le=8192)
+    bake_types: List[str] = Field(
+        default=["DIFFUSE", "ROUGHNESS", "NORMAL"],
+        description="烘焙类型列表：DIFFUSE, ROUGHNESS, METALLIC, NORMAL, AO, EMISSION"
+    )
+
+
 # ==================== 工具注册 ====================
 
 def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
@@ -559,3 +641,302 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             return f"已创建卡通材质 '{data.get('material_name', params.name)}'"
         else:
             return f"创建卡通材质失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    # ==================== 生产标准优化工具 ====================
+    
+    @mcp.tool(
+        name="blender_material_analyze",
+        annotations={
+            "title": "PBR材质分析",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False
+        }
+    )
+    async def blender_material_analyze(params: MaterialAnalyzeInput) -> str:
+        """分析材质是否符合PBR生产标准。
+        
+        检查材质的PBR参数是否符合游戏引擎最佳实践：
+        - 金属度是否为0或1（生产标准）
+        - 纹理色彩空间是否正确
+        - 法线贴图设置是否正确
+        - 是否符合目标引擎要求
+        
+        Args:
+            params: 材质名称和目标引擎
+            
+        Returns:
+            详细的材质分析报告
+        """
+        result = await server.execute_command(
+            "material", "analyze",
+            {
+                "material_name": params.material_name,
+                "target_engine": params.target_engine.value
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            
+            lines = [f"# PBR材质分析报告: {params.material_name}", ""]
+            
+            # 基础信息
+            lines.append("## 基础信息")
+            lines.append(f"- 使用节点: {'是' if data.get('uses_nodes') else '否'}")
+            lines.append(f"- 目标引擎: {params.target_engine.value}")
+            lines.append("")
+            
+            # PBR参数
+            pbr = data.get("pbr_values", {})
+            lines.append("## PBR参数")
+            lines.append(f"- 金属度: {pbr.get('metallic', 'N/A')}")
+            lines.append(f"- 粗糙度: {pbr.get('roughness', 'N/A')}")
+            lines.append(f"- 基础颜色: {pbr.get('base_color', 'N/A')}")
+            lines.append("")
+            
+            # 纹理信息
+            textures = data.get("textures", [])
+            if textures:
+                lines.append("## 纹理列表")
+                for tex in textures:
+                    lines.append(f"- {tex.get('name', 'Unknown')}")
+                    lines.append(f"  - 类型: {tex.get('type', 'N/A')}")
+                    lines.append(f"  - 色彩空间: {tex.get('colorspace', 'N/A')}")
+                    correct = tex.get('colorspace_correct', True)
+                    lines.append(f"  - 色彩空间正确: {'是' if correct else '否 ⚠️'}")
+                lines.append("")
+            
+            # 问题和建议
+            issues = data.get("issues", [])
+            if issues:
+                lines.append("## ⚠️ 发现的问题")
+                for issue in issues:
+                    lines.append(f"- {issue}")
+                lines.append("")
+            
+            suggestions = data.get("suggestions", [])
+            if suggestions:
+                lines.append("## 💡 优化建议")
+                for suggestion in suggestions:
+                    lines.append(f"- {suggestion}")
+                lines.append("")
+            
+            # 兼容性评分
+            score = data.get("compatibility_score", 0)
+            lines.append(f"## 兼容性评分: {score}/100")
+            
+            return "\n".join(lines)
+        else:
+            return f"分析失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_material_optimize",
+        annotations={
+            "title": "优化PBR材质",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False
+        }
+    )
+    async def blender_material_optimize(params: MaterialOptimizeInput) -> str:
+        """优化材质以符合游戏引擎PBR标准。
+        
+        自动修复常见问题：
+        - 将金属度值修正为0或1
+        - 修复纹理色彩空间（法线/粗糙度等使用Non-Color）
+        - 针对目标引擎优化设置
+        
+        Args:
+            params: 材质名称和优化选项
+            
+        Returns:
+            优化结果
+        """
+        result = await server.execute_command(
+            "material", "optimize",
+            {
+                "material_name": params.material_name,
+                "target_engine": params.target_engine.value,
+                "fix_metallic": params.fix_metallic,
+                "fix_color_space": params.fix_color_space,
+                "combine_textures": params.combine_textures
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            fixes = data.get("fixes_applied", [])
+            
+            lines = [f"材质 '{params.material_name}' 优化完成", ""]
+            
+            if fixes:
+                lines.append("已应用的修复:")
+                for fix in fixes:
+                    lines.append(f"- {fix}")
+            else:
+                lines.append("材质已符合标准，无需修复。")
+            
+            return "\n".join(lines)
+        else:
+            return f"优化失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_pbr_material_create",
+        annotations={
+            "title": "创建标准PBR材质",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True
+        }
+    )
+    async def blender_pbr_material_create(params: PBRMaterialCreateInput) -> str:
+        """创建符合生产标准的PBR材质。
+        
+        按照游戏引擎最佳实践创建材质：
+        - 自动设置正确的色彩空间
+        - 金属度遵循0/1规则
+        - 支持完整的PBR纹理工作流
+        
+        Args:
+            params: PBR材质参数和纹理路径
+            
+        Returns:
+            创建结果
+        """
+        result = await server.execute_command(
+            "material", "create_pbr",
+            {
+                "name": params.name,
+                "target_engine": params.target_engine.value,
+                "base_color": params.base_color or [0.8, 0.8, 0.8, 1.0],
+                "metallic": params.metallic,
+                "roughness": params.roughness,
+                "base_color_texture": params.base_color_texture,
+                "normal_texture": params.normal_texture,
+                "metallic_texture": params.metallic_texture,
+                "roughness_texture": params.roughness_texture,
+                "ao_texture": params.ao_texture,
+                "emission_texture": params.emission_texture,
+                "emission_strength": params.emission_strength,
+                "alpha_mode": params.alpha_mode.value,
+                "double_sided": params.double_sided
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            textures_loaded = data.get("textures_loaded", [])
+            
+            lines = [f"成功创建PBR材质 '{params.name}'", ""]
+            lines.append(f"- 目标引擎: {params.target_engine.value}")
+            lines.append(f"- 金属度: {params.metallic}")
+            lines.append(f"- 粗糙度: {params.roughness}")
+            
+            if textures_loaded:
+                lines.append("")
+                lines.append("已加载纹理:")
+                for tex in textures_loaded:
+                    lines.append(f"- {tex}")
+            
+            return "\n".join(lines)
+        else:
+            return f"创建PBR材质失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_texture_colorspace_fix",
+        annotations={
+            "title": "修复纹理色彩空间",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False
+        }
+    )
+    async def blender_texture_colorspace_fix(params: TextureColorSpaceInput) -> str:
+        """自动修复材质中纹理的色彩空间设置。
+        
+        根据纹理用途自动设置正确的色彩空间：
+        - 颜色贴图: sRGB
+        - 法线/粗糙度/金属度: Non-Color
+        
+        Args:
+            params: 材质名称
+            
+        Returns:
+            修复结果
+        """
+        result = await server.execute_command(
+            "material", "fix_colorspace",
+            {
+                "material_name": params.material_name,
+                "auto_detect": params.auto_detect
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            fixed = data.get("fixed_textures", [])
+            
+            if fixed:
+                lines = ["已修复以下纹理的色彩空间:"]
+                for tex in fixed:
+                    lines.append(f"- {tex.get('name')}: {tex.get('old_space')} → {tex.get('new_space')}")
+                return "\n".join(lines)
+            else:
+                return "所有纹理色彩空间已正确设置，无需修复。"
+        else:
+            return f"修复失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_material_bake_textures",
+        annotations={
+            "title": "烘焙材质纹理",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True
+        }
+    )
+    async def blender_material_bake_textures(params: MaterialBakeTexturesInput) -> str:
+        """将程序化材质烘焙为纹理图像。
+        
+        支持烘焙：漫反射、粗糙度、金属度、法线、AO、自发光。
+        烘焙后的纹理可导出到游戏引擎使用。
+        
+        Args:
+            params: 材质名称、输出目录、分辨率、烘焙类型
+            
+        Returns:
+            烘焙结果
+        """
+        result = await server.execute_command(
+            "material", "bake_textures",
+            {
+                "material_name": params.material_name,
+                "output_directory": params.output_directory,
+                "resolution": params.resolution,
+                "bake_types": params.bake_types
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            baked = data.get("baked_textures", [])
+            
+            lines = [f"材质 '{params.material_name}' 纹理烘焙完成", ""]
+            lines.append(f"输出目录: {params.output_directory}")
+            lines.append(f"分辨率: {params.resolution}x{params.resolution}")
+            lines.append("")
+            
+            if baked:
+                lines.append("已烘焙的纹理:")
+                for tex in baked:
+                    lines.append(f"- {tex}")
+            
+            return "\n".join(lines)
+        else:
+            return f"烘焙失败: {result.get('error', {}).get('message', '未知错误')}"
