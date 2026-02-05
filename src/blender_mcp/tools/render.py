@@ -67,6 +67,26 @@ class RenderPreviewInput(BaseModel):
     samples: int = Field(default=32, description="采样数", ge=1, le=256)
 
 
+class ViewType(str, Enum):
+    """视图类型"""
+    PERSP = "PERSP"     # 透视
+    FRONT = "FRONT"     # 前视图
+    BACK = "BACK"       # 后视图
+    LEFT = "LEFT"       # 左视图
+    RIGHT = "RIGHT"     # 右视图
+    TOP = "TOP"         # 顶视图
+    BOTTOM = "BOTTOM"   # 底视图
+
+
+class GetViewportScreenshotInput(BaseModel):
+    """获取视口截图输入"""
+    output_path: Optional[str] = Field(default=None, description="输出路径（不提供则使用临时目录）")
+    width: int = Field(default=800, description="截图宽度", ge=64, le=4096)
+    height: int = Field(default=600, description="截图高度", ge=64, le=4096)
+    view_type: Optional[ViewType] = Field(default=None, description="视图类型")
+    return_base64: bool = Field(default=False, description="是否返回base64编码的图片数据")
+
+
 # ==================== 工具注册 ====================
 
 def register_render_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
@@ -230,3 +250,49 @@ def register_render_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             return f"预览渲染完成"
         else:
             return f"预览渲染失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_get_viewport_screenshot",
+        annotations={
+            "title": "获取视口截图",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True
+        }
+    )
+    async def blender_get_viewport_screenshot(params: GetViewportScreenshotInput) -> str:
+        """获取当前3D视口的截图。
+        
+        使用OpenGL渲染捕获视口画面，用于调试和预览。
+        
+        Args:
+            params: 输出路径、尺寸、视图类型
+            
+        Returns:
+            截图文件路径信息
+        """
+        result = await server.execute_command(
+            "render", "get_viewport_screenshot",
+            {
+                "output_path": params.output_path,
+                "width": params.width,
+                "height": params.height,
+                "view_type": params.view_type.value if params.view_type else None,
+                "return_base64": params.return_base64
+            }
+        )
+        
+        if result.get("success"):
+            data = result.get("data", {})
+            lines = ["视口截图已保存"]
+            lines.append(f"- 路径: {data.get('output_path', 'N/A')}")
+            lines.append(f"- 尺寸: {data.get('width', 0)}x{data.get('height', 0)}")
+            lines.append(f"- 文件大小: {data.get('file_size', 0)} 字节")
+            
+            if params.return_base64 and data.get('base64'):
+                lines.append(f"- Base64 数据已包含在响应中")
+            
+            return "\n".join(lines)
+        else:
+            return f"截图失败: {result.get('error', {}).get('message', '未知错误')}"

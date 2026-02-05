@@ -10,10 +10,11 @@ import bpy
 
 def get_principled_bsdf(nodes):
     """获取Principled BSDF节点，兼容不同Blender版本"""
-    # 先尝试按名称查找
-    bsdf = get_principled_bsdf(nodes)
-    if bsdf:
+    # 先尝试按名称查找（Blender常见的默认名称）
+    bsdf = nodes.get("Principled BSDF")
+    if bsdf and bsdf.type == 'BSDF_PRINCIPLED':
         return bsdf
+    
     # 再按类型查找
     for node in nodes:
         if node.type == 'BSDF_PRINCIPLED':
