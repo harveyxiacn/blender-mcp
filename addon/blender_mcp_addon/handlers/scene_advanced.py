@@ -59,6 +59,25 @@ ENVIRONMENT_PRESETS = {
             {"type": "SUN", "location": [0, 0, 10], "power": 10, "color": [1, 1, 1], "rotation": [0.5, 0, 0]},
         ]
     },
+    "forest": {
+        "world_color": [0.15, 0.25, 0.12],
+        "lights": [
+            {"type": "SUN", "location": [0, 0, 10], "power": 3, "color": [1, 0.95, 0.85], "rotation": [0.7, 0.3, 0]},
+            {"type": "AREA", "location": [5, 5, 8], "power": 200, "color": [0.9, 1, 0.85]},
+        ]
+    },
+    "underwater": {
+        "world_color": [0.05, 0.15, 0.25],
+        "lights": [
+            {"type": "SUN", "location": [0, 0, 10], "power": 2, "color": [0.6, 0.8, 1], "rotation": [0.9, 0, 0]},
+        ]
+    },
+    "desert": {
+        "world_color": [0.6, 0.5, 0.35],
+        "lights": [
+            {"type": "SUN", "location": [0, 0, 10], "power": 8, "color": [1, 0.95, 0.85], "rotation": [0.6, 0.2, 0]},
+        ]
+    },
 }
 
 # 地面材质预设
@@ -300,7 +319,13 @@ def handle_ground_plane(params: Dict[str, Any]) -> Dict[str, Any]:
     mat = bpy.data.materials.new(name=f"Ground_{material_preset}")
     mat.use_nodes = True
     
-    bsdf = mat.node_tree.nodes.get("Principled BSDF")
+    # 兼容不同Blender版本查找Principled BSDF节点
+    bsdf = None
+    for node in mat.node_tree.nodes:
+        if node.type == 'BSDF_PRINCIPLED':
+            bsdf = node
+            break
+    
     if bsdf:
         bsdf.inputs["Base Color"].default_value = mat_config["color"]
         bsdf.inputs["Roughness"].default_value = mat_config.get("roughness", 0.5)

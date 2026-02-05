@@ -6,6 +6,20 @@ ZBrush 连接处理器
 
 from typing import Any, Dict
 import bpy
+
+
+def get_principled_bsdf(nodes):
+    """获取Principled BSDF节点，兼容不同Blender版本"""
+    # 先尝试按名称查找
+    bsdf = get_principled_bsdf(nodes)
+    if bsdf:
+        return bsdf
+    # 再按类型查找
+    for node in nodes:
+        if node.type == 'BSDF_PRINCIPLED':
+            return node
+    return None
+
 import os
 import platform
 
@@ -292,7 +306,7 @@ def handle_maps(params: Dict[str, Any]) -> Dict[str, Any]:
         nodes = mat.node_tree.nodes
         links = mat.node_tree.links
         
-        bsdf = nodes.get("Principled BSDF")
+        bsdf = get_principled_bsdf(nodes)
         if not bsdf:
             bsdf = nodes.new('ShaderNodeBsdfPrincipled')
         

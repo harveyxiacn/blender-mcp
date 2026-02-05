@@ -6,6 +6,20 @@
 
 from typing import Any, Dict, List
 import bpy
+
+
+def get_principled_bsdf(nodes):
+    """获取Principled BSDF节点，兼容不同Blender版本"""
+    # 先尝试按名称查找
+    bsdf = get_principled_bsdf(nodes)
+    if bsdf:
+        return bsdf
+    # 再按类型查找
+    for node in nodes:
+        if node.type == 'BSDF_PRINCIPLED':
+            return node
+    return None
+
 import math
 
 
@@ -72,7 +86,7 @@ def _create_material(name: str, color: List[float], metallic: float = 0.0, rough
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     
-    bsdf = mat.node_tree.nodes.get("Principled BSDF")
+    bsdf = get_principled_bsdf(mat.node_tree.nodes)
     if bsdf:
         bsdf.inputs["Base Color"].default_value = color
         bsdf.inputs["Metallic"].default_value = metallic

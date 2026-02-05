@@ -8,6 +8,20 @@ from typing import Any, Dict
 import bpy
 
 
+def get_principled_bsdf(nodes):
+    """获取Principled BSDF节点，兼容不同Blender版本"""
+    # 先尝试按名称查找
+    bsdf = get_principled_bsdf(nodes)
+    if bsdf:
+        return bsdf
+    # 再按类型查找
+    for node in nodes:
+        if node.type == 'BSDF_PRINCIPLED':
+            return node
+    return None
+
+
+
 def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
     """创建材质"""
     name = params.get("name", "Material")
@@ -23,7 +37,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
     if use_nodes:
         # 获取 Principled BSDF 节点
         nodes = mat.node_tree.nodes
-        principled = nodes.get("Principled BSDF")
+        principled = get_principled_bsdf(nodes)
         
         if principled:
             # 设置颜色
@@ -103,7 +117,7 @@ def handle_set_properties(params: Dict[str, Any]) -> Dict[str, Any]:
         mat.use_nodes = True
     
     nodes = mat.node_tree.nodes
-    principled = nodes.get("Principled BSDF")
+    principled = get_principled_bsdf(nodes)
     
     if not principled:
         return {
@@ -178,7 +192,7 @@ def handle_add_texture(params: Dict[str, Any]) -> Dict[str, Any]:
     
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
-    principled = nodes.get("Principled BSDF")
+    principled = get_principled_bsdf(nodes)
     
     if not principled:
         return {
@@ -245,7 +259,7 @@ def handle_list(params: Dict[str, Any]) -> Dict[str, Any]:
         
         if mat.use_nodes:
             nodes = mat.node_tree.nodes
-            principled = nodes.get("Principled BSDF")
+            principled = get_principled_bsdf(nodes)
             if principled:
                 mat_info["color"] = list(principled.inputs["Base Color"].default_value)
                 mat_info["metallic"] = principled.inputs["Metallic"].default_value
@@ -323,7 +337,7 @@ def handle_node_add(params: Dict[str, Any]) -> Dict[str, Any]:
     
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
-    principled = nodes.get("Principled BSDF")
+    principled = get_principled_bsdf(nodes)
     
     try:
         # 根据节点类型创建和配置节点
@@ -502,7 +516,7 @@ def handle_texture_apply(params: Dict[str, Any]) -> Dict[str, Any]:
     
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
-    principled = nodes.get("Principled BSDF")
+    principled = get_principled_bsdf(nodes)
     
     if not principled:
         return {
@@ -615,7 +629,7 @@ def handle_create_skin_material(params: Dict[str, Any]) -> Dict[str, Any]:
     mat.use_nodes = True
     
     nodes = mat.node_tree.nodes
-    principled = nodes.get("Principled BSDF")
+    principled = get_principled_bsdf(nodes)
     
     if principled:
         # 基础颜色
@@ -1011,7 +1025,7 @@ def handle_create_pbr(params: Dict[str, Any]) -> Dict[str, Any]:
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
     
-    principled = nodes.get("Principled BSDF")
+    principled = get_principled_bsdf(nodes)
     output = nodes.get("Material Output")
     
     if principled:

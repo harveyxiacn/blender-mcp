@@ -20,7 +20,12 @@ class AnimationPresetApplyInput(BaseModel):
     armature_name: str = Field(..., description="骨架名称")
     preset: str = Field(
         default="idle",
-        description="预设动画: idle, walk, run, jump, wave, celebrate, attack, dance, sit, bow"
+        description="""预设动画类别：
+        基础动作: idle, idle_combat, walk, run, sprint, jump, double_jump, land, dodge_roll, dodge_back
+        战斗动作: attack, attack_combo_1, attack_combo_2, attack_combo_3, attack_heavy, attack_spin, attack_uppercut, block, parry, hit_light, hit_heavy, knockdown, getup, death
+        技能动作: cast_spell, cast_fireball, cast_heal, charge_power, release_power
+        社交动作: wave, celebrate, dance, sit, bow, salute, point
+        交互动作: pickup, use_item, open_chest"""
     )
     speed: float = Field(default=1.0, description="动画速度倍率", ge=0.1, le=5.0)
     loop: bool = Field(default=True, description="是否循环")

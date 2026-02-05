@@ -6,6 +6,20 @@ VR/AR 场景处理器
 
 from typing import Any, Dict
 import bpy
+
+
+def get_principled_bsdf(nodes):
+    """获取Principled BSDF节点，兼容不同Blender版本"""
+    # 先尝试按名称查找
+    bsdf = get_principled_bsdf(nodes)
+    if bsdf:
+        return bsdf
+    # 再按类型查找
+    for node in nodes:
+        if node.type == 'BSDF_PRINCIPLED':
+            return node
+    return None
+
 import os
 import math
 
@@ -194,7 +208,7 @@ def handle_ar_marker(params: Dict[str, Any]) -> Dict[str, Any]:
         mat.use_nodes = True
         nodes = mat.node_tree.nodes
         
-        bsdf = nodes.get("Principled BSDF")
+        bsdf = get_principled_bsdf(nodes)
         if bsdf:
             # 使用醒目的颜色
             if marker_type == "image":
@@ -251,7 +265,7 @@ def handle_xr_interaction(params: Dict[str, Any]) -> Dict[str, Any]:
         mat.use_nodes = True
         nodes = mat.node_tree.nodes
         
-        bsdf = nodes.get("Principled BSDF")
+        bsdf = get_principled_bsdf(nodes)
         if bsdf:
             bsdf.inputs['Emission Color'].default_value = highlight_color[:3] + (1.0,)
             bsdf.inputs['Emission Strength'].default_value = 0.5
