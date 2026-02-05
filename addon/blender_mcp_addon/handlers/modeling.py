@@ -1525,10 +1525,15 @@ def handle_smart_subdivide(params: Dict[str, Any]) -> Dict[str, Any]:
 def handle_auto_smooth(params: Dict[str, Any]) -> Dict[str, Any]:
     """自动平滑
     
+    根据 Blender 版本使用不同的实现方式：
+    - Blender < 4.1: 使用 use_auto_smooth 属性
+    - Blender 4.1+: 使用 Smooth by Angle 修改器
+    - Blender 5.0+: 使用 Weighted Normal 修改器或几何节点
+    
     Args:
         params:
             - object_name: 对象名称
-            - angle: 平滑角度阈值
+            - angle: 平滑角度阈值（度）
             - use_sharp_edges: 对锐边使用硬边
     """
     import math
@@ -1564,29 +1569,95 @@ def handle_auto_smooth(params: Dict[str, Any]) -> Dict[str, Any]:
     # 应用平滑着色
     bpy.ops.object.shade_smooth()
     
-    # 设置自动平滑
-    # Blender 4.0+使用不同的方式设置自动平滑
-    try:
-        # 尝试Blender 4.0+的方式
-        obj.data.use_auto_smooth = True
-        obj.data.auto_smooth_angle = math.radians(angle)
-    except AttributeError:
-        # Blender 4.1+使用修改器方式
-        # 检查是否已有自动平滑修改器
-        smooth_mod = None
+    blender_version = bpy.app.version
+    method_used = "unknown"
+    
+    # 根据 Blender 版本选择实现方式
+    if blender_version >= (5, 0, 0):
+        # Blender 5.0+: 使用 Weighted Normal 修改器 + 锐边标记
+        method_used = "weighted_normal"
+        
+        # 首先标记锐边（基于角度）
+        import bmesh
+        bpy.ops.object.mode_set(mode='EDIT')
+        bm = bmesh.from_edit_mesh(obj.data)
+        
+        angle_rad = math.radians(angle)
+        sharp_count = 0
+        
+        for edge in bm.edges:
+            if len(edge.link_faces) == 2:
+                try:
+                    face_angle = edge.calc_face_angle()
+                    if face_angle is not None and face_angle > angle_rad:
+                        edge.smooth = False
+                        sharp_count += 1
+                    else:
+                        edge.smooth = True
+                except:
+                    pass
+        
+        bmesh.update_edit_mesh(obj.data)
+        bpy.ops.object.mode_set(mode='OBJECT')
+        
+        # 添加 Weighted Normal 修改器（如果不存在）
+        wn_mod = None
         for mod in obj.modifiers:
-            if mod.type == 'SMOOTH_BY_ANGLE':
-                smooth_mod = mod
+            if mod.type == 'WEIGHTED_NORMAL':
+                wn_mod = mod
                 break
         
-        if not smooth_mod:
-            smooth_mod = obj.modifiers.new(name="AutoSmooth", type='SMOOTH_BY_ANGLE')
+        if not wn_mod:
+            wn_mod = obj.modifiers.new(name="WeightedNormal", type='WEIGHTED_NORMAL')
         
-        if smooth_mod:
-            smooth_mod.angle = math.radians(angle)
+        if wn_mod:
+            wn_mod.keep_sharp = True  # 保持锐边
+            wn_mod.weight = 50  # 面积权重
+            wn_mod.mode = 'FACE_AREA'
+        
+    elif blender_version >= (4, 1, 0):
+        # Blender 4.1-4.x: 尝试使用 Smooth by Angle 修改器
+        method_used = "smooth_by_angle"
+        
+        try:
+            smooth_mod = None
+            for mod in obj.modifiers:
+                if hasattr(mod, 'type') and mod.type == 'SMOOTH_BY_ANGLE':
+                    smooth_mod = mod
+                    break
+            
+            if not smooth_mod:
+                smooth_mod = obj.modifiers.new(name="AutoSmooth", type='SMOOTH_BY_ANGLE')
+            
+            if smooth_mod:
+                smooth_mod.angle = math.radians(angle)
+        except (TypeError, RuntimeError):
+            # 如果 SMOOTH_BY_ANGLE 不可用，回退到 Weighted Normal
+            method_used = "weighted_normal_fallback"
+            
+            wn_mod = None
+            for mod in obj.modifiers:
+                if mod.type == 'WEIGHTED_NORMAL':
+                    wn_mod = mod
+                    break
+            
+            if not wn_mod:
+                wn_mod = obj.modifiers.new(name="WeightedNormal", type='WEIGHTED_NORMAL')
+            
+            if wn_mod:
+                wn_mod.keep_sharp = True
+    else:
+        # Blender < 4.1: 使用旧的 use_auto_smooth 属性
+        method_used = "legacy_auto_smooth"
+        try:
+            obj.data.use_auto_smooth = True
+            obj.data.auto_smooth_angle = math.radians(angle)
+        except AttributeError:
+            pass
     
-    # 如果需要，标记锐边
-    if use_sharp_edges:
+    # 标记锐边（如果需要且尚未在 Blender 5.0+ 分支中完成）
+    sharp_count = 0
+    if use_sharp_edges and method_used != "weighted_normal":
         import bmesh
         
         if bpy.context.mode != 'EDIT':
@@ -1595,14 +1666,16 @@ def handle_auto_smooth(params: Dict[str, Any]) -> Dict[str, Any]:
         bm = bmesh.from_edit_mesh(obj.data)
         
         angle_rad = math.radians(angle)
-        sharp_count = 0
         
         for edge in bm.edges:
             if len(edge.link_faces) == 2:
-                face_angle = edge.calc_face_angle()
-                if face_angle and face_angle > angle_rad:
-                    edge.smooth = False
-                    sharp_count += 1
+                try:
+                    face_angle = edge.calc_face_angle()
+                    if face_angle is not None and face_angle > angle_rad:
+                        edge.smooth = False
+                        sharp_count += 1
+                except:
+                    pass
         
         bmesh.update_edit_mesh(obj.data)
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -1612,6 +1685,8 @@ def handle_auto_smooth(params: Dict[str, Any]) -> Dict[str, Any]:
         "data": {
             "object_name": obj.name,
             "smooth_angle": angle,
-            "sharp_edges_marked": sharp_count if use_sharp_edges else 0
+            "sharp_edges_marked": sharp_count,
+            "method_used": method_used,
+            "blender_version": f"{blender_version[0]}.{blender_version[1]}.{blender_version[2]}"
         }
     }

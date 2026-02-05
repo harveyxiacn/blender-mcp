@@ -240,6 +240,7 @@ def handle_get_viewport_screenshot(params: Dict[str, Any]) -> Dict[str, Any]:
     """获取视口截图
     
     使用OpenGL渲染捕获当前3D视口的截图。
+    通过定时器在主线程中执行以解决执行上下文问题。
     
     Args:
         params:
@@ -252,132 +253,167 @@ def handle_get_viewport_screenshot(params: Dict[str, Any]) -> Dict[str, Any]:
         截图文件路径和信息
     """
     import base64
+    import threading
+    import time
     
     output_path = params.get("output_path")
     width = params.get("width", 800)
     height = params.get("height", 600)
     view_type = params.get("view_type")
+    return_base64 = params.get("return_base64", False)
     
-    scene = bpy.context.scene
+    # 确定输出路径
+    if not output_path:
+        import datetime
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_path = os.path.join(tempfile.gettempdir(), f"blender_viewport_{timestamp}.png")
     
-    # 保存原始设置
-    orig_res_x = scene.render.resolution_x
-    orig_res_y = scene.render.resolution_y
-    orig_res_pct = scene.render.resolution_percentage
-    orig_filepath = scene.render.filepath
-    orig_file_format = scene.render.image_settings.file_format
+    # 使用共享字典存储结果（用于跨线程通信）
+    result_holder = {"done": False, "result": None}
     
-    try:
-        # 设置渲染分辨率
-        scene.render.resolution_x = width
-        scene.render.resolution_y = height
-        scene.render.resolution_percentage = 100
-        scene.render.image_settings.file_format = 'PNG'
-        
-        # 确定输出路径
-        if not output_path:
-            import datetime
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            output_path = os.path.join(tempfile.gettempdir(), f"blender_viewport_{timestamp}.png")
-        
-        scene.render.filepath = output_path
-        
-        # 查找3D视口区域
-        area = None
-        for window in bpy.context.window_manager.windows:
-            for a in window.screen.areas:
-                if a.type == 'VIEW_3D':
-                    area = a
-                    break
-            if area:
-                break
-        
-        if not area:
-            return {
-                "success": False,
-                "error": {
-                    "code": "NO_3D_VIEW",
-                    "message": "找不到3D视口"
-                }
-            }
-        
-        # 如果指定了视图类型，切换视图
-        if view_type:
-            for space in area.spaces:
-                if space.type == 'VIEW_3D':
-                    region_3d = space.region_3d
-                    
-                    view_types_map = {
-                        'PERSP': ('PERSP', (0.785, 0.785, 0)),  # 透视
-                        'FRONT': ('ORTHO', (1.5708, 0, 0)),     # 前视图
-                        'BACK': ('ORTHO', (1.5708, 0, 3.1416)), # 后视图
-                        'LEFT': ('ORTHO', (1.5708, 0, -1.5708)), # 左视图
-                        'RIGHT': ('ORTHO', (1.5708, 0, 1.5708)), # 右视图
-                        'TOP': ('ORTHO', (0, 0, 0)),            # 顶视图
-                        'BOTTOM': ('ORTHO', (3.1416, 0, 0)),    # 底视图
+    def do_screenshot():
+        """在主线程中执行截图"""
+        try:
+            scene = bpy.context.scene
+            
+            # 保存原始设置
+            orig_res_x = scene.render.resolution_x
+            orig_res_y = scene.render.resolution_y
+            orig_res_pct = scene.render.resolution_percentage
+            orig_filepath = scene.render.filepath
+            orig_file_format = scene.render.image_settings.file_format
+            
+            try:
+                # 设置渲染分辨率
+                scene.render.resolution_x = width
+                scene.render.resolution_y = height
+                scene.render.resolution_percentage = 100
+                scene.render.image_settings.file_format = 'PNG'
+                scene.render.filepath = output_path
+                
+                # 查找3D视口区域
+                area = None
+                for window in bpy.context.window_manager.windows:
+                    for a in window.screen.areas:
+                        if a.type == 'VIEW_3D':
+                            area = a
+                            break
+                    if area:
+                        break
+                
+                if not area:
+                    result_holder["result"] = {
+                        "success": False,
+                        "error": {
+                            "code": "NO_3D_VIEW",
+                            "message": "找不到3D视口"
+                        }
                     }
+                    result_holder["done"] = True
+                    return None
+                
+                # 如果指定了视图类型，切换视图
+                if view_type:
+                    for space in area.spaces:
+                        if space.type == 'VIEW_3D':
+                            region_3d = space.region_3d
+                            
+                            view_types_map = {
+                                'PERSP': ('PERSP', (0.785, 0.785, 0)),
+                                'FRONT': ('ORTHO', (1.5708, 0, 0)),
+                                'BACK': ('ORTHO', (1.5708, 0, 3.1416)),
+                                'LEFT': ('ORTHO', (1.5708, 0, -1.5708)),
+                                'RIGHT': ('ORTHO', (1.5708, 0, 1.5708)),
+                                'TOP': ('ORTHO', (0, 0, 0)),
+                                'BOTTOM': ('ORTHO', (3.1416, 0, 0)),
+                            }
+                            
+                            if view_type.upper() in view_types_map:
+                                view_mode, rotation = view_types_map[view_type.upper()]
+                                region_3d.view_perspective = view_mode
+                            break
+                
+                # 使用 temp_override 执行 OpenGL 渲染
+                for region in area.regions:
+                    if region.type == 'WINDOW':
+                        with bpy.context.temp_override(area=area, region=region):
+                            bpy.ops.render.opengl(write_still=True)
+                        break
+                
+                # 检查文件是否创建
+                if os.path.exists(output_path):
+                    file_size = os.path.getsize(output_path)
                     
-                    if view_type.upper() in view_types_map:
-                        view_mode, rotation = view_types_map[view_type.upper()]
-                        region_3d.view_perspective = view_mode
-                        # 注意：设置旋转需要使用Matrix或Quaternion
-                    break
-        
-        # 使用OpenGL渲染视口
-        # 覆盖上下文以在正确的区域执行
-        override = bpy.context.copy()
-        override['area'] = area
-        for region in area.regions:
-            if region.type == 'WINDOW':
-                override['region'] = region
-                break
-        
-        # 执行视口渲染
-        with bpy.context.temp_override(**override):
-            bpy.ops.render.opengl(write_still=True)
-        
-        # 检查文件是否创建
-        if os.path.exists(output_path):
-            file_size = os.path.getsize(output_path)
+                    screenshot_base64 = None
+                    if return_base64:
+                        with open(output_path, "rb") as f:
+                            screenshot_base64 = base64.b64encode(f.read()).decode('utf-8')
+                    
+                    result_holder["result"] = {
+                        "success": True,
+                        "data": {
+                            "output_path": output_path,
+                            "width": width,
+                            "height": height,
+                            "file_size": file_size,
+                            "base64": screenshot_base64
+                        }
+                    }
+                else:
+                    result_holder["result"] = {
+                        "success": False,
+                        "error": {
+                            "code": "SCREENSHOT_FAILED",
+                            "message": "截图文件未创建"
+                        }
+                    }
             
-            # 可选：读取并编码为base64
-            screenshot_base64 = None
-            if params.get("return_base64", False):
-                with open(output_path, "rb") as f:
-                    screenshot_base64 = base64.b64encode(f.read()).decode('utf-8')
-            
-            return {
-                "success": True,
-                "data": {
-                    "output_path": output_path,
-                    "width": width,
-                    "height": height,
-                    "file_size": file_size,
-                    "base64": screenshot_base64
-                }
-            }
-        else:
-            return {
+            finally:
+                # 恢复原始设置
+                scene.render.resolution_x = orig_res_x
+                scene.render.resolution_y = orig_res_y
+                scene.render.resolution_percentage = orig_res_pct
+                scene.render.filepath = orig_filepath
+                scene.render.image_settings.file_format = orig_file_format
+        
+        except Exception as e:
+            result_holder["result"] = {
                 "success": False,
                 "error": {
-                    "code": "SCREENSHOT_FAILED",
-                    "message": "截图文件未创建"
+                    "code": "SCREENSHOT_ERROR",
+                    "message": str(e)
                 }
             }
+        
+        result_holder["done"] = True
+        return None  # 不需要重复定时器
     
-    except Exception as e:
+    # 检查是否在主线程中
+    # 如果在主线程中直接执行，否则通过定时器调度
+    try:
+        # 尝试直接执行（如果上下文正确）
+        if bpy.context.window:
+            do_screenshot()
+            return result_holder["result"]
+    except:
+        pass
+    
+    # 通过定时器在主线程中执行
+    bpy.app.timers.register(do_screenshot, first_interval=0.0)
+    
+    # 等待结果（最多10秒）
+    timeout = 10.0
+    start_time = time.time()
+    while not result_holder["done"] and (time.time() - start_time) < timeout:
+        time.sleep(0.05)
+    
+    if not result_holder["done"]:
         return {
             "success": False,
             "error": {
-                "code": "SCREENSHOT_ERROR",
-                "message": str(e)
+                "code": "TIMEOUT",
+                "message": "截图操作超时"
             }
         }
     
-    finally:
-        # 恢复原始设置
-        scene.render.resolution_x = orig_res_x
-        scene.render.resolution_y = orig_res_y
-        scene.render.resolution_percentage = orig_res_pct
-        scene.render.filepath = orig_filepath
-        scene.render.image_settings.file_format = orig_file_format
+    return result_holder["result"]
