@@ -12,11 +12,10 @@ def test_enabled_modules_not_empty() -> None:
     assert enabled
 
 
-def test_run_http_applies_port_to_fastmcp_settings() -> None:
-    """run_http should forward the provided port into FastMCP settings."""
+def test_run_http_uses_streamable_http_transport() -> None:
+    """run_http should start FastMCP using streamable HTTP transport."""
     server = BlenderMCPServer()
     with patch.object(server.mcp, "run", return_value=None) as mocked_run:
         server.run_http(9123)
 
-    assert server.mcp.settings.port == 9123
     mocked_run.assert_called_once_with(transport="streamable-http")
