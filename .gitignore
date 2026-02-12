@@ -1,0 +1,101 @@
+# ============================================
+# Blender MCP - .gitignore
+# ============================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+.eggs/
+
+# --- Virtual Environment ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- IDE ---
+.cursor/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.windsurf/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+%APPDATA%/
+
+# --- Books & Personal Study Notes ---
+books/
+docs/internal/
+docs/Blender建模风格与技巧学习笔记.md
+docs/Blender综合学习笔记（8本书精华整合）.md
+docs/OPTIMIZATION_REPORT.md
+docs/MISSING_FEATURES_PIXEL_TO_AAA.md
+docs/EXTENDED_ROADMAP.md
+docs/BUILD_BY_SPEC_README.md
+
+# --- Old root-level docs (moved to docs/en/ and docs/zh/) ---
+docs/ARCHITECTURE.md
+docs/INSTALLATION.md
+docs/QUICKSTART.md
+docs/API_REFERENCE.md
+docs/TUTORIALS.md
+docs/ROADMAP.md
+
+# --- Blender Files (project-specific, not part of the package) ---
+*.blend
+*.blend1
+*.blend2
+
+# --- 3D Assets & Media (project-specific) ---
+*.glb
+*.gltf
+*.fbx
+*.obj
+*.stl
+fanxing-models/
+fzd_*
+fanzhendong-01.jpeg
+
+# --- Training Data ---
+blender_training/
+
+# --- Test & Demo Scripts (root level, not in tests/) ---
+test_*.py
+create_*.py
+build_scenes_by_spec.py
+demo_*.py
+fix_*.py
+list_objects.py
+
+# --- Lock Files ---
+uv.lock
+
+# --- Logs ---
+*.log
+
+# --- Misc ---
+*.bak
+*.tmp
+.blender_mcp.pid
+
+# --- Local Agent/Assistant State ---
+.claude/
+
+# --- Local Reports & Scratch ---
+COMPREHENSIVE_TEST_REPORT.md
+INSTALLATION_SUMMARY.md
+nul
+test_models.bin
+test_models.mtl
