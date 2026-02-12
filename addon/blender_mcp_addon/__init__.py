@@ -8,7 +8,7 @@ bl_info = {
     "name": "Blender MCP",
     "author": "Blender MCP Team",
     "version": (0, 1, 0),
-    "blender": (3, 0, 0),
+    "blender": (4, 0, 0),
     "location": "View3D > Sidebar > MCP",
     "description": "Enable AI assistants to control Blender through MCP protocol",
     "category": "Interface",

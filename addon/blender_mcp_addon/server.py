@@ -8,7 +8,7 @@ import json
 import socket
 import threading
 import traceback
-from typing import Any, Dict, Optional, Callable
+from typing import Any, Dict, Optional
 
 import bpy
 
@@ -196,6 +196,12 @@ class MCPServer:
     ) -> Dict[str, Any]:
         """在 Blender 主线程中执行命令"""
         result_container = {"result": None, "done": False}
+        raw_timeout = params.get("timeout", 30.0)
+        try:
+            timeout = float(raw_timeout)
+        except (TypeError, ValueError):
+            timeout = 30.0
+        timeout = max(1.0, min(timeout, 3600.0))
         
         def execute():
             try:
@@ -218,7 +224,6 @@ class MCPServer:
         
         # 等待执行完成
         import time
-        timeout = 30.0  # 30 秒超时
         start_time = time.time()
         
         while not result_container["done"]:

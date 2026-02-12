@@ -163,6 +163,12 @@ class BlenderConnection:
         
         # 连接断开，标记所有待处理请求为失败
         self._connected = False
+        if self._pending_requests:
+            error = BlenderConnectionError("连接已断开")
+            for future in list(self._pending_requests.values()):
+                if not future.done():
+                    future.set_exception(error)
+            self._pending_requests.clear()
     
     async def _handle_response(self, response: dict[str, Any]) -> None:
         """处理响应消息"""
@@ -206,12 +212,14 @@ class BlenderConnection:
         }
         
         # 创建 Future 等待响应
-        future: asyncio.Future = asyncio.get_event_loop().create_future()
+        future: asyncio.Future = asyncio.get_running_loop().create_future()
         self._pending_requests[request_id] = future
         
         try:
             # 发送请求
             message = json.dumps(request) + "\n"
+            if self._writer is None:
+                raise BlenderConnectionError("连接不可用")
             self._writer.write(message.encode("utf-8"))
             await self._writer.drain()
             
@@ -227,6 +235,12 @@ class BlenderConnection:
             raise BlenderConnectionError(f"命令超时: {category}.{action}")
         except Exception as e:
             self._pending_requests.pop(request_id, None)
+            # 写入/读取失败后主动清理连接，避免后续请求复用坏连接
+            if self._connected:
+                try:
+                    await self.disconnect()
+                except Exception:
+                    pass
             raise BlenderConnectionError(f"命令失败: {e}")
     
     async def get_blender_info(self) -> dict[str, Any]:

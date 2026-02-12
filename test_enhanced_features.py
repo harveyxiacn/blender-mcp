@@ -17,9 +17,10 @@ import sys
 import io
 from pathlib import Path
 
-# Set stdout encoding to utf-8
-if sys.stdout.encoding != 'utf-8':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+def ensure_utf8_stdout() -> None:
+    """仅在脚本直跑时调整 stdout 编码，避免影响 pytest 捕获"""
+    if hasattr(sys.stdout, "buffer") and getattr(sys.stdout, "encoding", "").lower() != "utf-8":
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 # 添加 src 目录到路径
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -439,4 +440,5 @@ def run_all_tests():
 
 
 if __name__ == "__main__":
+    ensure_utf8_stdout()
     sys.exit(run_all_tests())

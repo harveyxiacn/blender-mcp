@@ -4,11 +4,16 @@
 
 import sys
 import io
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 import asyncio
 import socket
 import json
+
+
+def ensure_utf8_stdout() -> None:
+    """仅在脚本直跑时调整 stdout 编码，避免影响 pytest 捕获"""
+    if hasattr(sys.stdout, "buffer") and getattr(sys.stdout, "encoding", "").lower() != "utf-8":
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 
 class TestClient:
@@ -22,7 +27,7 @@ class TestClient:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((self.host, self.port))
         self.socket.setblocking(False)
-        print(f"[OK] Connected to Blender MCP")
+        print("[OK] Connected to Blender MCP")
     
     async def send(self, category, action, params=None):
         self.request_id += 1
@@ -167,4 +172,5 @@ async def main():
 
 
 if __name__ == "__main__":
+    ensure_utf8_stdout()
     asyncio.run(main())

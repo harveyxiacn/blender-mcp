@@ -13,14 +13,12 @@ import tempfile
 def handle_execute_python(params: Dict[str, Any]) -> Dict[str, Any]:
     """执行 Python 代码"""
     code = params.get("code", "")
-    timeout = params.get("timeout", 30)
     
     # 注意：这是一个危险操作，实际使用时应该添加安全检查
     
     try:
-        # 创建执行环境
+        # 创建执行环境 (单一命名空间, 确保函数可访问所有导入)
         exec_globals = {"bpy": bpy, "__builtins__": __builtins__}
-        exec_locals = {}
         
         # 捕获输出
         import io
@@ -29,7 +27,7 @@ def handle_execute_python(params: Dict[str, Any]) -> Dict[str, Any]:
         sys.stdout = io.StringIO()
         
         try:
-            exec(code, exec_globals, exec_locals)
+            exec(code, exec_globals)
             output = sys.stdout.getvalue()
         finally:
             sys.stdout = old_stdout
@@ -62,32 +60,45 @@ def handle_viewport_screenshot(params: Dict[str, Any]) -> Dict[str, Any]:
     # 确保目录存在
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     
-    # 获取 3D 视口
-    for area in bpy.context.screen.areas:
-        if area.type == 'VIEW_3D':
-            # 设置渲染尺寸
-            for region in area.regions:
-                if region.type == 'WINDOW':
-                    # 使用 OpenGL 渲染视口
-                    override = bpy.context.copy()
-                    override['area'] = area
-                    override['region'] = region
-                    
-                    # 渲染视口
-                    bpy.ops.render.opengl(
-                        override,
-                        write_still=True
-                    )
-                    
-                    # 保存图像
-                    bpy.data.images['Render Result'].save_render(output_path)
-                    
-                    return {
-                        "success": True,
-                        "data": {
-                            "output_path": output_path
+    scene = bpy.context.scene
+    old_width = scene.render.resolution_x
+    old_height = scene.render.resolution_y
+    old_percentage = scene.render.resolution_percentage
+
+    try:
+        scene.render.resolution_x = width
+        scene.render.resolution_y = height
+        scene.render.resolution_percentage = 100
+
+        # 获取 3D 视口
+        for area in bpy.context.screen.areas:
+            if area.type == 'VIEW_3D':
+                for region in area.regions:
+                    if region.type == 'WINDOW':
+                        # 使用 OpenGL 渲染视口
+                        override = bpy.context.copy()
+                        override['area'] = area
+                        override['region'] = region
+                        
+                        bpy.ops.render.opengl(
+                            override,
+                            write_still=True
+                        )
+                        
+                        # 保存图像
+                        bpy.data.images['Render Result'].save_render(output_path)
+                        
+                        return {
+                            "success": True,
+                            "data": {
+                                "output_path": output_path
+                            }
                         }
-                    }
+    finally:
+        # 恢复用户原始渲染设置
+        scene.render.resolution_x = old_width
+        scene.render.resolution_y = old_height
+        scene.render.resolution_percentage = old_percentage
     
     return {
         "success": False,

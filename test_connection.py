@@ -9,6 +9,22 @@ import json
 import sys
 
 
+def recv_json_line(sock: socket.socket, buffer_size: int = 8192) -> dict:
+    """接收一行 JSON 响应（以换行符分隔）"""
+    buffer = ""
+    while "\n" not in buffer:
+        chunk = sock.recv(buffer_size)
+        if not chunk:
+            break
+        buffer += chunk.decode("utf-8")
+
+    if not buffer.strip():
+        raise RuntimeError("No response from server")
+
+    line = buffer.split("\n", 1)[0].strip()
+    return json.loads(line)
+
+
 def test_connection(host="127.0.0.1", port=9876):
     """Test connection to Blender MCP service"""
     
@@ -33,8 +49,7 @@ def test_connection(host="127.0.0.1", port=9876):
         }
         
         sock.send((json.dumps(request) + "\n").encode("utf-8"))
-        response = sock.recv(4096).decode("utf-8")
-        result = json.loads(response.strip())
+        result = recv_json_line(sock)
         
         if result.get("success"):
             print(f"[OK] Blender info: {json.dumps(result.get('data', {}), indent=2)}")
@@ -52,8 +67,7 @@ def test_connection(host="127.0.0.1", port=9876):
         }
         
         sock.send((json.dumps(request) + "\n").encode("utf-8"))
-        response = sock.recv(4096).decode("utf-8")
-        result = json.loads(response.strip())
+        result = recv_json_line(sock)
         
         if result.get("success"):
             objects = result.get("data", {}).get("objects", [])
@@ -78,8 +92,7 @@ def test_connection(host="127.0.0.1", port=9876):
         }
         
         sock.send((json.dumps(request) + "\n").encode("utf-8"))
-        response = sock.recv(4096).decode("utf-8")
-        result = json.loads(response.strip())
+        result = recv_json_line(sock)
         
         if result.get("success"):
             print(f"[OK] Created: {result.get('data', {}).get('name', 'unknown')}")

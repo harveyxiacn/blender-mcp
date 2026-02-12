@@ -12,12 +12,16 @@
 
 import sys
 import io
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 import asyncio
 import socket
 import json
-import time
+
+
+def ensure_utf8_stdout() -> None:
+    """仅在脚本直跑时调整 stdout 编码，避免影响 pytest 捕获"""
+    if hasattr(sys.stdout, "buffer") and getattr(sys.stdout, "encoding", "").lower() != "utf-8":
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 
 class BlenderMCPTestClient:
@@ -357,4 +361,5 @@ async def main():
 
 
 if __name__ == "__main__":
+    ensure_utf8_stdout()
     asyncio.run(main())
