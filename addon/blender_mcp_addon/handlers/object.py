@@ -10,20 +10,66 @@ import mathutils
 import fnmatch
 
 
-# 对象创建函数映射
-MESH_CREATORS = {
-    "CUBE": lambda: bpy.ops.mesh.primitive_cube_add(),
-    "SPHERE": lambda: bpy.ops.mesh.primitive_uv_sphere_add(),
-    "UV_SPHERE": lambda: bpy.ops.mesh.primitive_uv_sphere_add(),
-    "ICO_SPHERE": lambda: bpy.ops.mesh.primitive_ico_sphere_add(),
-    "CYLINDER": lambda: bpy.ops.mesh.primitive_cylinder_add(),
-    "CONE": lambda: bpy.ops.mesh.primitive_cone_add(),
-    "TORUS": lambda: bpy.ops.mesh.primitive_torus_add(),
-    "PLANE": lambda: bpy.ops.mesh.primitive_plane_add(),
-    "CIRCLE": lambda: bpy.ops.mesh.primitive_circle_add(),
-    "GRID": lambda: bpy.ops.mesh.primitive_grid_add(),
-    "MONKEY": lambda: bpy.ops.mesh.primitive_monkey_add(),
-}
+def _create_mesh_primitive(obj_type: str, mp: Dict[str, Any]) -> None:
+    """根据类型和mesh_params创建网格图元"""
+    if obj_type in ("SPHERE", "UV_SPHERE"):
+        bpy.ops.mesh.primitive_uv_sphere_add(
+            segments=mp.get("segments", 32),
+            ring_count=mp.get("ring_count", 16),
+            radius=mp.get("radius", 1.0),
+        )
+    elif obj_type == "ICO_SPHERE":
+        bpy.ops.mesh.primitive_ico_sphere_add(
+            subdivisions=mp.get("subdivisions", 2),
+            radius=mp.get("radius", 1.0),
+        )
+    elif obj_type == "CYLINDER":
+        bpy.ops.mesh.primitive_cylinder_add(
+            vertices=mp.get("vertices", 32),
+            radius=mp.get("radius", 1.0),
+            depth=mp.get("depth", 2.0),
+            end_fill_type=mp.get("fill_type", "NGON"),
+        )
+    elif obj_type == "CONE":
+        bpy.ops.mesh.primitive_cone_add(
+            vertices=mp.get("vertices", 32),
+            radius1=mp.get("radius1", 1.0),
+            radius2=mp.get("radius2", 0.0),
+            depth=mp.get("depth", 2.0),
+            end_fill_type=mp.get("fill_type", "NGON"),
+        )
+    elif obj_type == "TORUS":
+        bpy.ops.mesh.primitive_torus_add(
+            major_segments=mp.get("major_segments", 48),
+            minor_segments=mp.get("minor_segments", 12),
+            major_radius=mp.get("major_radius", 1.0),
+            minor_radius=mp.get("minor_radius", 0.25),
+        )
+    elif obj_type == "CIRCLE":
+        bpy.ops.mesh.primitive_circle_add(
+            vertices=mp.get("vertices", 32),
+            radius=mp.get("radius", 1.0),
+            fill_type=mp.get("fill_type", "NOTHING"),
+        )
+    elif obj_type == "GRID":
+        bpy.ops.mesh.primitive_grid_add(
+            x_subdivisions=mp.get("x_subdivisions", 10),
+            y_subdivisions=mp.get("y_subdivisions", 10),
+            size=mp.get("size", 2.0),
+        )
+    elif obj_type == "CUBE":
+        bpy.ops.mesh.primitive_cube_add(
+            size=mp.get("size", 2.0),
+        )
+    elif obj_type == "PLANE":
+        bpy.ops.mesh.primitive_plane_add(
+            size=mp.get("size", 2.0),
+        )
+    elif obj_type == "MONKEY":
+        bpy.ops.mesh.primitive_monkey_add()
+    else:
+        return False
+    return True
 
 
 def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -33,11 +79,24 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
     location = params.get("location", [0, 0, 0])
     rotation = params.get("rotation", [0, 0, 0])
     scale = params.get("scale", [1, 1, 1])
+    mp = params.get("mesh_params", {}) or {}
     
-    # 创建对象
-    creator = MESH_CREATORS.get(obj_type)
-    if creator:
-        creator()
+    # 创建网格对象
+    mesh_types = [
+        "CUBE", "SPHERE", "UV_SPHERE", "ICO_SPHERE", "CYLINDER",
+        "CONE", "TORUS", "PLANE", "CIRCLE", "GRID", "MONKEY"
+    ]
+    
+    if obj_type in mesh_types:
+        result = _create_mesh_primitive(obj_type, mp)
+        if result is False:
+            return {
+                "success": False,
+                "error": {
+                    "code": "INVALID_TYPE",
+                    "message": f"不支持的网格类型: {obj_type}"
+                }
+            }
     elif obj_type == "EMPTY":
         bpy.ops.object.empty_add(type='PLAIN_AXES', location=location)
     elif obj_type == "TEXT":
@@ -48,6 +107,15 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
         bpy.ops.object.light_add(type='POINT', location=location)
     elif obj_type == "ARMATURE":
         bpy.ops.object.armature_add(location=location)
+    elif obj_type == "LATTICE":
+        u_res = mp.get("u_resolution", 2)
+        v_res = mp.get("v_resolution", 2)
+        w_res = mp.get("w_resolution", 2)
+        bpy.ops.object.add(type='LATTICE', location=location)
+        lat = bpy.context.active_object.data
+        lat.points_u = u_res
+        lat.points_v = v_res
+        lat.points_w = w_res
     else:
         return {
             "success": False,
