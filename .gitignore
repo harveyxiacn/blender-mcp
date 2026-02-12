@@ -99,3 +99,14 @@ INSTALLATION_SUMMARY.md
 nul
 test_models.bin
 test_models.mtl
+
+# --- Example Media Outputs / Reference Images (keep scripts, ignore binaries) ---
+examples/**/*.png
+examples/**/*.jpg
+examples/**/*.jpeg
+
+# --- Local Modeling Notes (not part of released docs) ---
+docs/blender_5.0_official_manual_reference.md
+docs/blender_comprehensive_learning_notes.md
+docs/blender_style_modeling_workflows.md
+docs/MCP_SKILL_SYSTEM_GUIDE.md
