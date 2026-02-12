@@ -15,9 +15,13 @@ Options:
 """
 
 import sys
+import os
+import signal
+import atexit
 import asyncio
 import logging
 from typing import Optional
+from pathlib import Path
 
 import click
 from rich.console import Console
@@ -28,6 +32,155 @@ from blender_mcp.server import BlenderMCPServer
 
 # 使用 stderr 避免干扰 MCP stdio 通信
 console = Console(file=sys.stderr)
+
+# PID 文件路径
+_PID_FILE = Path(__file__).parent.parent.parent / ".blender_mcp.pid"
+
+
+def _get_pid_file() -> Path:
+    """获取 PID 文件路径（优先使用临时目录）"""
+    import tempfile
+    return Path(tempfile.gettempdir()) / "blender_mcp.pid"
+
+
+def _cleanup_zombie_processes() -> int:
+    """清理残留的 blender-mcp 僵尸进程
+    
+    Returns:
+        清理的进程数量
+    """
+    current_pid = os.getpid()
+    killed = 0
+    
+    # 方法1: 通过 PID 文件清理
+    pid_file = _get_pid_file()
+    if pid_file.exists():
+        try:
+            old_pid = int(pid_file.read_text().strip())
+            if old_pid != current_pid and _is_blender_mcp_process(old_pid):
+                os.kill(old_pid, signal.SIGTERM)
+                killed += 1
+                console.print(f"[yellow]已终止残留进程 PID={old_pid}[/yellow]", highlight=False)
+        except (ValueError, ProcessLookupError, PermissionError, OSError):
+            pass
+        try:
+            pid_file.unlink()
+        except OSError:
+            pass
+    
+    # 方法2: 扫描所有 Python 进程，找到 blender-mcp 相关的
+    if sys.platform == "win32":
+        killed += _cleanup_windows(current_pid)
+    else:
+        killed += _cleanup_unix(current_pid)
+    
+    return killed
+
+
+def _is_blender_mcp_process(pid: int) -> bool:
+    """检查指定 PID 是否是 blender-mcp 进程"""
+    try:
+        if sys.platform == "win32":
+            import subprocess
+            result = subprocess.run(
+                ["wmic", "process", "where", f"ProcessId={pid}", "get", "CommandLine", "/value"],
+                capture_output=True, text=True, timeout=5
+            )
+            return "blender-mcp" in result.stdout or "blender_mcp" in result.stdout
+        else:
+            cmdline_path = f"/proc/{pid}/cmdline"
+            if os.path.exists(cmdline_path):
+                with open(cmdline_path, "r") as f:
+                    cmdline = f.read()
+                return "blender-mcp" in cmdline or "blender_mcp" in cmdline
+    except Exception:
+        pass
+    return False
+
+
+def _cleanup_windows(current_pid: int) -> int:
+    """Windows 平台清理僵尸进程"""
+    killed = 0
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["wmic", "process", "where", "Name='python.exe'", "get", "ProcessId,CommandLine", "/value"],
+            capture_output=True, text=True, timeout=10
+        )
+        
+        # 解析 WMIC 输出
+        entries = result.stdout.split("\n\n")
+        pid = None
+        cmdline = ""
+        
+        for entry in entries:
+            for line in entry.strip().split("\n"):
+                line = line.strip()
+                if line.startswith("CommandLine="):
+                    cmdline = line[len("CommandLine="):]
+                elif line.startswith("ProcessId="):
+                    try:
+                        pid = int(line[len("ProcessId="):])
+                    except ValueError:
+                        pid = None
+            
+            if pid and pid != current_pid and ("blender-mcp" in cmdline or "blender_mcp" in cmdline):
+                try:
+                    os.kill(pid, signal.SIGTERM)
+                    killed += 1
+                    console.print(f"[yellow]已终止残留进程 PID={pid}[/yellow]", highlight=False)
+                except (ProcessLookupError, PermissionError, OSError):
+                    pass
+            
+            pid = None
+            cmdline = ""
+    except Exception:
+        pass
+    return killed
+
+
+def _cleanup_unix(current_pid: int) -> int:
+    """Unix/macOS 平台清理僵尸进程"""
+    killed = 0
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["pgrep", "-f", "blender.mcp"],
+            capture_output=True, text=True, timeout=5
+        )
+        for line in result.stdout.strip().split("\n"):
+            if not line.strip():
+                continue
+            try:
+                pid = int(line.strip())
+                if pid != current_pid:
+                    os.kill(pid, signal.SIGTERM)
+                    killed += 1
+                    console.print(f"[yellow]已终止残留进程 PID={pid}[/yellow]", highlight=False)
+            except (ValueError, ProcessLookupError, PermissionError, OSError):
+                pass
+    except Exception:
+        pass
+    return killed
+
+
+def _write_pid_file():
+    """写入当前进程 PID 文件"""
+    try:
+        pid_file = _get_pid_file()
+        pid_file.write_text(str(os.getpid()))
+    except OSError:
+        pass
+
+
+def _remove_pid_file():
+    """删除 PID 文件"""
+    try:
+        pid_file = _get_pid_file()
+        if pid_file.exists():
+            pid_file.unlink()
+    except OSError:
+        pass
 
 
 def setup_logging(level: str) -> None:
@@ -64,6 +217,15 @@ def main(
     if ctx.invoked_subcommand is None:
         setup_logging(log_level)
         
+        # === 启动前清理僵尸进程 ===
+        killed = _cleanup_zombie_processes()
+        if killed > 0:
+            console.print(f"[yellow]已清理 {killed} 个残留进程[/yellow]")
+        
+        # === 写入 PID 文件 + 注册退出钩子 ===
+        _write_pid_file()
+        atexit.register(_remove_pid_file)
+        
         server = BlenderMCPServer(
             blender_host=host,
             blender_port=port
@@ -73,18 +235,20 @@ def main(
             if transport == "stdio":
                 # stdio 模式：stdout 用于 MCP 协议，日志输出到 stderr
                 console.print(f"[green]启动 Blender MCP 服务器 (stdio 模式)[/green]")
-                console.print(f"[dim]Blender 连接: {host}:{port}[/dim]")
+                console.print(f"[dim]Blender 连接: {host}:{port} | PID: {os.getpid()}[/dim]")
                 server.run_stdio()  # 同步调用
             else:
                 console.print(f"[green]启动 Blender MCP 服务器 (HTTP 模式)[/green]")
                 console.print(f"[dim]HTTP 端口: {http_port}[/dim]")
-                console.print(f"[dim]Blender 连接: {host}:{port}[/dim]")
+                console.print(f"[dim]Blender 连接: {host}:{port} | PID: {os.getpid()}[/dim]")
                 server.run_http(http_port)  # 同步调用
         except KeyboardInterrupt:
             console.print("\n[yellow]服务器已停止[/yellow]")
         except Exception as e:
             console.print(f"[red]错误: {e}[/red]")
             sys.exit(1)
+        finally:
+            _remove_pid_file()
 
 
 @main.command()

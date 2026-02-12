@@ -2,60 +2,26 @@
 Blender MCP Server - 主服务器模块
 
 实现 MCP 协议，注册所有工具，处理请求和响应。
+
+工具模块配置:
+- 编辑 tools_config.py 中的 TOOL_PROFILE 来控制启用的工具数量
+- "skill": ~31个工具 + 按需加载 (推荐)
+- "minimal": ~30个工具 (仅核心功能)
+- "focused": ~82个工具
+- "standard": ~146个工具
+- "full": ~319个工具 (所有功能)
 """
 
-import asyncio
 import logging
 from typing import Any, Optional
 
 from mcp.server.fastmcp import FastMCP
 
 from blender_mcp.connection import BlenderConnection
-from blender_mcp.tools import (
-    register_scene_tools,
-    register_object_tools,
-    register_modeling_tools,
-    register_material_tools,
-    register_lighting_tools,
-    register_camera_tools,
-    register_animation_tools,
-    register_character_tools,
-    register_rigging_tools,
-    register_render_tools,
-    register_utility_tools,
-    register_export_tools,
-    register_character_template_tools,
-    register_auto_rig_tools,
-    register_animation_preset_tools,
-    register_physics_tools,
-    register_scene_advanced_tools,
-    register_batch_tools,
-    register_curve_tools,
-    register_uv_tools,
-    register_node_tools,
-    register_compositor_tools,
-    register_video_editing_tools,
-    register_sculpting_tools,
-    register_texture_painting_tools,
-    register_grease_pencil_tools,
-    register_simulation_tools,
-    register_hair_tools,
-    register_asset_tools,
-    register_addon_tools,
-    register_world_tools,
-    register_constraint_tools,
-    register_mocap_tools,
-    register_preferences_tools,
-    register_external_tools,
-    register_ai_assist_tools,
-    register_versioning_tools,
-    register_ai_generation_tools,
-    register_vr_ar_tools,
-    register_substance_tools,
-    register_zbrush_tools,
-    register_cloud_render_tools,
-    register_collaboration_tools,
-)
+from blender_mcp.tools_config import get_enabled_modules, MODULE_REGISTRY, TOOL_PROFILE
+
+# 动态导入启用的工具模块
+import importlib
 
 logger = logging.getLogger(__name__)
 
@@ -92,10 +58,21 @@ class BlenderMCPServer:
         # Blender 连接（延迟初始化）
         self._connection: Optional[BlenderConnection] = None
         
+        # Skill 管理器（延迟初始化，仅在 skill profile 下使用）
+        self._skill_manager = None
+        
         # 注册所有工具
         self._register_tools()
         
         logger.info(f"Blender MCP 服务器初始化完成: {name}")
+    
+    @property
+    def skill_manager(self):
+        """获取 Skill 管理器实例（仅 skill profile 下可用）"""
+        if self._skill_manager is None:
+            from blender_mcp.skill_manager import SkillManager
+            self._skill_manager = SkillManager(self)
+        return self._skill_manager
     
     @property
     def connection(self) -> BlenderConnection:
@@ -108,137 +85,46 @@ class BlenderMCPServer:
         return self._connection
     
     def _register_tools(self) -> None:
-        """注册所有 MCP 工具"""
-        # 场景管理工具
-        register_scene_tools(self.mcp, self)
+        """注册启用的 MCP 工具模块
         
-        # 对象操作工具
-        register_object_tools(self.mcp, self)
+        根据 tools_config.py 中的 TOOL_PROFILE 设置动态加载模块。
+        可以通过修改 TOOL_PROFILE 来控制工具数量：
+        - "skill": ~31个工具 + 按需加载 (推荐)
+        - "minimal": ~30个工具
+        - "focused": ~82个工具
+        - "standard": ~146个工具
+        - "full": ~319个工具
+        """
+        enabled_modules = get_enabled_modules()
+        loaded_count = 0
         
-        # 建模工具
-        register_modeling_tools(self.mcp, self)
+        logger.info(f"工具配置: {TOOL_PROFILE} (启用 {len(enabled_modules)} 个模块)")
         
-        # 材质工具
-        register_material_tools(self.mcp, self)
+        for module_name in enabled_modules:
+            if module_name not in MODULE_REGISTRY:
+                logger.warning(f"未知模块: {module_name}")
+                continue
+            
+            register_func_name = MODULE_REGISTRY[module_name]
+            
+            try:
+                # 动态导入模块
+                tool_module = importlib.import_module(f"blender_mcp.tools.{module_name}")
+                register_func = getattr(tool_module, register_func_name)
+                
+                # 调用注册函数
+                register_func(self.mcp, self)
+                loaded_count += 1
+                logger.debug(f"已加载模块: {module_name}")
+                
+            except ImportError as e:
+                logger.warning(f"无法导入模块 {module_name}: {e}")
+            except AttributeError as e:
+                logger.warning(f"模块 {module_name} 缺少注册函数 {register_func_name}: {e}")
+            except Exception as e:
+                logger.warning(f"加载模块 {module_name} 失败: {e}")
         
-        # 灯光工具
-        register_lighting_tools(self.mcp, self)
-        
-        # 相机工具
-        register_camera_tools(self.mcp, self)
-        
-        # 动画工具
-        register_animation_tools(self.mcp, self)
-        
-        # 角色系统工具
-        register_character_tools(self.mcp, self)
-        
-        # 骨骼绑定工具
-        register_rigging_tools(self.mcp, self)
-        
-        # 渲染工具
-        register_render_tools(self.mcp, self)
-        
-        # 实用工具
-        register_utility_tools(self.mcp, self)
-        
-        # 导出工具
-        register_export_tools(self.mcp, self)
-        
-        # 角色模板工具
-        register_character_template_tools(self.mcp, self)
-        
-        # 自动骨骼绑定工具
-        register_auto_rig_tools(self.mcp, self)
-        
-        # 预设动画工具
-        register_animation_preset_tools(self.mcp, self)
-        
-        # 物理模拟工具
-        register_physics_tools(self.mcp, self)
-        
-        # 场景增强工具
-        register_scene_advanced_tools(self.mcp, self)
-        
-        # 批量处理工具
-        register_batch_tools(self.mcp, self)
-        
-        # 曲线建模工具
-        register_curve_tools(self.mcp, self)
-        
-        # UV映射工具
-        register_uv_tools(self.mcp, self)
-        
-        # 节点系统工具
-        register_node_tools(self.mcp, self)
-        
-        # 合成器工具
-        register_compositor_tools(self.mcp, self)
-        
-        # 视频编辑工具
-        register_video_editing_tools(self.mcp, self)
-        
-        # 雕刻工具
-        register_sculpting_tools(self.mcp, self)
-        
-        # 纹理绘制工具
-        register_texture_painting_tools(self.mcp, self)
-        
-        # 油笔/2D动画工具
-        register_grease_pencil_tools(self.mcp, self)
-        
-        # 高级模拟工具（流体、烟雾、海洋）
-        register_simulation_tools(self.mcp, self)
-        
-        # 毛发系统工具
-        register_hair_tools(self.mcp, self)
-        
-        # 资产管理工具
-        register_asset_tools(self.mcp, self)
-        
-        # 插件管理工具
-        register_addon_tools(self.mcp, self)
-        
-        # 世界/环境工具
-        register_world_tools(self.mcp, self)
-        
-        # 约束系统工具
-        register_constraint_tools(self.mcp, self)
-        
-        # 动作捕捉工具
-        register_mocap_tools(self.mcp, self)
-        
-        # 偏好设置工具
-        register_preferences_tools(self.mcp, self)
-        
-        # 外部集成工具
-        register_external_tools(self.mcp, self)
-        
-        # AI辅助工具
-        register_ai_assist_tools(self.mcp, self)
-        
-        # 版本控制工具
-        register_versioning_tools(self.mcp, self)
-        
-        # AI生成工具
-        register_ai_generation_tools(self.mcp, self)
-        
-        # VR/AR工具
-        register_vr_ar_tools(self.mcp, self)
-        
-        # Substance连接工具
-        register_substance_tools(self.mcp, self)
-        
-        # ZBrush连接工具
-        register_zbrush_tools(self.mcp, self)
-        
-        # 云渲染工具
-        register_cloud_render_tools(self.mcp, self)
-        
-        # 协作工具
-        register_collaboration_tools(self.mcp, self)
-        
-        logger.info("所有工具注册完成")
+        logger.info(f"工具注册完成: 加载了 {loaded_count}/{len(enabled_modules)} 个模块")
     
     async def execute_command(
         self,
@@ -288,6 +174,8 @@ class BlenderMCPServer:
             port: HTTP 服务端口
         """
         logger.info(f"启动 HTTP 传输，端口: {port}")
+        # FastMCP 的 run() 不接收端口参数，需要通过 settings 注入
+        self.mcp.settings.port = port
         self.mcp.run(transport="streamable-http")
     
     async def shutdown(self) -> None:

@@ -79,6 +79,20 @@ class ObjectCreateInput(BaseModel):
         default=None,
         description="缩放 [x, y, z]"
     )
+    mesh_params: Optional[dict] = Field(
+        default=None,
+        description="网格创建参数(可选)。可用参数取决于类型: "
+                    "SPHERE/UV_SPHERE: segments(int,默认32), ring_count(int,默认16), radius(float,默认1); "
+                    "ICO_SPHERE: subdivisions(int,默认2), radius(float,默认1); "
+                    "CYLINDER: vertices(int,默认32), radius(float,默认1), depth(float,默认2), fill_type(str: NGON/TRIS/NOTHING); "
+                    "CONE: vertices(int,默认32), radius1(float,默认1), radius2(float,默认0), depth(float,默认2), fill_type(str); "
+                    "TORUS: major_segments(int,默认48), minor_segments(int,默认12), major_radius(float,默认1), minor_radius(float,默认0.25); "
+                    "CIRCLE: vertices(int,默认32), radius(float,默认1), fill_type(str: NGON/TRIS/NOTHING); "
+                    "GRID: x_subdivisions(int,默认10), y_subdivisions(int,默认10), size(float,默认2); "
+                    "CUBE: size(float,默认2); "
+                    "PLANE: size(float,默认2). "
+                    "Low Poly风格建议: segments=6~12, subdivisions=1~2"
+    )
     
     @field_validator("location", "rotation", "scale")
     @classmethod
@@ -216,7 +230,8 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "name": params.name,
                 "location": params.location or [0, 0, 0],
                 "rotation": params.rotation or [0, 0, 0],
-                "scale": params.scale or [1, 1, 1]
+                "scale": params.scale or [1, 1, 1],
+                "mesh_params": params.mesh_params or {}
             }
         )
         

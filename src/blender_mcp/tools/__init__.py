@@ -47,6 +47,10 @@ from blender_mcp.tools.substance import register_substance_tools
 from blender_mcp.tools.zbrush import register_zbrush_tools
 from blender_mcp.tools.cloud_render import register_cloud_render_tools
 from blender_mcp.tools.collaboration import register_collaboration_tools
+from blender_mcp.tools.mesh_edit_advanced import register_mesh_edit_advanced_tools
+from blender_mcp.tools.style_presets import register_style_preset_tools
+from blender_mcp.tools.procedural_materials import register_procedural_material_tools
+from blender_mcp.tools.skills import register_skill_tools
 
 __all__ = [
     "register_scene_tools",
@@ -92,4 +96,8 @@ __all__ = [
     "register_zbrush_tools",
     "register_cloud_render_tools",
     "register_collaboration_tools",
+    "register_mesh_edit_advanced_tools",
+    "register_style_preset_tools",
+    "register_procedural_material_tools",
+    "register_skill_tools",
 ]
