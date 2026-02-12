@@ -8,40 +8,41 @@
 
 ### Overview
 
-Blender MCP (Model Context Protocol) enables AI assistants to control Blender directly from IDEs like Cursor, Antigravity, and Windsurf. Create 3D models, characters, animations, and scenes through natural language conversations.
+Blender MCP (Model Context Protocol) enables AI assistants to control Blender directly from IDEs like Cursor, Windsurf, and Claude Desktop. Create 3D models, characters, animations, and scenes through natural language conversations.
 
 ### Features
 
-- **Full Blender Control**: 155+ tools across 43 modules covering all Blender functionality
-- **Multi-IDE Support**: Works with Cursor, Antigravity, Windsurf, and any MCP-compatible IDE
+- **200+ Tools**: Comprehensive Blender control across 26 modules
+- **Skill System**: On-demand tool loading — only ~31 tools at startup, load more as needed (saves 70% context)
+- **Multi-IDE Support**: Works with Cursor, Windsurf, Claude Desktop, and any MCP-compatible IDE
 - **Complete 3D Pipeline**: Modeling, sculpting, UV mapping, texturing, materials, lighting, animation, rendering
-- **Character Creation**: Templates, auto-rigging, facial features, hair systems, clothing
-- **Animation System**: Keyframe animation, motion capture import, physics simulation
-- **Post-Production**: Compositor nodes, video editing (VSE), 2D animation (Grease Pencil)
-- **Game Engine Integration**: Optimized export for Unity, Unreal Engine, and Godot
-- **External Software Integration**: Substance Painter, ZBrush/GoZ connectivity
-- **VR/AR Support**: VR scene setup, stereo cameras, 360° panorama rendering, AR markers
-- **Version Control**: Scene versioning, branching, comparison, and restoration
-- **Cloud Rendering**: Render farm integration, job management, progress monitoring
-- **Real-time Collaboration**: Session hosting, object locking, state synchronization
-- **AI Assistance**: Scene analysis, optimization suggestions, AI-powered texture/material generation
+- **67 Procedural Material Presets**: Metal, wood, stone, fabric, nature, skin, effects, toon
+- **8 Style Presets**: Pixel art → AAA realistic, one-click configuration
+- **Character Creation**: Templates, auto-rigging, facial features, hair systems
+- **Animation System**: Keyframe animation, presets, physics simulation
+- **Game Engine Export**: Optimized export for Unity, Unreal Engine, and Godot (glTF/FBX/OBJ)
+- **45 Modifier Types**: Full parametric modeling support
+- **High-to-Low Poly Baking**: Normal, AO, curvature, and more
 
 ### Quick Start
 
 ```bash
-# Install MCP server
-pip install blender-mcp
+# Clone and install
+git clone https://github.com/your-username/blender-mcp.git
+cd blender-mcp
+uv sync
 
 # Install Blender addon
-python -m blender_mcp install-addon
+python build_addon.py
+# Then in Blender: Edit → Preferences → Add-ons → Install → select dist/blender_mcp_addon.zip
 
-# Configure your IDE (Cursor example)
+# Configure your IDE (Cursor/Windsurf)
 # Create .cursor/mcp.json:
 {
   "mcpServers": {
     "blender": {
-      "command": "python",
-      "args": ["-m", "blender_mcp"]
+      "command": "uv",
+      "args": ["run", "--directory", "/path/to/blender-mcp", "blender-mcp"]
     }
   }
 }
@@ -75,17 +76,23 @@ The addon supports hot reload for development:
 
 ### Documentation
 
-- [Installation Guide](docs/INSTALLATION.md)
-- [Quick Start](docs/QUICKSTART.md)
-- [API Reference](docs/API_REFERENCE.md)
-- [Tutorials](docs/TUTORIALS.md)
-- [Architecture](docs/ARCHITECTURE.md)
+| Document | English | 中文 |
+|----------|---------|------|
+| Quick Start | [QUICKSTART](docs/en/QUICKSTART.md) | [快速开始](docs/zh/QUICKSTART.md) |
+| Installation | [INSTALLATION](docs/en/INSTALLATION.md) | [安装指南](docs/zh/INSTALLATION.md) |
+| Architecture | [ARCHITECTURE](docs/en/ARCHITECTURE.md) | [架构设计](docs/zh/ARCHITECTURE.md) |
+| API Reference | [API_REFERENCE](docs/en/API_REFERENCE.md) | [API 参考](docs/zh/API_REFERENCE.md) |
+| Tutorials | [TUTORIALS](docs/en/TUTORIALS.md) | [教程](docs/zh/TUTORIALS.md) |
+| Skill System Guide | [MCP_SKILL_SYSTEM_GUIDE](docs/en/MCP_SKILL_SYSTEM_GUIDE.md) | [Skill 系统指南](docs/zh/MCP_SKILL_SYSTEM_GUIDE.md) |
+| Contributing | [CONTRIBUTING](docs/en/CONTRIBUTING.md) | [贡献指南](docs/zh/CONTRIBUTING.md) |
+| Changelog | [CHANGELOG](docs/en/CHANGELOG.md) | [更新日志](docs/zh/CHANGELOG.md) |
+| Roadmap | [ROADMAP](docs/en/ROADMAP.md) | [路线图](docs/zh/ROADMAP.md) |
 
 ### Requirements
 
 - Python 3.10+
 - Blender 4.0+ (5.0+ recommended)
-- MCP-compatible IDE
+- MCP-compatible IDE (Cursor, Windsurf, Claude Desktop)
 
 ### License
 
@@ -97,40 +104,41 @@ MIT License
 
 ### 概述
 
-Blender MCP（模型上下文协议）使 AI 助手能够从 Cursor、Antigravity、Windsurf 等 IDE 中直接控制 Blender。通过自然语言对话创建 3D 模型、角色、动画和场景。
+Blender MCP（模型上下文协议）使 AI 助手能够从 Cursor、Windsurf、Claude Desktop 等 IDE 中直接控制 Blender。通过自然语言对话创建 3D 模型、角色、动画和场景。
 
 ### 功能特性
 
-- **完整的 Blender 控制**：155+ 工具，43 个模块，覆盖 Blender 所有功能
-- **多 IDE 支持**：支持 Cursor、Antigravity、Windsurf 及任何兼容 MCP 的 IDE
+- **200+ 工具**：26 个模块全面覆盖 Blender 功能
+- **Skill 系统**：按需加载工具——启动仅 ~31 个工具，按需加载更多（节省 70% 上下文）
+- **多 IDE 支持**：支持 Cursor、Windsurf、Claude Desktop 及任何兼容 MCP 的 IDE
 - **完整 3D 流程**：建模、雕刻、UV展开、纹理绘制、材质、灯光、动画、渲染
-- **角色创建**：模板、自动绑定、面部特征、毛发系统、服装
-- **动画系统**：关键帧动画、动作捕捉导入、物理模拟
-- **后期制作**：合成器节点、视频编辑（VSE）、2D动画（油笔）
-- **游戏引擎集成**：优化导出到 Unity、Unreal Engine、Godot
-- **外部软件集成**：Substance Painter、ZBrush/GoZ 连接
-- **VR/AR 支持**：VR 场景配置、立体相机、360° 全景渲染、AR 标记
-- **版本控制**：场景版本管理、分支、比较、恢复
-- **云渲染**：渲染农场集成、任务管理、进度监控
-- **实时协作**：会话托管、对象锁定、状态同步
-- **AI 辅助**：场景分析、优化建议、AI 驱动的纹理/材质生成
+- **67 种程序化材质预设**：金属、木纹、石材、织物、自然、皮肤、特效、卡通
+- **8 种风格预设**：像素风→3A写实，一键配置
+- **角色创建**：模板、自动绑定、面部特征、毛发系统
+- **动画系统**：关键帧动画、预设、物理模拟
+- **游戏引擎导出**：优化导出到 Unity、Unreal Engine、Godot（glTF/FBX/OBJ）
+- **45 种修改器类型**：完整参数化建模支持
+- **高低模烘焙**：法线、AO、曲率等贴图烘焙
 
 ### 快速开始
 
 ```bash
-# 安装 MCP 服务器
-pip install blender-mcp
+# 克隆并安装
+git clone https://github.com/your-username/blender-mcp.git
+cd blender-mcp
+uv sync
 
 # 安装 Blender 插件
-python -m blender_mcp install-addon
+python build_addon.py
+# 然后在 Blender 中：编辑 → 偏好设置 → 插件 → 安装 → 选择 dist/blender_mcp_addon.zip
 
-# 配置 IDE（以 Cursor 为例）
+# 配置 IDE（Cursor/Windsurf）
 # 创建 .cursor/mcp.json：
 {
   "mcpServers": {
     "blender": {
-      "command": "python",
-      "args": ["-m", "blender_mcp"]
+      "command": "uv",
+      "args": ["run", "--directory", "/path/to/blender-mcp", "blender-mcp"]
     }
   }
 }
@@ -164,17 +172,23 @@ python build_addon.py
 
 ### 文档
 
-- [安装指南](docs/INSTALLATION.md)
-- [快速开始](docs/QUICKSTART.md)
-- [API 参考](docs/API_REFERENCE.md)
-- [教程](docs/TUTORIALS.md)
-- [架构设计](docs/ARCHITECTURE.md)
+| 文档 | English | 中文 |
+|------|---------|------|
+| 快速开始 | [QUICKSTART](docs/en/QUICKSTART.md) | [快速开始](docs/zh/QUICKSTART.md) |
+| 安装指南 | [INSTALLATION](docs/en/INSTALLATION.md) | [安装指南](docs/zh/INSTALLATION.md) |
+| 架构设计 | [ARCHITECTURE](docs/en/ARCHITECTURE.md) | [架构设计](docs/zh/ARCHITECTURE.md) |
+| API 参考 | [API_REFERENCE](docs/en/API_REFERENCE.md) | [API 参考](docs/zh/API_REFERENCE.md) |
+| 教程 | [TUTORIALS](docs/en/TUTORIALS.md) | [教程](docs/zh/TUTORIALS.md) |
+| Skill 系统 | [MCP_SKILL_SYSTEM_GUIDE](docs/en/MCP_SKILL_SYSTEM_GUIDE.md) | [Skill 系统指南](docs/zh/MCP_SKILL_SYSTEM_GUIDE.md) |
+| 贡献指南 | [CONTRIBUTING](docs/en/CONTRIBUTING.md) | [贡献指南](docs/zh/CONTRIBUTING.md) |
+| 更新日志 | [CHANGELOG](docs/en/CHANGELOG.md) | [更新日志](docs/zh/CHANGELOG.md) |
+| 路线图 | [ROADMAP](docs/en/ROADMAP.md) | [路线图](docs/zh/ROADMAP.md) |
 
 ### 系统要求
 
 - Python 3.10+
 - Blender 4.0+（推荐 5.0+）
-- 支持 MCP 的 IDE
+- 支持 MCP 的 IDE（Cursor、Windsurf、Claude Desktop）
 
 ### 许可证
 
@@ -186,46 +200,39 @@ MIT 许可证
 
 ```
 blender-mcp/
-├── README.md                 # 项目说明
-├── pyproject.toml           # Python 项目配置
-├── setup.py                 # 安装脚本
-├── LICENSE                  # 许可证
-├── docs/                    # 文档目录
-│   ├── ARCHITECTURE.md      # 架构设计
-│   ├── INSTALLATION.md      # 安装指南
-│   ├── QUICKSTART.md        # 快速开始
-│   ├── API_REFERENCE.md     # API 参考
-│   └── TUTORIALS.md         # 教程
-├── src/
-│   └── blender_mcp/         # MCP 服务器
-│       ├── __init__.py
-│       ├── __main__.py
-│       ├── server.py
-│       ├── connection.py
-│       ├── tools/           # MCP 工具
-│       ├── models/          # 数据模型
-│       └── utils/           # 工具函数
-├── addon/
-│   └── blender_mcp_addon/   # Blender 插件
-│       ├── __init__.py
-│       ├── server.py
-│       ├── executor.py
-│       ├── handlers/        # 命令处理器
-│       ├── operators/       # Blender 操作符
-│       ├── panels/          # UI 面板
-│       └── utils/           # 工具函数
-└── tests/                   # 测试
-    ├── test_server.py
-    └── test_tools.py
+├── README.md                 # Project README
+├── pyproject.toml            # Python project config
+├── build_addon.py            # Addon build script
+├── LICENSE                   # MIT License
+├── docs/
+│   ├── en/                   # English documentation
+│   └── zh/                   # 中文文档
+├── src/blender_mcp/          # MCP Server
+│   ├── server.py             # Main server class
+│   ├── connection.py         # Blender TCP connection
+│   ├── skill_manager.py      # Dynamic skill system
+│   ├── tools_config.py       # Tool profile config
+│   └── tools/                # MCP tool modules (26+)
+│       ├── skills.py         # Skill meta-tools
+│       ├── scene.py          # Scene management
+│       ├── object.py         # Object operations
+│       ├── modeling.py       # Mesh editing
+│       └── ...               # More modules
+├── addon/blender_mcp_addon/  # Blender Addon
+│   ├── server.py             # TCP server
+│   ├── executor.py           # Command dispatcher
+│   ├── handlers/             # Blender API handlers
+│   ├── operators/            # Blender operators
+│   └── panels/               # UI panels
 ```
 
 ## Contributing / 贡献
 
-Contributions are welcome! Please read our contributing guidelines first.
+Contributions are welcome! Please read our [Contributing Guide](docs/en/CONTRIBUTING.md).
 
-欢迎贡献代码！请先阅读贡献指南。
+欢迎贡献代码！请阅读[贡献指南](docs/zh/CONTRIBUTING.md)。
 
 ## Support / 支持
 
-- GitHub Issues: Report bugs or request features
-- Discussions: Ask questions and share ideas
+- **GitHub Issues**: Report bugs or request features / 报告 Bug 或提交功能需求
+- **Discussions**: Ask questions and share ideas / 提问和分享想法
