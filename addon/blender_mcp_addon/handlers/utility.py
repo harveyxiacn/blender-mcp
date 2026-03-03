@@ -10,17 +10,50 @@ import os
 import tempfile
 
 
+MAX_CODE_SIZE = 100_000
+
+BLOCKED_PATTERNS = [
+    "subprocess", "Popen",
+    "socket.connect", "socket.bind",
+    "shutil.rmtree",
+    "os.remove", "os.unlink", "os.rmdir", "os.removedirs",
+    "__import__('subprocess",
+    "__import__('socket",
+]
+
+
+def _check_code_safety(code: str) -> str | None:
+    """Check for dangerous patterns. Returns warning message or None."""
+    if len(code) > MAX_CODE_SIZE:
+        return f"代码超过大小限制 ({MAX_CODE_SIZE} 字符)"
+    
+    for pattern in BLOCKED_PATTERNS:
+        if pattern in code:
+            return f"检测到危险操作: {pattern}"
+    
+    return None
+
+
 def handle_execute_python(params: Dict[str, Any]) -> Dict[str, Any]:
-    """执行 Python 代码"""
+    """执行 Python 代码（含安全检查）"""
     code = params.get("code", "")
     
-    # 注意：这是一个危险操作，实际使用时应该添加安全检查
+    if not code.strip():
+        return {
+            "success": False,
+            "error": {"code": "EMPTY_CODE", "message": "代码为空"}
+        }
+    
+    warning = _check_code_safety(code)
+    if warning:
+        return {
+            "success": False,
+            "error": {"code": "SAFETY_CHECK_FAILED", "message": warning}
+        }
     
     try:
-        # 创建执行环境 (单一命名空间, 确保函数可访问所有导入)
         exec_globals = {"bpy": bpy, "__builtins__": __builtins__}
         
-        # 捕获输出
         import io
         import sys
         old_stdout = sys.stdout

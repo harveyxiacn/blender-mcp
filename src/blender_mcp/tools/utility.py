@@ -45,6 +45,11 @@ class GetBlenderInfoInput(BaseModel):
     pass
 
 
+class ConnectionStatusInput(BaseModel):
+    """连接状态查询输入"""
+    pass
+
+
 class UndoInput(BaseModel):
     """撤销输入"""
     steps: int = Field(default=1, description="撤销步数", ge=1, le=100)
@@ -277,3 +282,45 @@ def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             return f"已重做 {params.steps} 步操作"
         else:
             return f"重做失败: {result.get('error', {}).get('message', '未知错误')}"
+    
+    @mcp.tool(
+        name="blender_connection_status",
+        annotations={
+            "title": "查询连接状态",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False
+        }
+    )
+    async def blender_connection_status(params: ConnectionStatusInput) -> str:
+        """查询当前与 Blender 的连接状态和统计信息。
+        
+        可用于诊断连接问题、确认 Blender 是否在线。
+        
+        Returns:
+            连接状态信息
+        """
+        conn = server.connection
+        stats = conn.stats
+        
+        lines = ["# Blender 连接状态", ""]
+        lines.append(f"- **状态**: {'已连接' if stats['connected'] else '未连接'}")
+        lines.append(f"- **地址**: {stats['host']}:{stats['port']}")
+        lines.append(f"- **总命令数**: {stats['total_commands']}")
+        lines.append(f"- **失败命令数**: {stats['failed_commands']}")
+        lines.append(f"- **重连次数**: {stats['reconnect_count']}")
+        lines.append(f"- **待处理请求**: {stats['pending_requests']}")
+        
+        if stats['connected']:
+            try:
+                info = await conn.get_blender_info()
+                lines.append("")
+                lines.append("## Blender 信息")
+                lines.append(f"- **版本**: {info.get('version_string', '未知')}")
+                lines.append(f"- **场景**: {info.get('scene', '未知')}")
+                lines.append(f"- **对象数**: {info.get('objects_count', 0)}")
+            except Exception:
+                lines.append("\n*无法获取 Blender 详细信息*")
+        
+        return "\n".join(lines)

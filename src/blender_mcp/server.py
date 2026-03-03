@@ -19,6 +19,7 @@ from mcp.server.fastmcp import FastMCP
 
 from blender_mcp.connection import BlenderConnection
 from blender_mcp.tools_config import get_enabled_modules, MODULE_REGISTRY, TOOL_PROFILE
+from blender_mcp import config
 
 # 动态导入启用的工具模块
 import importlib
@@ -38,8 +39,8 @@ class BlenderMCPServer:
     
     def __init__(
         self,
-        blender_host: str = "127.0.0.1",
-        blender_port: int = 9876,
+        blender_host: str = config.BLENDER_HOST,
+        blender_port: int = config.BLENDER_PORT,
         name: str = "blender_mcp"
     ):
         """初始化服务器

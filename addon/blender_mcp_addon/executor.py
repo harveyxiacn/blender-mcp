@@ -105,10 +105,18 @@ class CommandExecutor:
         }
     
     def handle_execute_python(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """在Blender中执行Python代码"""
+        """在 Blender 中执行 Python 代码（含安全检查）"""
         code = params.get("code", "")
         if not code:
             return {"success": False, "error": {"code": "MISSING_CODE", "message": "缺少code参数"}}
+        
+        from .handlers.utility import _check_code_safety
+        warning = _check_code_safety(code)
+        if warning:
+            return {
+                "success": False,
+                "error": {"code": "SAFETY_CHECK_FAILED", "message": warning}
+            }
         
         try:
             local_vars = {"bpy": bpy, "result": None}

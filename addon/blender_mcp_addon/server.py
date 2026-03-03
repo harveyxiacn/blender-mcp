@@ -195,7 +195,10 @@ class MCPServer:
         params: Dict[str, Any]
     ) -> Dict[str, Any]:
         """在 Blender 主线程中执行命令"""
-        result_container = {"result": None, "done": False}
+        import time
+        
+        done_event = threading.Event()
+        result_container: Dict[str, Any] = {"result": None}
         raw_timeout = params.get("timeout", 30.0)
         try:
             timeout = float(raw_timeout)
@@ -217,25 +220,18 @@ class MCPServer:
                     }
                 }
             finally:
-                result_container["done"] = True
+                done_event.set()
         
-        # 使用 bpy.app.timers 在主线程中执行
         bpy.app.timers.register(execute, first_interval=0)
         
-        # 等待执行完成
-        import time
-        start_time = time.time()
-        
-        while not result_container["done"]:
-            if time.time() - start_time > timeout:
-                return {
-                    "success": False,
-                    "error": {
-                        "code": "TIMEOUT",
-                        "message": "命令执行超时"
-                    }
+        if not done_event.wait(timeout=timeout):
+            return {
+                "success": False,
+                "error": {
+                    "code": "TIMEOUT",
+                    "message": "命令执行超时"
                 }
-            time.sleep(0.01)
+            }
         
         return result_container["result"]
 
@@ -244,14 +240,14 @@ class MCPServer:
 _server: Optional[MCPServer] = None
 
 
-def start_server(port: int = 9876) -> bool:
+def start_server(host: str = "127.0.0.1", port: int = 9876) -> bool:
     """启动 MCP 服务器"""
     global _server
     
     if _server and _server.running:
         return True
     
-    _server = MCPServer(port=port)
+    _server = MCPServer(host=host, port=port)
     return _server.start()
 
 

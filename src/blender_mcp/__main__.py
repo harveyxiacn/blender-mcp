@@ -29,6 +29,7 @@ from rich.logging import RichHandler
 
 from blender_mcp import __version__
 from blender_mcp.server import BlenderMCPServer
+from blender_mcp import config
 
 # 使用 stderr 避免干扰 MCP stdio 通信
 console = Console(file=sys.stderr)
@@ -194,11 +195,11 @@ def setup_logging(level: str) -> None:
 
 
 @click.group(invoke_without_command=True)
-@click.option("--host", default="127.0.0.1", help="Blender 连接主机")
-@click.option("--port", default=9876, help="Blender 连接端口")
+@click.option("--host", default=config.BLENDER_HOST, help="Blender 连接主机")
+@click.option("--port", default=config.BLENDER_PORT, help="Blender 连接端口")
 @click.option("--transport", default="stdio", type=click.Choice(["stdio", "http"]), help="传输方式")
-@click.option("--http-port", default=8080, help="HTTP 服务端口")
-@click.option("--log-level", default="INFO", type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"]), help="日志级别")
+@click.option("--http-port", default=config.MCP_HTTP_PORT, help="HTTP 服务端口")
+@click.option("--log-level", default=config.LOG_LEVEL, type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"]), help="日志级别")
 @click.version_option(version=__version__, prog_name="blender-mcp")
 @click.pass_context
 def main(
