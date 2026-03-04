@@ -238,6 +238,36 @@ EDGE_WEAR(边缘磨损), SCRATCHES(划痕), RUST(锈蚀), DIRT(污渍), DUST(灰
 - 卡通渲染: 平面光 + 纯色背景 + Freestyle描边
 """,
     ),
+
+    "automation": SkillInfo(
+        name="automation",
+        description="自动化生产线 - 一键生成角色/道具/场景 + 质量审计闭环",
+        modules=["pipeline", "quality_audit", "style_presets", "procedural_materials"],
+        estimated_tools=12,
+        tags=["automation", "pipeline", "quality", "style", "production"],
+        workflow_guide="""## Automation Skill 工作流指引
+
+### 推荐全自动流程:
+1. `blender_pipeline_generate_character` 生成角色主体（模板/服装/配饰/自动绑定）
+2. `blender_pipeline_generate_prop` 批量生成道具（含程序化材质与UV）
+3. `blender_pipeline_assemble_scene` 自动完成环境、灯光、相机和渲染参数
+4. `blender_quality_audit_full` 进行拓扑 + UV + 性能审计并输出最终评分
+
+### 多风格落地建议:
+- 像素/低模: style=PIXEL/LOW_POLY + quality_target=draft/production
+- 二次元/卡通: style=TOON/STYLIZED + outline + GENSHIN_STYLE/TOON 系材质
+- 写实/3A: style=PBR_REALISTIC/AAA + 更高采样 + 质量审计目标平台设为 desktop/aaa
+
+### 质量门禁建议:
+- Topology: N-gon/non-manifold/loose verts 清零或接近零
+- UV: 平均评分 >= 80，重叠面最小化
+- Performance: 不超过目标平台 triangles/draw calls 预算
+
+### 提示:
+- 该 Skill 聚焦“自动生成 + 自动审计”，适合批量资产生产和持续迭代
+- 如需细节手工打磨，可再激活 modeling/materials/advanced_3d Skills
+""",
+    ),
     
     "physics": SkillInfo(
         name="physics",
@@ -353,6 +383,28 @@ class SkillManager:
     
     def is_active(self, skill_name: str) -> bool:
         return skill_name in self._active_skills
+
+    def _tool_names_snapshot(self) -> set[str]:
+        """获取当前已注册工具名快照（同步方式）。"""
+        tool_manager = getattr(self.server.mcp, "_tool_manager", None)
+        tools = getattr(tool_manager, "_tools", None)
+        if isinstance(tools, dict):
+            return set(tools.keys())
+        return set()
+
+    def _remove_tool_by_name(self, tool_name: str) -> bool:
+        """移除已注册工具，兼容不同 FastMCP 版本。"""
+        remove_tool = getattr(self.server.mcp, "remove_tool", None)
+        if callable(remove_tool):
+            remove_tool(tool_name)
+            return True
+
+        tool_manager = getattr(self.server.mcp, "_tool_manager", None)
+        tools = getattr(tool_manager, "_tools", None)
+        if isinstance(tools, dict) and tool_name in tools:
+            del tools[tool_name]
+            return True
+        return False
     
     def activate_skill(self, skill_name: str) -> tuple[bool, str, list[str]]:
         """激活一个 Skill, 动态注册其工具模块
@@ -385,13 +437,13 @@ class SkillManager:
                 register_func = getattr(tool_module, register_func_name)
                 
                 # 记录注册前的工具列表
-                before = set(t.name for t in self.server.mcp.list_tools())
+                before = self._tool_names_snapshot()
                 
                 # 调用注册函数
                 register_func(self.server.mcp, self.server)
                 
                 # 计算新注册的工具
-                after = set(t.name for t in self.server.mcp.list_tools())
+                after = self._tool_names_snapshot()
                 new_tools = after - before
                 registered_tools.extend(new_tools)
                 
@@ -418,8 +470,10 @@ class SkillManager:
         
         for tool_name in tool_names:
             try:
-                self.server.mcp.remove_tool(tool_name)
-                removed.append(tool_name)
+                if self._remove_tool_by_name(tool_name):
+                    removed.append(tool_name)
+                else:
+                    logger.warning(f"Could not remove tool '{tool_name}': tool not found")
             except Exception as e:
                 logger.warning(f"Could not remove tool '{tool_name}': {e}")
         

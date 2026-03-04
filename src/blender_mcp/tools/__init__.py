@@ -50,6 +50,8 @@ from blender_mcp.tools.collaboration import register_collaboration_tools
 from blender_mcp.tools.mesh_edit_advanced import register_mesh_edit_advanced_tools
 from blender_mcp.tools.style_presets import register_style_preset_tools
 from blender_mcp.tools.procedural_materials import register_procedural_material_tools
+from blender_mcp.tools.pipeline import register_pipeline_tools
+from blender_mcp.tools.quality_audit import register_quality_audit_tools
 from blender_mcp.tools.skills import register_skill_tools
 
 __all__ = [
@@ -99,5 +101,7 @@ __all__ = [
     "register_mesh_edit_advanced_tools",
     "register_style_preset_tools",
     "register_procedural_material_tools",
+    "register_pipeline_tools",
+    "register_quality_audit_tools",
     "register_skill_tools",
 ]

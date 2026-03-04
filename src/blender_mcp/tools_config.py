@@ -15,9 +15,9 @@ Tool Module Configuration - Control which tool modules are enabled
 # 
 # 推荐配置:
 # - "skill": ~31个工具 + 按需加载 - AI驱动的动态工具管理 (推荐)
-# - "focused": ~82个工具 - 满足大多数自动化需求
-# - "standard": ~146个工具 - 包含角色和场景功能
-# - "full": ~319个工具 - 完整功能
+# - "focused": ~89个工具 - 满足大多数自动化需求
+# - "standard": ~153个工具 - 包含角色和场景功能
+# - "full": ~326个工具 - 完整功能
 TOOL_PROFILE = "skill"
 
 # ============================================================
@@ -71,6 +71,12 @@ PHYSICS_MODULES = [
 BATCH_MODULES = [
     "batch",              # 批量工具 (6个工具)
     "assets",             # 资产管理 (5个工具)
+]
+
+# 自动化流程工具 - 一键流程和质量闭环
+AUTOMATION_MODULES = [
+    "pipeline",           # 自动流程 (3个工具) - 角色/道具/场景
+    "quality_audit",      # 质量审计 (4个工具) - 拓扑/UV/性能/综合评分
 ]
 
 # 高级工具 - 专业功能，不常用
@@ -136,7 +142,7 @@ SKILL_MODULES = CORE_MODULES + ["skills"]
 # 最小配置 (~28个工具) - 仅核心功能
 MINIMAL_MODULES = CORE_MODULES
 
-# 聚焦配置 (~72个工具) - 保留完全自动化能力，精简工具数量 (推荐)
+# 聚焦配置 (~89个工具) - 保留完全自动化能力，精简工具数量 (推荐)
 # 核心理念：utility.execute_python 可以执行任意 Python 代码，
 # 所以只需保留最常用的便捷工具，复杂功能通过 execute_python 实现
 FOCUSED_MODULES = [
@@ -163,8 +169,10 @@ FOCUSED_MODULES = [
     
     # 培训系统 (11个)
     "training",           # 培训系统 - 交互式学习与项目实战
+    "pipeline",           # 端到端自动流程
+    "quality_audit",      # 生产质量审计
 ]
-# 总计约82个工具
+# 总计约89个工具
 # 
 # 新增风格覆盖工具说明:
 # - mesh_edit_advanced: inset_faces, bridge, spin, edge_mark, select_by_trait, vertex_group, vertex_color
@@ -172,12 +180,13 @@ FOCUSED_MODULES = [
 # - procedural_materials: 50+程序化材质预设(金属/木材/石材/布料/自然/皮肤/特效/卡通), 磨损效果
 # 注意：动画、灯光、渲染等功能可通过 utility.execute_python 实现
 
-# 标准配置 (~146个工具) - 包含更多便捷功能
+# 标准配置 (~153个工具) - 包含更多便捷功能
 STANDARD_MODULES = (
     CORE_MODULES +
     MODELING_MODULES +
     CHARACTER_MODULES +
-    SCENE_MODULES
+    SCENE_MODULES +
+    AUTOMATION_MODULES
 )
 
 # 扩展配置 (~120个工具) - 包含物理和批处理
@@ -187,7 +196,7 @@ EXTENDED_MODULES = (
     BATCH_MODULES
 )
 
-# 完整配置 (~300个工具) - 所有功能
+# 完整配置 (~326个工具) - 所有功能
 FULL_MODULES = (
     CORE_MODULES +
     MODELING_MODULES +
@@ -195,6 +204,7 @@ FULL_MODULES = (
     SCENE_MODULES +
     PHYSICS_MODULES +
     BATCH_MODULES +
+    AUTOMATION_MODULES +
     ADVANCED_MODULES +
     EXTERNAL_MODULES +
     AI_CLOUD_MODULES +
@@ -299,6 +309,8 @@ MODULE_REGISTRY = {
     "mesh_edit_advanced": "register_mesh_edit_advanced_tools",
     "style_presets": "register_style_preset_tools",
     "procedural_materials": "register_procedural_material_tools",
+    "pipeline": "register_pipeline_tools",
+    "quality_audit": "register_quality_audit_tools",
 }
 
 # Skills 模块不在 MODULE_REGISTRY 中使用常规映射

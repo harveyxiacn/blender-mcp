@@ -162,6 +162,15 @@ class BlenderMCPServer:
                     "message": str(e)
                 }
             }
+
+    async def send_command(
+        self,
+        category: str,
+        action: str,
+        params: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Backward-compatible alias for tool modules using send_command()."""
+        return await self.execute_command(category, action, params)
     
     def run_stdio(self) -> None:
         """以 stdio 模式运行服务器（同步方法）"""

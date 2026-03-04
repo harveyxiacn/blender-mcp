@@ -2,6 +2,7 @@
 
 from blender_mcp.tools_config import (
     CORE_MODULES,
+    FOCUSED_MODULES,
     FULL_MODULES,
     MINIMAL_MODULES,
     MODULE_REGISTRY,
@@ -43,3 +44,14 @@ def test_get_enabled_modules_returns_list():
 
 def test_no_duplicate_modules_in_full():
     assert len(FULL_MODULES) == len(set(FULL_MODULES)), "Duplicate modules in FULL_MODULES"
+
+
+def test_automation_modules_in_registry():
+    assert MODULE_REGISTRY["pipeline"] == "register_pipeline_tools"
+    assert MODULE_REGISTRY["quality_audit"] == "register_quality_audit_tools"
+
+
+def test_automation_modules_in_major_profiles():
+    for profile_modules in (FOCUSED_MODULES, STANDARD_MODULES, FULL_MODULES):
+        assert "pipeline" in profile_modules
+        assert "quality_audit" in profile_modules
