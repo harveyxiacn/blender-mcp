@@ -14,6 +14,28 @@ from typing import Optional, List
 logger = logging.getLogger(__name__)
 
 
+def resolve_addon_source() -> Path:
+    """解析 addon 源码目录。
+
+    优先支持仓库源码布局:
+      repo_root/src/blender_mcp/installer.py
+      repo_root/addon/blender_mcp_addon
+    """
+    module_file = Path(__file__).resolve()
+    candidates = [
+        module_file.parents[2] / "addon" / "blender_mcp_addon",  # repo_root/addon/...
+        module_file.parents[1] / "addon" / "blender_mcp_addon",  # src/addon/... (备用)
+        Path.cwd() / "addon" / "blender_mcp_addon",              # 从仓库根目录运行时的备用路径
+    ]
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+
+    tried = "\n".join(f"  - {path}" for path in candidates)
+    raise FileNotFoundError(f"插件源文件不存在，已尝试路径:\n{tried}")
+
+
 def find_blender_paths() -> List[Path]:
     """查找系统中的 Blender 安装路径"""
     paths = []
@@ -105,14 +127,7 @@ def install_blender_addon(
         是否安装成功
     """
     # 确定源插件路径
-    package_dir = Path(__file__).parent.parent.parent.parent
-    addon_source = package_dir / "addon" / "blender_mcp_addon"
-    
-    if not addon_source.exists():
-        # 尝试从包数据中获取
-        import importlib.resources
-        # 这里需要实现从包数据复制插件的逻辑
-        raise FileNotFoundError(f"插件源文件不存在: {addon_source}")
+    addon_source = resolve_addon_source()
     
     # 确定目标路径
     if blender_path:

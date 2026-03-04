@@ -38,7 +38,7 @@
 
 ```bash
 # 从源码安装
-git clone https://github.com/your-username/blender-mcp.git
+git clone https://github.com/harveyxiacn/blender-mcp.git
 cd blender-mcp
 uv sync
 ```
@@ -52,7 +52,7 @@ pip install blender-mcp
 ### 方式 C：开发安装
 
 ```bash
-git clone https://github.com/your-username/blender-mcp.git
+git clone https://github.com/harveyxiacn/blender-mcp.git
 cd blender-mcp
 pip install -e ".[dev]"
 ```
@@ -199,3 +199,4 @@ python -m blender_mcp --log-level DEBUG
 # 窗口 → 切换系统控制台（Windows）
 # 或从终端启动 Blender（macOS/Linux）
 ```
+

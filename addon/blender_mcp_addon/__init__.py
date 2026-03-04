@@ -12,8 +12,8 @@ bl_info = {
     "location": "View3D > Sidebar > MCP",
     "description": "Enable AI assistants to control Blender through MCP protocol",
     "category": "Interface",
-    "doc_url": "https://github.com/your-username/blender-mcp",
-    "tracker_url": "https://github.com/your-username/blender-mcp/issues",
+    "doc_url": "https://github.com/harveyxiacn/blender-mcp",
+    "tracker_url": "https://github.com/harveyxiacn/blender-mcp/issues",
 }
 
 import bpy
@@ -105,7 +105,7 @@ def hot_reload():
         # 重启服务
         if was_running:
             port = prefs.preferences.port if prefs else 9876
-            server.start_server(port)
+            server.start_server(port=port)
         
         return True, "热更新完成"
         
@@ -211,7 +211,7 @@ def _delayed_start():
         prefs = bpy.context.preferences.addons.get(__name__)
         if prefs:
             port = prefs.preferences.port
-            server.start_server(port)
+            server.start_server(port=port)
     except Exception as e:
         print(f"[MCP] 自动启动服务失败: {e}")
     return None  # 不重复执行
@@ -219,3 +219,4 @@ def _delayed_start():
 
 if __name__ == "__main__":
     register()
+

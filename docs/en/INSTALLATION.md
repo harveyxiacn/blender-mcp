@@ -38,7 +38,7 @@
 
 ```bash
 # Install from source
-git clone https://github.com/your-username/blender-mcp.git
+git clone https://github.com/harveyxiacn/blender-mcp.git
 cd blender-mcp
 uv sync
 ```
@@ -52,7 +52,7 @@ pip install blender-mcp
 ### Option C: Development Install
 
 ```bash
-git clone https://github.com/your-username/blender-mcp.git
+git clone https://github.com/harveyxiacn/blender-mcp.git
 cd blender-mcp
 pip install -e ".[dev]"
 ```
@@ -199,3 +199,4 @@ python -m blender_mcp --log-level DEBUG
 # Window → Toggle System Console (Windows)
 # Or launch Blender from terminal (macOS/Linux)
 ```
+

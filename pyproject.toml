@@ -47,10 +47,10 @@ dev = [
 blender-mcp = "blender_mcp.__main__:main"
 
 [project.urls]
-Homepage = "https://github.com/your-username/blender-mcp"
-Documentation = "https://github.com/your-username/blender-mcp/docs"
-Repository = "https://github.com/your-username/blender-mcp"
-Issues = "https://github.com/your-username/blender-mcp/issues"
+Homepage = "https://github.com/harveyxiacn/blender-mcp"
+Documentation = "https://github.com/harveyxiacn/blender-mcp/docs"
+Repository = "https://github.com/harveyxiacn/blender-mcp"
+Issues = "https://github.com/harveyxiacn/blender-mcp/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -76,3 +76,4 @@ disallow_untyped_defs = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+

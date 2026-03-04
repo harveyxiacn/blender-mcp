@@ -11,7 +11,7 @@
 ### 1. Fork & Clone
 
 ```bash
-git clone https://github.com/your-username/blender-mcp.git
+git clone https://github.com/harveyxiacn/blender-mcp.git
 cd blender-mcp
 ```
 
@@ -56,7 +56,7 @@ addon/blender_mcp_addon/  # Blender 插件
 
 ### 报告 Bug
 
-1. 检查现有 [Issues](https://github.com/your-username/blender-mcp/issues)
+1. 检查现有 [Issues](https://github.com/harveyxiacn/blender-mcp/issues)
 2. 创建新 Issue，包含：
    - Blender 版本
    - Python 版本
@@ -167,3 +167,4 @@ python -m blender_mcp --log-level DEBUG
 ## 许可证
 
 贡献代码即表示同意你的贡献以 MIT 许可证授权。
+

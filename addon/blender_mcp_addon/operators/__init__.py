@@ -18,7 +18,7 @@ class MCP_OT_StartServer(bpy.types.Operator):
         prefs = context.preferences.addons.get("blender_mcp_addon")
         port = prefs.preferences.port if prefs else 9876
         
-        if server.start_server(port):
+        if server.start_server(port=port):
             self.report({'INFO'}, f"MCP 服务器已启动，端口: {port}")
         else:
             self.report({'ERROR'}, "MCP 服务器启动失败")
@@ -50,7 +50,7 @@ class MCP_OT_RestartServer(bpy.types.Operator):
         prefs = context.preferences.addons.get("blender_mcp_addon")
         port = prefs.preferences.port if prefs else 9876
         
-        if server.start_server(port):
+        if server.start_server(port=port):
             self.report({'INFO'}, f"MCP 服务器已重启，端口: {port}")
         else:
             self.report({'ERROR'}, "MCP 服务器重启失败")

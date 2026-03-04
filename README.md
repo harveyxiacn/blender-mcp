@@ -28,7 +28,7 @@ Blender MCP (Model Context Protocol) enables AI assistants to control Blender di
 
 ```bash
 # Clone and install
-git clone https://github.com/your-username/blender-mcp.git
+git clone https://github.com/harveyxiacn/blender-mcp.git
 cd blender-mcp
 uv sync
 
@@ -124,7 +124,7 @@ Blender MCP（模型上下文协议）使 AI 助手能够从 Cursor、Windsurf�
 
 ```bash
 # 克隆并安装
-git clone https://github.com/your-username/blender-mcp.git
+git clone https://github.com/harveyxiacn/blender-mcp.git
 cd blender-mcp
 uv sync
 
@@ -236,3 +236,4 @@ Contributions are welcome! Please read our [Contributing Guide](docs/en/CONTRIBU
 
 - **GitHub Issues**: Report bugs or request features / 报告 Bug 或提交功能需求
 - **Discussions**: Ask questions and share ideas / 提问和分享想法
+

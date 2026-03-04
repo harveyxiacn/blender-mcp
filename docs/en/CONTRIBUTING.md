@@ -11,7 +11,7 @@ Be respectful and constructive. We welcome contributors of all experience levels
 ### 1. Fork & Clone
 
 ```bash
-git clone https://github.com/your-username/blender-mcp.git
+git clone https://github.com/harveyxiacn/blender-mcp.git
 cd blender-mcp
 ```
 
@@ -56,7 +56,7 @@ addon/blender_mcp_addon/  # Blender Addon
 
 ### Reporting Bugs
 
-1. Check existing [Issues](https://github.com/your-username/blender-mcp/issues)
+1. Check existing [Issues](https://github.com/harveyxiacn/blender-mcp/issues)
 2. Create a new issue with:
    - Blender version
    - Python version
@@ -167,3 +167,4 @@ Set `TOOL_PROFILE = "full"` in `tools_config.py` during development to load all 
 ## License
 
 By contributing, you agree that your contributions will be licensed under the MIT License.
+
