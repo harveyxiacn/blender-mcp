@@ -1,7 +1,7 @@
 """
-ZBrush 连接处理器
+ZBrush Connection Handler
 
-处理与 ZBrush 集成的命令。
+Handles commands for integration with ZBrush.
 """
 
 from typing import Any, Dict
@@ -13,11 +13,11 @@ import platform
 
 
 def _find_goz_paths() -> Dict[str, str]:
-    """查找 GoZ 相关路径"""
+    """Find GoZ related paths"""
     system = platform.system()
     
     if system == "Windows":
-        # Windows GoZ 路径
+        # Windows GoZ paths
         public_path = os.path.join(os.environ.get("PUBLIC", "C:\\Users\\Public"), "Pixologic", "GoZBrush")
         zbrush_paths = [
             r"C:\Program Files\Pixologic\ZBrush 2024",
@@ -32,11 +32,11 @@ def _find_goz_paths() -> Dict[str, str]:
             "/Applications/ZBrush 2023",
             "/Applications/Maxon ZBrush.app"
         ]
-    else:  # Linux (通过 Wine)
+    else:  # Linux (via Wine)
         public_path = os.path.expanduser("~/.wine/drive_c/users/Public/Pixologic/GoZBrush")
         zbrush_paths = []
     
-    # 查找 ZBrush 安装
+    # Find ZBrush installation
     zbrush_install = None
     for path in zbrush_paths:
         if os.path.exists(path):
@@ -51,7 +51,7 @@ def _find_goz_paths() -> Dict[str, str]:
 
 
 def handle_export(params: Dict[str, Any]) -> Dict[str, Any]:
-    """导出到 ZBrush"""
+    """Export to ZBrush"""
     object_name = params.get("object_name")
     filepath = params.get("filepath")
     subdivisions = params.get("subdivisions", 0)
@@ -60,23 +60,23 @@ def handle_export(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 选择对象
+        # Select object
         bpy.ops.object.select_all(action='DESELECT')
         obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
         
-        # 应用细分（如果需要）
+        # Apply subdivision (if needed)
         if subdivisions > 0:
             mod = obj.modifiers.new(name="Subdiv_ZBrush", type='SUBSURF')
             mod.levels = subdivisions
             mod.render_levels = subdivisions
             bpy.ops.object.modifier_apply(modifier=mod.name)
         
-        # 确定导出路径
+        # Determine export path
         if not filepath:
             goz_paths = _find_goz_paths()
             if goz_paths["goz_public"]:
@@ -85,17 +85,17 @@ def handle_export(params: Dict[str, Any]) -> Dict[str, Any]:
                 import tempfile
                 filepath = os.path.join(tempfile.gettempdir(), f"{object_name}.obj")
         
-        # 确保目录存在
+        # Ensure directory exists
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         
-        # 导出 OBJ（ZBrush 最佳格式）
+        # Export OBJ (best format for ZBrush)
         bpy.ops.wm.obj_export(
             filepath=filepath,
             export_selected_objects=True,
             export_uv=True,
             export_normals=True,
             export_colors=True,
-            export_triangulated_mesh=False  # ZBrush 可处理四边形
+            export_triangulated_mesh=False  # ZBrush can handle quads
         )
         
         return {
@@ -115,13 +115,13 @@ def handle_export(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_import(params: Dict[str, Any]) -> Dict[str, Any]:
-    """从 ZBrush 导入"""
+    """Import from ZBrush"""
     filepath = params.get("filepath")
     import_polypaint = params.get("import_polypaint", True)
     import_mask = params.get("import_mask", True)
     
     try:
-        # 如果没有指定路径，尝试从 GoZ 目录查找
+        # If no path specified, try to find from GoZ directory
         if not filepath:
             goz_paths = _find_goz_paths()
             if goz_paths["goz_objects"] and os.path.exists(goz_paths["goz_objects"]):
@@ -133,10 +133,10 @@ def handle_import(params: Dict[str, Any]) -> Dict[str, Any]:
         if not filepath or not os.path.exists(filepath):
             return {
                 "success": False,
-                "error": {"code": "FILE_NOT_FOUND", "message": "未找到要导入的文件"}
+                "error": {"code": "FILE_NOT_FOUND", "message": "No file found to import"}
             }
         
-        # 导入 OBJ
+        # Import OBJ
         bpy.ops.wm.obj_import(
             filepath=filepath,
             import_vertex_groups=True
@@ -160,14 +160,14 @@ def handle_import(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_goz_send(params: Dict[str, Any]) -> Dict[str, Any]:
-    """通过 GoZ 发送"""
+    """Send via GoZ"""
     object_name = params.get("object_name")
     
     obj = bpy.data.objects.get(object_name)
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
@@ -176,18 +176,18 @@ def handle_goz_send(params: Dict[str, Any]) -> Dict[str, Any]:
         if not goz_paths["goz_public"]:
             return {
                 "success": False,
-                "error": {"code": "GOZ_NOT_FOUND", "message": "未找到 GoZ 安装"}
+                "error": {"code": "GOZ_NOT_FOUND", "message": "GoZ installation not found"}
             }
         
-        # 创建 GoZ 目录
+        # Create GoZ directory
         goz_dir = os.path.join(goz_paths["goz_public"], "GoZBrush")
         os.makedirs(goz_dir, exist_ok=True)
         
-        # 导出到 GoZ 目录
+        # Export to GoZ directory
         goz_file = os.path.join(goz_dir, f"{object_name}.GoZ")
         obj_file = os.path.join(goz_dir, f"{object_name}.obj")
         
-        # 选择并导出
+        # Select and export
         bpy.ops.object.select_all(action='DESELECT')
         obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
@@ -197,7 +197,7 @@ def handle_goz_send(params: Dict[str, Any]) -> Dict[str, Any]:
             export_selected_objects=True
         )
         
-        # 写入对象列表
+        # Write object list
         object_list_file = os.path.join(goz_dir, "GoZ_ObjectList.txt")
         with open(object_list_file, 'w') as f:
             f.write(obj_file)
@@ -207,7 +207,7 @@ def handle_goz_send(params: Dict[str, Any]) -> Dict[str, Any]:
             "data": {
                 "object": object_name,
                 "goz_path": obj_file,
-                "note": "请在 ZBrush 中点击 GoZ 按钮导入"
+                "note": "Please click the GoZ button in ZBrush to import"
             }
         }
     
@@ -219,14 +219,14 @@ def handle_goz_send(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_goz_receive(params: Dict[str, Any]) -> Dict[str, Any]:
-    """从 GoZ 接收"""
+    """Receive from GoZ"""
     try:
         goz_paths = _find_goz_paths()
         
         if not goz_paths["goz_public"]:
             return {
                 "success": False,
-                "error": {"code": "GOZ_NOT_FOUND", "message": "未找到 GoZ 安装"}
+                "error": {"code": "GOZ_NOT_FOUND", "message": "GoZ installation not found"}
             }
         
         goz_dir = os.path.join(goz_paths["goz_public"], "GoZBrush")
@@ -235,20 +235,20 @@ def handle_goz_receive(params: Dict[str, Any]) -> Dict[str, Any]:
         if not os.path.exists(object_list_file):
             return {
                 "success": False,
-                "error": {"code": "NO_GOZ_DATA", "message": "没有待导入的 GoZ 数据"}
+                "error": {"code": "NO_GOZ_DATA", "message": "No pending GoZ data to import"}
             }
         
-        # 读取对象列表
+        # Read object list
         with open(object_list_file, 'r') as f:
             obj_path = f.readline().strip()
         
         if not obj_path or not os.path.exists(obj_path):
             return {
                 "success": False,
-                "error": {"code": "FILE_NOT_FOUND", "message": f"GoZ 文件不存在: {obj_path}"}
+                "error": {"code": "FILE_NOT_FOUND", "message": f"GoZ file not found: {obj_path}"}
             }
         
-        # 导入
+        # Import
         bpy.ops.wm.obj_import(filepath=obj_path)
         
         imported_obj = bpy.context.selected_objects[0] if bpy.context.selected_objects else None
@@ -269,7 +269,7 @@ def handle_goz_receive(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_maps(params: Dict[str, Any]) -> Dict[str, Any]:
-    """导入 ZBrush 贴图"""
+    """Import ZBrush maps"""
     object_name = params.get("object_name")
     displacement_path = params.get("displacement_path")
     normal_path = params.get("normal_path")
@@ -279,11 +279,11 @@ def handle_maps(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 获取或创建材质
+        # Get or create material
         if obj.data.materials:
             mat = obj.data.materials[0]
         else:
@@ -302,7 +302,7 @@ def handle_maps(params: Dict[str, Any]) -> Dict[str, Any]:
         
         imported_maps = []
         
-        # 置换贴图
+        # Displacement map
         if displacement_path and os.path.exists(displacement_path):
             img = bpy.data.images.load(displacement_path)
             img.colorspace_settings.name = 'Non-Color'
@@ -320,7 +320,7 @@ def handle_maps(params: Dict[str, Any]) -> Dict[str, Any]:
             mat.cycles.displacement_method = 'DISPLACEMENT'
             imported_maps.append("displacement")
         
-        # 法线贴图
+        # Normal map
         if normal_path and os.path.exists(normal_path):
             img = bpy.data.images.load(normal_path)
             img.colorspace_settings.name = 'Non-Color'
@@ -336,7 +336,7 @@ def handle_maps(params: Dict[str, Any]) -> Dict[str, Any]:
             links.new(normal_map.outputs['Normal'], bsdf.inputs['Normal'])
             imported_maps.append("normal")
         
-        # 顶点绘制贴图
+        # Polypaint map
         if polypaint_path and os.path.exists(polypaint_path):
             img = bpy.data.images.load(polypaint_path)
             
@@ -364,7 +364,7 @@ def handle_maps(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_decimate_export(params: Dict[str, Any]) -> Dict[str, Any]:
-    """导出减面模型"""
+    """Export decimated model"""
     object_name = params.get("object_name")
     target_faces = params.get("target_faces", 10000)
     filepath = params.get("filepath")
@@ -373,11 +373,11 @@ def handle_decimate_export(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 复制对象
+        # Duplicate object
         bpy.ops.object.select_all(action='DESELECT')
         obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
@@ -386,17 +386,17 @@ def handle_decimate_export(params: Dict[str, Any]) -> Dict[str, Any]:
         decimated_obj = bpy.context.active_object
         decimated_obj.name = f"{object_name}_decimated"
         
-        # 计算减面比例
+        # Calculate decimation ratio
         current_faces = len(decimated_obj.data.polygons)
         if current_faces > target_faces:
             ratio = target_faces / current_faces
             
-            # 添加减面修改器
+            # Add decimate modifier
             mod = decimated_obj.modifiers.new(name="Decimate", type='DECIMATE')
             mod.ratio = ratio
             bpy.ops.object.modifier_apply(modifier=mod.name)
         
-        # 导出
+        # Export
         if not filepath:
             import tempfile
             filepath = os.path.join(tempfile.gettempdir(), f"{object_name}_decimated.obj")
@@ -410,7 +410,7 @@ def handle_decimate_export(params: Dict[str, Any]) -> Dict[str, Any]:
         
         final_faces = len(decimated_obj.data.polygons)
         
-        # 删除临时对象
+        # Delete temporary object
         bpy.data.objects.remove(decimated_obj, do_unlink=True)
         
         return {
@@ -430,7 +430,7 @@ def handle_decimate_export(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_detect(params: Dict[str, Any]) -> Dict[str, Any]:
-    """检测 ZBrush 安装"""
+    """Detect ZBrush installation"""
     try:
         goz_paths = _find_goz_paths()
         

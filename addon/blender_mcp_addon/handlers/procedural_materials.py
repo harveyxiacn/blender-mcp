@@ -1,7 +1,7 @@
 """
-程序化材质处理器
+Procedural Materials Handler
 
-通过Blender节点系统生成50+种程序化材质预设。
+Generates 50+ procedural material presets through the Blender node system.
 """
 
 from typing import Any, Dict, List, Tuple
@@ -9,13 +9,13 @@ import bpy
 import math
 
 
-# ==================== 辅助函数 ====================
+# ==================== Utility Functions ====================
 
 def _get_or_create_material(name: str) -> bpy.types.Material:
-    """获取或创建材质"""
+    """Get or create material"""
     mat = bpy.data.materials.get(name)
     if mat:
-        # 清理旧节点
+        # Clear old nodes
         mat.node_tree.nodes.clear()
     else:
         mat = bpy.data.materials.new(name=name)
@@ -26,7 +26,7 @@ def _get_or_create_material(name: str) -> bpy.types.Material:
 
 
 def _get_output(mat: bpy.types.Material):
-    """获取Material Output节点"""
+    """Get Material Output node"""
     for node in mat.node_tree.nodes:
         if node.type == 'OUTPUT_MATERIAL':
             return node
@@ -34,14 +34,14 @@ def _get_output(mat: bpy.types.Material):
 
 
 def _add_principled(mat, location=(-300, 0)):
-    """添加Principled BSDF节点"""
+    """Add Principled BSDF node"""
     node = mat.node_tree.nodes.new(type='ShaderNodeBsdfPrincipled')
     node.location = location
     return node
 
 
 def _add_noise(mat, scale=5.0, detail=2.0, location=(-800, 0)):
-    """添加噪波纹理"""
+    """Add noise texture"""
     node = mat.node_tree.nodes.new(type='ShaderNodeTexNoise')
     node.inputs['Scale'].default_value = scale
     node.inputs['Detail'].default_value = detail
@@ -50,7 +50,7 @@ def _add_noise(mat, scale=5.0, detail=2.0, location=(-800, 0)):
 
 
 def _add_voronoi(mat, scale=5.0, location=(-800, 0)):
-    """添加Voronoi纹理"""
+    """Add Voronoi texture"""
     node = mat.node_tree.nodes.new(type='ShaderNodeTexVoronoi')
     node.inputs['Scale'].default_value = scale
     node.location = location
@@ -58,7 +58,7 @@ def _add_voronoi(mat, scale=5.0, location=(-800, 0)):
 
 
 def _add_musgrave(mat, scale=5.0, detail=2.0, location=(-800, 0)):
-    """添加Musgrave纹理(Blender 4.0+合并到Noise)"""
+    """Add Musgrave texture (merged into Noise in Blender 4.0+)"""
     try:
         node = mat.node_tree.nodes.new(type='ShaderNodeTexMusgrave')
         node.inputs['Scale'].default_value = scale
@@ -73,7 +73,7 @@ def _add_musgrave(mat, scale=5.0, detail=2.0, location=(-800, 0)):
 
 
 def _add_colorramp(mat, colors=None, positions=None, location=(-500, 0)):
-    """添加ColorRamp节点"""
+    """Add ColorRamp node"""
     node = mat.node_tree.nodes.new(type='ShaderNodeValToRGB')
     node.location = location
     if colors and positions:
@@ -92,7 +92,7 @@ def _add_colorramp(mat, colors=None, positions=None, location=(-500, 0)):
 
 
 def _add_bump(mat, strength=0.5, location=(-300, -300)):
-    """添加Bump节点"""
+    """Add Bump node"""
     node = mat.node_tree.nodes.new(type='ShaderNodeBump')
     node.inputs['Strength'].default_value = strength
     node.location = location
@@ -100,7 +100,7 @@ def _add_bump(mat, strength=0.5, location=(-300, -300)):
 
 
 def _add_mapping(mat, scale=(1, 1, 1), location=(-1200, 0)):
-    """添加Mapping + Texture Coordinate"""
+    """Add Mapping + Texture Coordinate"""
     tc = mat.node_tree.nodes.new(type='ShaderNodeTexCoord')
     tc.location = (location[0] - 200, location[1])
     mapping = mat.node_tree.nodes.new(type='ShaderNodeMapping')
@@ -111,8 +111,8 @@ def _add_mapping(mat, scale=(1, 1, 1), location=(-1200, 0)):
 
 
 def _link(mat, from_node, from_socket, to_node, to_socket):
-    """连接节点"""
-    # 支持字符串或索引
+    """Connect nodes"""
+    # Support string or index
     if isinstance(from_socket, str):
         out = from_node.outputs[from_socket]
     else:
@@ -125,7 +125,7 @@ def _link(mat, from_node, from_socket, to_node, to_socket):
 
 
 def _apply_to_object(mat, object_name):
-    """应用材质到对象"""
+    """Apply material to object"""
     obj = bpy.data.objects.get(object_name)
     if obj:
         if len(obj.data.materials) == 0:
@@ -134,7 +134,7 @@ def _apply_to_object(mat, object_name):
             obj.data.materials[0] = mat
 
 
-# ==================== 材质预设数据 ====================
+# ==================== Material Preset Data ====================
 
 METAL_PRESETS = {
     "STEEL": {"base_color": (0.55, 0.56, 0.58), "metallic": 1.0, "roughness": 0.3, "noise_scale": 50, "bump_strength": 0.1},
@@ -224,10 +224,10 @@ TOON_PRESETS = {
 }
 
 
-# ==================== 材质生成函数 ====================
+# ==================== Material Generator Functions ====================
 
 def _create_metal(mat, preset_data, scale, color_override, roughness_override):
-    """创建金属材质"""
+    """Create metal material"""
     output = _get_output(mat)
     bsdf = _add_principled(mat)
     _link(mat, bsdf, 'BSDF', output, 'Surface')
@@ -237,14 +237,14 @@ def _create_metal(mat, preset_data, scale, color_override, roughness_override):
     bsdf.inputs['Metallic'].default_value = preset_data.get("metallic", 1.0)
     bsdf.inputs['Roughness'].default_value = roughness_override if roughness_override is not None else preset_data["roughness"]
 
-    # 添加噪波纹理做微表面变化
+    # Add noise texture for micro-surface variation
     ns = preset_data.get("noise_scale", 50) * scale
     noise = _add_noise(mat, scale=ns, detail=4.0)
     bump = _add_bump(mat, strength=preset_data.get("bump_strength", 0.1))
     _link(mat, noise, 'Fac', bump, 'Height')
     _link(mat, bump, 'Normal', bsdf, 'Normal')
 
-    # 粗糙度变化
+    # Roughness variation
     ramp = _add_colorramp(mat,
         colors=[(0.3, 0.3, 0.3), (0.6, 0.6, 0.6)],
         positions=[0.4, 0.6],
@@ -268,7 +268,7 @@ def _create_metal(mat, preset_data, scale, color_override, roughness_override):
 
 
 def _create_wood(mat, preset_data, scale, color_override, roughness_override):
-    """创建木材材质"""
+    """Create wood material"""
     output = _get_output(mat)
     bsdf = _add_principled(mat)
     _link(mat, bsdf, 'BSDF', output, 'Surface')
@@ -278,7 +278,7 @@ def _create_wood(mat, preset_data, scale, color_override, roughness_override):
 
     bsdf.inputs['Roughness'].default_value = roughness_override if roughness_override is not None else preset_data["roughness"]
 
-    # 木纹: Wave Texture + Noise混合
+    # Wood grain: Wave Texture + Noise mix
     mapping, tc = _add_mapping(mat, scale=(scale, scale, scale))
 
     wave = mat.node_tree.nodes.new(type='ShaderNodeTexWave')
@@ -297,14 +297,14 @@ def _create_wood(mat, preset_data, scale, color_override, roughness_override):
     _link(mat, wave, 'Fac', ramp, 'Fac')
     _link(mat, ramp, 'Color', bsdf, 'Base Color')
 
-    # 凹凸
+    # Bump
     bump = _add_bump(mat, strength=0.1)
     _link(mat, wave, 'Fac', bump, 'Height')
     _link(mat, bump, 'Normal', bsdf, 'Normal')
 
 
 def _create_stone(mat, preset_data, scale, color_override, roughness_override):
-    """创建石材材质"""
+    """Create stone material"""
     output = _get_output(mat)
     bsdf = _add_principled(mat)
     _link(mat, bsdf, 'BSDF', output, 'Surface')
@@ -316,7 +316,7 @@ def _create_stone(mat, preset_data, scale, color_override, roughness_override):
     voronoi = _add_voronoi(mat, scale=vs)
     noise = _add_noise(mat, scale=vs * 2, detail=4.0, location=(-800, 200))
 
-    # 颜色变化
+    # Color variation
     dark_color = tuple(c * 0.7 for c in bc)
     ramp = _add_colorramp(mat,
         colors=[dark_color, bc],
@@ -331,7 +331,7 @@ def _create_stone(mat, preset_data, scale, color_override, roughness_override):
     _link(mat, mix, 'Value', ramp, 'Fac')
     _link(mat, ramp, 'Color', bsdf, 'Base Color')
 
-    # 凹凸
+    # Bump
     bs = preset_data.get("bump_strength", 0.15)
     bump = _add_bump(mat, strength=bs)
     _link(mat, voronoi, 'Distance', bump, 'Height')
@@ -339,7 +339,7 @@ def _create_stone(mat, preset_data, scale, color_override, roughness_override):
 
 
 def _create_fabric(mat, preset_data, scale, color_override, roughness_override):
-    """创建布料材质"""
+    """Create fabric material"""
     output = _get_output(mat)
     bsdf = _add_principled(mat)
     _link(mat, bsdf, 'BSDF', output, 'Surface')
@@ -357,7 +357,7 @@ def _create_fabric(mat, preset_data, scale, color_override, roughness_override):
     if preset_data.get("metallic"):
         bsdf.inputs['Metallic'].default_value = preset_data["metallic"]
 
-    # 微表面纹理
+    # Micro-surface texture
     ns = preset_data.get("noise_scale", 80) * scale
     noise = _add_noise(mat, scale=ns, detail=6.0)
     bump = _add_bump(mat, strength=0.05)
@@ -366,7 +366,7 @@ def _create_fabric(mat, preset_data, scale, color_override, roughness_override):
 
 
 def _create_nature(mat, preset_data, scale, color_override, roughness_override):
-    """创建自然材质"""
+    """Create nature material"""
     output = _get_output(mat)
     bsdf = _add_principled(mat)
     _link(mat, bsdf, 'BSDF', output, 'Surface')
@@ -401,7 +401,7 @@ def _create_nature(mat, preset_data, scale, color_override, roughness_override):
         if 'Emission Strength' in bsdf.inputs:
             bsdf.inputs['Emission Strength'].default_value = preset_data.get("emission_strength", 1.0)
 
-    # 颜色+噪波变化
+    # Color + noise variation
     ns = preset_data.get("noise_scale", 20) * scale
     noise = _add_noise(mat, scale=ns, detail=4.0)
     dark_color = tuple(max(0, c * 0.7) for c in bc)
@@ -412,7 +412,7 @@ def _create_nature(mat, preset_data, scale, color_override, roughness_override):
     _link(mat, noise, 'Fac', ramp, 'Fac')
     _link(mat, ramp, 'Color', bsdf, 'Base Color')
 
-    # 凹凸
+    # Bump
     bs = preset_data.get("bump_strength", 0.1)
     if bs > 0:
         bump = _add_bump(mat, strength=bs)
@@ -421,7 +421,7 @@ def _create_nature(mat, preset_data, scale, color_override, roughness_override):
 
 
 def _create_skin(mat, preset_data, scale, color_override, roughness_override):
-    """创建皮肤材质"""
+    """Create skin material"""
     output = _get_output(mat)
     bsdf = _add_principled(mat)
     _link(mat, bsdf, 'BSDF', output, 'Surface')
@@ -452,7 +452,7 @@ def _create_skin(mat, preset_data, scale, color_override, roughness_override):
         _link(mat, voronoi, 'Distance', bump, 'Height')
         _link(mat, bump, 'Normal', bsdf, 'Normal')
     else:
-        # 皮肤微表面噪波
+        # Skin micro-surface noise
         noise = _add_noise(mat, scale=80 * scale, detail=8.0)
         bump = _add_bump(mat, strength=0.03)
         _link(mat, noise, 'Fac', bump, 'Height')
@@ -460,7 +460,7 @@ def _create_skin(mat, preset_data, scale, color_override, roughness_override):
 
 
 def _create_effect(mat, preset_data, scale, color_override, roughness_override):
-    """创建特效材质"""
+    """Create effect material"""
     output = _get_output(mat)
     bsdf = _add_principled(mat)
     _link(mat, bsdf, 'BSDF', output, 'Surface')
@@ -493,7 +493,7 @@ def _create_effect(mat, preset_data, scale, color_override, roughness_override):
         bsdf.inputs['Alpha'].default_value = preset_data["alpha"]
         mat.blend_method = 'BLEND' if hasattr(mat, 'blend_method') else 'OPAQUE'
 
-    # 动态噪波效果
+    # Dynamic noise effect
     if preset_data.get("emission_color"):
         noise = _add_noise(mat, scale=10 * scale, detail=6.0)
         ramp = _add_colorramp(mat,
@@ -504,10 +504,10 @@ def _create_effect(mat, preset_data, scale, color_override, roughness_override):
 
 
 def _create_toon(mat, preset_data, scale, color_override, roughness_override):
-    """创建卡通/Toon材质"""
+    """Create cartoon/toon material"""
     output = _get_output(mat)
 
-    # Toon材质使用 Shader to RGB + ColorRamp 实现
+    # Toon material uses Shader to RGB + ColorRamp
     bsdf = _add_principled(mat)
     bc = color_override or preset_data["base_color"]
     bsdf.inputs['Base Color'].default_value = (*bc, 1.0)
@@ -530,7 +530,7 @@ def _create_toon(mat, preset_data, scale, color_override, roughness_override):
     ramp.location = (100, 0)
     ramp.color_ramp.interpolation = 'CONSTANT'
 
-    # 设置色阶
+    # Set color stops
     ramp.color_ramp.elements[0].position = 0.0
     ramp.color_ramp.elements[0].color = (*shadow_color, 1.0)
     ramp.color_ramp.elements[1].position = 0.5
@@ -543,10 +543,10 @@ def _create_toon(mat, preset_data, scale, color_override, roughness_override):
 
     _link(mat, shader_to_rgb, 'Color', ramp, 'Fac')
 
-    # 连接到Output
+    # Connect to Output
     _link(mat, ramp, 'Color', output, 'Surface')
 
-    # Rim light (边缘光)
+    # Rim light
     if preset_data.get("rim"):
         fresnel = mat.node_tree.nodes.new(type='ShaderNodeFresnel')
         fresnel.inputs['IOR'].default_value = 1.1
@@ -576,10 +576,10 @@ def _create_toon(mat, preset_data, scale, color_override, roughness_override):
         _link(mat, mix_rgb, 2, output, 'Surface')
 
 
-# ==================== 主处理函数 ====================
+# ==================== Main Handler Functions ====================
 
 def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建程序化材质"""
+    """Create procedural material"""
     preset = params.get("preset", "STEEL")
     material_name = params.get("material_name") or f"Proc_{preset}"
     object_name = params.get("object_name")
@@ -587,7 +587,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
     scale = params.get("scale", 1.0)
     roughness_override = params.get("roughness_override")
 
-    # 查找预设数据
+    # Find preset data
     all_presets = {}
     all_presets.update({k: ("metal", v) for k, v in METAL_PRESETS.items()})
     all_presets.update({k: ("wood", v) for k, v in WOOD_PRESETS.items()})
@@ -603,7 +603,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
         available = ", ".join(sorted(all_presets.keys()))
         return {
             "success": False,
-            "error": {"code": "UNKNOWN_PRESET", "message": f"未知预设: {preset}。可用预设: {available}"}
+            "error": {"code": "UNKNOWN_PRESET", "message": f"Unknown preset: {preset}. Available presets: {available}"}
         }
 
     category, preset_data = all_presets[preset_upper]
@@ -628,7 +628,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
         if creator:
             creator(mat, preset_data, scale, color_tuple, roughness_override)
 
-        # 应用到对象
+        # Apply to object
         applied_to = ""
         if object_name:
             _apply_to_object(mat, object_name)
@@ -652,7 +652,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_wear(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加磨损效果"""
+    """Add wear effect"""
     object_name = params.get("object_name")
     material_name = params.get("material_name")
     wear_type = params.get("wear_type", "EDGE_WEAR")
@@ -663,10 +663,10 @@ def handle_wear(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "INVALID_OBJECT", "message": f"对象不存在或不是网格: {object_name}"}
+            "error": {"code": "INVALID_OBJECT", "message": f"Object not found or not a mesh: {object_name}"}
         }
 
-    # 获取材质
+    # Get material
     if material_name:
         mat = bpy.data.materials.get(material_name)
     elif obj.data.materials:
@@ -674,20 +674,20 @@ def handle_wear(params: Dict[str, Any]) -> Dict[str, Any]:
     else:
         return {
             "success": False,
-            "error": {"code": "NO_MATERIAL", "message": "对象没有材质"}
+            "error": {"code": "NO_MATERIAL", "message": "Object has no material"}
         }
 
     if not mat or not mat.use_nodes:
         return {
             "success": False,
-            "error": {"code": "INVALID_MATERIAL", "message": "材质无效或未使用节点"}
+            "error": {"code": "INVALID_MATERIAL", "message": "Material is invalid or not using nodes"}
         }
 
     try:
         nodes = mat.node_tree.nodes
         links = mat.node_tree.links
 
-        # 找到Principled BSDF
+        # Find Principled BSDF
         bsdf = None
         for node in nodes:
             if node.type == 'BSDF_PRINCIPLED':
@@ -697,10 +697,10 @@ def handle_wear(params: Dict[str, Any]) -> Dict[str, Any]:
         if not bsdf:
             return {
                 "success": False,
-                "error": {"code": "NO_BSDF", "message": "材质中没有Principled BSDF节点"}
+                "error": {"code": "NO_BSDF", "message": "No Principled BSDF node found in material"}
             }
 
-        # 默认磨损颜色
+        # Default wear colors
         default_colors = {
             "EDGE_WEAR": (0.9, 0.9, 0.9),
             "SCRATCHES": (0.7, 0.7, 0.7),
@@ -712,7 +712,7 @@ def handle_wear(params: Dict[str, Any]) -> Dict[str, Any]:
         }
         wc = tuple(wear_color[:3]) if wear_color else default_colors.get(wear_type, (0.5, 0.5, 0.5))
 
-        # 使用Geometry节点获取Pointiness(曲率)
+        # Use Geometry node to get Pointiness (curvature)
         geo_node = nodes.new(type='ShaderNodeNewGeometry')
         geo_node.location = (bsdf.location.x - 600, bsdf.location.y - 400)
 

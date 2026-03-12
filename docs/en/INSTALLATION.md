@@ -1,100 +1,63 @@
 # Blender MCP Installation Guide
 
-## Table of Contents
+## Requirements
 
-1. [System Requirements](#1-system-requirements)
-2. [Install MCP Server](#2-install-mcp-server)
-3. [Install Blender Addon](#3-install-blender-addon)
-4. [IDE Configuration](#4-ide-configuration)
-5. [Verify Installation](#5-verify-installation)
-6. [Troubleshooting](#6-troubleshooting)
+| Item | Minimum |
+|------|---------|
+| Python | 3.10 |
+| Blender | 4.0 |
+| MCP client | Cursor, Windsurf, Claude Desktop, or compatible |
 
-## 1. System Requirements
-
-### 1.1 Software Requirements
-
-| Software | Minimum | Recommended |
-|----------|---------|-------------|
-| Python | 3.10 | 3.12+ |
-| Blender | 4.0 | 5.0+ |
-| uv / pip | latest | latest |
-
-### 1.2 Supported Operating Systems
-
-- Windows 10/11 (x64)
-- macOS 12+ (Intel / Apple Silicon)
-- Linux (Ubuntu 20.04+, Fedora 36+)
-
-### 1.3 Supported IDEs
-
-- **Cursor** — Full MCP support
-- **Windsurf** — Full MCP support
-- **Claude Desktop** — MCP support via config
-- Any IDE implementing the [Model Context Protocol](https://modelcontextprotocol.io/)
-
-## 2. Install MCP Server
-
-### Option A: Using uv (Recommended)
+## 1. Clone And Sync
 
 ```bash
-# Install from source
 git clone https://github.com/harveyxiacn/blender-mcp.git
 cd blender-mcp
 uv sync
 ```
 
-### Option B: Using pip
+Optional development dependencies:
 
 ```bash
-pip install blender-mcp
+uv sync --extra dev
 ```
 
-### Option C: Development Install
+## 2. Recover From A Stale `.venv`
+
+This repository may be moved between machines. If `.venv/pyvenv.cfg` still points to an interpreter path from another computer, commands such as `uv run` can fail immediately.
+
+Recovery:
 
 ```bash
-git clone https://github.com/harveyxiacn/blender-mcp.git
-cd blender-mcp
-pip install -e ".[dev]"
+rm -rf .venv   # PowerShell: Remove-Item -Recurse -Force .venv
+uv sync
 ```
 
-## 3. Install Blender Addon
+## 3. Build Or Install The Blender Addon
 
-### 3.1 Auto Install
-
-```bash
-python -m blender_mcp install-addon
-```
-
-### 3.2 Manual Install
+Build the zip package:
 
 ```bash
-# Build the addon zip
 python build_addon.py
-# Output: dist/blender_mcp_addon.zip
 ```
 
-Then in Blender:
-1. **Edit → Preferences → Add-ons**
-2. Click **Install...**
+Optional auto-install command after the environment is ready:
+
+```bash
+uv run blender-mcp install-addon
+```
+
+Manual Blender steps:
+
+1. `Edit -> Preferences -> Add-ons`
+2. Click `Install...`
 3. Select `dist/blender_mcp_addon.zip`
-4. Enable **Blender MCP** addon
-5. The MCP panel appears in the 3D Viewport sidebar (press N)
+4. Enable `Blender MCP`
+5. Open the `MCP` panel in the 3D View sidebar
 
-### 3.3 Hot Reload (Development)
+## 4. Configure Your Client
 
-For developers who modify the addon frequently:
-
-1. Open Blender → Edit → Preferences → Add-ons → Blender MCP
-2. Set **Dev Source Path** to your local addon directory
-   (e.g., `E:\Projects\blender-mcp\addon\blender_mcp_addon`)
-3. Use the **Hot Reload** button in the MCP panel (3D Viewport → Sidebar → MCP → Developer Tools)
-4. Changes take effect immediately without restarting Blender
-
-## 4. IDE Configuration
-
-### 4.1 Cursor
-
-Create `.cursor/mcp.json` in your project root:
+Example `mcp.json`:
 
 ```json
 {
@@ -107,96 +70,41 @@ Create `.cursor/mcp.json` in your project root:
 }
 ```
 
-### 4.2 Windsurf
+## 5. Tool Profiles
 
-1. Open Settings → MCP Servers
-2. Add a new Custom MCP server:
-   - **Command**: `uv`
-   - **Arguments**: `run --directory /path/to/blender-mcp blender-mcp`
-3. Enable the server
+Current profile sizes are based on the 2026-03-10 code audit:
 
-### 4.3 Claude Desktop
+| Profile | Modules | Startup/User-Facing Tools | Notes |
+|---------|---------|---------------------------|-------|
+| `minimal` | 4 | 29 | Core scene/object/utility/export only |
+| `skill` | 5 | 32 | Default; adds 3 skill meta-tools |
+| `focused` | 14 | 108 | Static curated set |
+| `standard` | 23 | 165 | Broader daily-use coverage |
+| `extended` | 27 | 194 | Adds physics and batch modules |
+| `full` | 50 | 356 | All user-facing modules |
 
-Edit `claude_desktop_config.json`:
+The repository contains 359 total tools if you include the 3 skill meta-tools.
 
-```json
-{
-  "mcpServers": {
-    "blender": {
-      "command": "uv",
-      "args": ["run", "--directory", "/path/to/blender-mcp", "blender-mcp"]
-    }
-  }
-}
-```
+## 6. Verify
 
-### 4.4 Tool Profile Configuration
-
-Edit `src/blender_mcp/tools_config.py` to set the tool loading strategy:
-
-```python
-# "skill"   — ~31 core tools + on-demand loading (recommended)
-# "minimal" — ~30 core tools only
-# "focused" — ~82 tools (static)
-# "standard"— ~146 tools
-# "full"    — ~319 tools (all features)
-TOOL_PROFILE = "skill"
-```
-
-## 5. Verify Installation
-
-### 5.1 Check Server
+Basic checks:
 
 ```bash
-# Verify the MCP server starts
+uv run blender-mcp --version
 uv run blender-mcp
-# Should output: "Blender MCP server started"
 ```
 
-### 5.2 Check Blender Addon
-
-1. Open Blender
-2. Press N to open the sidebar
-3. Click the "MCP" tab
-4. Verify server status shows **Running**
-
-### 5.3 Test Connection
-
-In your IDE, ask the AI:
-
-```
-List all objects in the current Blender scene
-```
-
-If you get a list of objects (e.g., Camera, Light, Cube), the connection is working.
-
-## 6. Troubleshooting
-
-### Connection Failed
-
-| Symptom | Cause | Solution |
-|---------|-------|----------|
-| "Connection refused" | Blender addon not running | Enable addon, check MCP panel |
-| "Module not found" | Package not installed | Run `uv sync` or `pip install -e .` |
-| "Port in use" | Another instance running | Close duplicate Blender/server instances |
-| Server starts but no tools | Wrong profile or import error | Check `tools_config.py`, run with `--log-level DEBUG` |
-
-### Addon Issues
-
-| Symptom | Cause | Solution |
-|---------|-------|----------|
-| MCP panel missing | Addon not enabled | Edit → Preferences → Add-ons → Enable Blender MCP |
-| "Failed to register" | Blender version too old | Update to Blender 4.0+ |
-| Hot reload not working | Wrong source path | Verify Dev Source Path in addon preferences |
-
-### Debug Mode
+Connection check with Blender open and the addon enabled:
 
 ```bash
-# Run server with debug logging
-python -m blender_mcp --log-level DEBUG
-
-# Check Blender console
-# Window → Toggle System Console (Windows)
-# Or launch Blender from terminal (macOS/Linux)
+uv run blender-mcp check
 ```
 
+## 7. Troubleshooting
+
+| Symptom | Likely Cause | Action |
+|---------|--------------|--------|
+| `uv run` fails before startup | stale `.venv` | recreate `.venv` with `uv sync` |
+| `Connection refused` | addon not running | enable addon and confirm MCP panel status |
+| Tools show up but fail with unknown category | server/addon parity gap | avoid experimental automation tools for now |
+| Port already in use | duplicate instance | close the extra Blender or server process |

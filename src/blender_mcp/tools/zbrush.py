@@ -1,7 +1,7 @@
 """
-ZBrush 连接工具
+ZBrush Connection Tools
 
-提供与 ZBrush 集成的 MCP 工具。
+Provides MCP tools for ZBrush integration.
 """
 
 from typing import Any, Dict, List, Optional
@@ -9,42 +9,42 @@ from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
 
 
-# ============ Pydantic 模型 ============
+# ============ Pydantic Models ============
 
 class ZBrushExportInput(BaseModel):
-    """导出到 ZBrush"""
-    object_name: str = Field(..., description="对象名称")
-    filepath: Optional[str] = Field(None, description="导出路径（为空则使用 GoZ）")
-    subdivisions: int = Field(0, description="细分级别")
+    """Export to ZBrush"""
+    object_name: str = Field(..., description="Object name")
+    filepath: Optional[str] = Field(None, description="Export path (uses GoZ if empty)")
+    subdivisions: int = Field(0, description="Subdivision level")
 
 
 class ZBrushImportInput(BaseModel):
-    """从 ZBrush 导入"""
-    filepath: Optional[str] = Field(None, description="文件路径（为空则从 GoZ）")
-    import_polypaint: bool = Field(True, description="导入顶点颜色")
-    import_mask: bool = Field(True, description="导入遮罩")
+    """Import from ZBrush"""
+    filepath: Optional[str] = Field(None, description="File path (imports from GoZ if empty)")
+    import_polypaint: bool = Field(True, description="Import vertex colors")
+    import_mask: bool = Field(True, description="Import mask")
 
 
 class ZBrushMapsInput(BaseModel):
-    """导入 ZBrush 贴图"""
-    displacement_path: Optional[str] = Field(None, description="置换贴图路径")
-    normal_path: Optional[str] = Field(None, description="法线贴图路径")
-    polypaint_path: Optional[str] = Field(None, description="顶点绘制贴图路径")
-    object_name: str = Field(..., description="目标对象")
+    """Import ZBrush maps"""
+    displacement_path: Optional[str] = Field(None, description="Displacement map path")
+    normal_path: Optional[str] = Field(None, description="Normal map path")
+    polypaint_path: Optional[str] = Field(None, description="Polypaint map path")
+    object_name: str = Field(..., description="Target object")
 
 
 class ZBrushDecimateInput(BaseModel):
-    """导出减面模型"""
-    object_name: str = Field(..., description="对象名称")
-    target_faces: int = Field(10000, description="目标面数")
-    filepath: str = Field(..., description="导出路径")
+    """Export decimated model"""
+    object_name: str = Field(..., description="Object name")
+    target_faces: int = Field(10000, description="Target face count")
+    filepath: str = Field(..., description="Export path")
 
 
-# ============ 工具注册 ============
+# ============ Tool Registration ============
 
 def register_zbrush_tools(mcp: FastMCP, server):
-    """注册 ZBrush 连接工具"""
-    
+    """Register ZBrush connection tools"""
+
     @mcp.tool()
     async def blender_zbrush_export(
         object_name: str,
@@ -52,12 +52,12 @@ def register_zbrush_tools(mcp: FastMCP, server):
         subdivisions: int = 0
     ) -> Dict[str, Any]:
         """
-        导出模型到 ZBrush
-        
+        Export model to ZBrush
+
         Args:
-            object_name: 对象名称
-            filepath: 导出路径（为空则使用 GoZ 协议）
-            subdivisions: 细分级别
+            object_name: Object name
+            filepath: Export path (uses GoZ protocol if empty)
+            subdivisions: Subdivision level
         """
         params = ZBrushExportInput(
             object_name=object_name,
@@ -65,7 +65,7 @@ def register_zbrush_tools(mcp: FastMCP, server):
             subdivisions=subdivisions
         )
         return await server.send_command("zbrush", "export", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_zbrush_import(
         filepath: Optional[str] = None,
@@ -73,12 +73,12 @@ def register_zbrush_tools(mcp: FastMCP, server):
         import_mask: bool = True
     ) -> Dict[str, Any]:
         """
-        从 ZBrush 导入模型
-        
+        Import model from ZBrush
+
         Args:
-            filepath: 文件路径（为空则从 GoZ 导入）
-            import_polypaint: 导入顶点颜色
-            import_mask: 导入遮罩
+            filepath: File path (imports from GoZ if empty)
+            import_polypaint: Import vertex colors
+            import_mask: Import mask
         """
         params = ZBrushImportInput(
             filepath=filepath,
@@ -86,28 +86,28 @@ def register_zbrush_tools(mcp: FastMCP, server):
             import_mask=import_mask
         )
         return await server.send_command("zbrush", "import", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_zbrush_goz_send(
         object_name: str
     ) -> Dict[str, Any]:
         """
-        通过 GoZ 发送到 ZBrush
-        
+        Send to ZBrush via GoZ
+
         Args:
-            object_name: 对象名称
+            object_name: Object name
         """
         return await server.send_command("zbrush", "goz_send", {
             "object_name": object_name
         })
-    
+
     @mcp.tool()
     async def blender_zbrush_goz_receive() -> Dict[str, Any]:
         """
-        从 GoZ 接收 ZBrush 模型
+        Receive ZBrush model from GoZ
         """
         return await server.send_command("zbrush", "goz_receive", {})
-    
+
     @mcp.tool()
     async def blender_zbrush_maps(
         object_name: str,
@@ -116,13 +116,13 @@ def register_zbrush_tools(mcp: FastMCP, server):
         polypaint_path: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        导入 ZBrush 导出的贴图
-        
+        Import maps exported from ZBrush
+
         Args:
-            object_name: 目标对象名称
-            displacement_path: 置换贴图路径
-            normal_path: 法线贴图路径
-            polypaint_path: 顶点绘制贴图路径
+            object_name: Target object name
+            displacement_path: Displacement map path
+            normal_path: Normal map path
+            polypaint_path: Polypaint map path
         """
         params = ZBrushMapsInput(
             object_name=object_name,
@@ -131,7 +131,7 @@ def register_zbrush_tools(mcp: FastMCP, server):
             polypaint_path=polypaint_path
         )
         return await server.send_command("zbrush", "maps", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_zbrush_decimate_export(
         object_name: str,
@@ -139,12 +139,12 @@ def register_zbrush_tools(mcp: FastMCP, server):
         filepath: str = ""
     ) -> Dict[str, Any]:
         """
-        导出减面后的模型用于 ZBrush 投射
-        
+        Export decimated model for ZBrush projection
+
         Args:
-            object_name: 对象名称
-            target_faces: 目标面数
-            filepath: 导出路径
+            object_name: Object name
+            target_faces: Target face count
+            filepath: Export path
         """
         params = ZBrushDecimateInput(
             object_name=object_name,
@@ -152,10 +152,10 @@ def register_zbrush_tools(mcp: FastMCP, server):
             filepath=filepath
         )
         return await server.send_command("zbrush", "decimate_export", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_zbrush_detect() -> Dict[str, Any]:
         """
-        检测 ZBrush 安装和 GoZ 配置
+        Detect ZBrush installation and GoZ configuration
         """
         return await server.send_command("zbrush", "detect", {})

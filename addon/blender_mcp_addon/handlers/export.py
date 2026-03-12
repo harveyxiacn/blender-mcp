@@ -1,7 +1,7 @@
 """
-导出处理器
+Export Handler
 
-处理各种格式的导出命令。
+Handles export commands for various formats.
 """
 
 from typing import Any, Dict
@@ -10,7 +10,7 @@ import os
 
 
 def handle_fbx(params: Dict[str, Any]) -> Dict[str, Any]:
-    """导出 FBX"""
+    """Export FBX"""
     filepath = params.get("filepath")
     
     if not filepath:
@@ -18,16 +18,16 @@ def handle_fbx(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "MISSING_FILEPATH",
-                "message": "需要指定导出路径"
+                "message": "Export filepath is required"
             }
         }
     
-    # 确保目录存在
+    # Ensure directory exists
     directory = os.path.dirname(filepath)
     if directory and not os.path.exists(directory):
         os.makedirs(directory)
     
-    # 确保扩展名正确
+    # Ensure correct file extension
     if not filepath.lower().endswith('.fbx'):
         filepath += '.fbx'
     
@@ -63,7 +63,7 @@ def handle_fbx(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_gltf(params: Dict[str, Any]) -> Dict[str, Any]:
-    """导出 glTF"""
+    """Export glTF"""
     filepath = params.get("filepath")
     
     if not filepath:
@@ -71,18 +71,18 @@ def handle_gltf(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "MISSING_FILEPATH",
-                "message": "需要指定导出路径"
+                "message": "Export filepath is required"
             }
         }
     
-    # 确保目录存在
+    # Ensure directory exists
     directory = os.path.dirname(filepath)
     if directory and not os.path.exists(directory):
         os.makedirs(directory)
     
     export_format = params.get("export_format", "GLB")
     
-    # 确保扩展名正确
+    # Ensure correct file extension
     if export_format == "GLB" and not filepath.lower().endswith('.glb'):
         filepath += '.glb'
     elif export_format == "GLTF_SEPARATE" and not filepath.lower().endswith('.gltf'):
@@ -116,7 +116,7 @@ def handle_gltf(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_obj(params: Dict[str, Any]) -> Dict[str, Any]:
-    """导出 OBJ"""
+    """Export OBJ"""
     filepath = params.get("filepath")
     
     if not filepath:
@@ -124,16 +124,16 @@ def handle_obj(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "MISSING_FILEPATH",
-                "message": "需要指定导出路径"
+                "message": "Export filepath is required"
             }
         }
     
-    # 确保目录存在
+    # Ensure directory exists
     directory = os.path.dirname(filepath)
     if directory and not os.path.exists(directory):
         os.makedirs(directory)
     
-    # 确保扩展名正确
+    # Ensure correct file extension
     if not filepath.lower().endswith('.obj'):
         filepath += '.obj'
     

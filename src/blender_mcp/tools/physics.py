@@ -1,7 +1,7 @@
 """
-物理模拟工具
+Physics simulation tools
 
-提供布料、刚体、粒子系统等物理模拟功能。
+Provides physics simulation features including cloth, rigid body, particle systems, etc.
 """
 
 from typing import TYPE_CHECKING, Optional, List
@@ -13,75 +13,75 @@ if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class ClothAddInput(BaseModel):
-    """添加布料模拟输入"""
-    object_name: str = Field(..., description="网格对象名称")
+    """Add cloth simulation input"""
+    object_name: str = Field(..., description="Mesh object name")
     preset: str = Field(
         default="cotton",
-        description="布料预设: cotton, silk, leather, denim, rubber"
+        description="Cloth preset: cotton, silk, leather, denim, rubber"
     )
-    pin_group: Optional[str] = Field(default=None, description="固定顶点组")
-    collision_quality: int = Field(default=2, description="碰撞质量", ge=1, le=10)
+    pin_group: Optional[str] = Field(default=None, description="Pin vertex group")
+    collision_quality: int = Field(default=2, description="Collision quality", ge=1, le=10)
 
 
 class RigidBodyAddInput(BaseModel):
-    """添加刚体输入"""
-    object_name: str = Field(..., description="对象名称")
-    body_type: str = Field(default="ACTIVE", description="类型: ACTIVE(活动), PASSIVE(被动)")
-    shape: str = Field(default="CONVEX_HULL", description="碰撞形状: BOX, SPHERE, CAPSULE, CYLINDER, CONE, CONVEX_HULL, MESH")
-    mass: float = Field(default=1.0, description="质量 (kg)", ge=0)
-    friction: float = Field(default=0.5, description="摩擦力", ge=0, le=1)
-    bounciness: float = Field(default=0.0, description="弹性", ge=0, le=1)
+    """Add rigid body input"""
+    object_name: str = Field(..., description="Object name")
+    body_type: str = Field(default="ACTIVE", description="Type: ACTIVE, PASSIVE")
+    shape: str = Field(default="CONVEX_HULL", description="Collision shape: BOX, SPHERE, CAPSULE, CYLINDER, CONE, CONVEX_HULL, MESH")
+    mass: float = Field(default=1.0, description="Mass (kg)", ge=0)
+    friction: float = Field(default=0.5, description="Friction", ge=0, le=1)
+    bounciness: float = Field(default=0.0, description="Bounciness", ge=0, le=1)
 
 
 class CollisionAddInput(BaseModel):
-    """添加碰撞体输入"""
-    object_name: str = Field(..., description="对象名称")
-    damping: float = Field(default=0.0, description="阻尼", ge=0, le=1)
-    thickness: float = Field(default=0.02, description="厚度", ge=0)
-    friction: float = Field(default=0.0, description="摩擦力", ge=0, le=1)
+    """Add collision body input"""
+    object_name: str = Field(..., description="Object name")
+    damping: float = Field(default=0.0, description="Damping", ge=0, le=1)
+    thickness: float = Field(default=0.02, description="Thickness", ge=0)
+    friction: float = Field(default=0.0, description="Friction", ge=0, le=1)
 
 
 class ParticleSystemInput(BaseModel):
-    """粒子系统输入"""
-    object_name: str = Field(..., description="发射器对象名称")
-    particle_type: str = Field(default="EMITTER", description="类型: EMITTER, HAIR")
-    count: int = Field(default=1000, description="粒子数量", ge=1, le=100000)
-    lifetime: float = Field(default=50.0, description="生命周期 (帧)", ge=1)
-    emit_from: str = Field(default="FACE", description="发射位置: VERT, FACE, VOLUME")
-    velocity_normal: float = Field(default=1.0, description="法向速度")
+    """Particle system input"""
+    object_name: str = Field(..., description="Emitter object name")
+    particle_type: str = Field(default="EMITTER", description="Type: EMITTER, HAIR")
+    count: int = Field(default=1000, description="Particle count", ge=1, le=100000)
+    lifetime: float = Field(default=50.0, description="Lifetime (frames)", ge=1)
+    emit_from: str = Field(default="FACE", description="Emit from: VERT, FACE, VOLUME")
+    velocity_normal: float = Field(default=1.0, description="Normal velocity")
 
 
 class ForceFieldInput(BaseModel):
-    """力场输入"""
+    """Force field input"""
     force_type: str = Field(
         default="WIND",
-        description="力场类型: WIND, VORTEX, TURBULENCE, DRAG, FORCE, MAGNETIC"
+        description="Force field type: WIND, VORTEX, TURBULENCE, DRAG, FORCE, MAGNETIC"
     )
-    location: Optional[List[float]] = Field(default=None, description="位置")
-    strength: float = Field(default=1.0, description="强度")
-    flow: float = Field(default=0.0, description="流动")
+    location: Optional[List[float]] = Field(default=None, description="Location")
+    strength: float = Field(default=1.0, description="Strength")
+    flow: float = Field(default=0.0, description="Flow")
 
 
 class SoftBodyAddInput(BaseModel):
-    """添加软体输入"""
-    object_name: str = Field(..., description="对象名称")
-    mass: float = Field(default=1.0, description="质量", ge=0)
-    friction: float = Field(default=0.5, description="摩擦力", ge=0, le=1)
-    goal_strength: float = Field(default=0.7, description="目标强度", ge=0, le=1)
+    """Add soft body input"""
+    object_name: str = Field(..., description="Object name")
+    mass: float = Field(default=1.0, description="Mass", ge=0)
+    friction: float = Field(default=0.5, description="Friction", ge=0, le=1)
+    goal_strength: float = Field(default=0.7, description="Goal strength", ge=0, le=1)
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册物理模拟工具"""
-    
+    """Register physics simulation tools"""
+
     @mcp.tool(
         name="blender_physics_cloth_add",
         annotations={
-            "title": "添加布料模拟",
+            "title": "Add Cloth Simulation",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -89,13 +89,13 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_physics_cloth_add(params: ClothAddInput) -> str:
-        """为网格添加布料模拟。
-        
+        """Add cloth simulation to a mesh.
+
         Args:
-            params: 对象名称、布料预设等
-            
+            params: Object name, cloth preset, etc.
+
         Returns:
-            添加结果
+            Operation result
         """
         result = await server.execute_command(
             "physics", "cloth_add",
@@ -106,16 +106,16 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "collision_quality": params.collision_quality
             }
         )
-        
+
         if result.get("success"):
-            return f"成功为 '{params.object_name}' 添加 {params.preset} 布料模拟"
+            return f"Successfully added {params.preset} cloth simulation to '{params.object_name}'"
         else:
-            return f"添加失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to add: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_physics_rigid_body_add",
         annotations={
-            "title": "添加刚体",
+            "title": "Add Rigid Body",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -123,13 +123,13 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_physics_rigid_body_add(params: RigidBodyAddInput) -> str:
-        """为对象添加刚体物理。
-        
+        """Add rigid body physics to an object.
+
         Args:
-            params: 对象名称、类型、质量等
-            
+            params: Object name, type, mass, etc.
+
         Returns:
-            添加结果
+            Operation result
         """
         result = await server.execute_command(
             "physics", "rigid_body_add",
@@ -142,16 +142,16 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "bounciness": params.bounciness
             }
         )
-        
+
         if result.get("success"):
-            return f"成功为 '{params.object_name}' 添加 {params.body_type} 刚体"
+            return f"Successfully added {params.body_type} rigid body to '{params.object_name}'"
         else:
-            return f"添加失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to add: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_physics_collision_add",
         annotations={
-            "title": "添加碰撞体",
+            "title": "Add Collision Body",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -159,13 +159,13 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_physics_collision_add(params: CollisionAddInput) -> str:
-        """为对象添加碰撞体（用于布料/软体碰撞）。
-        
+        """Add collision body to an object (for cloth/soft body collision).
+
         Args:
-            params: 对象名称、阻尼、厚度等
-            
+            params: Object name, damping, thickness, etc.
+
         Returns:
-            添加结果
+            Operation result
         """
         result = await server.execute_command(
             "physics", "collision_add",
@@ -176,16 +176,16 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "friction": params.friction
             }
         )
-        
+
         if result.get("success"):
-            return f"成功为 '{params.object_name}' 添加碰撞体"
+            return f"Successfully added collision body to '{params.object_name}'"
         else:
-            return f"添加失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to add: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_physics_particles_create",
         annotations={
-            "title": "创建粒子系统",
+            "title": "Create Particle System",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -193,13 +193,13 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_physics_particles_create(params: ParticleSystemInput) -> str:
-        """创建粒子系统。
-        
+        """Create a particle system.
+
         Args:
-            params: 发射器、粒子数量、生命周期等
-            
+            params: Emitter, particle count, lifetime, etc.
+
         Returns:
-            创建结果
+            Operation result
         """
         result = await server.execute_command(
             "physics", "particles_create",
@@ -212,16 +212,16 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "velocity_normal": params.velocity_normal
             }
         )
-        
+
         if result.get("success"):
-            return f"成功为 '{params.object_name}' 创建粒子系统 ({params.count} 粒子)"
+            return f"Successfully created particle system for '{params.object_name}' ({params.count} particles)"
         else:
-            return f"创建失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to create: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_physics_force_field_add",
         annotations={
-            "title": "添加力场",
+            "title": "Add Force Field",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -229,13 +229,13 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_physics_force_field_add(params: ForceFieldInput) -> str:
-        """添加力场（风、涡流、湍流等）。
-        
+        """Add a force field (wind, vortex, turbulence, etc.).
+
         Args:
-            params: 力场类型、位置、强度等
-            
+            params: Force field type, location, strength, etc.
+
         Returns:
-            创建结果
+            Operation result
         """
         result = await server.execute_command(
             "physics", "force_field_add",
@@ -246,16 +246,16 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "flow": params.flow
             }
         )
-        
+
         if result.get("success"):
-            return f"成功创建 {params.force_type} 力场"
+            return f"Successfully created {params.force_type} force field"
         else:
-            return f"创建失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to create: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_physics_soft_body_add",
         annotations={
-            "title": "添加软体",
+            "title": "Add Soft Body",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -263,13 +263,13 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_physics_soft_body_add(params: SoftBodyAddInput) -> str:
-        """为对象添加软体模拟。
-        
+        """Add soft body simulation to an object.
+
         Args:
-            params: 对象名称、质量、摩擦力等
-            
+            params: Object name, mass, friction, etc.
+
         Returns:
-            添加结果
+            Operation result
         """
         result = await server.execute_command(
             "physics", "soft_body_add",
@@ -280,8 +280,8 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "goal_strength": params.goal_strength
             }
         )
-        
+
         if result.get("success"):
-            return f"成功为 '{params.object_name}' 添加软体模拟"
+            return f"Successfully added soft body simulation to '{params.object_name}'"
         else:
-            return f"添加失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Failed to add: {result.get('error', {}).get('message', 'Unknown error')}"

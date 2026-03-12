@@ -1,7 +1,7 @@
 """
-约束系统工具
+Constraint System Tools
 
-提供Blender对象和骨骼约束的MCP工具。
+MCP tools for Blender object and bone constraints.
 """
 
 from typing import Any, Dict, List, Optional
@@ -9,103 +9,103 @@ from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
 
 
-# ============ Pydantic 模型 ============
+# ============ Pydantic Models ============
 
 class ConstraintAddInput(BaseModel):
-    """添加约束"""
-    object_name: str = Field(..., description="对象名称")
-    constraint_type: str = Field(..., description="约束类型")
-    name: Optional[str] = Field(None, description="约束名称")
-    target: Optional[str] = Field(None, description="目标对象")
-    subtarget: Optional[str] = Field(None, description="子目标（骨骼名）")
+    """Add constraint"""
+    object_name: str = Field(..., description="Object name")
+    constraint_type: str = Field(..., description="Constraint type")
+    name: Optional[str] = Field(None, description="Constraint name")
+    target: Optional[str] = Field(None, description="Target object")
+    subtarget: Optional[str] = Field(None, description="Subtarget (bone name)")
 
 
 class ConstraintRemoveInput(BaseModel):
-    """移除约束"""
-    object_name: str = Field(..., description="对象名称")
-    constraint_name: str = Field(..., description="约束名称")
+    """Remove constraint"""
+    object_name: str = Field(..., description="Object name")
+    constraint_name: str = Field(..., description="Constraint name")
 
 
 class ConstraintCopyLocationInput(BaseModel):
-    """位置约束"""
-    object_name: str = Field(..., description="对象名称")
-    target: str = Field(..., description="目标对象")
-    subtarget: Optional[str] = Field(None, description="子目标骨骼")
-    use_x: bool = Field(True, description="X轴")
-    use_y: bool = Field(True, description="Y轴")
-    use_z: bool = Field(True, description="Z轴")
-    influence: float = Field(1.0, description="影响度")
+    """Copy location constraint"""
+    object_name: str = Field(..., description="Object name")
+    target: str = Field(..., description="Target object")
+    subtarget: Optional[str] = Field(None, description="Subtarget bone")
+    use_x: bool = Field(True, description="X axis")
+    use_y: bool = Field(True, description="Y axis")
+    use_z: bool = Field(True, description="Z axis")
+    influence: float = Field(1.0, description="Influence")
 
 
 class ConstraintCopyRotationInput(BaseModel):
-    """旋转约束"""
-    object_name: str = Field(..., description="对象名称")
-    target: str = Field(..., description="目标对象")
-    subtarget: Optional[str] = Field(None, description="子目标骨骼")
-    use_x: bool = Field(True, description="X轴")
-    use_y: bool = Field(True, description="Y轴")
-    use_z: bool = Field(True, description="Z轴")
-    influence: float = Field(1.0, description="影响度")
+    """Copy rotation constraint"""
+    object_name: str = Field(..., description="Object name")
+    target: str = Field(..., description="Target object")
+    subtarget: Optional[str] = Field(None, description="Subtarget bone")
+    use_x: bool = Field(True, description="X axis")
+    use_y: bool = Field(True, description="Y axis")
+    use_z: bool = Field(True, description="Z axis")
+    influence: float = Field(1.0, description="Influence")
 
 
 class ConstraintCopyScaleInput(BaseModel):
-    """缩放约束"""
-    object_name: str = Field(..., description="对象名称")
-    target: str = Field(..., description="目标对象")
-    subtarget: Optional[str] = Field(None, description="子目标骨骼")
-    use_x: bool = Field(True, description="X轴")
-    use_y: bool = Field(True, description="Y轴")
-    use_z: bool = Field(True, description="Z轴")
-    influence: float = Field(1.0, description="影响度")
+    """Copy scale constraint"""
+    object_name: str = Field(..., description="Object name")
+    target: str = Field(..., description="Target object")
+    subtarget: Optional[str] = Field(None, description="Subtarget bone")
+    use_x: bool = Field(True, description="X axis")
+    use_y: bool = Field(True, description="Y axis")
+    use_z: bool = Field(True, description="Z axis")
+    influence: float = Field(1.0, description="Influence")
 
 
 class ConstraintTrackToInput(BaseModel):
-    """跟踪约束"""
-    object_name: str = Field(..., description="对象名称")
-    target: str = Field(..., description="目标对象")
-    subtarget: Optional[str] = Field(None, description="子目标骨骼")
-    track_axis: str = Field("TRACK_NEGATIVE_Z", description="跟踪轴")
-    up_axis: str = Field("UP_Y", description="向上轴")
-    influence: float = Field(1.0, description="影响度")
+    """Track to constraint"""
+    object_name: str = Field(..., description="Object name")
+    target: str = Field(..., description="Target object")
+    subtarget: Optional[str] = Field(None, description="Subtarget bone")
+    track_axis: str = Field("TRACK_NEGATIVE_Z", description="Track axis")
+    up_axis: str = Field("UP_Y", description="Up axis")
+    influence: float = Field(1.0, description="Influence")
 
 
 class ConstraintLimitInput(BaseModel):
-    """限制约束"""
-    object_name: str = Field(..., description="对象名称")
-    limit_type: str = Field("LOCATION", description="限制类型: LOCATION, ROTATION, SCALE")
-    min_x: Optional[float] = Field(None, description="X最小值")
-    max_x: Optional[float] = Field(None, description="X最大值")
-    min_y: Optional[float] = Field(None, description="Y最小值")
-    max_y: Optional[float] = Field(None, description="Y最大值")
-    min_z: Optional[float] = Field(None, description="Z最小值")
-    max_z: Optional[float] = Field(None, description="Z最大值")
+    """Limit constraint"""
+    object_name: str = Field(..., description="Object name")
+    limit_type: str = Field("LOCATION", description="Limit type: LOCATION, ROTATION, SCALE")
+    min_x: Optional[float] = Field(None, description="X minimum")
+    max_x: Optional[float] = Field(None, description="X maximum")
+    min_y: Optional[float] = Field(None, description="Y minimum")
+    max_y: Optional[float] = Field(None, description="Y maximum")
+    min_z: Optional[float] = Field(None, description="Z minimum")
+    max_z: Optional[float] = Field(None, description="Z maximum")
 
 
 class ConstraintIKInput(BaseModel):
-    """IK约束（反向动力学）"""
-    object_name: str = Field(..., description="骨架对象名称")
-    bone_name: str = Field(..., description="骨骼名称")
-    target: Optional[str] = Field(None, description="目标对象")
-    subtarget: Optional[str] = Field(None, description="目标骨骼")
-    pole_target: Optional[str] = Field(None, description="极向目标对象")
-    pole_subtarget: Optional[str] = Field(None, description="极向目标骨骼")
-    chain_count: int = Field(2, description="链长度")
-    influence: float = Field(1.0, description="影响度")
+    """IK constraint (Inverse Kinematics)"""
+    object_name: str = Field(..., description="Armature object name")
+    bone_name: str = Field(..., description="Bone name")
+    target: Optional[str] = Field(None, description="Target object")
+    subtarget: Optional[str] = Field(None, description="Target bone")
+    pole_target: Optional[str] = Field(None, description="Pole target object")
+    pole_subtarget: Optional[str] = Field(None, description="Pole target bone")
+    chain_count: int = Field(2, description="Chain length")
+    influence: float = Field(1.0, description="Influence")
 
 
 class ConstraintParentInput(BaseModel):
-    """父级约束"""
-    object_name: str = Field(..., description="对象名称")
-    target: str = Field(..., description="目标对象")
-    subtarget: Optional[str] = Field(None, description="子目标骨骼")
-    influence: float = Field(1.0, description="影响度")
+    """Child of constraint"""
+    object_name: str = Field(..., description="Object name")
+    target: str = Field(..., description="Target object")
+    subtarget: Optional[str] = Field(None, description="Subtarget bone")
+    influence: float = Field(1.0, description="Influence")
 
 
-# ============ 工具注册 ============
+# ============ Tool Registration ============
 
 def register_constraint_tools(mcp: FastMCP, server):
-    """注册约束工具"""
-    
+    """Register constraint tools"""
+
     @mcp.tool()
     async def blender_constraint_add(
         object_name: str,
@@ -115,14 +115,14 @@ def register_constraint_tools(mcp: FastMCP, server):
         subtarget: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        添加约束
-        
+        Add a constraint
+
         Args:
-            object_name: 对象名称
-            constraint_type: 约束类型 (COPY_LOCATION, COPY_ROTATION, TRACK_TO, IK, etc.)
-            name: 约束名称
-            target: 目标对象
-            subtarget: 子目标（骨骼名）
+            object_name: Object name
+            constraint_type: Constraint type (COPY_LOCATION, COPY_ROTATION, TRACK_TO, IK, etc.)
+            name: Constraint name
+            target: Target object
+            subtarget: Subtarget (bone name)
         """
         params = ConstraintAddInput(
             object_name=object_name,
@@ -132,25 +132,25 @@ def register_constraint_tools(mcp: FastMCP, server):
             subtarget=subtarget
         )
         return await server.send_command("constraints", "add", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_constraint_remove(
         object_name: str,
         constraint_name: str
     ) -> Dict[str, Any]:
         """
-        移除约束
-        
+        Remove a constraint
+
         Args:
-            object_name: 对象名称
-            constraint_name: 约束名称
+            object_name: Object name
+            constraint_name: Constraint name
         """
         params = ConstraintRemoveInput(
             object_name=object_name,
             constraint_name=constraint_name
         )
         return await server.send_command("constraints", "remove", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_constraint_copy_location(
         object_name: str,
@@ -162,14 +162,14 @@ def register_constraint_tools(mcp: FastMCP, server):
         influence: float = 1.0
     ) -> Dict[str, Any]:
         """
-        添加位置复制约束
-        
+        Add a copy location constraint
+
         Args:
-            object_name: 对象名称
-            target: 目标对象
-            subtarget: 子目标骨骼
-            use_x/y/z: 是否影响各轴
-            influence: 影响度 (0-1)
+            object_name: Object name
+            target: Target object
+            subtarget: Subtarget bone
+            use_x/y/z: Whether to affect each axis
+            influence: Influence (0-1)
         """
         params = ConstraintCopyLocationInput(
             object_name=object_name,
@@ -181,7 +181,7 @@ def register_constraint_tools(mcp: FastMCP, server):
             influence=influence
         )
         return await server.send_command("constraints", "copy_location", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_constraint_copy_rotation(
         object_name: str,
@@ -193,14 +193,14 @@ def register_constraint_tools(mcp: FastMCP, server):
         influence: float = 1.0
     ) -> Dict[str, Any]:
         """
-        添加旋转复制约束
-        
+        Add a copy rotation constraint
+
         Args:
-            object_name: 对象名称
-            target: 目标对象
-            subtarget: 子目标骨骼
-            use_x/y/z: 是否影响各轴
-            influence: 影响度 (0-1)
+            object_name: Object name
+            target: Target object
+            subtarget: Subtarget bone
+            use_x/y/z: Whether to affect each axis
+            influence: Influence (0-1)
         """
         params = ConstraintCopyRotationInput(
             object_name=object_name,
@@ -212,7 +212,7 @@ def register_constraint_tools(mcp: FastMCP, server):
             influence=influence
         )
         return await server.send_command("constraints", "copy_rotation", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_constraint_copy_scale(
         object_name: str,
@@ -224,14 +224,14 @@ def register_constraint_tools(mcp: FastMCP, server):
         influence: float = 1.0
     ) -> Dict[str, Any]:
         """
-        添加缩放复制约束
-        
+        Add a copy scale constraint
+
         Args:
-            object_name: 对象名称
-            target: 目标对象
-            subtarget: 子目标骨骼
-            use_x/y/z: 是否影响各轴
-            influence: 影响度 (0-1)
+            object_name: Object name
+            target: Target object
+            subtarget: Subtarget bone
+            use_x/y/z: Whether to affect each axis
+            influence: Influence (0-1)
         """
         params = ConstraintCopyScaleInput(
             object_name=object_name,
@@ -243,7 +243,7 @@ def register_constraint_tools(mcp: FastMCP, server):
             influence=influence
         )
         return await server.send_command("constraints", "copy_scale", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_constraint_track_to(
         object_name: str,
@@ -254,15 +254,15 @@ def register_constraint_tools(mcp: FastMCP, server):
         influence: float = 1.0
     ) -> Dict[str, Any]:
         """
-        添加跟踪约束
-        
+        Add a track to constraint
+
         Args:
-            object_name: 对象名称
-            target: 目标对象
-            subtarget: 子目标骨骼
-            track_axis: 跟踪轴 (TRACK_X, TRACK_Y, TRACK_Z, TRACK_NEGATIVE_X/Y/Z)
-            up_axis: 向上轴 (UP_X, UP_Y, UP_Z)
-            influence: 影响度 (0-1)
+            object_name: Object name
+            target: Target object
+            subtarget: Subtarget bone
+            track_axis: Track axis (TRACK_X, TRACK_Y, TRACK_Z, TRACK_NEGATIVE_X/Y/Z)
+            up_axis: Up axis (UP_X, UP_Y, UP_Z)
+            influence: Influence (0-1)
         """
         params = ConstraintTrackToInput(
             object_name=object_name,
@@ -273,7 +273,7 @@ def register_constraint_tools(mcp: FastMCP, server):
             influence=influence
         )
         return await server.send_command("constraints", "track_to", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_constraint_limit(
         object_name: str,
@@ -286,14 +286,14 @@ def register_constraint_tools(mcp: FastMCP, server):
         max_z: Optional[float] = None
     ) -> Dict[str, Any]:
         """
-        添加限制约束
-        
+        Add a limit constraint
+
         Args:
-            object_name: 对象名称
-            limit_type: 限制类型 (LOCATION, ROTATION, SCALE)
-            min_x/max_x: X轴范围
-            min_y/max_y: Y轴范围
-            min_z/max_z: Z轴范围
+            object_name: Object name
+            limit_type: Limit type (LOCATION, ROTATION, SCALE)
+            min_x/max_x: X axis range
+            min_y/max_y: Y axis range
+            min_z/max_z: Z axis range
         """
         params = ConstraintLimitInput(
             object_name=object_name,
@@ -306,7 +306,7 @@ def register_constraint_tools(mcp: FastMCP, server):
             max_z=max_z
         )
         return await server.send_command("constraints", "limit", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_constraint_ik(
         object_name: str,
@@ -319,17 +319,17 @@ def register_constraint_tools(mcp: FastMCP, server):
         influence: float = 1.0
     ) -> Dict[str, Any]:
         """
-        添加IK约束（反向动力学）
-        
+        Add an IK constraint (Inverse Kinematics)
+
         Args:
-            object_name: 骨架对象名称
-            bone_name: 骨骼名称
-            target: 目标对象
-            subtarget: 目标骨骼
-            pole_target: 极向目标对象
-            pole_subtarget: 极向目标骨骼
-            chain_count: 链长度
-            influence: 影响度 (0-1)
+            object_name: Armature object name
+            bone_name: Bone name
+            target: Target object
+            subtarget: Target bone
+            pole_target: Pole target object
+            pole_subtarget: Pole target bone
+            chain_count: Chain length
+            influence: Influence (0-1)
         """
         params = ConstraintIKInput(
             object_name=object_name,
@@ -342,7 +342,7 @@ def register_constraint_tools(mcp: FastMCP, server):
             influence=influence
         )
         return await server.send_command("constraints", "ik", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_constraint_parent(
         object_name: str,
@@ -351,13 +351,13 @@ def register_constraint_tools(mcp: FastMCP, server):
         influence: float = 1.0
     ) -> Dict[str, Any]:
         """
-        添加父级约束
-        
+        Add a child of constraint
+
         Args:
-            object_name: 对象名称
-            target: 目标对象
-            subtarget: 子目标骨骼
-            influence: 影响度 (0-1)
+            object_name: Object name
+            target: Target object
+            subtarget: Subtarget bone
+            influence: Influence (0-1)
         """
         params = ConstraintParentInput(
             object_name=object_name,
@@ -366,15 +366,15 @@ def register_constraint_tools(mcp: FastMCP, server):
             influence=influence
         )
         return await server.send_command("constraints", "parent", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_constraint_list(
         object_name: str
     ) -> Dict[str, Any]:
         """
-        列出对象的所有约束
-        
+        List all constraints on an object
+
         Args:
-            object_name: 对象名称
+            object_name: Object name
         """
         return await server.send_command("constraints", "list", {"object_name": object_name})

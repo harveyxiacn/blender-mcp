@@ -84,8 +84,8 @@ bpy.ops.object.mode_set(mode='EDIT')
 bm = bmesh.from_edit_mesh(head.data)
 bm.verts.ensure_lookup_table()
 for v in bm.verts:
-    if v.co.z < 1.52:
-        f = max(0, (1.52 - v.co.z) / 0.08)
+    if v.co.z < -0.02:
+        f = max(0, (-0.02 - v.co.z) / 0.08)
         v.co.x *= (1.0 - f * 0.48)
         v.co.y *= (1.0 - f * 0.38)
     if v.co.y > 0.02: v.co.y *= 0.88
@@ -219,7 +219,7 @@ bpy.ops.object.transform_apply(scale=True)
 bpy.ops.object.mode_set(mode='EDIT')
 bm = bmesh.from_edit_mesh(hb.data)
 bm.verts.ensure_lookup_table()
-to_del = [v for v in bm.verts if v.co.z < 1.56 and v.co.y < 0.01]
+to_del = [v for v in bm.verts if v.co.z < -0.02 and v.co.y < 0.01]
 bmesh.ops.delete(bm, geom=to_del, context='VERTS')
 bmesh.update_edit_mesh(hb.data)
 bpy.ops.object.mode_set(mode='OBJECT')

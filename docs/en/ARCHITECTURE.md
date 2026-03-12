@@ -1,276 +1,120 @@
 # Blender MCP Architecture
 
-## Overview
+## System Summary
 
-Blender MCP implements the [Model Context Protocol](https://modelcontextprotocol.io/) to bridge AI assistants and Blender. It consists of two main components: an **MCP Server** (Python) and a **Blender Addon** (Python/Blender API).
+As of 2026-03-10, the repository contains:
 
-```
-┌──────────────┐     MCP Protocol      ┌──────────────┐    Socket/TCP    ┌──────────┐
-│   AI IDE     │ ◄──── stdio ────────► │  MCP Server  │ ◄────────────► │  Blender │
-│ (Cursor,     │   tools/list          │  (FastMCP)   │   JSON-RPC     │  Addon   │
-│  Windsurf)   │   tools/call          │              │                │          │
-└──────────────┘                        └──────────────┘                └──────────┘
-```
+- 51 server-side tool modules in `src/blender_mcp/tools`
+- 359 total `@mcp.tool(...)` registrations in source
+- 12 skill groups in `skill_manager.py`
+- 6 loading profiles in `tools_config.py`
 
-## System Architecture
+## Runtime Topology
 
-### Component Diagram
-
-```
-blender-mcp/
-├── src/blender_mcp/          # MCP Server (runs as a separate process)
-│   ├── server.py             # BlenderMCPServer — main entry point
-│   ├── connection.py         # BlenderConnection — TCP socket to Blender
-│   ├── skill_manager.py      # SkillManager — dynamic tool loading
-│   ├── tools_config.py       # Profile-based tool configuration
-│   └── tools/                # MCP tool definitions (grouped by module)
-│       ├── scene.py          # Scene management tools
-│       ├── object.py         # Object CRUD tools
-│       ├── modeling.py       # Mesh editing & modifiers
-│       ├── material.py       # Material system
-│       ├── skills.py         # Skill meta-tools (list/activate/deactivate)
-│       └── ...               # 25+ tool modules
-│
-├── addon/blender_mcp_addon/  # Blender Addon (runs inside Blender)
-│   ├── __init__.py           # Addon registration
-│   ├── server.py             # TCP server (listens for MCP commands)
-│   ├── executor.py           # Command dispatcher
-│   ├── handlers/             # Command handlers (execute Blender API calls)
-│   │   ├── scene.py
-│   │   ├── object.py
-│   │   ├── modeling.py
-│   │   └── ...
-│   ├── operators/            # Blender operators
-│   ├── panels/               # UI panels
-│   └── utils/                # Utilities
+```text
+AI client
+  -> MCP stdio / streamable-http
+Blender MCP server
+  -> TCP JSON messages
+Blender addon
+  -> Blender Python API
 ```
 
-### Data Flow
+## Main Components
 
-```
-User → AI IDE → MCP Server → Blender Addon → Blender API → Result
-                                                              ↓
-User ← AI IDE ← MCP Server ← Blender Addon ← JSON Response ←┘
-```
+### MCP Server
 
-1. **User** sends natural language request to AI in IDE
-2. **AI** selects appropriate MCP tool(s) and calls them
-3. **MCP Server** receives tool call, formats command, sends to Blender via TCP
-4. **Blender Addon** receives command, dispatches to handler, executes Blender Python API
-5. **Result** flows back through the chain as JSON
+Key files:
 
-## MCP Server
+- `src/blender_mcp/server.py`
+- `src/blender_mcp/connection.py`
+- `src/blender_mcp/skill_manager.py`
+- `src/blender_mcp/tools_config.py`
 
-### BlenderMCPServer
+Responsibilities:
 
-The main server class (`server.py`) manages:
+- register tools for the selected profile
+- open and maintain the TCP connection to Blender
+- expose `list/activate/deactivate` skill meta-tools
+- translate MCP tool calls into addon command payloads
 
-- **FastMCP instance** — Handles MCP protocol (stdio transport)
-- **BlenderConnection** — TCP socket to Blender addon (lazy initialization)
-- **SkillManager** — Dynamic tool loading/unloading (lazy initialization)
-- **Tool registration** — Loads tool modules based on configured profile
+### Blender Addon
 
-```python
-class BlenderMCPServer:
-    def __init__(self, name="Blender MCP", blender_host="127.0.0.1", blender_port=9876):
-        self.mcp = FastMCP(name)
-        self._connection = None      # Lazy: BlenderConnection
-        self._skill_manager = None   # Lazy: SkillManager
-        self._register_tools()       # Load tools based on TOOL_PROFILE
-```
+Key files:
 
-### Tool Modules
+- `addon/blender_mcp_addon/__init__.py`
+- `addon/blender_mcp_addon/server.py`
+- `addon/blender_mcp_addon/executor.py`
+- `addon/blender_mcp_addon/handlers/__init__.py`
 
-Each tool module follows a consistent pattern:
+Responsibilities:
 
-```python
-# tools/example.py
-from pydantic import BaseModel, Field
+- run a socket server inside Blender
+- move command execution back onto Blender's main thread
+- dispatch by category to handler modules
+- expose panel/preferences UI and hot reload helpers
 
-class ExampleInput(BaseModel):
-    name: str = Field(..., description="Object name")
+## Profile Inventory
 
-def register_example_tools(mcp: FastMCP, server: BlenderMCPServer) -> None:
-    @mcp.tool()
-    async def blender_example_action(params: ExampleInput) -> str:
-        result = await server.execute_command("category", "action", params.model_dump())
-        return format_result(result)
-```
+The current profile counts come from a static scan of tool decorators:
 
-### Tool Configuration (Profiles)
+| Profile | Modules | Tools | Notes |
+|---------|---------|-------|-------|
+| `minimal` | 4 | 29 | Core operational surface |
+| `skill` | 5 | 32 | Core tools plus 3 skill meta-tools |
+| `focused` | 14 | 108 | Static curated workflow set |
+| `standard` | 23 | 165 | Broad day-to-day coverage |
+| `extended` | 27 | 194 | Adds physics and batch workflows |
+| `full` | 50 | 356 | All user-facing modules |
 
-`tools_config.py` defines which modules are loaded at startup:
+The codebase has 359 total tools if you count the 3 skill meta-tools separately.
 
-| Profile | Modules | Tools | Use Case |
-|---------|---------|-------|----------|
-| `skill` | 5 (core + skills) | ~31 | Recommended: on-demand loading |
-| `minimal` | 4 (core only) | ~28 | Minimum viable set |
-| `focused` | 12 | ~82 | Static, curated set |
-| `standard` | 20 | ~146 | Most features |
-| `full` | 26+ | ~319 | Everything |
+## Skill Inventory
 
-## Skill System (Dynamic Tool Loading)
+| Skill | Estimated Tools | Module Set |
+|-------|-----------------|------------|
+| `modeling` | ~38 | modeling, curves, uv_mapping |
+| `materials` | ~17 | material, procedural_materials |
+| `style` | ~8 | style_presets, mesh_edit_advanced |
+| `character` | ~23 | character_templates, rigging, auto_rig |
+| `animation` | ~17 | animation, animation_presets |
+| `scene_setup` | ~18 | lighting, camera, world, render |
+| `automation` | ~12 | pipeline, quality_audit, style_presets, procedural_materials |
+| `physics` | ~18 | physics, constraints |
+| `batch_assets` | ~11 | batch, assets |
+| `advanced_3d` | ~32 | nodes, compositor, sculpting, texture_painting |
+| `sport_character` | ~7 | sport_character |
+| `training` | ~11 | training |
 
-The Skill system reduces initial context window usage by loading tools on demand.
+## Command Flow
 
-### Architecture
+1. The client invokes an MCP tool on the server.
+2. The server converts the tool input into `{category, action, params}`.
+3. `BlenderConnection` sends the request over TCP.
+4. The addon socket server receives the payload.
+5. `CommandExecutor` routes the request to a handler module.
+6. The handler executes Blender API calls and returns JSON.
 
-```
-Startup: Load CORE_MODULES + skills module → ~31 tools
-         ├── scene (6 tools)
-         ├── object (12 tools)
-         ├── utility (7 tools)
-         ├── export (3 tools)
-         └── skills (3 meta-tools)
+## Current Execution Gap
 
-Runtime: AI calls activate_skill("modeling")
-         → SkillManager dynamically imports modeling/curves/uv_mapping modules
-         → FastMCP.add_tool() registers each tool
-         → Server sends tools/list_changed notification
-         → Client refreshes tool list
-         → AI now has +38 modeling tools available
+The most important architecture gap found in the 2026-03 review:
 
-         AI calls deactivate_skill("modeling")
-         → FastMCP.remove_tool() for each registered tool
-         → Server sends tools/list_changed notification
-         → Tools removed, context freed
-```
+- `pipeline` and `quality_audit` are registered in `src/blender_mcp/tools_config.py`
+- those modules are also advertised through the `automation` skill
+- but `addon/blender_mcp_addon/handlers/__init__.py` does not map `pipeline` or `quality_audit`
 
-### Skill Definitions
+Effect:
 
-11 skill groups covering all functionality:
+- the tools can appear in MCP tool lists
+- execution can still fail inside the addon with an unknown category error
 
-| Skill | Tools | Modules |
-|-------|-------|---------|
-| modeling | ~38 | modeling, curves, uv_mapping |
-| materials | ~17 | material, procedural_materials |
-| style | ~8 | style_presets, mesh_edit_advanced |
-| character | ~23 | character_templates, rigging, auto_rig |
-| animation | ~17 | animation, animation_presets |
-| scene_setup | ~18 | lighting, camera, world, render |
-| physics | ~18 | physics, constraints |
-| batch_assets | ~11 | batch, assets |
-| advanced_3d | ~32 | nodes, compositor, sculpting, texture_painting |
-| sport_character | ~7 | sport_character |
-| training | ~11 | training |
+Until addon parity is completed, treat automation tools as experimental.
 
-### Key APIs Used
+## Extension Rule
 
-```python
-# Dynamic tool management (FastMCP)
-mcp.add_tool(fn, name="...", description="...")
-mcp.remove_tool("tool_name")
+When adding a new tool family, update both layers:
 
-# Client notification (MCP Protocol)
-await ctx.session.send_tool_list_changed()
-```
-
-## Blender Addon
-
-### TCP Server
-
-The addon runs a TCP server inside Blender (default port 9876) that:
-
-1. Listens for JSON-RPC commands from the MCP server
-2. Dispatches commands to the appropriate handler
-3. Returns JSON results
-
-### Command Dispatcher
-
-`executor.py` routes commands by category:
-
-```python
-HANDLER_MAP = {
-    "scene": scene_handler,
-    "object": object_handler,
-    "modeling": modeling_handler,
-    "material": material_handler,
-    # ... more handlers
-}
-```
-
-### Handlers
-
-Each handler executes Blender Python API calls:
-
-```python
-# handlers/object.py
-def handle(action: str, params: dict) -> dict:
-    if action == "create":
-        return _create_object(params)
-    elif action == "delete":
-        return _delete_object(params)
-    # ...
-```
-
-## Communication Protocol
-
-### MCP Server ↔ Blender Addon
-
-JSON-RPC over TCP socket:
-
-```json
-// Request (MCP Server → Blender)
-{
-    "category": "object",
-    "action": "create",
-    "params": {"type": "CUBE", "name": "MyCube", "location": [0, 0, 0]}
-}
-
-// Response (Blender → MCP Server)
-{
-    "success": true,
-    "result": "Created CUBE 'MyCube' at [0, 0, 0]"
-}
-```
-
-### MCP Server ↔ AI IDE
-
-Standard MCP protocol over stdio:
-
-- `tools/list` — List available tools
-- `tools/call` — Execute a tool
-- `notifications/tools/list_changed` — Dynamic tool updates
-
-## Design Decisions
-
-### Composite Tools over Atomic Tools
-
-10 composite tools replace 58 atomic tools to prevent AI tool selection confusion:
-
-```
-Before: create_cube, create_sphere, create_cylinder, ... (20 tools)
-After:  blender_object_create(type="CUBE|SPHERE|CYLINDER|...") (1 tool)
-```
-
-### Lazy Initialization
-
-Both `BlenderConnection` and `SkillManager` use lazy initialization to avoid startup overhead and circular imports.
-
-### Profile-Based Loading
-
-Multiple profiles allow the same codebase to serve different use cases without code changes — just a config switch.
-
-## Extension Guide
-
-### Adding a New Tool Module
-
-1. Create `src/blender_mcp/tools/my_module.py` with `register_my_module_tools(mcp, server)`
-2. Create `addon/blender_mcp_addon/handlers/my_module.py` with `handle(action, params)`
-3. Register in `tools_config.py` → `MODULE_REGISTRY`
-4. Register handler in `addon/blender_mcp_addon/executor.py`
-5. Add to appropriate profile or skill definition
-
-### Adding a New Skill
-
-Edit `skill_manager.py` → `SKILL_DEFINITIONS`:
-
-```python
-"my_skill": SkillInfo(
-    name="my_skill",
-    description="Description for AI to understand",
-    modules=["my_module_a", "my_module_b"],
-    estimated_tools=15,
-    workflow_guide="## My Skill Workflow\n...",
-),
-```
+1. server tool module and `MODULE_REGISTRY`
+2. addon handler module and handler registry
+3. profile / skill definitions
+4. tests that verify server-to-addon category parity

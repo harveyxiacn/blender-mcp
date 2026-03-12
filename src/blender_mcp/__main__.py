@@ -1,17 +1,17 @@
 """
-Blender MCP - 命令行入口点
+Blender MCP - Command Line Entry Point
 
 Usage:
     python -m blender_mcp [OPTIONS]
-    
+
 Options:
-    --host TEXT         Blender 连接主机 [default: 127.0.0.1]
-    --port INTEGER      Blender 连接端口 [default: 9876]
-    --transport TEXT    传输方式: stdio, http [default: stdio]
-    --http-port INTEGER HTTP 服务端口 [default: 8080]
-    --log-level TEXT    日志级别: DEBUG, INFO, WARNING, ERROR [default: INFO]
-    --version           显示版本信息
-    --help              显示帮助信息
+    --host TEXT         Blender connection host [default: 127.0.0.1]
+    --port INTEGER      Blender connection port [default: 9876]
+    --transport TEXT    Transport mode: stdio, http [default: stdio]
+    --http-port INTEGER HTTP server port [default: 8080]
+    --log-level TEXT    Log level: DEBUG, INFO, WARNING, ERROR [default: INFO]
+    --version           Show version info
+    --help              Show help info
 """
 
 import sys
@@ -31,29 +31,29 @@ from blender_mcp import __version__
 from blender_mcp.server import BlenderMCPServer
 from blender_mcp import config
 
-# 使用 stderr 避免干扰 MCP stdio 通信
+# Use stderr to avoid interfering with MCP stdio communication
 console = Console(file=sys.stderr)
 
-# PID 文件路径
+# PID file path
 _PID_FILE = Path(__file__).parent.parent.parent / ".blender_mcp.pid"
 
 
 def _get_pid_file() -> Path:
-    """获取 PID 文件路径（优先使用临时目录）"""
+    """Get PID file path (prefer temp directory)"""
     import tempfile
     return Path(tempfile.gettempdir()) / "blender_mcp.pid"
 
 
 def _cleanup_zombie_processes() -> int:
-    """清理残留的 blender-mcp 僵尸进程
-    
+    """Clean up leftover blender-mcp zombie processes
+
     Returns:
-        清理的进程数量
+        Number of processes cleaned up
     """
     current_pid = os.getpid()
     killed = 0
     
-    # 方法1: 通过 PID 文件清理
+    # Method 1: Clean up via PID file
     pid_file = _get_pid_file()
     if pid_file.exists():
         try:
@@ -61,7 +61,7 @@ def _cleanup_zombie_processes() -> int:
             if old_pid != current_pid and _is_blender_mcp_process(old_pid):
                 os.kill(old_pid, signal.SIGTERM)
                 killed += 1
-                console.print(f"[yellow]已终止残留进程 PID={old_pid}[/yellow]", highlight=False)
+                console.print(f"[yellow]Terminated leftover process PID={old_pid}[/yellow]", highlight=False)
         except (ValueError, ProcessLookupError, PermissionError, OSError):
             pass
         try:
@@ -69,7 +69,7 @@ def _cleanup_zombie_processes() -> int:
         except OSError:
             pass
     
-    # 方法2: 扫描所有 Python 进程，找到 blender-mcp 相关的
+    # Method 2: Scan all Python processes to find blender-mcp related ones
     if sys.platform == "win32":
         killed += _cleanup_windows(current_pid)
     else:
@@ -79,7 +79,7 @@ def _cleanup_zombie_processes() -> int:
 
 
 def _is_blender_mcp_process(pid: int) -> bool:
-    """检查指定 PID 是否是 blender-mcp 进程"""
+    """Check if the specified PID is a blender-mcp process"""
     try:
         if sys.platform == "win32":
             import subprocess
@@ -100,7 +100,7 @@ def _is_blender_mcp_process(pid: int) -> bool:
 
 
 def _cleanup_windows(current_pid: int) -> int:
-    """Windows 平台清理僵尸进程"""
+    """Clean up zombie processes on Windows"""
     killed = 0
     try:
         import subprocess
@@ -109,7 +109,7 @@ def _cleanup_windows(current_pid: int) -> int:
             capture_output=True, text=True, timeout=10
         )
         
-        # 解析 WMIC 输出
+        # Parse WMIC output
         entries = result.stdout.split("\n\n")
         pid = None
         cmdline = ""
@@ -129,7 +129,7 @@ def _cleanup_windows(current_pid: int) -> int:
                 try:
                     os.kill(pid, signal.SIGTERM)
                     killed += 1
-                    console.print(f"[yellow]已终止残留进程 PID={pid}[/yellow]", highlight=False)
+                    console.print(f"[yellow]Terminated leftover process PID={pid}[/yellow]", highlight=False)
                 except (ProcessLookupError, PermissionError, OSError):
                     pass
             
@@ -141,7 +141,7 @@ def _cleanup_windows(current_pid: int) -> int:
 
 
 def _cleanup_unix(current_pid: int) -> int:
-    """Unix/macOS 平台清理僵尸进程"""
+    """Clean up zombie processes on Unix/macOS"""
     killed = 0
     try:
         import subprocess
@@ -157,7 +157,7 @@ def _cleanup_unix(current_pid: int) -> int:
                 if pid != current_pid:
                     os.kill(pid, signal.SIGTERM)
                     killed += 1
-                    console.print(f"[yellow]已终止残留进程 PID={pid}[/yellow]", highlight=False)
+                    console.print(f"[yellow]Terminated leftover process PID={pid}[/yellow]", highlight=False)
             except (ValueError, ProcessLookupError, PermissionError, OSError):
                 pass
     except Exception:
@@ -166,7 +166,7 @@ def _cleanup_unix(current_pid: int) -> int:
 
 
 def _write_pid_file():
-    """写入当前进程 PID 文件"""
+    """Write the current process PID file"""
     try:
         pid_file = _get_pid_file()
         pid_file.write_text(str(os.getpid()))
@@ -175,7 +175,7 @@ def _write_pid_file():
 
 
 def _remove_pid_file():
-    """删除 PID 文件"""
+    """Remove the PID file"""
     try:
         pid_file = _get_pid_file()
         if pid_file.exists():
@@ -185,7 +185,7 @@ def _remove_pid_file():
 
 
 def setup_logging(level: str) -> None:
-    """配置日志系统（输出到 stderr，避免干扰 MCP stdio）"""
+    """Configure logging system (output to stderr to avoid interfering with MCP stdio)"""
     logging.basicConfig(
         level=getattr(logging, level.upper()),
         format="%(message)s",
@@ -195,11 +195,11 @@ def setup_logging(level: str) -> None:
 
 
 @click.group(invoke_without_command=True)
-@click.option("--host", default=config.BLENDER_HOST, help="Blender 连接主机")
-@click.option("--port", default=config.BLENDER_PORT, help="Blender 连接端口")
-@click.option("--transport", default="stdio", type=click.Choice(["stdio", "http"]), help="传输方式")
-@click.option("--http-port", default=config.MCP_HTTP_PORT, help="HTTP 服务端口")
-@click.option("--log-level", default=config.LOG_LEVEL, type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"]), help="日志级别")
+@click.option("--host", default=config.BLENDER_HOST, help="Blender connection host")
+@click.option("--port", default=config.BLENDER_PORT, help="Blender connection port")
+@click.option("--transport", default="stdio", type=click.Choice(["stdio", "http"]), help="Transport mode")
+@click.option("--http-port", default=config.MCP_HTTP_PORT, help="HTTP server port")
+@click.option("--log-level", default=config.LOG_LEVEL, type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"]), help="Log level")
 @click.version_option(version=__version__, prog_name="blender-mcp")
 @click.pass_context
 def main(
@@ -210,20 +210,20 @@ def main(
     http_port: int,
     log_level: str
 ) -> None:
-    """Blender MCP - AI 助手的 Blender 控制接口
-    
-    通过 MCP 协议让 AI 助手能够直接控制 Blender，
-    支持创建 3D 模型、角色、动画和场景。
+    """Blender MCP - Blender control interface for AI assistants
+
+    Enables AI assistants to directly control Blender via the MCP protocol,
+    supporting creation of 3D models, characters, animations, and scenes.
     """
     if ctx.invoked_subcommand is None:
         setup_logging(log_level)
         
-        # === 启动前清理僵尸进程 ===
+        # === Clean up zombie processes before startup ===
         killed = _cleanup_zombie_processes()
         if killed > 0:
-            console.print(f"[yellow]已清理 {killed} 个残留进程[/yellow]")
+            console.print(f"[yellow]Cleaned up {killed} leftover process(es)[/yellow]")
         
-        # === 写入 PID 文件 + 注册退出钩子 ===
+        # === Write PID file + register exit hook ===
         _write_pid_file()
         atexit.register(_remove_pid_file)
         
@@ -234,65 +234,65 @@ def main(
         
         try:
             if transport == "stdio":
-                # stdio 模式：stdout 用于 MCP 协议，日志输出到 stderr
-                console.print(f"[green]启动 Blender MCP 服务器 (stdio 模式)[/green]")
-                console.print(f"[dim]Blender 连接: {host}:{port} | PID: {os.getpid()}[/dim]")
-                server.run_stdio()  # 同步调用
+                # stdio mode: stdout used for MCP protocol, logs go to stderr
+                console.print(f"[green]Starting Blender MCP server (stdio mode)[/green]")
+                console.print(f"[dim]Blender connection: {host}:{port} | PID: {os.getpid()}[/dim]")
+                server.run_stdio()  # synchronous call
             else:
-                console.print(f"[green]启动 Blender MCP 服务器 (HTTP 模式)[/green]")
-                console.print(f"[dim]HTTP 端口: {http_port}[/dim]")
-                console.print(f"[dim]Blender 连接: {host}:{port} | PID: {os.getpid()}[/dim]")
-                server.run_http(http_port)  # 同步调用
+                console.print(f"[green]Starting Blender MCP server (HTTP mode)[/green]")
+                console.print(f"[dim]HTTP port: {http_port}[/dim]")
+                console.print(f"[dim]Blender connection: {host}:{port} | PID: {os.getpid()}[/dim]")
+                server.run_http(http_port)  # synchronous call
         except KeyboardInterrupt:
-            console.print("\n[yellow]服务器已停止[/yellow]")
+            console.print("\n[yellow]Server stopped[/yellow]")
         except Exception as e:
-            console.print(f"[red]错误: {e}[/red]")
+            console.print(f"[red]Error: {e}[/red]")
             sys.exit(1)
         finally:
             _remove_pid_file()
 
 
 @main.command()
-@click.option("--blender-path", default=None, help="Blender 安装路径")
-@click.option("--force", is_flag=True, help="强制重新安装")
+@click.option("--blender-path", default=None, help="Blender installation path")
+@click.option("--force", is_flag=True, help="Force reinstall")
 def install_addon(blender_path: Optional[str], force: bool) -> None:
-    """安装 Blender 插件
-    
-    自动检测 Blender 安装路径并安装 MCP 插件。
+    """Install the Blender addon
+
+    Automatically detects the Blender installation path and installs the MCP addon.
     """
     from blender_mcp.installer import install_blender_addon
     
     try:
         result = install_blender_addon(blender_path, force)
         if result:
-            console.print("[green]✓ Blender 插件安装成功！[/green]")
-            console.print("[dim]请重启 Blender 并在偏好设置中启用插件[/dim]")
+            console.print("[green]✓ Blender addon installed successfully![/green]")
+            console.print("[dim]Please restart Blender and enable the addon in Preferences[/dim]")
         else:
-            console.print("[yellow]插件已存在，使用 --force 强制重新安装[/yellow]")
+            console.print("[yellow]Addon already exists, use --force to reinstall[/yellow]")
     except Exception as e:
-        console.print(f"[red]安装失败: {e}[/red]")
+        console.print(f"[red]Installation failed: {e}[/red]")
         sys.exit(1)
 
 
 @main.command()
 def check() -> None:
-    """检查 Blender 连接状态"""
+    """Check Blender connection status"""
     from blender_mcp.connection import BlenderConnection
     
-    console.print("[dim]检查 Blender 连接...[/dim]")
+    console.print("[dim]Checking Blender connection...[/dim]")
     
     async def do_check():
         conn = BlenderConnection()
         try:
             await conn.connect()
             info = await conn.get_blender_info()
-            console.print("[green]✓ Blender 连接正常[/green]")
-            console.print(f"  版本: {info.get('version', '未知')}")
-            console.print(f"  场景: {info.get('scene', '未知')}")
+            console.print("[green]✓ Blender connection OK[/green]")
+            console.print(f"  Version: {info.get('version', 'unknown')}")
+            console.print(f"  Scene: {info.get('scene', 'unknown')}")
             await conn.disconnect()
         except Exception as e:
-            console.print(f"[red]✗ 连接失败: {e}[/red]")
-            console.print("[dim]请确保 Blender 正在运行且 MCP 插件已启用[/dim]")
+            console.print(f"[red]✗ Connection failed: {e}[/red]")
+            console.print("[dim]Please ensure Blender is running and the MCP addon is enabled[/dim]")
     
     asyncio.run(do_check())
 

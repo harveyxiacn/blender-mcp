@@ -1,8 +1,8 @@
 """
-命令处理器模块
+Command handler module
 
-每个处理器负责处理特定类别的命令。
-使用懒加载避免循环导入和启动失败。
+Each handler is responsible for processing a specific category of commands.
+Uses lazy loading to avoid circular imports and startup failures.
 """
 
 import importlib
@@ -10,7 +10,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# 处理器模块名称到文件名的映射
+# Mapping of handler module names to file names
 HANDLER_MODULES = {
     "scene": "scene",
     "object": "object",
@@ -62,18 +62,18 @@ HANDLER_MODULES = {
     "procedural_materials": "procedural_materials",
 }
 
-# 懒加载缓存
+# Lazy loading cache
 _loaded_handlers = {}
 
 
 def get_handler(name: str):
-    """懒加载获取处理器模块
-    
+    """Lazily load and retrieve a handler module
+
     Args:
-        name: 处理器名称 (如 "scene", "object", "modeling" 等)
-    
+        name: Handler name (e.g. "scene", "object", "modeling", etc.)
+
     Returns:
-        处理器模块，失败时返回 None
+        The handler module, or None on failure
     """
     if name in _loaded_handlers:
         return _loaded_handlers[name]

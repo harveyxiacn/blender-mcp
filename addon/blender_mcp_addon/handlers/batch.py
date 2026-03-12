@@ -1,7 +1,7 @@
 """
-批量处理处理器
+Batch processing handler
 
-处理批量材质、变换、重命名、导出等命令。
+Handles batch material, transform, rename, export and related commands.
 """
 
 from typing import Any, Dict, List
@@ -11,7 +11,7 @@ import os
 
 
 def _get_matching_objects(pattern: str) -> List[bpy.types.Object]:
-    """获取匹配模式的对象"""
+    """Get objects matching the pattern"""
     matching = []
     for obj in bpy.data.objects:
         if fnmatch.fnmatch(obj.name, pattern):
@@ -20,7 +20,7 @@ def _get_matching_objects(pattern: str) -> List[bpy.types.Object]:
 
 
 def handle_apply_material(params: Dict[str, Any]) -> Dict[str, Any]:
-    """批量应用材质"""
+    """Batch apply material"""
     pattern = params.get("pattern")
     material_name = params.get("material_name")
     replace_existing = params.get("replace_existing", True)
@@ -29,7 +29,7 @@ def handle_apply_material(params: Dict[str, Any]) -> Dict[str, Any]:
     if not material:
         return {
             "success": False,
-            "error": {"code": "MATERIAL_NOT_FOUND", "message": f"材质不存在: {material_name}"}
+            "error": {"code": "MATERIAL_NOT_FOUND", "message": f"Material not found: {material_name}"}
         }
     
     objects = _get_matching_objects(pattern)
@@ -54,7 +54,7 @@ def handle_apply_material(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_transform(params: Dict[str, Any]) -> Dict[str, Any]:
-    """批量变换"""
+    """Batch transform"""
     pattern = params.get("pattern")
     location_offset = params.get("location_offset")
     rotation_offset = params.get("rotation_offset")
@@ -90,7 +90,7 @@ def handle_transform(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_rename(params: Dict[str, Any]) -> Dict[str, Any]:
-    """批量重命名"""
+    """Batch rename"""
     pattern = params.get("pattern")
     new_name = params.get("new_name")
     numbering = params.get("numbering", True)
@@ -115,7 +115,7 @@ def handle_rename(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
-    """批量删除"""
+    """Batch delete"""
     pattern = params.get("pattern")
     delete_data = params.get("delete_data", True)
     
@@ -146,13 +146,13 @@ def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_export(params: Dict[str, Any]) -> Dict[str, Any]:
-    """批量导出"""
+    """Batch export"""
     pattern = params.get("pattern")
     export_path = params.get("export_path")
     format_type = params.get("format", "fbx")
     individual_files = params.get("individual_files", True)
     
-    # 确保目录存在
+    # Ensure directory exists
     if not os.path.exists(export_path):
         os.makedirs(export_path)
     
@@ -160,12 +160,12 @@ def handle_export(params: Dict[str, Any]) -> Dict[str, Any]:
     exported = 0
     
     if individual_files:
-        # 每个对象单独导出
+        # Export each object individually
         for obj in objects:
             if obj.type != 'MESH':
                 continue
             
-            # 选择对象
+            # Select object
             bpy.ops.object.select_all(action='DESELECT')
             obj.select_set(True)
             bpy.context.view_layer.objects.active = obj
@@ -191,9 +191,9 @@ def handle_export(params: Dict[str, Any]) -> Dict[str, Any]:
                     )
                 exported += 1
             except Exception as e:
-                print(f"导出 {obj.name} 失败: {e}")
+                print(f"Failed to export {obj.name}: {e}")
     else:
-        # 所有对象一起导出
+        # Export all objects together
         bpy.ops.object.select_all(action='DESELECT')
         for obj in objects:
             if obj.type == 'MESH':
@@ -234,7 +234,7 @@ def handle_export(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_add_modifier(params: Dict[str, Any]) -> Dict[str, Any]:
-    """批量添加修改器"""
+    """Batch add modifier"""
     pattern = params.get("pattern")
     modifier_type = params.get("modifier_type")
     settings = params.get("settings", {})
@@ -248,7 +248,7 @@ def handle_add_modifier(params: Dict[str, Any]) -> Dict[str, Any]:
         
         modifier = obj.modifiers.new(name=modifier_type, type=modifier_type)
         
-        # 应用设置
+        # Apply settings
         for key, value in settings.items():
             if hasattr(modifier, key):
                 setattr(modifier, key, value)
@@ -264,7 +264,7 @@ def handle_add_modifier(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_set_parent(params: Dict[str, Any]) -> Dict[str, Any]:
-    """批量设置父对象"""
+    """Batch set parent"""
     pattern = params.get("pattern")
     parent_name = params.get("parent_name")
     keep_transform = params.get("keep_transform", True)
@@ -273,7 +273,7 @@ def handle_set_parent(params: Dict[str, Any]) -> Dict[str, Any]:
     if not parent:
         return {
             "success": False,
-            "error": {"code": "PARENT_NOT_FOUND", "message": f"父对象不存在: {parent_name}"}
+            "error": {"code": "PARENT_NOT_FOUND", "message": f"Parent object not found: {parent_name}"}
         }
     
     objects = _get_matching_objects(pattern)

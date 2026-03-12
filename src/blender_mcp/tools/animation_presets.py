@@ -1,7 +1,7 @@
 """
-预设动画工具
+Preset Animation Tools
 
-提供预设动画库、动作管理、NLA编辑等功能。
+Provides preset animation library, action management, NLA editing, and more.
 """
 
 from typing import TYPE_CHECKING, Optional, List
@@ -13,78 +13,78 @@ if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class AnimationPresetApplyInput(BaseModel):
-    """应用预设动画输入"""
-    armature_name: str = Field(..., description="骨架名称")
+    """Apply preset animation input"""
+    armature_name: str = Field(..., description="Armature name")
     preset: str = Field(
         default="idle",
-        description="""预设动画类别：
-        基础动作: idle, idle_combat, walk, run, sprint, jump, double_jump, land, dodge_roll, dodge_back
-        战斗动作: attack, attack_combo_1, attack_combo_2, attack_combo_3, attack_heavy, attack_spin, attack_uppercut, block, parry, hit_light, hit_heavy, knockdown, getup, death
-        技能动作: cast_spell, cast_fireball, cast_heal, charge_power, release_power
-        社交动作: wave, celebrate, dance, sit, bow, salute, point
-        交互动作: pickup, use_item, open_chest"""
+        description="""Preset animation category:
+        Basic actions: idle, idle_combat, walk, run, sprint, jump, double_jump, land, dodge_roll, dodge_back
+        Combat actions: attack, attack_combo_1, attack_combo_2, attack_combo_3, attack_heavy, attack_spin, attack_uppercut, block, parry, hit_light, hit_heavy, knockdown, getup, death
+        Skill actions: cast_spell, cast_fireball, cast_heal, charge_power, release_power
+        Social actions: wave, celebrate, dance, sit, bow, salute, point
+        Interaction actions: pickup, use_item, open_chest"""
     )
-    speed: float = Field(default=1.0, description="动画速度倍率", ge=0.1, le=5.0)
-    loop: bool = Field(default=True, description="是否循环")
+    speed: float = Field(default=1.0, description="Animation speed multiplier", ge=0.1, le=5.0)
+    loop: bool = Field(default=True, description="Whether to loop")
 
 
 class ActionCreateInput(BaseModel):
-    """创建动作输入"""
-    action_name: str = Field(..., description="动作名称")
-    armature_name: Optional[str] = Field(default=None, description="关联的骨架")
-    frame_start: int = Field(default=1, description="起始帧")
-    frame_end: int = Field(default=60, description="结束帧")
+    """Create action input"""
+    action_name: str = Field(..., description="Action name")
+    armature_name: Optional[str] = Field(default=None, description="Associated armature")
+    frame_start: int = Field(default=1, description="Start frame")
+    frame_end: int = Field(default=60, description="End frame")
 
 
 class ActionLibraryAddInput(BaseModel):
-    """添加到动作库输入"""
-    action_name: str = Field(..., description="动作名称")
-    tags: Optional[List[str]] = Field(default=None, description="标签")
-    category: str = Field(default="general", description="分类")
+    """Add to action library input"""
+    action_name: str = Field(..., description="Action name")
+    tags: Optional[List[str]] = Field(default=None, description="Tags")
+    category: str = Field(default="general", description="Category")
 
 
 class NLAStripAddInput(BaseModel):
-    """添加NLA条带输入"""
-    object_name: str = Field(..., description="对象名称")
-    action_name: str = Field(..., description="动作名称")
-    track_name: str = Field(default="NlaTrack", description="轨道名称")
-    start_frame: int = Field(default=1, description="起始帧")
-    blend_type: str = Field(default="REPLACE", description="混合类型: REPLACE, ADD, SUBTRACT, MULTIPLY")
-    scale: float = Field(default=1.0, description="时间缩放")
+    """Add NLA strip input"""
+    object_name: str = Field(..., description="Object name")
+    action_name: str = Field(..., description="Action name")
+    track_name: str = Field(default="NlaTrack", description="Track name")
+    start_frame: int = Field(default=1, description="Start frame")
+    blend_type: str = Field(default="REPLACE", description="Blend type: REPLACE, ADD, SUBTRACT, MULTIPLY")
+    scale: float = Field(default=1.0, description="Time scale")
 
 
 class PathAnimationInput(BaseModel):
-    """路径动画输入"""
-    object_name: str = Field(..., description="对象名称")
-    path_name: str = Field(..., description="路径曲线名称")
-    duration: int = Field(default=100, description="动画持续帧数")
-    follow_rotation: bool = Field(default=True, description="跟随路径旋转")
+    """Path animation input"""
+    object_name: str = Field(..., description="Object name")
+    path_name: str = Field(..., description="Path curve name")
+    duration: int = Field(default=100, description="Animation duration in frames")
+    follow_rotation: bool = Field(default=True, description="Follow path rotation")
 
 
 class AnimationBakeInput(BaseModel):
-    """烘焙动画输入"""
-    object_name: str = Field(..., description="对象名称")
-    frame_start: int = Field(default=1, description="起始帧")
-    frame_end: int = Field(default=250, description="结束帧")
+    """Bake animation input"""
+    object_name: str = Field(..., description="Object name")
+    frame_start: int = Field(default=1, description="Start frame")
+    frame_end: int = Field(default=250, description="End frame")
     bake_types: List[str] = Field(
         default=["LOCATION", "ROTATION", "SCALE"],
-        description="烘焙类型"
+        description="Bake types"
     )
-    clear_constraints: bool = Field(default=False, description="烘焙后清除约束")
+    clear_constraints: bool = Field(default=False, description="Clear constraints after baking")
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_animation_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册预设动画工具"""
-    
+    """Register preset animation tools"""
+
     @mcp.tool(
         name="blender_animation_preset_apply",
         annotations={
-            "title": "应用预设动画",
+            "title": "Apply Preset Animation",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -92,25 +92,25 @@ def register_animation_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") ->
         }
     )
     async def blender_animation_preset_apply(params: AnimationPresetApplyInput) -> str:
-        """应用预设动画到骨架。
-        
-        可用预设:
-        - idle: 待机呼吸动画
-        - walk: 行走循环
-        - run: 跑步循环
-        - jump: 跳跃
-        - wave: 挥手
-        - celebrate: 庆祝
-        - attack: 攻击
-        - dance: 跳舞
-        - sit: 坐下
-        - bow: 鞠躬
-        
+        """Apply a preset animation to an armature.
+
+        Available presets:
+        - idle: Idle breathing animation
+        - walk: Walk cycle
+        - run: Run cycle
+        - jump: Jump
+        - wave: Wave
+        - celebrate: Celebrate
+        - attack: Attack
+        - dance: Dance
+        - sit: Sit down
+        - bow: Bow
+
         Args:
-            params: 骨架名称、预设类型、速度等
-            
+            params: Armature name, preset type, speed, etc.
+
         Returns:
-            应用结果
+            Application result
         """
         result = await server.execute_command(
             "animation_preset", "apply",
@@ -121,16 +121,16 @@ def register_animation_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") ->
                 "loop": params.loop
             }
         )
-        
+
         if result.get("success"):
-            return f"成功为 '{params.armature_name}' 应用 {params.preset} 动画"
+            return f"Successfully applied {params.preset} animation to '{params.armature_name}'"
         else:
-            return f"应用失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Application failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_action_create",
         annotations={
-            "title": "创建动作",
+            "title": "Create Action",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -138,13 +138,13 @@ def register_animation_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") ->
         }
     )
     async def blender_action_create(params: ActionCreateInput) -> str:
-        """创建新的动作。
-        
+        """Create a new action.
+
         Args:
-            params: 动作名称、帧范围等
-            
+            params: Action name, frame range, etc.
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "animation_preset", "action_create",
@@ -155,16 +155,16 @@ def register_animation_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") ->
                 "frame_end": params.frame_end
             }
         )
-        
+
         if result.get("success"):
-            return f"成功创建动作 '{params.action_name}'"
+            return f"Successfully created action '{params.action_name}'"
         else:
-            return f"创建失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Creation failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_nla_strip_add",
         annotations={
-            "title": "添加NLA条带",
+            "title": "Add NLA Strip",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -172,13 +172,13 @@ def register_animation_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") ->
         }
     )
     async def blender_nla_strip_add(params: NLAStripAddInput) -> str:
-        """添加NLA条带用于动画混合。
-        
+        """Add an NLA strip for animation blending.
+
         Args:
-            params: 对象、动作、轨道等
-            
+            params: Object, action, track, etc.
+
         Returns:
-            添加结果
+            Addition result
         """
         result = await server.execute_command(
             "animation_preset", "nla_add",
@@ -191,16 +191,16 @@ def register_animation_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") ->
                 "scale": params.scale
             }
         )
-        
+
         if result.get("success"):
-            return f"成功添加 NLA 条带"
+            return f"Successfully added NLA strip"
         else:
-            return f"添加失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Addition failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_animation_follow_path",
         annotations={
-            "title": "路径动画",
+            "title": "Path Animation",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -208,13 +208,13 @@ def register_animation_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") ->
         }
     )
     async def blender_animation_follow_path(params: PathAnimationInput) -> str:
-        """让对象沿路径移动。
-        
+        """Make an object follow a path.
+
         Args:
-            params: 对象、路径、持续时间等
-            
+            params: Object, path, duration, etc.
+
         Returns:
-            设置结果
+            Setting result
         """
         result = await server.execute_command(
             "animation_preset", "follow_path",
@@ -225,10 +225,10 @@ def register_animation_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") ->
                 "follow_rotation": params.follow_rotation
             }
         )
-        
+
         if result.get("success"):
-            return f"成功设置 '{params.object_name}' 沿 '{params.path_name}' 移动"
+            return f"Successfully set '{params.object_name}' to follow '{params.path_name}'"
         else:
-            return f"设置失败: {result.get('error', {}).get('message', '未知错误')}"
-    
-    # 注意：blender_animation_bake 已移至 animation.py 避免重复注册
+            return f"Setting failed: {result.get('error', {}).get('message', 'unknown error')}"
+
+    # Note: blender_animation_bake has been moved to animation.py to avoid duplicate registration

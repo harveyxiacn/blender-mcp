@@ -1,186 +1,185 @@
 """
-工具模块配置 - 控制启用哪些工具模块
 Tool Module Configuration - Control which tool modules are enabled
 
-使用方法:
-1. 设置 TOOL_PROFILE = "minimal" 启用最少工具 (~30个)
-2. 设置 TOOL_PROFILE = "standard" 启用标准工具 (~80个)
-3. 设置 TOOL_PROFILE = "full" 启用所有工具 (~300个)
+Usage:
+1. Set TOOL_PROFILE = "minimal" to enable minimal tools (~30)
+2. Set TOOL_PROFILE = "standard" to enable standard tools (~80)
+3. Set TOOL_PROFILE = "full" to enable all tools (~300)
 
-或者手动设置 ENABLED_MODULES 列表
+Or manually set the ENABLED_MODULES list.
 """
 
-# 工具配置文件 (Tool Profile)
-# 选项: "skill", "minimal", "focused", "standard", "extended", "full", "custom"
-# 
-# 推荐配置:
-# - "skill": ~31个工具 + 按需加载 - AI驱动的动态工具管理 (推荐)
-# - "focused": ~89个工具 - 满足大多数自动化需求
-# - "standard": ~153个工具 - 包含角色和场景功能
-# - "full": ~326个工具 - 完整功能
+# Tool Profile
+# Options: "skill", "minimal", "focused", "standard", "extended", "full", "custom"
+#
+# Recommended profiles:
+# - "skill": ~31 tools + on-demand loading - AI-driven dynamic tool management (recommended)
+# - "focused": ~89 tools - covers most automation needs
+# - "standard": ~153 tools - includes character and scene features
+# - "full": ~326 tools - all features
 TOOL_PROFILE = "skill"
 
 # ============================================================
-# 工具模块分类
+# Tool Module Categories
 # ============================================================
 
-# 核心工具 - 必须启用，这是最基本的功能
+# Core tools - must be enabled, these are the most basic features
 CORE_MODULES = [
-    "scene",              # 场景管理 (5个工具)
-    "object",             # 对象操作 (15个工具)
-    "utility",            # 实用工具 (8个工具) - 包含execute_python
-    "export",             # 导出工具 (4个工具)
+    "scene",              # Scene management (5 tools)
+    "object",             # Object operations (15 tools)
+    "utility",            # Utility tools (8 tools) - includes execute_python
+    "export",             # Export tools (4 tools)
 ]
 
-# 建模工具 - 创建和编辑3D模型
+# Modeling tools - create and edit 3D models
 MODELING_MODULES = [
-    "modeling",           # 建模工具 (20个工具)
-    "material",           # 材质系统 (15个工具)
-    "curves",             # 曲线工具 (8个工具)
-    "uv_mapping",         # UV映射 (10个工具)
-    "mesh_edit_advanced", # 高级网格编辑 (5个工具) - inset/bridge/spin/edge_mark/select_by_trait/vertex_group/vertex_color
-    "style_presets",      # 风格预设 (3个工具) - style_setup/outline/bake_maps
-    "procedural_materials", # 程序化材质 (2个工具) - 50+预设/磨损效果
+    "modeling",           # Modeling tools (20 tools)
+    "material",           # Material system (15 tools)
+    "curves",             # Curve tools (8 tools)
+    "uv_mapping",         # UV mapping (10 tools)
+    "mesh_edit_advanced", # Advanced mesh editing (5 tools) - inset/bridge/spin/edge_mark/select_by_trait/vertex_group/vertex_color
+    "style_presets",      # Style presets (3 tools) - style_setup/outline/bake_maps
+    "procedural_materials", # Procedural materials (2 tools) - 50+ presets/wear effects
 ]
 
-# 角色工具 - 角色创建和动画
+# Character tools - character creation and animation
 CHARACTER_MODULES = [
-    "character_templates", # 角色模板 (8个工具)
-    "rigging",            # 骨骼绑定 (10个工具)
-    "auto_rig",           # 自动绑定 (5个工具)
-    "animation",          # 动画工具 (12个工具)
-    "animation_presets",  # 动画预设 (5个工具)
+    "character_templates", # Character templates (8 tools)
+    "rigging",            # Rigging (10 tools)
+    "auto_rig",           # Auto rigging (5 tools)
+    "animation",          # Animation tools (12 tools)
+    "animation_presets",  # Animation presets (5 tools)
 ]
 
-# 场景工具 - 场景设置和渲染
+# Scene tools - scene setup and rendering
 SCENE_MODULES = [
-    "lighting",           # 灯光 (5个工具)
-    "camera",             # 相机 (4个工具)
-    "world",              # 世界设置 (4个工具)
-    "render",             # 渲染 (5个工具)
-    "scene_advanced",     # 高级场景 (6个工具)
+    "lighting",           # Lighting (5 tools)
+    "camera",             # Camera (4 tools)
+    "world",              # World settings (4 tools)
+    "render",             # Render (5 tools)
+    "scene_advanced",     # Advanced scene (6 tools)
 ]
 
-# 物理工具 - 物理模拟
+# Physics tools - physics simulation
 PHYSICS_MODULES = [
-    "physics",            # 物理系统 (8个工具)
-    "constraints",        # 约束系统 (10个工具)
+    "physics",            # Physics system (8 tools)
+    "constraints",        # Constraint system (10 tools)
 ]
 
-# 批处理工具 - 批量操作
+# Batch tools - bulk operations
 BATCH_MODULES = [
-    "batch",              # 批量工具 (6个工具)
-    "assets",             # 资产管理 (5个工具)
+    "batch",              # Batch tools (6 tools)
+    "assets",             # Asset management (5 tools)
 ]
 
-# 自动化流程工具 - 一键流程和质量闭环
+# Automation pipeline tools - one-click pipelines and quality gates
 AUTOMATION_MODULES = [
-    "pipeline",           # 自动流程 (3个工具) - 角色/道具/场景
-    "quality_audit",      # 质量审计 (4个工具) - 拓扑/UV/性能/综合评分
+    "pipeline",           # Automation pipeline (3 tools) - character/prop/scene
+    "quality_audit",      # Quality audit (4 tools) - topology/UV/performance/overall score
 ]
 
-# 高级工具 - 专业功能，不常用
+# Advanced tools - professional features, less commonly used
 ADVANCED_MODULES = [
-    "nodes",              # 节点工具 (8个工具)
-    "compositor",         # 合成器 (6个工具)
-    "sculpting",          # 雕刻 (10个工具)
-    "texture_painting",   # 纹理绘制 (8个工具)
-    "grease_pencil",      # 油笔 (10个工具)
-    "hair",               # 毛发 (8个工具)
-    "simulation",         # 模拟 (10个工具)
-    "video_editing",      # 视频编辑 (8个工具)
+    "nodes",              # Node tools (8 tools)
+    "compositor",         # Compositor (6 tools)
+    "sculpting",          # Sculpting (10 tools)
+    "texture_painting",   # Texture painting (8 tools)
+    "grease_pencil",      # Grease Pencil (10 tools)
+    "hair",               # Hair (8 tools)
+    "simulation",         # Simulation (10 tools)
+    "video_editing",      # Video editing (8 tools)
 ]
 
-# 外部集成工具 - 与其他软件集成
+# External integration tools - integration with other software
 EXTERNAL_MODULES = [
-    "external",           # 外部集成 (5个工具)
-    "substance",          # Substance (5个工具)
-    "zbrush",             # ZBrush (5个工具)
-    "mocap",              # 动作捕捉 (5个工具)
+    "external",           # External integration (5 tools)
+    "substance",          # Substance (5 tools)
+    "zbrush",             # ZBrush (5 tools)
+    "mocap",              # Motion capture (5 tools)
 ]
 
-# AI和云工具 - 需要外部服务
+# AI and cloud tools - require external services
 AI_CLOUD_MODULES = [
-    "ai_assist",          # AI辅助 (6个工具)
-    "ai_generation",      # AI生成 (8个工具)
-    "cloud_render",       # 云渲染 (6个工具)
-    "collaboration",      # 协作 (8个工具)
+    "ai_assist",          # AI assist (6 tools)
+    "ai_generation",      # AI generation (8 tools)
+    "cloud_render",       # Cloud render (6 tools)
+    "collaboration",      # Collaboration (8 tools)
 ]
 
-# 系统工具 - 系统设置和管理
+# System tools - system settings and management
 SYSTEM_MODULES = [
-    "addons",             # 插件管理 (4个工具)
-    "preferences",        # 偏好设置 (5个工具)
-    "versioning",         # 版本控制 (8个工具)
-    "vr_ar",              # VR/AR (8个工具)
+    "addons",             # Addon management (4 tools)
+    "preferences",        # Preferences (5 tools)
+    "versioning",         # Version control (8 tools)
+    "vr_ar",              # VR/AR (8 tools)
 ]
 
-# 角色扩展 - 更多角色功能
+# Character extensions - additional character features
 CHARACTER_EXTRA_MODULES = [
-    "character",          # 角色扩展 (10个工具)
+    "character",          # Character extensions (10 tools)
 ]
 
-# 运动角色工具 - 运动员3D建模专用
+# Sport character tools - dedicated to athlete 3D modeling
 SPORT_CHARACTER_MODULES = [
-    "sport_character",    # 运动角色 (7个工具) - 运动员角色创建、装备、运动服、姿势、参考图、优化、场景
+    "sport_character",    # Sport character (7 tools) - athlete creation, gear, sportswear, poses, reference images, optimization, scenes
 ]
 
-# 培训系统 - 交互式学习和项目实战
+# Training system - interactive learning and project exercises
 TRAINING_MODULES = [
-    "training",           # 培训系统 (11个工具) - 课程浏览、练习执行、进度管理
+    "training",           # Training system (11 tools) - course browsing, exercise execution, progress tracking
 ]
 
 # ============================================================
-# 预设配置
+# Preset Configurations
 # ============================================================
 
-# Skill 配置 (~31个工具) - 核心 + Skill 管理元工具 (推荐)
-# AI 通过 list_skills/activate_skill/deactivate_skill 按需加载工具组
-# 启动时只有核心工具, 需要时再加载建模/材质/动画等工具
+# Skill profile (~31 tools) - core + skill management meta-tools (recommended)
+# AI loads tool groups on demand via list_skills/activate_skill/deactivate_skill
+# Only core tools at startup; modeling/materials/animation etc. loaded as needed
 SKILL_MODULES = CORE_MODULES + ["skills"]
 
-# 最小配置 (~28个工具) - 仅核心功能
+# Minimal profile (~28 tools) - core functionality only
 MINIMAL_MODULES = CORE_MODULES
 
-# 聚焦配置 (~89个工具) - 保留完全自动化能力，精简工具数量 (推荐)
-# 核心理念：utility.execute_python 可以执行任意 Python 代码，
-# 所以只需保留最常用的便捷工具，复杂功能通过 execute_python 实现
+# Focused profile (~89 tools) - full automation capability with streamlined tool count (recommended)
+# Core concept: utility.execute_python can execute arbitrary Python code,
+# so only the most commonly used convenience tools are needed; complex features via execute_python
 FOCUSED_MODULES = [
-    # 核心功能 (28个)
-    "scene",              # 场景管理 - 必须
-    "object",             # 对象操作 - 必须  
-    "utility",            # 实用工具 (含execute_python) - 最重要！
-    "export",             # 导出工具 - 必须
-    
-    # 建模基础 (38个)
-    "modeling",           # 建模工具 - 创建几何体
-    "material",           # 材质系统 - 创建材质
-    
-    # 风格覆盖 (像素→3A) - 10个工具
-    "mesh_edit_advanced", # 高级网格: inset/bridge/spin/edge_mark/select_trait/vertex_group/vertex_color
-    "style_presets",      # 风格预设: style_setup/outline/bake_maps
-    "procedural_materials", # 程序化材质: 50+预设/磨损效果
-    
-    # 角色模板 (6个)
-    "character_templates", # 角色模板 - 快速创建Q版角色
-    
-    # 运动角色 (7个)
-    "sport_character",    # 运动角色 - 运动员建模、装备、运动服、姿势、Web优化
-    
-    # 培训系统 (11个)
-    "training",           # 培训系统 - 交互式学习与项目实战
-    "pipeline",           # 端到端自动流程
-    "quality_audit",      # 生产质量审计
-]
-# 总计约89个工具
-# 
-# 新增风格覆盖工具说明:
-# - mesh_edit_advanced: inset_faces, bridge, spin, edge_mark, select_by_trait, vertex_group, vertex_color
-# - style_presets: 一键风格配置(PIXEL/LOW_POLY/TOON/PBR/AAA), 描边效果, 烘焙工作流
-# - procedural_materials: 50+程序化材质预设(金属/木材/石材/布料/自然/皮肤/特效/卡通), 磨损效果
-# 注意：动画、灯光、渲染等功能可通过 utility.execute_python 实现
+    # Core features (28 tools)
+    "scene",              # Scene management - required
+    "object",             # Object operations - required
+    "utility",            # Utility tools (includes execute_python) - most important!
+    "export",             # Export tools - required
 
-# 标准配置 (~153个工具) - 包含更多便捷功能
+    # Modeling basics (38 tools)
+    "modeling",           # Modeling tools - create geometry
+    "material",           # Material system - create materials
+
+    # Style coverage (pixel to AAA) - 10 tools
+    "mesh_edit_advanced", # Advanced mesh: inset/bridge/spin/edge_mark/select_trait/vertex_group/vertex_color
+    "style_presets",      # Style presets: style_setup/outline/bake_maps
+    "procedural_materials", # Procedural materials: 50+ presets/wear effects
+
+    # Character templates (6 tools)
+    "character_templates", # Character templates - quick chibi character creation
+
+    # Sport character (7 tools)
+    "sport_character",    # Sport character - athlete modeling, gear, sportswear, poses, web optimization
+
+    # Training system (11 tools)
+    "training",           # Training system - interactive learning and project exercises
+    "pipeline",           # End-to-end automation pipeline
+    "quality_audit",      # Production quality audit
+]
+# Total: ~89 tools
+#
+# Style coverage tools explained:
+# - mesh_edit_advanced: inset_faces, bridge, spin, edge_mark, select_by_trait, vertex_group, vertex_color
+# - style_presets: one-click style config (PIXEL/LOW_POLY/TOON/PBR/AAA), outline effects, bake workflow
+# - procedural_materials: 50+ procedural material presets (metal/wood/stone/fabric/nature/skin/effects/toon), wear effects
+# Note: animation, lighting, render features can be achieved via utility.execute_python
+
+# Standard profile (~153 tools) - includes more convenience features
 STANDARD_MODULES = (
     CORE_MODULES +
     MODELING_MODULES +
@@ -189,14 +188,14 @@ STANDARD_MODULES = (
     AUTOMATION_MODULES
 )
 
-# 扩展配置 (~120个工具) - 包含物理和批处理
+# Extended profile (~120 tools) - includes physics and batch processing
 EXTENDED_MODULES = (
     STANDARD_MODULES +
     PHYSICS_MODULES +
     BATCH_MODULES
 )
 
-# 完整配置 (~326个工具) - 所有功能
+# Full profile (~326 tools) - all features
 FULL_MODULES = (
     CORE_MODULES +
     MODELING_MODULES +
@@ -215,11 +214,11 @@ FULL_MODULES = (
 )
 
 # ============================================================
-# 获取启用的模块列表
+# Get Enabled Module List
 # ============================================================
 
 def get_enabled_modules():
-    """根据TOOL_PROFILE返回启用的模块列表"""
+    """Return the list of enabled modules based on TOOL_PROFILE"""
     if TOOL_PROFILE == "skill":
         return SKILL_MODULES
     elif TOOL_PROFILE == "minimal":
@@ -233,14 +232,14 @@ def get_enabled_modules():
     elif TOOL_PROFILE == "full":
         return FULL_MODULES
     elif TOOL_PROFILE == "custom":
-        # 用户可以在这里自定义模块列表
+        # Users can customize the module list here
         return CUSTOM_MODULES
     else:
-        return FOCUSED_MODULES  # 默认使用focused配置
+        return FOCUSED_MODULES  # Default to focused profile
 
-# 自定义模块列表 (当TOOL_PROFILE = "custom"时使用)
+# Custom module list (used when TOOL_PROFILE = "custom")
 CUSTOM_MODULES = [
-    # 添加你需要的模块
+    # Add the modules you need
     "scene",
     "object",
     "utility",
@@ -256,7 +255,7 @@ CUSTOM_MODULES = [
 ]
 
 # ============================================================
-# 模块到注册函数的映射
+# Module to Register Function Mapping
 # ============================================================
 
 MODULE_REGISTRY = {
@@ -313,15 +312,15 @@ MODULE_REGISTRY = {
     "quality_audit": "register_quality_audit_tools",
 }
 
-# Skills 模块不在 MODULE_REGISTRY 中使用常规映射
-# 因为它通过 skill_manager 动态加载
+# The skills module does not use the standard mapping in MODULE_REGISTRY
+# because it is dynamically loaded via skill_manager
 
 # ============================================================
-# 打印配置信息
+# Print Configuration Info
 # ============================================================
 
 def print_config_info():
-    """打印当前配置信息"""
+    """Print current configuration info"""
     enabled = get_enabled_modules()
     print(f"Tool Profile: {TOOL_PROFILE}")
     print(f"Enabled Modules: {len(enabled)}")

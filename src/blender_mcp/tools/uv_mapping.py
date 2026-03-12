@@ -1,7 +1,7 @@
 """
-UV映射工具
+UV Mapping Tools
 
-提供UV展开、投影、编辑等功能。
+Provides UV unwrapping, projection, editing, and related functionality.
 """
 
 from typing import TYPE_CHECKING, Optional, List
@@ -13,67 +13,67 @@ if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class UVUnwrapInput(BaseModel):
-    """UV展开输入"""
-    object_name: str = Field(..., description="对象名称")
+    """UV unwrap input"""
+    object_name: str = Field(..., description="Object name")
     method: str = Field(
         default="ANGLE_BASED",
-        description="展开方法: ANGLE_BASED, CONFORMAL"
+        description="Unwrap method: ANGLE_BASED, CONFORMAL"
     )
-    fill_holes: bool = Field(default=True, description="填充空洞")
-    correct_aspect: bool = Field(default=True, description="修正宽高比")
+    fill_holes: bool = Field(default=True, description="Fill holes")
+    correct_aspect: bool = Field(default=True, description="Correct aspect ratio")
 
 
 class UVProjectInput(BaseModel):
-    """UV投影输入"""
-    object_name: str = Field(..., description="对象名称")
+    """UV projection input"""
+    object_name: str = Field(..., description="Object name")
     projection_type: str = Field(
         default="CUBE",
-        description="投影类型: CUBE, CYLINDER, SPHERE, VIEW"
+        description="Projection type: CUBE, CYLINDER, SPHERE, VIEW"
     )
-    scale_to_bounds: bool = Field(default=True, description="缩放到边界")
+    scale_to_bounds: bool = Field(default=True, description="Scale to bounds")
 
 
 class UVSmartProjectInput(BaseModel):
-    """智能UV投影输入"""
-    object_name: str = Field(..., description="对象名称")
-    angle_limit: float = Field(default=66.0, description="角度限制 (度)", ge=0, le=89)
-    island_margin: float = Field(default=0.0, description="岛屿边距", ge=0, le=1)
-    area_weight: float = Field(default=0.0, description="面积权重", ge=0, le=1)
+    """Smart UV projection input"""
+    object_name: str = Field(..., description="Object name")
+    angle_limit: float = Field(default=66.0, description="Angle limit (degrees)", ge=0, le=89)
+    island_margin: float = Field(default=0.0, description="Island margin", ge=0, le=1)
+    area_weight: float = Field(default=0.0, description="Area weight", ge=0, le=1)
 
 
 class UVPackInput(BaseModel):
-    """UV打包输入"""
-    object_name: str = Field(..., description="对象名称")
-    margin: float = Field(default=0.001, description="边距", ge=0, le=1)
-    rotate: bool = Field(default=True, description="允许旋转")
+    """UV pack input"""
+    object_name: str = Field(..., description="Object name")
+    margin: float = Field(default=0.001, description="Margin", ge=0, le=1)
+    rotate: bool = Field(default=True, description="Allow rotation")
 
 
 class UVSeamInput(BaseModel):
-    """UV接缝输入"""
-    object_name: str = Field(..., description="对象名称")
-    action: str = Field(default="mark", description="操作: mark, clear")
-    edge_indices: Optional[List[int]] = Field(default=None, description="边索引列表")
-    from_sharp: bool = Field(default=False, description="从锐边标记")
+    """UV seam input"""
+    object_name: str = Field(..., description="Object name")
+    action: str = Field(default="mark", description="Action: mark, clear")
+    edge_indices: Optional[List[int]] = Field(default=None, description="Edge index list")
+    from_sharp: bool = Field(default=False, description="Mark from sharp edges")
 
 
 class UVTransformInput(BaseModel):
-    """UV变换输入"""
-    object_name: str = Field(..., description="对象名称")
-    translate: Optional[List[float]] = Field(default=None, description="平移 [U, V]")
-    rotate: Optional[float] = Field(default=None, description="旋转 (度)")
-    scale: Optional[List[float]] = Field(default=None, description="缩放 [U, V]")
+    """UV transform input"""
+    object_name: str = Field(..., description="Object name")
+    translate: Optional[List[float]] = Field(default=None, description="Translation [U, V]")
+    rotate: Optional[float] = Field(default=None, description="Rotation (degrees)")
+    scale: Optional[List[float]] = Field(default=None, description="Scale [U, V]")
 
 
-# ==================== 生产标准优化输入模型 ====================
+# ==================== Production-Standard Optimization Input Models ====================
 
 from enum import Enum
 
 
 class TextureResolution(str, Enum):
-    """纹理分辨率"""
+    """Texture resolution"""
     RES_256 = "256"
     RES_512 = "512"
     RES_1024 = "1024"
@@ -82,70 +82,70 @@ class TextureResolution(str, Enum):
 
 
 class UVAnalyzeInput(BaseModel):
-    """UV分析输入"""
-    object_name: str = Field(..., description="对象名称")
+    """UV analysis input"""
+    object_name: str = Field(..., description="Object name")
     texture_resolution: TextureResolution = Field(
         default=TextureResolution.RES_1024,
-        description="目标纹理分辨率（用于计算像素密度）"
+        description="Target texture resolution (used for pixel density calculation)"
     )
 
 
 class UVOptimizeInput(BaseModel):
-    """UV优化输入"""
-    object_name: str = Field(..., description="对象名称")
-    target_margin: float = Field(default=0.01, description="目标边距", ge=0, le=0.1)
-    straighten_uvs: bool = Field(default=True, description="尝试矫正UV")
-    minimize_stretch: bool = Field(default=True, description="最小化拉伸")
-    pack_efficiently: bool = Field(default=True, description="高效打包")
+    """UV optimization input"""
+    object_name: str = Field(..., description="Object name")
+    target_margin: float = Field(default=0.01, description="Target margin", ge=0, le=0.1)
+    straighten_uvs: bool = Field(default=True, description="Attempt to straighten UVs")
+    minimize_stretch: bool = Field(default=True, description="Minimize stretch")
+    pack_efficiently: bool = Field(default=True, description="Pack efficiently")
 
 
 class UVDensityInput(BaseModel):
-    """UV密度标准化输入"""
-    object_name: str = Field(..., description="对象名称")
+    """UV density normalization input"""
+    object_name: str = Field(..., description="Object name")
     target_density: Optional[float] = Field(
         default=None,
-        description="目标密度（像素/单位），None则使用平均密度"
+        description="Target density (pixels/unit), None uses average density"
     )
     texture_resolution: TextureResolution = Field(
         default=TextureResolution.RES_1024,
-        description="目标纹理分辨率"
+        description="Target texture resolution"
     )
 
 
 class TextureAtlasCreateInput(BaseModel):
-    """创建纹理图集输入"""
-    object_names: List[str] = Field(..., description="对象名称列表")
-    atlas_name: str = Field(default="TextureAtlas", description="图集名称")
+    """Create texture atlas input"""
+    object_names: List[str] = Field(..., description="Object name list")
+    atlas_name: str = Field(default="TextureAtlas", description="Atlas name")
     resolution: TextureResolution = Field(
         default=TextureResolution.RES_2048,
-        description="图集分辨率"
+        description="Atlas resolution"
     )
-    margin: float = Field(default=0.01, description="UV岛屿边距", ge=0, le=0.1)
+    margin: float = Field(default=0.01, description="UV island margin", ge=0, le=0.1)
 
 
 class UVAutoSeamInput(BaseModel):
-    """自动接缝输入"""
-    object_name: str = Field(..., description="对象名称")
-    angle_threshold: float = Field(default=30.0, description="角度阈值（度）", ge=0, le=90)
-    use_hard_edges: bool = Field(default=True, description="使用硬边作为接缝")
-    optimize_for_deformation: bool = Field(default=False, description="优化变形区域")
+    """Auto seam input"""
+    object_name: str = Field(..., description="Object name")
+    angle_threshold: float = Field(default=30.0, description="Angle threshold (degrees)", ge=0, le=90)
+    use_hard_edges: bool = Field(default=True, description="Use hard edges as seams")
+    optimize_for_deformation: bool = Field(default=False, description="Optimize for deformation areas")
 
 
 class UVGridCheckInput(BaseModel):
-    """UV棋盘格检查输入"""
-    object_name: str = Field(..., description="对象名称")
-    grid_size: int = Field(default=8, description="棋盘格数量", ge=2, le=64)
+    """UV checker grid input"""
+    object_name: str = Field(..., description="Object name")
+    grid_size: int = Field(default=8, description="Checker grid count", ge=2, le=64)
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册UV映射工具"""
-    
+    """Register UV mapping tools"""
+
     @mcp.tool(
         name="blender_uv_unwrap",
         annotations={
-            "title": "UV展开",
+            "title": "UV Unwrap",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -153,13 +153,13 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_uv_unwrap(params: UVUnwrapInput) -> str:
-        """自动UV展开。
-        
+        """Automatic UV unwrap.
+
         Args:
-            params: 对象名称、展开方法等
-            
+            params: Object name, unwrap method, etc.
+
         Returns:
-            展开结果
+            Unwrap result
         """
         result = await server.execute_command(
             "uv", "unwrap",
@@ -170,16 +170,16 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "correct_aspect": params.correct_aspect
             }
         )
-        
+
         if result.get("success"):
-            return f"成功展开 '{params.object_name}' 的UV"
+            return f"Successfully unwrapped UV for '{params.object_name}'"
         else:
-            return f"展开失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Unwrap failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_uv_project",
         annotations={
-            "title": "UV投影",
+            "title": "UV Projection",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -187,13 +187,13 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_uv_project(params: UVProjectInput) -> str:
-        """投影UV映射（立方体、圆柱、球面）。
-        
+        """UV projection mapping (cube, cylinder, sphere).
+
         Args:
-            params: 对象名称、投影类型
-            
+            params: Object name, projection type
+
         Returns:
-            投影结果
+            Projection result
         """
         result = await server.execute_command(
             "uv", "project",
@@ -203,16 +203,16 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "scale_to_bounds": params.scale_to_bounds
             }
         )
-        
+
         if result.get("success"):
-            return f"成功为 '{params.object_name}' 应用 {params.projection_type} 投影"
+            return f"Successfully applied {params.projection_type} projection to '{params.object_name}'"
         else:
-            return f"投影失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Projection failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_uv_smart_project",
         annotations={
-            "title": "智能UV投影",
+            "title": "Smart UV Project",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -220,13 +220,13 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_uv_smart_project(params: UVSmartProjectInput) -> str:
-        """智能UV投影（自动分割岛屿）。
-        
+        """Smart UV projection (automatic island splitting).
+
         Args:
-            params: 对象名称、角度限制、边距
-            
+            params: Object name, angle limit, margin
+
         Returns:
-            投影结果
+            Projection result
         """
         result = await server.execute_command(
             "uv", "smart_project",
@@ -237,16 +237,16 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "area_weight": params.area_weight
             }
         )
-        
+
         if result.get("success"):
-            return f"成功为 '{params.object_name}' 应用智能UV投影"
+            return f"Successfully applied smart UV projection to '{params.object_name}'"
         else:
-            return f"投影失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Projection failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_uv_pack",
         annotations={
-            "title": "UV打包",
+            "title": "UV Pack",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -254,13 +254,13 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_uv_pack(params: UVPackInput) -> str:
-        """优化UV岛屿排布。
-        
+        """Optimize UV island layout.
+
         Args:
-            params: 对象名称、边距、是否旋转
-            
+            params: Object name, margin, whether to rotate
+
         Returns:
-            打包结果
+            Pack result
         """
         result = await server.execute_command(
             "uv", "pack",
@@ -270,16 +270,16 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "rotate": params.rotate
             }
         )
-        
+
         if result.get("success"):
-            return f"成功打包 '{params.object_name}' 的UV"
+            return f"Successfully packed UV for '{params.object_name}'"
         else:
-            return f"打包失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Pack failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_uv_seam",
         annotations={
-            "title": "UV接缝",
+            "title": "UV Seam",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -287,13 +287,13 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_uv_seam(params: UVSeamInput) -> str:
-        """标记或清除UV接缝。
-        
+        """Mark or clear UV seams.
+
         Args:
-            params: 对象名称、操作类型
-            
+            params: Object name, action type
+
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "uv", "seam",
@@ -304,16 +304,16 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "from_sharp": params.from_sharp
             }
         )
-        
+
         if result.get("success"):
-            return f"成功{params.action} UV接缝"
+            return f"Successfully performed {params.action} on UV seams"
         else:
-            return f"操作失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Operation failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_uv_transform",
         annotations={
-            "title": "UV变换",
+            "title": "UV Transform",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -321,13 +321,13 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_uv_transform(params: UVTransformInput) -> str:
-        """变换UV坐标。
-        
+        """Transform UV coordinates.
+
         Args:
-            params: 对象名称、平移、旋转、缩放
-            
+            params: Object name, translation, rotation, scale
+
         Returns:
-            变换结果
+            Transform result
         """
         result = await server.execute_command(
             "uv", "transform",
@@ -338,18 +338,18 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "scale": params.scale
             }
         )
-        
+
         if result.get("success"):
-            return f"成功变换 '{params.object_name}' 的UV"
+            return f"Successfully transformed UV for '{params.object_name}'"
         else:
-            return f"变换失败: {result.get('error', {}).get('message', '未知错误')}"
-    
-    # ==================== 生产标准优化工具 ====================
-    
+            return f"Transform failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
+    # ==================== Production-Standard Optimization Tools ====================
+
     @mcp.tool(
         name="blender_uv_analyze",
         annotations={
-            "title": "UV质量分析",
+            "title": "UV Quality Analysis",
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -357,20 +357,20 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_uv_analyze(params: UVAnalyzeInput) -> str:
-        """分析UV映射质量。
-        
-        检查UV质量指标：
-        - 拉伸/变形程度
-        - 岛屿数量和分布
-        - UV空间利用率
-        - 像素密度一致性
-        - 重叠检测
-        
+        """Analyze UV mapping quality.
+
+        Checks UV quality metrics:
+        - Stretch/distortion level
+        - Island count and distribution
+        - UV space utilization
+        - Pixel density consistency
+        - Overlap detection
+
         Args:
-            params: 对象名称和目标纹理分辨率
-            
+            params: Object name and target texture resolution
+
         Returns:
-            详细的UV分析报告
+            Detailed UV analysis report
         """
         result = await server.execute_command(
             "uv", "analyze",
@@ -379,57 +379,57 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "texture_resolution": int(params.texture_resolution.value)
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            
-            lines = [f"# UV分析报告: {params.object_name}", ""]
-            
-            # 基础统计
-            lines.append("## 基础统计")
-            lines.append(f"- UV层数量: {data.get('uv_layer_count', 'N/A')}")
-            lines.append(f"- 岛屿数量: {data.get('island_count', 'N/A')}")
-            lines.append(f"- UV空间利用率: {data.get('space_usage', 0):.1f}%")
+
+            lines = [f"# UV Analysis Report: {params.object_name}", ""]
+
+            # Basic statistics
+            lines.append("## Basic Statistics")
+            lines.append(f"- UV Layer Count: {data.get('uv_layer_count', 'N/A')}")
+            lines.append(f"- Island Count: {data.get('island_count', 'N/A')}")
+            lines.append(f"- UV Space Utilization: {data.get('space_usage', 0):.1f}%")
             lines.append("")
-            
-            # 质量指标
-            lines.append("## 质量指标")
-            lines.append(f"- 平均拉伸度: {data.get('avg_stretch', 0):.3f}")
-            lines.append(f"- 最大拉伸度: {data.get('max_stretch', 0):.3f}")
-            lines.append(f"- 重叠面数: {data.get('overlapping_faces', 0)}")
+
+            # Quality metrics
+            lines.append("## Quality Metrics")
+            lines.append(f"- Average Stretch: {data.get('avg_stretch', 0):.3f}")
+            lines.append(f"- Maximum Stretch: {data.get('max_stretch', 0):.3f}")
+            lines.append(f"- Overlapping Faces: {data.get('overlapping_faces', 0)}")
             lines.append("")
-            
-            # 像素密度
+
+            # Pixel density
             density = data.get("pixel_density", {})
-            lines.append("## 像素密度（基于 {}x{} 纹理）".format(
+            lines.append("## Pixel Density (based on {}x{} texture)".format(
                 params.texture_resolution.value, params.texture_resolution.value
             ))
-            lines.append(f"- 平均密度: {density.get('average', 0):.1f} 像素/单位")
-            lines.append(f"- 最小密度: {density.get('min', 0):.1f} 像素/单位")
-            lines.append(f"- 最大密度: {density.get('max', 0):.1f} 像素/单位")
-            lines.append(f"- 密度变化: {density.get('variance', 0):.1f}%")
+            lines.append(f"- Average Density: {density.get('average', 0):.1f} pixels/unit")
+            lines.append(f"- Minimum Density: {density.get('min', 0):.1f} pixels/unit")
+            lines.append(f"- Maximum Density: {density.get('max', 0):.1f} pixels/unit")
+            lines.append(f"- Density Variance: {density.get('variance', 0):.1f}%")
             lines.append("")
-            
-            # 问题和建议
+
+            # Issues and suggestions
             issues = data.get("issues", [])
             if issues:
-                lines.append("## ⚠️ 发现的问题")
+                lines.append("## Issues Found")
                 for issue in issues:
                     lines.append(f"- {issue}")
                 lines.append("")
-            
-            # 评分
+
+            # Score
             score = data.get("quality_score", 0)
-            lines.append(f"## UV质量评分: {score}/100")
-            
+            lines.append(f"## UV Quality Score: {score}/100")
+
             return "\n".join(lines)
         else:
-            return f"分析失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Analysis failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_uv_optimize",
         annotations={
-            "title": "优化UV布局",
+            "title": "Optimize UV Layout",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -437,19 +437,19 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_uv_optimize(params: UVOptimizeInput) -> str:
-        """优化UV布局以符合生产标准。
-        
-        自动执行以下优化：
-        - 最小化UV拉伸
-        - 高效打包UV岛屿
-        - 优化UV空间利用率
-        - 设置适当的岛屿边距
-        
+        """Optimize UV layout to meet production standards.
+
+        Automatically performs the following optimizations:
+        - Minimize UV stretch
+        - Efficiently pack UV islands
+        - Optimize UV space utilization
+        - Set appropriate island margins
+
         Args:
-            params: 对象名称和优化选项
-            
+            params: Object name and optimization options
+
         Returns:
-            优化结果
+            Optimization result
         """
         result = await server.execute_command(
             "uv", "optimize",
@@ -461,22 +461,22 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "pack_efficiently": params.pack_efficiently
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            
-            lines = [f"UV优化完成: {params.object_name}", ""]
-            lines.append(f"- 空间利用率: {data.get('old_usage', 0):.1f}% → {data.get('new_usage', 0):.1f}%")
-            lines.append(f"- 平均拉伸度: {data.get('old_stretch', 0):.3f} → {data.get('new_stretch', 0):.3f}")
-            
+
+            lines = [f"UV optimization complete: {params.object_name}", ""]
+            lines.append(f"- Space Utilization: {data.get('old_usage', 0):.1f}% -> {data.get('new_usage', 0):.1f}%")
+            lines.append(f"- Average Stretch: {data.get('old_stretch', 0):.3f} -> {data.get('new_stretch', 0):.3f}")
+
             return "\n".join(lines)
         else:
-            return f"优化失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Optimization failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_uv_density_normalize",
         annotations={
-            "title": "标准化UV密度",
+            "title": "Normalize UV Density",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -484,18 +484,18 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_uv_density_normalize(params: UVDensityInput) -> str:
-        """标准化UV像素密度。
-        
-        确保所有UV岛屿具有一致的像素密度，这对于：
-        - 游戏资产质量一致性至关重要
-        - 避免纹理模糊或过于清晰的区域
-        - 符合游戏引擎LOD要求
-        
+        """Normalize UV pixel density.
+
+        Ensures all UV islands have consistent pixel density, which is critical for:
+        - Game asset quality consistency
+        - Avoiding blurry or overly sharp texture areas
+        - Meeting game engine LOD requirements
+
         Args:
-            params: 对象名称和目标密度设置
-            
+            params: Object name and target density settings
+
         Returns:
-            标准化结果
+            Normalization result
         """
         result = await server.execute_command(
             "uv", "density_normalize",
@@ -505,22 +505,22 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "texture_resolution": int(params.texture_resolution.value)
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            
-            lines = [f"UV密度标准化完成: {params.object_name}", ""]
-            lines.append(f"- 目标密度: {data.get('target_density', 0):.1f} 像素/单位")
-            lines.append(f"- 调整的岛屿数: {data.get('adjusted_islands', 0)}")
-            
+
+            lines = [f"UV density normalization complete: {params.object_name}", ""]
+            lines.append(f"- Target Density: {data.get('target_density', 0):.1f} pixels/unit")
+            lines.append(f"- Adjusted Islands: {data.get('adjusted_islands', 0)}")
+
             return "\n".join(lines)
         else:
-            return f"标准化失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Normalization failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_texture_atlas_create",
         annotations={
-            "title": "创建纹理图集",
+            "title": "Create Texture Atlas",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -528,18 +528,18 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_texture_atlas_create(params: TextureAtlasCreateInput) -> str:
-        """为多个对象创建纹理图集（Texture Atlas）。
-        
-        将多个对象的UV合并到单一纹理空间中，这对于：
-        - 减少Draw Call，提升渲染性能
-        - 移动端游戏优化
-        - 批量渲染静态场景
-        
+        """Create a texture atlas for multiple objects.
+
+        Merges UV of multiple objects into a single texture space, which is useful for:
+        - Reducing draw calls and improving rendering performance
+        - Mobile game optimization
+        - Batch rendering of static scenes
+
         Args:
-            params: 对象列表、图集名称和设置
-            
+            params: Object list, atlas name, and settings
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "uv", "create_atlas",
@@ -550,23 +550,23 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "margin": params.margin
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            
-            lines = [f"纹理图集创建成功: {params.atlas_name}", ""]
-            lines.append(f"- 分辨率: {params.resolution.value}x{params.resolution.value}")
-            lines.append(f"- 包含对象数: {len(params.object_names)}")
-            lines.append(f"- UV空间利用率: {data.get('space_usage', 0):.1f}%")
-            
+
+            lines = [f"Texture atlas created successfully: {params.atlas_name}", ""]
+            lines.append(f"- Resolution: {params.resolution.value}x{params.resolution.value}")
+            lines.append(f"- Objects Included: {len(params.object_names)}")
+            lines.append(f"- UV Space Utilization: {data.get('space_usage', 0):.1f}%")
+
             return "\n".join(lines)
         else:
-            return f"创建图集失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Atlas creation failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_uv_auto_seam",
         annotations={
-            "title": "自动UV接缝",
+            "title": "Auto UV Seam",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -574,18 +574,18 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_uv_auto_seam(params: UVAutoSeamInput) -> str:
-        """智能自动标记UV接缝。
-        
-        基于几何特征自动生成最优接缝：
-        - 基于角度阈值检测硬边
-        - 考虑模型拓扑结构
-        - 可选择针对变形优化（角色动画）
-        
+        """Intelligent automatic UV seam marking.
+
+        Automatically generates optimal seams based on geometric features:
+        - Detects hard edges based on angle threshold
+        - Considers model topology
+        - Optional optimization for deformation (character animation)
+
         Args:
-            params: 对象名称和接缝选项
-            
+            params: Object name and seam options
+
         Returns:
-            接缝标记结果
+            Seam marking result
         """
         result = await server.execute_command(
             "uv", "auto_seam",
@@ -596,22 +596,22 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "optimize_for_deformation": params.optimize_for_deformation
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            
-            lines = [f"自动接缝完成: {params.object_name}", ""]
-            lines.append(f"- 标记的接缝边数: {data.get('seam_count', 0)}")
-            lines.append(f"- 预计岛屿数: {data.get('estimated_islands', 0)}")
-            
+
+            lines = [f"Auto seam complete: {params.object_name}", ""]
+            lines.append(f"- Seam Edges Marked: {data.get('seam_count', 0)}")
+            lines.append(f"- Estimated Islands: {data.get('estimated_islands', 0)}")
+
             return "\n".join(lines)
         else:
-            return f"自动接缝失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Auto seam failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_uv_grid_check",
         annotations={
-            "title": "UV棋盘格检查",
+            "title": "UV Checker Grid",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -619,18 +619,18 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_uv_grid_check(params: UVGridCheckInput) -> str:
-        """应用棋盘格纹理检查UV质量。
-        
-        创建并应用棋盘格材质，用于直观检查：
-        - UV拉伸和变形
-        - 像素密度一致性
-        - 接缝位置
-        
+        """Apply checker grid texture for UV quality inspection.
+
+        Creates and applies a checker material for visual inspection of:
+        - UV stretch and distortion
+        - Pixel density consistency
+        - Seam placement
+
         Args:
-            params: 对象名称和棋盘格参数
-            
+            params: Object name and checker grid parameters
+
         Returns:
-            检查结果
+            Check result
         """
         result = await server.execute_command(
             "uv", "grid_check",
@@ -639,9 +639,9 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "grid_size": params.grid_size
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            return f"已为 '{params.object_name}' 应用棋盘格检查材质 '{data.get('material_name', 'UV_Checker')}'"
+            return f"Applied checker grid material '{data.get('material_name', 'UV_Checker')}' to '{params.object_name}'"
         else:
-            return f"检查失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Check failed: {result.get('error', {}).get('message', 'Unknown error')}"

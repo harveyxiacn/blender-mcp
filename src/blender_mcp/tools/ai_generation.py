@@ -1,7 +1,7 @@
 """
-AI 辅助建模工具
+AI-Assisted Modeling Tools
 
-提供 AI 生成纹理、材质、3D 模型等功能的 MCP 工具。
+MCP tools for AI-generated textures, materials, 3D models, and more.
 """
 
 from typing import Any, Dict, List, Optional
@@ -9,57 +9,57 @@ from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
 
 
-# ============ Pydantic 模型 ============
+# ============ Pydantic Models ============
 
 class AITextureGenerateInput(BaseModel):
-    """AI生成纹理"""
-    prompt: str = Field(..., description="纹理描述")
-    negative_prompt: str = Field("", description="负面提示")
-    width: int = Field(1024, description="宽度")
-    height: int = Field(1024, description="高度")
-    seamless: bool = Field(True, description="无缝纹理")
-    apply_to: Optional[str] = Field(None, description="应用到对象")
+    """AI texture generation"""
+    prompt: str = Field(..., description="Texture description")
+    negative_prompt: str = Field("", description="Negative prompt")
+    width: int = Field(1024, description="Width")
+    height: int = Field(1024, description="Height")
+    seamless: bool = Field(True, description="Seamless texture")
+    apply_to: Optional[str] = Field(None, description="Apply to object")
 
 
 class AIConceptArtInput(BaseModel):
-    """生成概念图"""
-    prompt: str = Field(..., description="概念描述")
-    style: str = Field("realistic", description="风格: realistic, anime, cartoon, sketch")
-    aspect_ratio: str = Field("16:9", description="宽高比")
+    """Generate concept art"""
+    prompt: str = Field(..., description="Concept description")
+    style: str = Field("realistic", description="Style: realistic, anime, cartoon, sketch")
+    aspect_ratio: str = Field("16:9", description="Aspect ratio")
 
 
 class AIMaterialFromTextInput(BaseModel):
-    """文本生成材质"""
-    description: str = Field(..., description="材质描述")
-    object_name: str = Field(..., description="目标对象")
-    generate_textures: bool = Field(True, description="生成纹理贴图")
+    """Generate material from text"""
+    description: str = Field(..., description="Material description")
+    object_name: str = Field(..., description="Target object")
+    generate_textures: bool = Field(True, description="Generate texture maps")
 
 
 class AIUpscaleInput(BaseModel):
-    """纹理放大"""
-    image_path: str = Field(..., description="图像路径")
-    scale: int = Field(2, description="放大倍数: 2, 4")
+    """Texture upscale"""
+    image_path: str = Field(..., description="Image path")
+    scale: int = Field(2, description="Scale factor: 2, 4")
 
 
 class AIRemoveBackgroundInput(BaseModel):
-    """背景移除"""
-    image_path: str = Field(..., description="图像路径")
-    output_path: Optional[str] = Field(None, description="输出路径")
+    """Background removal"""
+    image_path: str = Field(..., description="Image path")
+    output_path: Optional[str] = Field(None, description="Output path")
 
 
 class AIConfigInput(BaseModel):
-    """配置AI服务"""
-    provider: str = Field("stability", description="服务商: stability, openai, local, replicate")
-    api_key: Optional[str] = Field(None, description="API密钥")
-    local_url: str = Field("http://127.0.0.1:7860", description="本地服务URL")
-    model: str = Field("sdxl-1.0", description="模型名称")
+    """Configure AI service"""
+    provider: str = Field("stability", description="Provider: stability, openai, local, replicate")
+    api_key: Optional[str] = Field(None, description="API key")
+    local_url: str = Field("http://127.0.0.1:7860", description="Local service URL")
+    model: str = Field("sdxl-1.0", description="Model name")
 
 
-# ============ 工具注册 ============
+# ============ Tool Registration ============
 
 def register_ai_generation_tools(mcp: FastMCP, server):
-    """注册 AI 辅助建模工具"""
-    
+    """Register AI-assisted modeling tools"""
+
     @mcp.tool()
     async def blender_ai_config(
         provider: str = "stability",
@@ -68,13 +68,13 @@ def register_ai_generation_tools(mcp: FastMCP, server):
         model: str = "sdxl-1.0"
     ) -> Dict[str, Any]:
         """
-        配置 AI 服务
-        
+        Configure AI service
+
         Args:
-            provider: 服务商 (stability, openai, local, replicate)
-            api_key: API 密钥
-            local_url: 本地服务 URL（用于 local 模式）
-            model: 模型名称
+            provider: Service provider (stability, openai, local, replicate)
+            api_key: API key
+            local_url: Local service URL (for local mode)
+            model: Model name
         """
         params = AIConfigInput(
             provider=provider,
@@ -83,7 +83,7 @@ def register_ai_generation_tools(mcp: FastMCP, server):
             model=model
         )
         return await server.send_command("ai_generation", "config", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_ai_texture_generate(
         prompt: str,
@@ -94,15 +94,15 @@ def register_ai_generation_tools(mcp: FastMCP, server):
         apply_to: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        AI 生成纹理
-        
+        AI texture generation
+
         Args:
-            prompt: 纹理描述（如 "木纹纹理"、"砖墙纹理"）
-            negative_prompt: 不希望出现的内容
-            width: 纹理宽度
-            height: 纹理高度
-            seamless: 生成无缝纹理
-            apply_to: 应用到指定对象的材质
+            prompt: Texture description (e.g. "wood grain texture", "brick wall texture")
+            negative_prompt: Content to exclude
+            width: Texture width
+            height: Texture height
+            seamless: Generate seamless texture
+            apply_to: Apply to specified object's material
         """
         params = AITextureGenerateInput(
             prompt=prompt,
@@ -113,7 +113,7 @@ def register_ai_generation_tools(mcp: FastMCP, server):
             apply_to=apply_to
         )
         return await server.send_command("ai_generation", "texture_generate", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_ai_concept_art(
         prompt: str,
@@ -121,12 +121,12 @@ def register_ai_generation_tools(mcp: FastMCP, server):
         aspect_ratio: str = "16:9"
     ) -> Dict[str, Any]:
         """
-        生成概念图作为参考
-        
+        Generate concept art as reference
+
         Args:
-            prompt: 概念描述
-            style: 风格 (realistic, anime, cartoon, sketch)
-            aspect_ratio: 宽高比 (16:9, 1:1, 4:3, 9:16)
+            prompt: Concept description
+            style: Style (realistic, anime, cartoon, sketch)
+            aspect_ratio: Aspect ratio (16:9, 1:1, 4:3, 9:16)
         """
         params = AIConceptArtInput(
             prompt=prompt,
@@ -134,7 +134,7 @@ def register_ai_generation_tools(mcp: FastMCP, server):
             aspect_ratio=aspect_ratio
         )
         return await server.send_command("ai_generation", "concept_art", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_ai_material_from_text(
         description: str,
@@ -142,12 +142,12 @@ def register_ai_generation_tools(mcp: FastMCP, server):
         generate_textures: bool = True
     ) -> Dict[str, Any]:
         """
-        根据文本描述生成并应用材质
-        
+        Generate and apply material from text description
+
         Args:
-            description: 材质描述（如 "生锈的金属"、"光滑的大理石"）
-            object_name: 目标对象名称
-            generate_textures: 是否生成纹理贴图
+            description: Material description (e.g. "rusty metal", "smooth marble")
+            object_name: Target object name
+            generate_textures: Whether to generate texture maps
         """
         params = AIMaterialFromTextInput(
             description=description,
@@ -155,54 +155,54 @@ def register_ai_generation_tools(mcp: FastMCP, server):
             generate_textures=generate_textures
         )
         return await server.send_command("ai_generation", "material_from_text", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_ai_upscale_texture(
         image_path: str,
         scale: int = 2
     ) -> Dict[str, Any]:
         """
-        AI 纹理放大
-        
+        AI texture upscale
+
         Args:
-            image_path: 图像路径
-            scale: 放大倍数 (2 或 4)
+            image_path: Image path
+            scale: Scale factor (2 or 4)
         """
         params = AIUpscaleInput(
             image_path=image_path,
             scale=scale
         )
         return await server.send_command("ai_generation", "upscale", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_ai_remove_background(
         image_path: str,
         output_path: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        AI 背景移除
-        
+        AI background removal
+
         Args:
-            image_path: 输入图像路径
-            output_path: 输出路径（为空则自动生成）
+            image_path: Input image path
+            output_path: Output path (auto-generated if empty)
         """
         params = AIRemoveBackgroundInput(
             image_path=image_path,
             output_path=output_path
         )
         return await server.send_command("ai_generation", "remove_background", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_ai_image_to_reference(
         prompt: str,
         as_background: bool = False
     ) -> Dict[str, Any]:
         """
-        生成图像并设置为参考图
-        
+        Generate image and set as reference
+
         Args:
-            prompt: 图像描述
-            as_background: 设置为背景图像
+            prompt: Image description
+            as_background: Set as background image
         """
         return await server.send_command("ai_generation", "image_to_reference", {
             "prompt": prompt,

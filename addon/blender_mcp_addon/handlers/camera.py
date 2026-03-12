@@ -1,7 +1,7 @@
 """
-相机处理器
+Camera handler
 
-处理相机相关的命令。
+Handles camera-related commands.
 """
 
 from typing import Any, Dict
@@ -10,7 +10,7 @@ import mathutils
 
 
 def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建相机"""
+    """Create camera"""
     name = params.get("name", "Camera")
     location = params.get("location", [0, -10, 5])
     rotation = params.get("rotation", [1.1, 0, 0])
@@ -18,20 +18,20 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
     sensor_width = params.get("sensor_width", 36.0)
     set_active = params.get("set_active", True)
     
-    # 创建相机数据
+    # Create camera data
     cam_data = bpy.data.cameras.new(name=name)
     cam_data.lens = lens
     cam_data.sensor_width = sensor_width
     
-    # 创建相机对象
+    # Create camera object
     cam_obj = bpy.data.objects.new(name=name, object_data=cam_data)
     cam_obj.location = location
     cam_obj.rotation_euler = rotation
     
-    # 链接到场景
+    # Link to scene
     bpy.context.collection.objects.link(cam_obj)
     
-    # 设为活动相机
+    # Set as active camera
     if set_active:
         bpy.context.scene.camera = cam_obj
     
@@ -44,7 +44,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_set_properties(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置相机属性"""
+    """Set camera properties"""
     camera_name = params.get("camera_name")
     properties = params.get("properties", {})
     
@@ -54,7 +54,7 @@ def handle_set_properties(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "CAMERA_NOT_FOUND",
-                "message": f"相机不存在: {camera_name}"
+                "message": f"Camera not found: {camera_name}"
             }
         }
     
@@ -93,7 +93,7 @@ def handle_set_properties(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_look_at(params: Dict[str, Any]) -> Dict[str, Any]:
-    """相机朝向目标"""
+    """Point camera at target"""
     camera_name = params.get("camera_name")
     target = params.get("target")
     use_constraint = params.get("use_constraint", False)
@@ -104,11 +104,11 @@ def handle_look_at(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "CAMERA_NOT_FOUND",
-                "message": f"相机不存在: {camera_name}"
+                "message": f"Camera not found: {camera_name}"
             }
         }
     
-    # 确定目标位置
+    # Determine target location
     if isinstance(target, str):
         target_obj = bpy.data.objects.get(target)
         if not target_obj:
@@ -116,7 +116,7 @@ def handle_look_at(params: Dict[str, Any]) -> Dict[str, Any]:
                 "success": False,
                 "error": {
                     "code": "TARGET_NOT_FOUND",
-                    "message": f"目标对象不存在: {target}"
+                    "message": f"Target object not found: {target}"
                 }
             }
         target_location = target_obj.location
@@ -125,13 +125,13 @@ def handle_look_at(params: Dict[str, Any]) -> Dict[str, Any]:
         target_obj = None
     
     if use_constraint and target_obj:
-        # 使用约束
+        # Use constraint
         constraint = obj.constraints.new(type='TRACK_TO')
         constraint.target = target_obj
         constraint.track_axis = 'TRACK_NEGATIVE_Z'
         constraint.up_axis = 'UP_Y'
     else:
-        # 直接设置旋转
+        # Set rotation directly
         direction = target_location - obj.location
         rot_quat = direction.to_track_quat('-Z', 'Y')
         obj.rotation_euler = rot_quat.to_euler()
@@ -143,8 +143,8 @@ def handle_look_at(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_set_active(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置活动相机"""
-    # 支持 camera_name 或 name 参数
+    """Set active camera"""
+    # Support camera_name or name parameter
     camera_name = params.get("camera_name") or params.get("name")
     
     if not camera_name:
@@ -152,7 +152,7 @@ def handle_set_active(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "MISSING_PARAM",
-                "message": "需要指定 camera_name 或 name 参数"
+                "message": "Must specify camera_name or name parameter"
             }
         }
     
@@ -162,7 +162,7 @@ def handle_set_active(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "CAMERA_NOT_FOUND",
-                "message": f"相机不存在: {camera_name}"
+                "message": f"Camera not found: {camera_name}"
             }
         }
     

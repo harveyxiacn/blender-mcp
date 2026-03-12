@@ -1,7 +1,7 @@
 """
-材质处理器
+Material Handler
 
-处理材质相关的命令。
+Handles material related commands.
 """
 
 from typing import Any, Dict
@@ -9,13 +9,13 @@ import bpy
 
 
 def get_principled_bsdf(nodes):
-    """获取Principled BSDF节点，兼容不同Blender版本"""
-    # 先尝试按名称查找（Blender常见的默认名称）
+    """Get Principled BSDF node, compatible with different Blender versions"""
+    # First try to find by name (common Blender default name)
     bsdf = nodes.get("Principled BSDF")
     if bsdf and bsdf.type == 'BSDF_PRINCIPLED':
         return bsdf
     
-    # 再按类型查找
+    # Then search by type
     for node in nodes:
         if node.type == 'BSDF_PRINCIPLED':
             return node
@@ -24,29 +24,29 @@ def get_principled_bsdf(nodes):
 
 
 def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建材质"""
+    """Create material"""
     name = params.get("name", "Material")
     color = params.get("color", [0.8, 0.8, 0.8, 1.0])
     metallic = params.get("metallic", 0.0)
     roughness = params.get("roughness", 0.5)
     use_nodes = params.get("use_nodes", True)
     
-    # 创建材质
+    # Create material
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = use_nodes
-    
+
     if use_nodes:
-        # 获取 Principled BSDF 节点
+        # Get Principled BSDF node
         nodes = mat.node_tree.nodes
         principled = get_principled_bsdf(nodes)
         
         if principled:
-            # 设置颜色
+            # Set color
             if len(color) == 3:
                 color = color + [1.0]
             principled.inputs["Base Color"].default_value = color
             
-            # 设置金属度和粗糙度
+            # Set metallic and roughness
             principled.inputs["Metallic"].default_value = metallic
             principled.inputs["Roughness"].default_value = roughness
     else:
@@ -61,7 +61,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_assign(params: Dict[str, Any]) -> Dict[str, Any]:
-    """分配材质"""
+    """Assign material"""
     object_name = params.get("object_name")
     material_name = params.get("material_name")
     slot_index = params.get("slot_index", 0)
@@ -72,7 +72,7 @@ def handle_assign(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
     
@@ -82,15 +82,15 @@ def handle_assign(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "MATERIAL_NOT_FOUND",
-                "message": f"材质不存在: {material_name}"
+                "message": f"Material not found: {material_name}"
             }
         }
     
-    # 确保有足够的材质槽
+    # Ensure enough material slots
     while len(obj.material_slots) <= slot_index:
         obj.data.materials.append(None)
     
-    # 分配材质
+    # Assign material
     obj.material_slots[slot_index].material = mat
     
     return {
@@ -100,7 +100,7 @@ def handle_assign(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_set_properties(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置材质属性"""
+    """Set material properties"""
     material_name = params.get("material_name")
     properties = params.get("properties", {})
     
@@ -110,7 +110,7 @@ def handle_set_properties(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "MATERIAL_NOT_FOUND",
-                "message": f"材质不存在: {material_name}"
+                "message": f"Material not found: {material_name}"
             }
         }
     
@@ -125,11 +125,11 @@ def handle_set_properties(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "NODE_NOT_FOUND",
-                "message": "找不到 Principled BSDF 节点"
+                "message": "Principled BSDF node not found"
             }
         }
     
-    # 设置属性
+    # Set properties
     if "color" in properties:
         color = properties["color"]
         if len(color) == 3:
@@ -143,7 +143,7 @@ def handle_set_properties(params: Dict[str, Any]) -> Dict[str, Any]:
         principled.inputs["Roughness"].default_value = properties["roughness"]
     
     if "specular" in properties:
-        # Blender 4.0+ 使用 Specular IOR Level
+        # Blender 4.0+ uses Specular IOR Level
         if "Specular IOR Level" in principled.inputs:
             principled.inputs["Specular IOR Level"].default_value = properties["specular"]
         elif "Specular" in principled.inputs:
@@ -172,7 +172,7 @@ def handle_set_properties(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_add_texture(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加纹理"""
+    """Add texture"""
     material_name = params.get("material_name")
     texture_path = params.get("texture_path")
     texture_type = params.get("texture_type", "COLOR")
@@ -184,7 +184,7 @@ def handle_add_texture(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "MATERIAL_NOT_FOUND",
-                "message": f"材质不存在: {material_name}"
+                "message": f"Material not found: {material_name}"
             }
         }
     
@@ -200,11 +200,11 @@ def handle_add_texture(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "NODE_NOT_FOUND",
-                "message": "找不到 Principled BSDF 节点"
+                "message": "Principled BSDF node not found"
             }
         }
     
-    # 加载图像
+    # Load image
     try:
         image = bpy.data.images.load(texture_path)
     except Exception as e:
@@ -212,19 +212,19 @@ def handle_add_texture(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "IMAGE_LOAD_ERROR",
-                "message": f"无法加载图像: {e}"
+                "message": f"Failed to load image: {e}"
             }
         }
-    
-    # 创建图像纹理节点
+
+    # Create image texture node
     tex_node = nodes.new(type='ShaderNodeTexImage')
     tex_node.image = image
     tex_node.location = (-400, 0)
     
-    # 连接到对应输入
+    # Connect to corresponding input
     input_map = {
         "COLOR": "Base Color",
-        "NORMAL": None,  # 需要法线贴图节点
+        "NORMAL": None,  # Requires normal map node
         "ROUGHNESS": "Roughness",
         "METALLIC": "Metallic",
         "EMISSION": "Emission Color"
@@ -233,7 +233,7 @@ def handle_add_texture(params: Dict[str, Any]) -> Dict[str, Any]:
     target_input = input_map.get(texture_type)
     
     if texture_type == "NORMAL":
-        # 创建法线贴图节点
+        # Create normal map node
         normal_node = nodes.new(type='ShaderNodeNormalMap')
         normal_node.location = (-200, 0)
         links.new(tex_node.outputs["Color"], normal_node.inputs["Color"])
@@ -251,7 +251,7 @@ def handle_add_texture(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_list(params: Dict[str, Any]) -> Dict[str, Any]:
-    """列出材质"""
+    """List materials"""
     limit = params.get("limit", 50)
     
     materials = []
@@ -278,7 +278,7 @@ def handle_list(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
-    """删除材质"""
+    """Delete material"""
     material_name = params.get("material_name")
     
     mat = bpy.data.materials.get(material_name)
@@ -287,7 +287,7 @@ def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "MATERIAL_NOT_FOUND",
-                "message": f"材质不存在: {material_name}"
+                "message": f"Material not found: {material_name}"
             }
         }
     
@@ -300,22 +300,22 @@ def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_node_add(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加材质节点
-    
+    """Add material node
+
     Args:
         params:
-            - material_name: 材质名称
-            - node_type: 节点类型
-                - SSS: 次表面散射节点配置
-                - EMISSION: 发光节点
-                - MIX_RGB: 混合 RGB
-                - COLOR_RAMP: 颜色渐变
-                - NOISE_TEXTURE: 噪波纹理
-                - IMAGE_TEXTURE: 图像纹理
-                - NORMAL_MAP: 法线贴图
-                - BUMP: 凹凸贴图
-            - settings: 节点设置
-            - connect_to: 连接到的节点输入
+            - material_name: Material name
+            - node_type: Node type
+                - SSS: Subsurface scattering node configuration
+                - EMISSION: Emission node
+                - MIX_RGB: Mix RGB
+                - COLOR_RAMP: Color ramp
+                - NOISE_TEXTURE: Noise texture
+                - IMAGE_TEXTURE: Image texture
+                - NORMAL_MAP: Normal map
+                - BUMP: Bump map
+            - settings: Node settings
+            - connect_to: Node input to connect to
     """
     material_name = params.get("material_name")
     node_type = params.get("node_type")
@@ -329,7 +329,7 @@ def handle_node_add(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "MATERIAL_NOT_FOUND",
-                "message": f"材质不存在: {material_name}"
+                "message": f"Material not found: {material_name}"
             }
         }
     
@@ -341,15 +341,15 @@ def handle_node_add(params: Dict[str, Any]) -> Dict[str, Any]:
     principled = get_principled_bsdf(nodes)
     
     try:
-        # 根据节点类型创建和配置节点
+        # Create and configure node based on node type
         if node_type == "SSS":
-            # 配置 Principled BSDF 的次表面散射
+            # Configure Principled BSDF subsurface scattering
             if principled:
                 subsurface = settings.get("subsurface", 0.3)
                 subsurface_color = settings.get("subsurface_color", [0.8, 0.2, 0.1])
                 subsurface_radius = settings.get("subsurface_radius", [1.0, 0.2, 0.1])
                 
-                # Blender 4.0+ 使用不同的 SSS 接口
+                # Blender 4.0+ uses a different SSS interface
                 if "Subsurface Weight" in principled.inputs:
                     principled.inputs["Subsurface Weight"].default_value = subsurface
                 elif "Subsurface" in principled.inputs:
@@ -367,7 +367,7 @@ def handle_node_add(params: Dict[str, Any]) -> Dict[str, Any]:
                 }
         
         elif node_type == "EMISSION":
-            # 配置发光
+            # Configure emission
             if principled:
                 emission_color = settings.get("color", [1.0, 1.0, 1.0, 1.0])
                 emission_strength = settings.get("strength", 1.0)
@@ -395,7 +395,7 @@ def handle_node_add(params: Dict[str, Any]) -> Dict[str, Any]:
         elif node_type == "COLOR_RAMP":
             node = nodes.new(type='ShaderNodeValToRGB')
             node.location = location
-            # 设置颜色停点
+            # Set color stops
             stops = settings.get("stops", [])
             for i, stop in enumerate(stops):
                 if i < len(node.color_ramp.elements):
@@ -436,7 +436,7 @@ def handle_node_add(params: Dict[str, Any]) -> Dict[str, Any]:
             node.inputs["Distance"].default_value = settings.get("distance", 0.1)
         
         else:
-            # 尝试创建通用节点
+            # Try to create generic node
             try:
                 node = nodes.new(type=node_type)
                 node.location = location
@@ -445,11 +445,11 @@ def handle_node_add(params: Dict[str, Any]) -> Dict[str, Any]:
                     "success": False,
                     "error": {
                         "code": "INVALID_NODE_TYPE",
-                        "message": f"不支持的节点类型: {node_type}"
+                        "message": f"Unsupported node type: {node_type}"
                     }
                 }
         
-        # 连接节点
+        # Connect node
         if connect_to and principled:
             if node_type not in ["SSS", "EMISSION"]:
                 target_input = connect_to.get("input", "Base Color")
@@ -478,24 +478,24 @@ def handle_node_add(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_texture_apply(params: Dict[str, Any]) -> Dict[str, Any]:
-    """应用纹理贴图
-    
+    """Apply texture map
+
     Args:
         params:
-            - material_name: 材质名称
-            - image_path: 图片文件路径
-            - mapping_type: 映射类型
-                - UV: UV 映射（默认）
-                - BOX: 盒式映射
-                - FLAT: 平面映射
-                - SPHERE: 球形映射
-            - texture_type: 纹理用途
-                - COLOR: 颜色贴图
-                - NORMAL: 法线贴图
-                - ROUGHNESS: 粗糙度贴图
-                - METALLIC: 金属度贴图
-                - EMISSION: 发光贴图
-                - ALPHA: 透明度贴图
+            - material_name: Material name
+            - image_path: Image file path
+            - mapping_type: Mapping type
+                - UV: UV mapping (default)
+                - BOX: Box mapping
+                - FLAT: Flat mapping
+                - SPHERE: Sphere mapping
+            - texture_type: Texture usage
+                - COLOR: Color map
+                - NORMAL: Normal map
+                - ROUGHNESS: Roughness map
+                - METALLIC: Metallic map
+                - EMISSION: Emission map
+                - ALPHA: Alpha map
     """
     material_name = params.get("material_name")
     image_path = params.get("image_path")
@@ -508,7 +508,7 @@ def handle_texture_apply(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "MATERIAL_NOT_FOUND",
-                "message": f"材质不存在: {material_name}"
+                "message": f"Material not found: {material_name}"
             }
         }
     
@@ -524,11 +524,11 @@ def handle_texture_apply(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "NODE_NOT_FOUND",
-                "message": "找不到 Principled BSDF 节点"
+                "message": "Principled BSDF node not found"
             }
         }
     
-    # 加载图像
+    # Load image
     try:
         image = bpy.data.images.load(image_path)
     except Exception as e:
@@ -536,23 +536,23 @@ def handle_texture_apply(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "IMAGE_LOAD_ERROR",
-                "message": f"无法加载图像: {e}"
+                "message": f"Failed to load image: {e}"
             }
         }
-    
-    # 创建图像纹理节点
+
+    # Create image texture node
     tex_node = nodes.new(type='ShaderNodeTexImage')
     tex_node.image = image
     tex_node.location = (-600, 0)
     
-    # 创建纹理坐标和映射节点
+    # Create texture coordinate and mapping nodes
     tex_coord = nodes.new(type='ShaderNodeTexCoord')
     tex_coord.location = (-1000, 0)
     
     mapping = nodes.new(type='ShaderNodeMapping')
     mapping.location = (-800, 0)
     
-    # 连接纹理坐标
+    # Connect texture coordinates
     coord_output = "UV" if mapping_type == "UV" else "Generated"
     if mapping_type == "BOX":
         coord_output = "Object"
@@ -560,10 +560,10 @@ def handle_texture_apply(params: Dict[str, Any]) -> Dict[str, Any]:
     links.new(tex_coord.outputs[coord_output], mapping.outputs["Vector"])
     links.new(mapping.outputs["Vector"], tex_node.inputs["Vector"])
     
-    # 根据纹理类型连接到对应输入
+    # Connect to corresponding input based on texture type
     input_map = {
         "COLOR": "Base Color",
-        "NORMAL": None,  # 需要法线贴图节点
+        "NORMAL": None,  # Requires normal map node
         "ROUGHNESS": "Roughness",
         "METALLIC": "Metallic",
         "EMISSION": "Emission Color",
@@ -573,7 +573,7 @@ def handle_texture_apply(params: Dict[str, Any]) -> Dict[str, Any]:
     target_input = input_map.get(texture_type)
     
     if texture_type == "NORMAL":
-        # 创建法线贴图节点
+        # Create normal map node
         normal_node = nodes.new(type='ShaderNodeNormalMap')
         normal_node.location = (-400, 0)
         links.new(tex_node.outputs["Color"], normal_node.inputs["Color"])
@@ -584,7 +584,7 @@ def handle_texture_apply(params: Dict[str, Any]) -> Dict[str, Any]:
         if texture_type not in ["COLOR", "EMISSION"]:
             image.colorspace_settings.name = 'Non-Color'
         
-        # 处理透明度
+        # Handle alpha/transparency
         if texture_type == "ALPHA":
             mat.blend_method = 'BLEND'
     
@@ -600,21 +600,21 @@ def handle_texture_apply(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_create_skin_material(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建皮肤材质
+    """Create skin material
     
-    预设的皮肤材质，包含 SSS 和适当的粗糙度设置。
+    Preset skin material with SSS and appropriate roughness settings.
     
     Args:
         params:
-            - name: 材质名称
-            - skin_tone: 肤色类型 (LIGHT, MEDIUM, DARK, CUSTOM)
-            - custom_color: 自定义颜色（当 skin_tone 为 CUSTOM 时）
+            - name: Material name
+            - skin_tone: Skin tone type (LIGHT, MEDIUM, DARK, CUSTOM)
+            - custom_color: Custom color (when skin_tone is CUSTOM)
     """
     name = params.get("name", "SkinMaterial")
     skin_tone = params.get("skin_tone", "MEDIUM")
     custom_color = params.get("custom_color")
     
-    # 预设肤色
+    # Preset skin tones
     skin_colors = {
         "LIGHT": [0.95, 0.85, 0.75, 1.0],
         "MEDIUM": [0.87, 0.70, 0.55, 1.0],
@@ -625,7 +625,7 @@ def handle_create_skin_material(params: Dict[str, Any]) -> Dict[str, Any]:
     if len(color) == 3:
         color = color + [1.0]
     
-    # 创建材质
+    # Create material
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     
@@ -633,23 +633,23 @@ def handle_create_skin_material(params: Dict[str, Any]) -> Dict[str, Any]:
     principled = get_principled_bsdf(nodes)
     
     if principled:
-        # 基础颜色
+        # Base color
         principled.inputs["Base Color"].default_value = color
         
-        # SSS 设置
+        # SSS settings
         if "Subsurface Weight" in principled.inputs:
             principled.inputs["Subsurface Weight"].default_value = 0.3
         elif "Subsurface" in principled.inputs:
             principled.inputs["Subsurface"].default_value = 0.3
         
         if "Subsurface Radius" in principled.inputs:
-            # 红色光散射最多，蓝色最少
+            # Red light scatters the most, blue the least
             principled.inputs["Subsurface Radius"].default_value = [1.0, 0.2, 0.1]
         
-        # 粗糙度
+        # Roughness
         principled.inputs["Roughness"].default_value = 0.4
         
-        # 镜面反射
+        # Specular reflection
         if "Specular IOR Level" in principled.inputs:
             principled.inputs["Specular IOR Level"].default_value = 0.5
         elif "Specular" in principled.inputs:
@@ -666,16 +666,16 @@ def handle_create_skin_material(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_create_toon_material(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建卡通材质
+    """Create toon material
     
-    适用于 Q 版角色的风格化卡通材质。
+    Stylized toon material suitable for chibi/cartoon characters.
     
     Args:
         params:
-            - name: 材质名称
-            - color: 基础颜色
-            - shadow_color: 阴影颜色（可选）
-            - outline: 是否添加描边效果
+            - name: Material name
+            - color: Base color
+            - shadow_color: Shadow color (optional)
+            - outline: Whether to add outline effect
     """
     name = params.get("name", "ToonMaterial")
     color = params.get("color", [0.8, 0.8, 0.8, 1.0])
@@ -685,26 +685,26 @@ def handle_create_toon_material(params: Dict[str, Any]) -> Dict[str, Any]:
     if len(color) == 3:
         color = color + [1.0]
     
-    # 创建材质
+    # Create material
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
     
-    # 清除默认节点
+    # Clear default nodes
     for node in nodes:
         nodes.remove(node)
     
-    # 创建输出节点
+    # Create output node
     output = nodes.new(type='ShaderNodeOutputMaterial')
     output.location = (400, 0)
     
-    # 创建 Principled BSDF（简化的卡通效果）
+    # Create Principled BSDF (simplified toon effect)
     principled = nodes.new(type='ShaderNodeBsdfPrincipled')
     principled.location = (100, 0)
     principled.inputs["Base Color"].default_value = color
-    principled.inputs["Roughness"].default_value = 0.9  # 高粗糙度减少高光
+    principled.inputs["Roughness"].default_value = 0.9  # High roughness to reduce specular highlights
     principled.inputs["Metallic"].default_value = 0.0
     
     if "Specular IOR Level" in principled.inputs:
@@ -714,7 +714,7 @@ def handle_create_toon_material(params: Dict[str, Any]) -> Dict[str, Any]:
     
     links.new(principled.outputs["BSDF"], output.inputs["Surface"])
     
-    # 如果需要描边，设置背面剔除
+    # If outline is needed, set backface culling
     if outline:
         mat.use_backface_culling = True
     
@@ -727,9 +727,9 @@ def handle_create_toon_material(params: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-# ==================== 生产标准优化处理器 ====================
+# ==================== Production Standard Optimization Handlers ====================
 
-# 纹理类型与正确色彩空间的映射
+# Texture type to correct color space mapping
 TEXTURE_COLORSPACE_MAP = {
     "COLOR": "sRGB",
     "DIFFUSE": "sRGB",
@@ -748,12 +748,12 @@ TEXTURE_COLORSPACE_MAP = {
 
 
 def handle_analyze(params: Dict[str, Any]) -> Dict[str, Any]:
-    """分析材质是否符合PBR生产标准
+    """Analyze whether material meets PBR production standards
     
     Args:
         params:
-            - material_name: 材质名称
-            - target_engine: 目标游戏引擎
+            - material_name: Material name
+            - target_engine: Target game engine
     """
     material_name = params.get("material_name")
     target_engine = params.get("target_engine", "GENERIC")
@@ -764,7 +764,7 @@ def handle_analyze(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "MATERIAL_NOT_FOUND",
-                "message": f"材质不存在: {material_name}"
+                "message": f"Material not found: {material_name}"
             }
         }
     
@@ -773,13 +773,13 @@ def handle_analyze(params: Dict[str, Any]) -> Dict[str, Any]:
     textures = []
     pbr_values = {}
     
-    # 检查是否使用节点
+    # Check if using nodes
     uses_nodes = mat.use_nodes
     
     if uses_nodes and mat.node_tree:
         nodes = mat.node_tree.nodes
         
-        # 查找Principled BSDF节点
+        # Find Principled BSDF node
         principled = None
         for node in nodes:
             if node.type == 'BSDF_PRINCIPLED':
@@ -787,35 +787,35 @@ def handle_analyze(params: Dict[str, Any]) -> Dict[str, Any]:
                 break
         
         if principled:
-            # 检查金属度
+            # Check metallic
             metallic = principled.inputs["Metallic"].default_value
             pbr_values["metallic"] = metallic
             
             if 0 < metallic < 1:
-                issues.append(f"金属度值为 {metallic:.2f}，应为 0（非金属）或 1（金属）")
-                suggestions.append("使用金属度贴图或将值设为0或1以符合PBR标准")
+                issues.append(f"Metallic value is {metallic:.2f}, should be 0 (non-metal) or 1 (metal)")
+                suggestions.append("Use a metallic texture map or set the value to 0 or 1 to comply with PBR standards")
             
-            # 检查粗糙度
+            # Check roughness
             roughness = principled.inputs["Roughness"].default_value
             pbr_values["roughness"] = roughness
             
-            # 检查基础颜色
+            # Check base color
             base_color = list(principled.inputs["Base Color"].default_value)
             pbr_values["base_color"] = base_color[:3]
             
-            # 检查过于明亮或过暗的颜色
+            # Check for overly bright or dark colors
             brightness = sum(base_color[:3]) / 3
             if brightness > 0.95:
-                suggestions.append("基础颜色过于明亮，可能导致渲染过曝")
+                suggestions.append("Base color is too bright, may cause overexposure in rendering")
             elif brightness < 0.05:
-                suggestions.append("基础颜色过于暗，考虑提高亮度")
+                suggestions.append("Base color is too dark, consider increasing brightness")
         
-        # 检查纹理节点
+        # Check texture nodes
         for node in nodes:
             if node.type == 'TEX_IMAGE' and node.image:
                 image = node.image
                 
-                # 尝试检测纹理类型
+                # Try to detect texture type
                 tex_type = "UNKNOWN"
                 name_lower = image.name.lower()
                 
@@ -847,20 +847,20 @@ def handle_analyze(params: Dict[str, Any]) -> Dict[str, Any]:
                 })
                 
                 if not colorspace_correct:
-                    issues.append(f"纹理 '{image.name}' 色彩空间应为 {expected_colorspace}，当前为 {actual_colorspace}")
+                    issues.append(f"Texture '{image.name}' color space should be {expected_colorspace}, currently {actual_colorspace}")
     else:
-        issues.append("材质未使用节点，无法进行详细分析")
-        suggestions.append("建议启用节点材质以获得更好的PBR支持")
+        issues.append("Material does not use nodes, unable to perform detailed analysis")
+        suggestions.append("Recommend enabling node material for better PBR support")
     
-    # 引擎特定检查
+    # Engine-specific checks
     if target_engine == "UNITY":
-        suggestions.append("Unity使用Standard/URP/HDRP着色器，确保导出为glTF或FBX")
+        suggestions.append("Unity uses Standard/URP/HDRP shaders, ensure export as glTF or FBX")
     elif target_engine == "UNREAL":
-        suggestions.append("Unreal使用单独的ORM纹理（Occlusion+Roughness+Metallic），考虑合并通道")
+        suggestions.append("Unreal uses separate ORM textures (Occlusion+Roughness+Metallic), consider merging channels")
     elif target_engine == "GODOT":
-        suggestions.append("Godot支持glTF 2.0和ORM纹理格式")
+        suggestions.append("Godot supports glTF 2.0 and ORM texture formats")
     
-    # 计算兼容性评分
+    # Calculate compatibility score
     score = 100
     score -= len(issues) * 15
     score = max(0, score)
@@ -879,15 +879,15 @@ def handle_analyze(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_optimize(params: Dict[str, Any]) -> Dict[str, Any]:
-    """优化材质以符合游戏引擎PBR标准
+    """Optimize material to meet game engine PBR standards
     
     Args:
         params:
-            - material_name: 材质名称
-            - target_engine: 目标游戏引擎
-            - fix_metallic: 修复金属度值
-            - fix_color_space: 修复纹理色彩空间
-            - combine_textures: 合并纹理通道
+            - material_name: Material name
+            - target_engine: Target game engine
+            - fix_metallic: Fix metallic values
+            - fix_color_space: Fix texture color spaces
+            - combine_textures: Combine texture channels
     """
     material_name = params.get("material_name")
     target_engine = params.get("target_engine", "GENERIC")
@@ -901,7 +901,7 @@ def handle_optimize(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "MATERIAL_NOT_FOUND",
-                "message": f"材质不存在: {material_name}"
+                "message": f"Material not found: {material_name}"
             }
         }
     
@@ -909,12 +909,12 @@ def handle_optimize(params: Dict[str, Any]) -> Dict[str, Any]:
     
     if not mat.use_nodes:
         mat.use_nodes = True
-        fixes_applied.append("启用了节点材质")
+        fixes_applied.append("Enabled node material")
     
     if mat.node_tree:
         nodes = mat.node_tree.nodes
         
-        # 查找Principled BSDF
+        # Find Principled BSDF
         principled = None
         for node in nodes:
             if node.type == 'BSDF_PRINCIPLED':
@@ -924,19 +924,19 @@ def handle_optimize(params: Dict[str, Any]) -> Dict[str, Any]:
         if principled and fix_metallic:
             metallic = principled.inputs["Metallic"].default_value
             if 0 < metallic < 1:
-                # 四舍五入到0或1
+                # Round to 0 or 1
                 new_metallic = 1.0 if metallic >= 0.5 else 0.0
                 principled.inputs["Metallic"].default_value = new_metallic
-                fixes_applied.append(f"金属度: {metallic:.2f} → {new_metallic}")
+                fixes_applied.append(f"Metallic: {metallic:.2f} -> {new_metallic}")
         
-        # 修复纹理色彩空间
+        # Fix texture color spaces
         if fix_color_space:
             for node in nodes:
                 if node.type == 'TEX_IMAGE' and node.image:
                     image = node.image
                     name_lower = image.name.lower()
                     
-                    # 检测纹理类型
+                    # Detect texture type
                     tex_type = "COLOR"
                     if any(x in name_lower for x in ["normal", "nrm", "nor", "bump"]):
                         tex_type = "NORMAL"
@@ -961,7 +961,7 @@ def handle_optimize(params: Dict[str, Any]) -> Dict[str, Any]:
                     if needs_fix:
                         old_space = current
                         image.colorspace_settings.name = expected
-                        fixes_applied.append(f"纹理 '{image.name}' 色彩空间: {old_space} → {expected}")
+                        fixes_applied.append(f"Texture '{image.name}' color space: {old_space} -> {expected}")
     
     return {
         "success": True,
@@ -973,19 +973,19 @@ def handle_optimize(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_create_pbr(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建符合生产标准的PBR材质
+    """Create production-standard PBR material
     
     Args:
         params:
-            - name: 材质名称
-            - target_engine: 目标游戏引擎
-            - base_color: 基础颜色
-            - metallic: 金属度
-            - roughness: 粗糙度
-            - *_texture: 各种纹理路径
-            - emission_strength: 自发光强度
-            - alpha_mode: 透明度模式
-            - double_sided: 双面渲染
+            - name: Material name
+            - target_engine: Target game engine
+            - base_color: Base color
+            - metallic: Metallic
+            - roughness: Roughness
+            - *_texture: Various texture paths
+            - emission_strength: Emission strength
+            - alpha_mode: Alpha mode
+            - double_sided: Double-sided rendering
     """
     name = params.get("name", "PBR_Material")
     target_engine = params.get("target_engine", "GENERIC")
@@ -996,7 +996,7 @@ def handle_create_pbr(params: Dict[str, Any]) -> Dict[str, Any]:
     double_sided = params.get("double_sided", False)
     emission_strength = params.get("emission_strength", 0.0)
     
-    # 纹理路径
+    # Texture paths
     base_color_texture = params.get("base_color_texture")
     normal_texture = params.get("normal_texture")
     metallic_texture = params.get("metallic_texture")
@@ -1007,11 +1007,11 @@ def handle_create_pbr(params: Dict[str, Any]) -> Dict[str, Any]:
     if len(base_color) == 3:
         base_color = base_color + [1.0]
     
-    # 创建材质
+    # Create material
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     
-    # 设置混合模式
+    # Set blend mode
     blend_modes = {
         "OPAQUE": 'OPAQUE',
         "CLIP": 'CLIP',
@@ -1020,7 +1020,7 @@ def handle_create_pbr(params: Dict[str, Any]) -> Dict[str, Any]:
     }
     mat.blend_method = blend_modes.get(alpha_mode, 'OPAQUE')
     
-    # 双面渲染
+    # Double-sided rendering
     mat.use_backface_culling = not double_sided
     
     nodes = mat.node_tree.nodes
@@ -1030,7 +1030,7 @@ def handle_create_pbr(params: Dict[str, Any]) -> Dict[str, Any]:
     output = nodes.get("Material Output")
     
     if principled:
-        # 设置基础属性
+        # Set base properties
         principled.inputs["Base Color"].default_value = base_color
         principled.inputs["Metallic"].default_value = metallic
         principled.inputs["Roughness"].default_value = roughness
@@ -1043,7 +1043,7 @@ def handle_create_pbr(params: Dict[str, Any]) -> Dict[str, Any]:
     textures_loaded = []
     x_offset = -300
     
-    # 加载纹理的辅助函数
+    # Helper function to load textures
     def load_texture(path, tex_type, y_offset):
         nonlocal x_offset
         if not path:
@@ -1059,7 +1059,7 @@ def handle_create_pbr(params: Dict[str, Any]) -> Dict[str, Any]:
             tex_node.location = (x_offset, y_offset)
             tex_node.image = image
             
-            # 设置色彩空间
+            # Set color space
             colorspace = TEXTURE_COLORSPACE_MAP.get(tex_type, "sRGB")
             image.colorspace_settings.name = colorspace
             
@@ -1068,7 +1068,7 @@ def handle_create_pbr(params: Dict[str, Any]) -> Dict[str, Any]:
         except:
             return None
     
-    # 加载并连接纹理
+    # Load and connect textures
     if base_color_texture and principled:
         tex = load_texture(base_color_texture, "COLOR", 200)
         if tex:
@@ -1097,13 +1097,13 @@ def handle_create_pbr(params: Dict[str, Any]) -> Dict[str, Any]:
     if ao_texture and principled:
         tex = load_texture(ao_texture, "AO", -600)
         if tex:
-            # AO通常乘以基础颜色
+            # AO is typically multiplied with base color
             mix_node = nodes.new(type='ShaderNodeMixRGB')
             mix_node.blend_type = 'MULTIPLY'
             mix_node.location = (x_offset + 200, 200)
             mix_node.inputs["Fac"].default_value = 1.0
             
-            # 找到现有的颜色连接并插入AO
+            # Find existing color connection and insert AO
             for link in list(links):
                 if link.to_socket == principled.inputs["Base Color"]:
                     links.new(link.from_socket, mix_node.inputs["Color1"])
@@ -1131,12 +1131,12 @@ def handle_create_pbr(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_fix_colorspace(params: Dict[str, Any]) -> Dict[str, Any]:
-    """修复材质中纹理的色彩空间
+    """Fix texture color spaces in material
     
     Args:
         params:
-            - material_name: 材质名称
-            - auto_detect: 自动检测
+            - material_name: Material name
+            - auto_detect: Auto detect
     """
     material_name = params.get("material_name")
     auto_detect = params.get("auto_detect", True)
@@ -1147,7 +1147,7 @@ def handle_fix_colorspace(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "MATERIAL_NOT_FOUND",
-                "message": f"材质不存在: {material_name}"
+                "message": f"Material not found: {material_name}"
             }
         }
     
@@ -1159,7 +1159,7 @@ def handle_fix_colorspace(params: Dict[str, Any]) -> Dict[str, Any]:
                 image = node.image
                 name_lower = image.name.lower()
                 
-                # 自动检测纹理类型
+                # Auto detect texture type
                 tex_type = "COLOR"
                 if any(x in name_lower for x in ["normal", "nrm", "nor", "bump"]):
                     tex_type = "NORMAL"
@@ -1202,14 +1202,14 @@ def handle_fix_colorspace(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_bake_textures(params: Dict[str, Any]) -> Dict[str, Any]:
-    """烘焙材质纹理
+    """Bake material textures
     
     Args:
         params:
-            - material_name: 材质名称
-            - output_directory: 输出目录
-            - resolution: 分辨率
-            - bake_types: 烘焙类型列表
+            - material_name: Material name
+            - output_directory: Output directory
+            - resolution: Resolution
+            - bake_types: Bake type list
     """
     import os
     
@@ -1224,15 +1224,15 @@ def handle_bake_textures(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "MATERIAL_NOT_FOUND",
-                "message": f"材质不存在: {material_name}"
+                "message": f"Material not found: {material_name}"
             }
         }
     
-    # 确保输出目录存在
+    # Ensure output directory exists
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
     
-    # 查找或创建使用该材质的对象
+    # Find or create an object using this material
     target_obj = None
     for obj in bpy.data.objects:
         if obj.type == 'MESH' and mat.name in [slot.material.name for slot in obj.material_slots if slot.material]:
@@ -1244,21 +1244,21 @@ def handle_bake_textures(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "NO_OBJECT_FOUND",
-                "message": "找不到使用该材质的网格对象"
+                "message": "No mesh object found using this material"
             }
         }
     
-    # 设置烘焙
+    # Set up baking
     bpy.context.scene.render.engine = 'CYCLES'
     bpy.context.scene.cycles.bake_type = 'DIFFUSE'
     
     baked_textures = []
     
-    # 注意：完整的烘焙实现需要更多设置
-    # 这里提供基本框架
+    # Note: Complete baking implementation requires more setup
+    # This provides a basic framework
     
     for bake_type in bake_types:
-        # 创建烘焙目标图像
+        # Create bake target image
         image_name = f"{material_name}_{bake_type.lower()}"
         if image_name in bpy.data.images:
             bpy.data.images.remove(bpy.data.images[image_name])

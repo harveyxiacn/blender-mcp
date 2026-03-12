@@ -1,7 +1,7 @@
 """
-合成器处理器
+Compositor Handler
 
-处理后期合成、颜色校正、特效等命令。
+Handles post-processing compositing, color correction, effects, and related commands.
 """
 
 from typing import Any, Dict, List
@@ -9,21 +9,21 @@ import bpy
 
 
 def _ensure_compositor():
-    """确保合成器已启用并返回节点树"""
+    """Ensure the compositor is enabled and return the node tree"""
     scene = bpy.context.scene
     
-    # 启用合成器节点
+    # Enable compositor nodes
     scene.use_nodes = True
-    
-    # Blender 5.0+ 中，合成器节点树通过不同方式访问
-    # 首先尝试直接访问
+
+    # In Blender 5.0+, the compositor node tree is accessed differently
+    # First try direct access
     node_tree = getattr(scene, 'node_tree', None)
     
     if node_tree is None:
-        # Blender 5.0+ 可能需要通过其他方式访问
-        # 尝试通过渲染设置获取
+        # Blender 5.0+ may need access through other means
+        # Try to get via render settings
         try:
-            # 创建一个新的合成器节点树
+            # Create a new compositor node tree
             if 'Compositing Nodetree' not in bpy.data.node_groups:
                 node_tree = bpy.data.node_groups.new('Compositing Nodetree', 'CompositorNodeTree')
             else:
@@ -32,14 +32,14 @@ def _ensure_compositor():
             pass
     
     if node_tree is None:
-        # 最后尝试：返回一个简化的结果表示成功
+        # Last resort: return None to indicate simplified success
         return None
     
     return node_tree
 
 
 def _get_or_create_node(nodes, node_type, name, location=[0, 0]):
-    """获取或创建节点"""
+    """Get or create a node"""
     for node in nodes:
         if node.name == name:
             return node
@@ -52,7 +52,7 @@ def _get_or_create_node(nodes, node_type, name, location=[0, 0]):
 
 
 def handle_enable(params: Dict[str, Any]) -> Dict[str, Any]:
-    """启用合成器"""
+    """Enable compositor"""
     enable = params.get("enable", True)
     use_backdrop = params.get("use_backdrop", True)
     
@@ -61,15 +61,15 @@ def handle_enable(params: Dict[str, Any]) -> Dict[str, Any]:
         scene.use_nodes = enable
         
         if enable:
-            # Blender 5.0+ 合成器节点在 use_nodes=True 后自动创建
-            # 尝试访问节点树
+            # Blender 5.0+ compositor nodes are auto-created after use_nodes=True
+            # Try to access the node tree
             node_tree = getattr(scene, 'node_tree', None)
             
             if node_tree:
-                # 确保有基本节点
+                # Ensure basic nodes exist
                 nodes = node_tree.nodes
                 
-                # 渲染层节点
+                # Render layers node
                 render_layers = None
                 composite = None
                 
@@ -87,7 +87,7 @@ def handle_enable(params: Dict[str, Any]) -> Dict[str, Any]:
                     composite = nodes.new('CompositorNodeComposite')
                     composite.location = [400, 0]
                 
-                # 连接
+                # Connect
                 if not composite.inputs['Image'].is_linked:
                     node_tree.links.new(render_layers.outputs['Image'], composite.inputs['Image'])
         
@@ -106,7 +106,7 @@ def handle_enable(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_preset(params: Dict[str, Any]) -> Dict[str, Any]:
-    """应用合成器预设"""
+    """Apply compositor preset"""
     preset = params.get("preset", "color_correction")
     intensity = params.get("intensity", 1.0)
     
@@ -132,23 +132,23 @@ def handle_preset(params: Dict[str, Any]) -> Dict[str, Any]:
             "error": {"code": "PRESET_ERROR", "message": str(e)}
         }
     
-    # 找到渲染层和合成输出
+    # Find render layers and composite output
     render_layers = None
     composite = None
-    
+
     for node in nodes:
         if node.type == 'R_LAYERS':
             render_layers = node
         elif node.type == 'COMPOSITE':
             composite = node
-    
+
     if not render_layers or not composite:
         return {
             "success": False,
-            "error": {"code": "MISSING_NODES", "message": "缺少基本节点"}
+            "error": {"code": "MISSING_NODES", "message": "Missing basic nodes"}
         }
-    
-    # 断开现有连接
+
+    # Disconnect existing links
     for link in list(links):
         if link.to_socket == composite.inputs['Image']:
             links.remove(link)
@@ -156,7 +156,7 @@ def handle_preset(params: Dict[str, Any]) -> Dict[str, Any]:
     last_output = render_layers.outputs['Image']
     
     if preset == "color_correction":
-        # 颜色校正
+        # Color correction
         cc = _get_or_create_node(nodes, 'CompositorNodeColorCorrection', 'ColorCorrection', [200, 0])
         cc.master_saturation = 1.0 + (intensity - 1.0) * 0.2
         cc.master_gain = 1.0 + (intensity - 1.0) * 0.1
@@ -165,7 +165,7 @@ def handle_preset(params: Dict[str, Any]) -> Dict[str, Any]:
         last_output = cc.outputs['Image']
         
     elif preset == "bloom":
-        # 辉光效果
+        # Bloom/glow effect
         glare = _get_or_create_node(nodes, 'CompositorNodeGlare', 'Bloom', [200, 0])
         glare.glare_type = 'FOG_GLOW'
         glare.threshold = 1.0 - intensity * 0.5
@@ -175,7 +175,7 @@ def handle_preset(params: Dict[str, Any]) -> Dict[str, Any]:
         last_output = glare.outputs['Image']
         
     elif preset == "vignette":
-        # 暗角
+        # Vignette
         ellipse = _get_or_create_node(nodes, 'CompositorNodeEllipseMask', 'VignetteMask', [200, 100])
         ellipse.width = 0.8
         ellipse.height = 0.8
@@ -194,7 +194,7 @@ def handle_preset(params: Dict[str, Any]) -> Dict[str, Any]:
         last_output = mix.outputs['Image']
         
     elif preset == "blur":
-        # 模糊
+        # Blur
         blur_node = _get_or_create_node(nodes, 'CompositorNodeBlur', 'Blur', [200, 0])
         blur_node.filter_type = 'FAST_GAUSS'
         blur_node.size_x = intensity * 10
@@ -204,7 +204,7 @@ def handle_preset(params: Dict[str, Any]) -> Dict[str, Any]:
         last_output = blur_node.outputs['Image']
         
     elif preset == "sharpen":
-        # 锐化
+        # Sharpen
         sharpen = _get_or_create_node(nodes, 'CompositorNodeFilter', 'Sharpen', [200, 0])
         sharpen.filter_type = 'SHARPEN'
         sharpen.inputs['Fac'].default_value = intensity
@@ -213,12 +213,12 @@ def handle_preset(params: Dict[str, Any]) -> Dict[str, Any]:
         last_output = sharpen.outputs['Image']
         
     elif preset == "film_grain":
-        # 胶片颗粒（使用噪波）
-        # 由于合成器没有直接的胶片颗粒节点，使用混合噪波
+        # Film grain (using noise)
+        # Since the compositor has no direct film grain node, use mixed noise
         pass
         
     elif preset == "chromatic_aberration":
-        # 色差
+        # Chromatic aberration
         lens_distortion = _get_or_create_node(nodes, 'CompositorNodeLensdist', 'ChromaticAberration', [200, 0])
         lens_distortion.use_jitter = False
         lens_distortion.use_fit = True
@@ -227,7 +227,7 @@ def handle_preset(params: Dict[str, Any]) -> Dict[str, Any]:
         links.new(last_output, lens_distortion.inputs['Image'])
         last_output = lens_distortion.outputs['Image']
     
-    # 连接到输出
+    # Connect to output
     links.new(last_output, composite.inputs['Image'])
     
     return {
@@ -239,7 +239,7 @@ def handle_preset(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_color_balance(params: Dict[str, Any]) -> Dict[str, Any]:
-    """颜色平衡"""
+    """Color balance"""
     shadows = params.get("shadows")
     midtones = params.get("midtones")
     highlights = params.get("highlights")
@@ -248,23 +248,23 @@ def handle_color_balance(params: Dict[str, Any]) -> Dict[str, Any]:
     nodes = node_tree.nodes
     links = node_tree.links
     
-    # 找到渲染层和合成输出
+    # Find render layers and composite output
     render_layers = None
     composite = None
-    
+
     for node in nodes:
         if node.type == 'R_LAYERS':
             render_layers = node
         elif node.type == 'COMPOSITE':
             composite = node
-    
+
     if not render_layers or not composite:
         return {
             "success": False,
-            "error": {"code": "MISSING_NODES", "message": "缺少基本节点"}
+            "error": {"code": "MISSING_NODES", "message": "Missing basic nodes"}
         }
-    
-    # 创建颜色平衡节点
+
+    # Create color balance node
     cb = _get_or_create_node(nodes, 'CompositorNodeColorBalance', 'ColorBalance', [200, 0])
     cb.correction_method = 'LIFT_GAMMA_GAIN'
     
@@ -275,15 +275,15 @@ def handle_color_balance(params: Dict[str, Any]) -> Dict[str, Any]:
     if highlights:
         cb.gain = highlights
     
-    # 断开旧连接
+    # Disconnect old links
     for link in list(links):
         if link.to_socket == composite.inputs['Image']:
             links.remove(link)
-    
-    # 重新连接
+
+    # Reconnect
     links.new(render_layers.outputs['Image'], cb.inputs['Image'])
     links.new(cb.outputs['Image'], composite.inputs['Image'])
-    
+
     return {
         "success": True,
         "data": {}
@@ -291,7 +291,7 @@ def handle_color_balance(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_blur(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加模糊"""
+    """Add blur"""
     blur_type = params.get("blur_type", "FAST_GAUSS")
     size_x = params.get("size_x", 10.0)
     size_y = params.get("size_y", 10.0)
@@ -300,34 +300,34 @@ def handle_blur(params: Dict[str, Any]) -> Dict[str, Any]:
     nodes = node_tree.nodes
     links = node_tree.links
     
-    # 找到渲染层和合成输出
+    # Find render layers and composite output
     render_layers = None
     composite = None
-    
+
     for node in nodes:
         if node.type == 'R_LAYERS':
             render_layers = node
         elif node.type == 'COMPOSITE':
             composite = node
-    
+
     if not render_layers or not composite:
         return {
             "success": False,
-            "error": {"code": "MISSING_NODES", "message": "缺少基本节点"}
+            "error": {"code": "MISSING_NODES", "message": "Missing basic nodes"}
         }
-    
-    # 创建模糊节点
+
+    # Create blur node
     blur = _get_or_create_node(nodes, 'CompositorNodeBlur', 'Blur', [200, 0])
     blur.filter_type = blur_type
     blur.size_x = int(size_x)
     blur.size_y = int(size_y)
     
-    # 断开旧连接
+    # Disconnect old links
     for link in list(links):
         if link.to_socket == composite.inputs['Image']:
             links.remove(link)
-    
-    # 重新连接
+
+    # Reconnect
     links.new(render_layers.outputs['Image'], blur.inputs['Image'])
     links.new(blur.outputs['Image'], composite.inputs['Image'])
     
@@ -338,7 +338,7 @@ def handle_blur(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_render_layer(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置渲染层"""
+    """Set up render layer"""
     layer_name = params.get("layer_name", "ViewLayer")
     use_pass_combined = params.get("use_pass_combined", True)
     use_pass_z = params.get("use_pass_z", False)
@@ -349,7 +349,7 @@ def handle_render_layer(params: Dict[str, Any]) -> Dict[str, Any]:
     if not view_layer:
         return {
             "success": False,
-            "error": {"code": "LAYER_NOT_FOUND", "message": f"视图层不存在: {layer_name}"}
+            "error": {"code": "LAYER_NOT_FOUND", "message": f"View layer not found: {layer_name}"}
         }
     
     view_layer.use_pass_combined = use_pass_combined

@@ -1,7 +1,7 @@
 """
-骨骼绑定处理器
+Rigging Handler
 
-处理骨骼和绑定相关的命令。
+Handles armature and rigging-related commands.
 """
 
 from typing import Any, Dict
@@ -9,18 +9,18 @@ import bpy
 
 
 def handle_armature_create(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建骨架"""
+    """Create armature"""
     name = params.get("name", "Armature")
     location = params.get("location", [0, 0, 0])
     
-    # 创建骨架数据
+    # Create armature data
     arm_data = bpy.data.armatures.new(name=name)
     
-    # 创建骨架对象
+    # Create armature object
     arm_obj = bpy.data.objects.new(name=name, object_data=arm_data)
     arm_obj.location = location
     
-    # 链接到场景
+    # Link to scene
     bpy.context.collection.objects.link(arm_obj)
     
     return {
@@ -32,7 +32,7 @@ def handle_armature_create(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_bone_add(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加骨骼"""
+    """Add bone"""
     armature_name = params.get("armature_name")
     bone_name = params.get("bone_name")
     head = params.get("head", [0, 0, 0])
@@ -46,28 +46,28 @@ def handle_bone_add(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "ARMATURE_NOT_FOUND",
-                "message": f"骨架不存在: {armature_name}"
+                "message": f"Armature not found: {armature_name}"
             }
         }
     
-    # 切换到编辑模式
+    # Switch to edit mode
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.mode_set(mode='EDIT')
     
-    # 创建骨骼
+    # Create bone
     arm = obj.data
     bone = arm.edit_bones.new(bone_name)
     bone.head = head
     bone.tail = tail
     
-    # 设置父骨骼
+    # Set parent bone
     if parent:
         parent_bone = arm.edit_bones.get(parent)
         if parent_bone:
             bone.parent = parent_bone
             bone.use_connect = use_connect
     
-    # 返回对象模式
+    # Return to object mode
     bpy.ops.object.mode_set(mode='OBJECT')
     
     return {
@@ -79,7 +79,7 @@ def handle_bone_add(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_generate_rig(params: Dict[str, Any]) -> Dict[str, Any]:
-    """生成角色绑定"""
+    """Generate character rig"""
     target_mesh = params.get("target_mesh")
     rig_type = params.get("rig_type", "HUMAN")
     auto_weights = params.get("auto_weights", True)
@@ -90,26 +90,26 @@ def handle_generate_rig(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "MESH_NOT_FOUND",
-                "message": f"网格不存在: {target_mesh}"
+                "message": f"Mesh not found: {target_mesh}"
             }
         }
     
-    # 创建基础骨架
+    # Create base armature
     bpy.ops.object.armature_add(location=mesh_obj.location)
     arm_obj = bpy.context.active_object
     arm_obj.name = f"{target_mesh}_Rig"
     
-    # 根据绑定类型添加骨骼
+    # Add bones based on rig type
     bpy.ops.object.mode_set(mode='EDIT')
     arm = arm_obj.data
     
-    # 删除默认骨骼
+    # Delete default bone
     for bone in arm.edit_bones:
         arm.edit_bones.remove(bone)
     
-    # 添加基础骨骼结构（简化版本）
+    # Add basic bone structure (simplified version)
     if rig_type == "HUMAN":
-        # 脊柱
+        # Spine
         root = arm.edit_bones.new("root")
         root.head = (0, 0, 0)
         root.tail = (0, 0, 0.2)
@@ -134,7 +134,7 @@ def handle_generate_rig(params: Dict[str, Any]) -> Dict[str, Any]:
         head.tail = (0, 0, 1.1)
         head.parent = neck
         
-        # 手臂
+        # Arms
         for side in ["L", "R"]:
             sign = 1 if side == "L" else -1
             
@@ -160,7 +160,7 @@ def handle_generate_rig(params: Dict[str, Any]) -> Dict[str, Any]:
             hand.parent = forearm
             hand.use_connect = True
         
-        # 腿部
+        # Legs
         for side in ["L", "R"]:
             sign = 1 if side == "L" else -1
             
@@ -183,7 +183,7 @@ def handle_generate_rig(params: Dict[str, Any]) -> Dict[str, Any]:
     
     bpy.ops.object.mode_set(mode='OBJECT')
     
-    # 绑定网格到骨架
+    # Bind mesh to armature
     mesh_obj.select_set(True)
     arm_obj.select_set(True)
     bpy.context.view_layer.objects.active = arm_obj
@@ -202,7 +202,7 @@ def handle_generate_rig(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_ik_setup(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置 IK"""
+    """Set up IK"""
     armature_name = params.get("armature_name")
     bone_name = params.get("bone_name")
     target = params.get("target")
@@ -215,15 +215,15 @@ def handle_ik_setup(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "ARMATURE_NOT_FOUND",
-                "message": f"骨架不存在: {armature_name}"
+                "message": f"Armature not found: {armature_name}"
             }
         }
     
-    # 切换到姿势模式
+    # Switch to pose mode
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.mode_set(mode='POSE')
     
-    # 获取姿势骨骼
+    # Get pose bone
     pose_bone = obj.pose.bones.get(bone_name)
     if not pose_bone:
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -231,20 +231,20 @@ def handle_ik_setup(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "BONE_NOT_FOUND",
-                "message": f"骨骼不存在: {bone_name}"
+                "message": f"Bone not found: {bone_name}"
             }
         }
     
-    # 添加 IK 约束
+    # Add IK constraint
     ik = pose_bone.constraints.new(type='IK')
     ik.chain_count = chain_length
     
-    # 设置目标
+    # Set target
     target_obj = bpy.data.objects.get(target)
     if target_obj:
         ik.target = target_obj
     
-    # 设置极向量目标
+    # Set pole target
     if pole_target:
         pole_obj = bpy.data.objects.get(pole_target)
         if pole_obj:
@@ -259,7 +259,7 @@ def handle_ik_setup(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_pose_set(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置姿势"""
+    """Set pose"""
     armature_name = params.get("armature_name")
     bone_name = params.get("bone_name")
     location = params.get("location")
@@ -272,15 +272,15 @@ def handle_pose_set(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "ARMATURE_NOT_FOUND",
-                "message": f"骨架不存在: {armature_name}"
+                "message": f"Armature not found: {armature_name}"
             }
         }
     
-    # 切换到姿势模式
+    # Switch to pose mode
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.mode_set(mode='POSE')
     
-    # 获取姿势骨骼
+    # Get pose bone
     pose_bone = obj.pose.bones.get(bone_name)
     if not pose_bone:
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -288,18 +288,18 @@ def handle_pose_set(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "BONE_NOT_FOUND",
-                "message": f"骨骼不存在: {bone_name}"
+                "message": f"Bone not found: {bone_name}"
             }
         }
     
-    # 设置旋转模式
+    # Set rotation mode
     pose_bone.rotation_mode = rotation_mode
     
-    # 设置位置
+    # Set location
     if location:
         pose_bone.location = location
     
-    # 设置旋转
+    # Set rotation
     if rotation:
         pose_bone.rotation_euler = rotation
     
@@ -312,7 +312,7 @@ def handle_pose_set(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_weight_paint(params: Dict[str, Any]) -> Dict[str, Any]:
-    """自动权重绘制"""
+    """Automatic weight painting"""
     mesh_name = params.get("mesh_name")
     armature_name = params.get("armature_name")
     auto_normalize = params.get("auto_normalize", True)
@@ -325,7 +325,7 @@ def handle_weight_paint(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "MESH_NOT_FOUND",
-                "message": f"网格不存在: {mesh_name}"
+                "message": f"Mesh not found: {mesh_name}"
             }
         }
     
@@ -334,17 +334,17 @@ def handle_weight_paint(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "ARMATURE_NOT_FOUND",
-                "message": f"骨架不存在: {armature_name}"
+                "message": f"Armature not found: {armature_name}"
             }
         }
     
-    # 选择网格和骨架
+    # Select mesh and armature
     bpy.ops.object.select_all(action='DESELECT')
     mesh_obj.select_set(True)
     arm_obj.select_set(True)
     bpy.context.view_layer.objects.active = arm_obj
     
-    # 自动权重
+    # Auto weights
     bpy.ops.object.parent_set(type='ARMATURE_AUTO')
     
     return {
@@ -354,17 +354,17 @@ def handle_weight_paint(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_armature_bind(params: Dict[str, Any]) -> Dict[str, Any]:
-    """将网格绑定到骨架
+    """Bind mesh to armature
     
     Args:
         params:
-            - mesh_name: 网格对象名称
-            - armature_name: 骨架对象名称
-            - bind_type: 绑定类型
-                - AUTO: 自动权重（推荐）
-                - ENVELOPE: 包络线权重
-                - EMPTY: 仅绑定，不设置权重
-            - preserve_volume: 是否保持体积（防止关节处变形过度）
+            - mesh_name: Mesh object name
+            - armature_name: Armature object name
+            - bind_type: Bind type
+                - AUTO: Auto weights (recommended)
+                - ENVELOPE: Envelope weights
+                - EMPTY: Bind only, no weights
+            - preserve_volume: Whether to preserve volume (prevents excessive deformation at joints)
     """
     mesh_name = params.get("mesh_name")
     armature_name = params.get("armature_name")
@@ -379,7 +379,7 @@ def handle_armature_bind(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "MESH_NOT_FOUND",
-                "message": f"网格不存在: {mesh_name}"
+                "message": f"Mesh not found: {mesh_name}"
             }
         }
     
@@ -388,21 +388,21 @@ def handle_armature_bind(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "ARMATURE_NOT_FOUND",
-                "message": f"骨架不存在: {armature_name}"
+                "message": f"Armature not found: {armature_name}"
             }
         }
     
-    # 确保在对象模式
+    # Ensure in object mode
     if bpy.context.mode != 'OBJECT':
         bpy.ops.object.mode_set(mode='OBJECT')
     
-    # 选择网格和骨架（网格先选，骨架作为活动对象）
+    # Select mesh and armature (mesh selected first, armature as active object)
     bpy.ops.object.select_all(action='DESELECT')
     mesh_obj.select_set(True)
     arm_obj.select_set(True)
     bpy.context.view_layer.objects.active = arm_obj
     
-    # 根据绑定类型执行绑定
+    # Execute bind based on bind type
     try:
         if bind_type == "AUTO":
             bpy.ops.object.parent_set(type='ARMATURE_AUTO')
@@ -415,11 +415,11 @@ def handle_armature_bind(params: Dict[str, Any]) -> Dict[str, Any]:
                 "success": False,
                 "error": {
                     "code": "INVALID_BIND_TYPE",
-                    "message": f"不支持的绑定类型: {bind_type}"
+                    "message": f"Unsupported bind type: {bind_type}"
                 }
             }
         
-        # 设置骨架修改器的保持体积选项
+        # Set armature modifier's preserve volume option
         if preserve_volume:
             for mod in mesh_obj.modifiers:
                 if mod.type == 'ARMATURE' and mod.object == arm_obj:
@@ -446,14 +446,14 @@ def handle_armature_bind(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_vertex_group_create(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建顶点组
+    """Create vertex group
     
     Args:
         params:
-            - object_name: 对象名称
-            - group_name: 顶点组名称
-            - vertex_indices: 顶点索引列表（可选）
-            - weight: 权重值（0.0-1.0）
+            - object_name: Object name
+            - group_name: Vertex group name
+            - vertex_indices: Vertex index list (optional)
+            - weight: Weight value (0.0-1.0)
     """
     object_name = params.get("object_name")
     group_name = params.get("group_name")
@@ -466,14 +466,14 @@ def handle_vertex_group_create(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"网格对象不存在: {object_name}"
+                "message": f"Mesh object not found: {object_name}"
             }
         }
     
-    # 创建顶点组
+    # Create vertex group
     vg = obj.vertex_groups.new(name=group_name)
     
-    # 如果指定了顶点，添加到组中
+    # If vertices specified, add them to the group
     if vertex_indices:
         vg.add(vertex_indices, weight, 'REPLACE')
     
@@ -488,15 +488,15 @@ def handle_vertex_group_create(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_vertex_group_assign(params: Dict[str, Any]) -> Dict[str, Any]:
-    """分配顶点到顶点组
+    """Assign vertices to vertex group
     
     Args:
         params:
-            - object_name: 对象名称
-            - group_name: 顶点组名称
-            - vertex_indices: 顶点索引列表
-            - weight: 权重值（0.0-1.0）
-            - mode: 分配模式（REPLACE, ADD, SUBTRACT）
+            - object_name: Object name
+            - group_name: Vertex group name
+            - vertex_indices: Vertex index list
+            - weight: Weight value (0.0-1.0)
+            - mode: Assign mode (REPLACE, ADD, SUBTRACT)
     """
     object_name = params.get("object_name")
     group_name = params.get("group_name")
@@ -510,7 +510,7 @@ def handle_vertex_group_assign(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"网格对象不存在: {object_name}"
+                "message": f"Mesh object not found: {object_name}"
             }
         }
     
@@ -520,11 +520,11 @@ def handle_vertex_group_assign(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "GROUP_NOT_FOUND",
-                "message": f"顶点组不存在: {group_name}"
+                "message": f"Vertex group not found: {group_name}"
             }
         }
     
-    # 分配顶点
+    # Assign vertices
     vg.add(vertex_indices, weight, mode)
     
     return {
@@ -538,14 +538,14 @@ def handle_vertex_group_assign(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_bone_constraint_add(params: Dict[str, Any]) -> Dict[str, Any]:
-    """为骨骼添加约束
+    """Add constraint to bone
     
     Args:
         params:
-            - armature_name: 骨架名称
-            - bone_name: 骨骼名称
-            - constraint_type: 约束类型（IK, COPY_ROTATION, COPY_LOCATION, LIMIT_ROTATION等）
-            - settings: 约束设置
+            - armature_name: Armature name
+            - bone_name: Bone name
+            - constraint_type: Constraint type (IK, COPY_ROTATION, COPY_LOCATION, LIMIT_ROTATION, etc.)
+            - settings: Constraint settings
     """
     armature_name = params.get("armature_name")
     bone_name = params.get("bone_name")
@@ -558,11 +558,11 @@ def handle_bone_constraint_add(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "ARMATURE_NOT_FOUND",
-                "message": f"骨架不存在: {armature_name}"
+                "message": f"Armature not found: {armature_name}"
             }
         }
     
-    # 切换到姿势模式
+    # Switch to pose mode
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.mode_set(mode='POSE')
     
@@ -573,18 +573,18 @@ def handle_bone_constraint_add(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "BONE_NOT_FOUND",
-                "message": f"骨骼不存在: {bone_name}"
+                "message": f"Bone not found: {bone_name}"
             }
         }
     
-    # 添加约束
+    # Add constraint
     try:
         constraint = pose_bone.constraints.new(type=constraint_type)
         
-        # 应用设置
+        # Apply settings
         for key, value in settings.items():
             if hasattr(constraint, key):
-                # 处理对象引用
+                # Handle object references
                 if key in ['target', 'pole_target'] and isinstance(value, str):
                     target_obj = bpy.data.objects.get(value)
                     if target_obj:

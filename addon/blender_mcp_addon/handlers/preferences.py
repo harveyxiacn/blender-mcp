@@ -1,7 +1,7 @@
 """
-偏好设置处理器
+Preferences Handler
 
-处理Blender偏好设置管理命令。
+Handles Blender preferences management commands.
 """
 
 from typing import Any, Dict
@@ -9,7 +9,7 @@ import bpy
 
 
 def handle_get(params: Dict[str, Any]) -> Dict[str, Any]:
-    """获取设置"""
+    """Get settings"""
     category = params.get("category")
     key = params.get("key")
     
@@ -28,14 +28,14 @@ def handle_get(params: Dict[str, Any]) -> Dict[str, Any]:
         if category not in category_map:
             return {
                 "success": False,
-                "error": {"code": "INVALID_CATEGORY", "message": f"无效类别: {category}"}
+                "error": {"code": "INVALID_CATEGORY", "message": f"Invalid category: {category}"}
             }
         
         cat_prefs = category_map[category]
         
         if hasattr(cat_prefs, key):
             value = getattr(cat_prefs, key)
-            # 转换为可序列化的值
+            # Convert to serializable value
             if hasattr(value, '__iter__') and not isinstance(value, str):
                 value = list(value)
             
@@ -50,7 +50,7 @@ def handle_get(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             return {
                 "success": False,
-                "error": {"code": "KEY_NOT_FOUND", "message": f"键不存在: {key}"}
+                "error": {"code": "KEY_NOT_FOUND", "message": f"Key not found: {key}"}
             }
     
     except Exception as e:
@@ -61,7 +61,7 @@ def handle_get(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_set(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置偏好"""
+    """Set preferences"""
     category = params.get("category")
     key = params.get("key")
     value = params.get("value")
@@ -80,7 +80,7 @@ def handle_set(params: Dict[str, Any]) -> Dict[str, Any]:
         if category not in category_map:
             return {
                 "success": False,
-                "error": {"code": "INVALID_CATEGORY", "message": f"无效类别: {category}"}
+                "error": {"code": "INVALID_CATEGORY", "message": f"Invalid category: {category}"}
             }
         
         cat_prefs = category_map[category]
@@ -99,7 +99,7 @@ def handle_set(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             return {
                 "success": False,
-                "error": {"code": "KEY_NOT_FOUND", "message": f"键不存在: {key}"}
+                "error": {"code": "KEY_NOT_FOUND", "message": f"Key not found: {key}"}
             }
     
     except Exception as e:
@@ -110,14 +110,14 @@ def handle_set(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_theme(params: Dict[str, Any]) -> Dict[str, Any]:
-    """主题设置"""
+    """Theme settings"""
     preset = params.get("preset")
     custom_colors = params.get("custom_colors")
     
     try:
         if preset:
-            # 加载预设主题
-            # Blender 5.0 主题预设
+            # Load preset theme
+            # Blender 5.0 theme presets
             preset_map = {
                 "Dark": "blender_dark",
                 "Light": "blender_light",
@@ -132,13 +132,13 @@ def handle_theme(params: Dict[str, Any]) -> Dict[str, Any]:
                     menu_idname="USERPREF_MT_interface_theme_presets"
                 )
             except:
-                # 如果预设不存在，尝试设置基本颜色
+                # If preset doesn't exist, try to set basic colors
                 pass
         
         if custom_colors:
             theme = bpy.context.preferences.themes[0]
             
-            # 应用自定义颜色
+            # Apply custom colors
             if "background" in custom_colors:
                 theme.view_3d.space.gradients.high_gradient = custom_colors["background"][:3]
             
@@ -164,7 +164,7 @@ def handle_theme(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_viewport(params: Dict[str, Any]) -> Dict[str, Any]:
-    """视口设置"""
+    """Viewport settings"""
     show_gizmo = params.get("show_gizmo")
     show_floor = params.get("show_floor")
     show_axis_x = params.get("show_axis_x")
@@ -174,7 +174,7 @@ def handle_viewport(params: Dict[str, Any]) -> Dict[str, Any]:
     clip_end = params.get("clip_end")
     
     try:
-        # 获取当前3D视图
+        # Get current 3D viewport
         for area in bpy.context.screen.areas:
             if area.type == 'VIEW_3D':
                 space = area.spaces.active
@@ -219,7 +219,7 @@ def handle_viewport(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_system(params: Dict[str, Any]) -> Dict[str, Any]:
-    """系统设置"""
+    """System settings"""
     memory_cache_limit = params.get("memory_cache_limit")
     undo_steps = params.get("undo_steps")
     use_gpu_subdivision = params.get("use_gpu_subdivision")
@@ -251,7 +251,7 @@ def handle_system(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_save(params: Dict[str, Any]) -> Dict[str, Any]:
-    """保存偏好设置"""
+    """Save preferences"""
     try:
         bpy.ops.wm.save_userpref()
         
@@ -270,7 +270,7 @@ def handle_save(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_load_factory(params: Dict[str, Any]) -> Dict[str, Any]:
-    """加载出厂设置"""
+    """Load factory settings"""
     try:
         bpy.ops.wm.read_factory_userpref()
         

@@ -1,7 +1,7 @@
 """
-视频序列编辑器处理器
+Video Sequence Editor Handler
 
-处理视频剪辑、效果、渲染等命令。
+Handles video editing, effects, rendering and other commands.
 """
 
 from typing import Any, Dict, List
@@ -10,7 +10,7 @@ import os
 
 
 def _ensure_vse():
-    """确保有序列编辑器"""
+    """Ensure the sequence editor exists"""
     scene = bpy.context.scene
     if not scene.sequence_editor:
         scene.sequence_editor_create()
@@ -18,7 +18,7 @@ def _ensure_vse():
 
 
 def handle_add_strip(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加条带"""
+    """Add a strip"""
     strip_type = params.get("strip_type", "MOVIE")
     filepath = params.get("filepath")
     channel = params.get("channel", 1)
@@ -60,7 +60,7 @@ def handle_add_strip(params: Dict[str, Any]) -> Dict[str, Any]:
             if not scene:
                 return {
                     "success": False,
-                    "error": {"code": "SCENE_NOT_FOUND", "message": f"场景不存在: {scene_name}"}
+                    "error": {"code": "SCENE_NOT_FOUND", "message": f"Scene not found: {scene_name}"}
                 }
             strip = strips.new_scene(
                 name=scene_name,
@@ -93,7 +93,7 @@ def handle_add_strip(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             return {
                 "success": False,
-                "error": {"code": "INVALID_PARAMS", "message": "参数不完整"}
+                "error": {"code": "INVALID_PARAMS", "message": "Incomplete parameters"}
             }
         
         return {
@@ -111,22 +111,22 @@ def handle_add_strip(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_cut(params: Dict[str, Any]) -> Dict[str, Any]:
-    """剪切条带"""
+    """Cut a strip"""
     channel = params.get("channel")
     frame = params.get("frame")
     cut_type = params.get("cut_type", "SOFT")
     
     seq_editor = _ensure_vse()
     
-    # 找到该通道在该帧的条带
+    # Find the strip at the given frame in the given channel
     for strip in seq_editor.sequences:
         if strip.channel == channel:
             if strip.frame_start <= frame <= strip.frame_final_end:
-                # 选择条带
+                # Select the strip
                 strip.select = True
                 bpy.context.scene.frame_current = frame
                 
-                # 执行剪切
+                # Perform the cut
                 bpy.ops.sequencer.cut(frame=frame, type=cut_type)
                 
                 return {
@@ -136,12 +136,12 @@ def handle_cut(params: Dict[str, Any]) -> Dict[str, Any]:
     
     return {
         "success": False,
-        "error": {"code": "STRIP_NOT_FOUND", "message": f"在通道 {channel} 帧 {frame} 找不到条带"}
+        "error": {"code": "STRIP_NOT_FOUND", "message": f"No strip found at channel {channel} frame {frame}"}
     }
 
 
 def handle_transform(params: Dict[str, Any]) -> Dict[str, Any]:
-    """变换条带"""
+    """Transform a strip"""
     strip_name = params.get("strip_name")
     position = params.get("position")
     scale = params.get("scale")
@@ -154,10 +154,10 @@ def handle_transform(params: Dict[str, Any]) -> Dict[str, Any]:
     if not strip:
         return {
             "success": False,
-            "error": {"code": "STRIP_NOT_FOUND", "message": f"条带不存在: {strip_name}"}
+            "error": {"code": "STRIP_NOT_FOUND", "message": f"Strip not found: {strip_name}"}
         }
     
-    # 启用变换
+    # Enable transform
     strip.use_translation = True
     strip.use_crop = True
     
@@ -182,7 +182,7 @@ def handle_transform(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_add_effect(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加效果"""
+    """Add an effect"""
     effect_type = params.get("effect_type", "CROSS")
     channel = params.get("channel", 1)
     start_frame = params.get("start_frame", 1)
@@ -201,7 +201,7 @@ def handle_add_effect(params: Dict[str, Any]) -> Dict[str, Any]:
             if not seq1 or not seq2:
                 return {
                     "success": False,
-                    "error": {"code": "STRIP_NOT_FOUND", "message": "源条带不存在"}
+                    "error": {"code": "STRIP_NOT_FOUND", "message": "Source strip not found"}
                 }
             
             strip = strips.new_effect(
@@ -237,7 +237,7 @@ def handle_add_effect(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_add_text(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加文本"""
+    """Add text"""
     text = params.get("text", "Text")
     channel = params.get("channel", 1)
     start_frame = params.get("start_frame", 1)
@@ -249,8 +249,8 @@ def handle_add_text(params: Dict[str, Any]) -> Dict[str, Any]:
     seq_editor = _ensure_vse()
     
     try:
-        # Blender 5.0+ 使用 sequences_all 或不同的 API
-        # 尝试多种方式
+        # Blender 5.0+ uses sequences_all or a different API
+        # Try multiple approaches
         sequences = getattr(seq_editor, 'sequences', None)
         if sequences is None:
             sequences = getattr(seq_editor, 'sequences_all', None)
@@ -277,10 +277,10 @@ def handle_add_text(params: Dict[str, Any]) -> Dict[str, Any]:
                 }
             }
         else:
-            # 使用 bpy.ops 作为备选
+            # Use bpy.ops as a fallback
             bpy.context.scene.frame_current = start_frame
             
-            # 获取正确的区域上下文
+            # Get the correct area context
             for area in bpy.context.screen.areas:
                 if area.type == 'SEQUENCE_EDITOR':
                     with bpy.context.temp_override(area=area):
@@ -299,7 +299,7 @@ def handle_add_text(params: Dict[str, Any]) -> Dict[str, Any]:
                             "data": {"strip_name": strip.name if strip else "Text"}
                         }
             
-            # 没有序列编辑器区域，返回成功但标注
+            # No Sequence Editor area found, return success with a note
             return {
                 "success": True,
                 "data": {
@@ -315,7 +315,7 @@ def handle_add_text(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_render(params: Dict[str, Any]) -> Dict[str, Any]:
-    """渲染视频"""
+    """Render video"""
     output_path = params.get("output_path")
     format_type = params.get("format", "MPEG4")
     codec = params.get("codec", "H264")
@@ -323,16 +323,16 @@ def handle_render(params: Dict[str, Any]) -> Dict[str, Any]:
     
     scene = bpy.context.scene
     
-    # 设置输出
+    # Set output
     scene.render.filepath = output_path
     scene.render.image_settings.file_format = 'FFMPEG'
     
-    # 设置视频编码
+    # Set video encoding
     scene.render.ffmpeg.format = format_type
     scene.render.ffmpeg.codec = codec
     scene.render.ffmpeg.constant_rate_factor = 'MEDIUM'
     
-    # 设置质量
+    # Set quality
     if quality >= 90:
         scene.render.ffmpeg.constant_rate_factor = 'HIGH'
     elif quality >= 70:
@@ -341,7 +341,7 @@ def handle_render(params: Dict[str, Any]) -> Dict[str, Any]:
         scene.render.ffmpeg.constant_rate_factor = 'LOW'
     
     try:
-        # 渲染
+        # Render
         bpy.ops.render.render(animation=True)
         
         return {

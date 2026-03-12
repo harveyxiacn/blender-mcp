@@ -1,8 +1,9 @@
 """
-风格预设工具
+Style Preset Tools
 
-一键配置从像素风格到3A级的完整渲染/材质/建模环境。
-将多个工具的调用合并为一个高级风格设置工具。
+One-click configuration of complete rendering/material/modeling environments
+from pixel art to AAA quality. Consolidates multiple tool calls into a single
+high-level style setup tool.
 """
 
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class ModelingStyle(str, Enum):
-    """建模风格"""
+    """Modeling style"""
     PIXEL = "PIXEL"
     LOW_POLY = "LOW_POLY"
     STYLIZED = "STYLIZED"
@@ -28,64 +29,64 @@ class ModelingStyle(str, Enum):
 
 
 class OutlineMethod(str, Enum):
-    """描边方法"""
+    """Outline method"""
     SOLIDIFY = "SOLIDIFY"
     FREESTYLE = "FREESTYLE"
     GREASE_PENCIL = "GREASE_PENCIL"
 
 
 class StyleSetupInput(BaseModel):
-    """风格设置输入"""
+    """Style setup input"""
     style: ModelingStyle = Field(
         ...,
-        description="建模风格: "
-                    "PIXEL(像素/体素,Flat Shading+像素纹理), "
-                    "LOW_POLY(低多边形,Flat Shading+纯色/顶点色), "
-                    "STYLIZED(风格化,渐变色+简单纹理), "
-                    "TOON(卡通/赛璐璐,Cel Shading+描边), "
-                    "HAND_PAINTED(手绘,Diffuse-Only纹理), "
-                    "SEMI_REALISTIC(半写实,简化PBR), "
-                    "PBR_REALISTIC(PBR写实,完整PBR管线), "
-                    "AAA(3A/影视级,高模雕刻+全套贴图)"
+        description="Modeling style: "
+                    "PIXEL (pixel/voxel, Flat Shading + pixel textures), "
+                    "LOW_POLY (low polygon, Flat Shading + solid/vertex color), "
+                    "STYLIZED (stylized, gradient + simple textures), "
+                    "TOON (cartoon/cel-shaded, Cel Shading + outlines), "
+                    "HAND_PAINTED (hand-painted, Diffuse-Only textures), "
+                    "SEMI_REALISTIC (semi-realistic, simplified PBR), "
+                    "PBR_REALISTIC (PBR realistic, full PBR pipeline), "
+                    "AAA (AAA/cinematic, high-poly sculpt + full texture set)"
     )
-    apply_to_scene: bool = Field(default=True, description="是否应用到场景渲染设置")
-    apply_to_objects: Optional[List[str]] = Field(default=None, description="应用到指定对象(为空则仅设置场景)")
+    apply_to_scene: bool = Field(default=True, description="Whether to apply to scene render settings")
+    apply_to_objects: Optional[List[str]] = Field(default=None, description="Apply to specified objects (empty = scene only)")
 
 
 class OutlineSetupInput(BaseModel):
-    """描边效果设置输入"""
-    object_name: str = Field(..., description="对象名称")
+    """Outline effect setup input"""
+    object_name: str = Field(..., description="Object name")
     method: OutlineMethod = Field(
         default=OutlineMethod.SOLIDIFY,
-        description="描边方法: SOLIDIFY(实体化翻转法线,最通用), FREESTYLE(渲染线,仅Cycles/EEVEE), GREASE_PENCIL(油笔描边)"
+        description="Outline method: SOLIDIFY (solidify + flipped normals, most versatile), FREESTYLE (render lines, Cycles/EEVEE only), GREASE_PENCIL (grease pencil outline)"
     )
-    thickness: float = Field(default=0.02, description="描边粗细", gt=0)
-    color: Optional[List[float]] = Field(default=None, description="描边颜色 [R,G,B] (默认黑色)")
+    thickness: float = Field(default=0.02, description="Outline thickness", gt=0)
+    color: Optional[List[float]] = Field(default=None, description="Outline color [R,G,B] (default: black)")
 
 
 class BakeWorkflowInput(BaseModel):
-    """烘焙工作流输入"""
-    high_poly: str = Field(..., description="高模对象名称")
-    low_poly: str = Field(..., description="低模对象名称")
+    """Bake workflow input"""
+    high_poly: str = Field(..., description="High-poly object name")
+    low_poly: str = Field(..., description="Low-poly object name")
     maps: List[str] = Field(
         default=["NORMAL", "AO"],
-        description="要烘焙的贴图类型: NORMAL(法线), AO(环境光遮蔽), CURVATURE(曲率), DIFFUSE(漫射色), ROUGHNESS(粗糙度), COMBINED(综合)"
+        description="Map types to bake: NORMAL, AO (ambient occlusion), CURVATURE, DIFFUSE, ROUGHNESS, COMBINED"
     )
-    resolution: int = Field(default=2048, description="纹理分辨率", ge=256, le=8192)
-    cage_extrusion: float = Field(default=0.1, description="笼体挤出距离", ge=0.001)
-    output_dir: Optional[str] = Field(default=None, description="输出目录(为空则保存到blend文件同目录)")
-    margin: int = Field(default=16, description="边缘扩展像素", ge=0, le=64)
+    resolution: int = Field(default=2048, description="Texture resolution", ge=256, le=8192)
+    cage_extrusion: float = Field(default=0.1, description="Cage extrusion distance", ge=0.001)
+    output_dir: Optional[str] = Field(default=None, description="Output directory (empty = same as .blend file)")
+    margin: int = Field(default=16, description="Edge margin in pixels", ge=0, le=64)
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_style_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册风格预设工具"""
+    """Register style preset tools."""
 
     @mcp.tool(
         name="blender_style_setup",
         annotations={
-            "title": "风格环境设置",
+            "title": "Style Environment Setup",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -93,22 +94,22 @@ def register_style_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") -> Non
         }
     )
     async def blender_style_setup(params: StyleSetupInput) -> str:
-        """一键配置建模风格环境。
+        """One-click modeling style environment configuration.
 
-        根据选择的风格（像素→3A）自动配置：
-        - 渲染引擎和设置
-        - 默认材质模式
-        - 着色方式(Flat/Smooth)
-        - 纹理过滤(Nearest/Linear)
-        - 推荐的建模参数
+        Automatically configures the following based on the selected style (pixel to AAA):
+        - Render engine and settings
+        - Default material mode
+        - Shading mode (Flat/Smooth)
+        - Texture filtering (Nearest/Linear)
+        - Recommended modeling parameters
 
-        这是开始任何风格建模前的第一步。
+        This is the first step before starting any style-specific modeling.
 
         Args:
-            params: 风格类型和应用范围
+            params: Style type and application scope
 
         Returns:
-            配置结果和建模建议
+            Configuration results and modeling tips
         """
         result = await server.execute_command(
             "style_presets", "setup",
@@ -122,37 +123,37 @@ def register_style_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") -> Non
         if result.get("success"):
             data = result.get("data", {})
             style_names = {
-                "PIXEL": "像素/体素", "LOW_POLY": "低多边形", "STYLIZED": "风格化",
-                "TOON": "卡通/赛璐璐", "HAND_PAINTED": "手绘", "SEMI_REALISTIC": "半写实",
-                "PBR_REALISTIC": "PBR写实", "AAA": "3A/影视级"
+                "PIXEL": "Pixel/Voxel", "LOW_POLY": "Low Poly", "STYLIZED": "Stylized",
+                "TOON": "Toon/Cel-Shaded", "HAND_PAINTED": "Hand-Painted", "SEMI_REALISTIC": "Semi-Realistic",
+                "PBR_REALISTIC": "PBR Realistic", "AAA": "AAA/Cinematic"
             }
             tips = data.get("tips", "")
             settings = data.get("settings_applied", {})
             extra = data.get("extra_applied", [])
             lines = [
-                f"# {style_names.get(params.style.value, params.style.value)}风格环境已配置",
+                f"# {style_names.get(params.style.value, params.style.value)} Style Environment Configured",
                 "",
-                "## 已应用设置",
+                "## Applied Settings",
             ]
             for k, v in settings.items():
                 lines.append(f"- **{k}**: {v}")
             if extra:
                 lines.append("")
-                lines.append("## 额外配置")
+                lines.append("## Additional Configuration")
                 for item in extra:
                     lines.append(f"- {item}")
             if tips:
                 lines.append("")
-                lines.append("## 建模建议")
+                lines.append("## Modeling Tips")
                 lines.append(tips)
             return "\n".join(lines)
         else:
-            return f"风格设置失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Style setup failed: {result.get('error', {}).get('message', 'Unknown error')}"
 
     @mcp.tool(
         name="blender_outline_effect",
         annotations={
-            "title": "描边效果",
+            "title": "Outline Effect",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -160,18 +161,18 @@ def register_style_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") -> Non
         }
     )
     async def blender_outline_effect(params: OutlineSetupInput) -> str:
-        """为对象添加描边效果。
+        """Add outline effect to an object.
 
-        支持三种方法：
-        - SOLIDIFY: 实体化+翻转法线（最通用，适合卡通/风格化）
-        - FREESTYLE: Blender渲染线（仅在渲染时可见）
-        - GREASE_PENCIL: 油笔描边（实时可见）
+        Supports three methods:
+        - SOLIDIFY: Solidify + flipped normals (most versatile, ideal for toon/stylized)
+        - FREESTYLE: Blender render lines (visible only at render time)
+        - GREASE_PENCIL: Grease pencil outline (visible in real-time)
 
         Args:
-            params: 对象名、方法、粗细、颜色
+            params: Object name, method, thickness, color
 
         Returns:
-            设置结果
+            Operation result
         """
         result = await server.execute_command(
             "style_presets", "outline",
@@ -184,15 +185,15 @@ def register_style_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") -> Non
         )
 
         if result.get("success"):
-            method_names = {"SOLIDIFY": "实体化翻转", "FREESTYLE": "渲染线", "GREASE_PENCIL": "油笔"}
-            return f"已添加{method_names.get(params.method.value, params.method.value)}描边效果，粗细: {params.thickness}"
+            method_names = {"SOLIDIFY": "Solidify Flip", "FREESTYLE": "Freestyle", "GREASE_PENCIL": "Grease Pencil"}
+            return f"Added {method_names.get(params.method.value, params.method.value)} outline effect, thickness: {params.thickness}"
         else:
-            return f"添加描边失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Failed to add outline: {result.get('error', {}).get('message', 'Unknown error')}"
 
     @mcp.tool(
         name="blender_bake_maps",
         annotations={
-            "title": "烘焙贴图",
+            "title": "Bake Texture Maps",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -200,22 +201,22 @@ def register_style_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") -> Non
         }
     )
     async def blender_bake_maps(params: BakeWorkflowInput) -> str:
-        """从高模到低模烘焙贴图（法线/AO/曲率等）。
+        """Bake texture maps from high-poly to low-poly (normal/AO/curvature etc.).
 
-        3A制作和PBR写实风格的核心环节。自动处理：
-        - 选择高模和低模
-        - 创建烘焙用图像纹理节点
-        - 设置烘焙参数
-        - 执行烘焙
-        - 保存纹理
+        A core step for AAA and PBR-realistic workflows. Automatically handles:
+        - Selecting high-poly and low-poly objects
+        - Creating bake image texture nodes
+        - Setting bake parameters
+        - Executing the bake
+        - Saving textures
 
-        需要Cycles渲染引擎。
+        Requires the Cycles render engine.
 
         Args:
-            params: 高模名、低模名、贴图类型、分辨率
+            params: High-poly name, low-poly name, map types, resolution
 
         Returns:
-            烘焙结果
+            Bake results
         """
         result = await server.execute_command(
             "style_presets", "bake_maps",
@@ -233,9 +234,9 @@ def register_style_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") -> Non
         if result.get("success"):
             data = result.get("data", {})
             baked = data.get("baked_maps", [])
-            lines = [f"# 烘焙完成", ""]
+            lines = ["# Bake Complete", ""]
             for m in baked:
                 lines.append(f"- **{m.get('type', '?')}**: {m.get('path', 'saved')}")
             return "\n".join(lines)
         else:
-            return f"烘焙失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Bake failed: {result.get('error', {}).get('message', 'Unknown error')}"

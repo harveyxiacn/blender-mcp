@@ -4,6 +4,87 @@ All notable changes to Blender MCP will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - 2026-03-04
+
+### Added
+
+- **Automation pipeline tools**
+  - Added `blender_pipeline_generate_character` for end-to-end character generation (template + hair/clothing/accessory + auto-rig + style)
+  - Added `blender_pipeline_generate_prop` for prop generation (primitive + style + procedural material + auto UV)
+  - Added `blender_pipeline_assemble_scene` for one-click scene assembly (environment, ground, lights, camera, render settings)
+
+- **Quality audit tools**
+  - Added `blender_quality_audit_topology` for topology checks (N-gons, non-manifold edges, loose verts)
+  - Added `blender_quality_audit_uv` for UV checks (space usage, stretch, overlaps)
+  - Added `blender_quality_audit_performance` for platform budget checks (triangles, estimated draw calls)
+  - Added `blender_quality_audit_full` for aggregated quality scoring and grade output
+
+- **Automation skill group**
+  - Added `automation` skill combining `pipeline`, `quality_audit`, `style_presets`, and `procedural_materials`
+  - Enables an end-to-end "auto-generate + auto-audit" workflow
+
+- **Shared node utility**
+  - Added `addon/blender_mcp_addon/handlers/node_utils.py`
+  - Introduced shared `find_principled_bsdf()` helper for safer material node lookup
+
+- **Expanded tests**
+  - Added tests for connection, config, tool profile config, skill manager, server compatibility alias, top-level tool exports, and Principled BSDF regression
+  - Test suite expanded from 27 to 34 tests
+
+- **Connection status tool**
+  - Added `blender_connection_status` to inspect MCP-Blender health, reconnect count, failed commands, and pending requests
+
+- **Centralized runtime config**
+  - Added `src/blender_mcp/config.py`
+  - Runtime defaults can now be overridden via environment variables (host, port, timeout, reconnect, log level)
+
+### Changed
+
+- **SkillManager compatibility update**
+  - Updated dynamic skill activation/deactivation internals to work with newer FastMCP tool management APIs
+
+- **Tool profile expansion**
+  - Added `AUTOMATION_MODULES` in `tools_config.py`
+  - Included `pipeline` and `quality_audit` in `focused`, `standard`, and `full` profiles
+
+- **Tool registration/export integration**
+  - Wired `pipeline` and `quality_audit` into module registry and top-level tool exports
+
+- **Blender 5.0.1 integration verification**
+  - Regression suites passed: `test_comprehensive.py` 133/133, `test_all_tools.py` 23/23
+  - New automation flow verified: character/prop/scene pipelines + full quality audit
+
+- **Connection reliability improvements**
+  - `BlenderConnection` now supports auto-reconnect and heartbeat checks
+  - Command send path retries once after reconnect on transient failures
+  - Increased read buffer size and improved UTF-8 decode fault tolerance
+  - Added connection stats (total commands, failed commands, reconnect count)
+
+- **Addon main-thread wait optimization**
+  - Replaced sleep-based polling with `threading.Event.wait()` to reduce busy waiting
+
+- **Unified CLI defaults**
+  - `__main__.py` and `server.py` now read defaults from centralized config
+
+### Fixed
+
+- **Principled BSDF recursive helper bug**
+  - Fixed recursive helper misuse in `ai_generation`, `character_template`, `substance`, `vr_ar`, and `zbrush`
+  - Replaced with shared helper to prevent runtime recursion failures
+
+- **Server backward compatibility**
+  - Added `send_command()` alias in `BlenderMCPServer` for modules still using legacy call sites
+
+- **Pipeline registration and parameter compatibility**
+  - Fixed `pipeline/quality_audit` registration errors under FastMCP
+  - Improved camera activation compatibility by passing both `camera_name` and `name`
+
+- **Addon server startup parameter bug**
+  - Fixed `start_server()` not passing through the `host` parameter
+
+- **Python execution safety**
+  - Added empty-code validation, code size limit, and dangerous-pattern checks for `execute_python`
+
 ## [0.2.0] - 2026-02-11
 
 ### Added

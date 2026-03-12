@@ -1,7 +1,7 @@
 """
-灯光处理器
+Lighting Handler
 
-处理灯光相关的命令。
+Handles lighting related commands.
 """
 
 from typing import Any, Dict
@@ -9,7 +9,7 @@ import bpy
 
 
 def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建灯光"""
+    """Create light"""
     light_type = params.get("type", "POINT")
     name = params.get("name")
     location = params.get("location", [0, 0, 5])
@@ -18,23 +18,23 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
     energy = params.get("energy", 1000.0)
     radius = params.get("radius", 0.25)
     
-    # 创建灯光数据
+    # Create light data
     light_data = bpy.data.lights.new(name=name or light_type, type=light_type)
     light_data.color = color
     light_data.energy = energy
     
-    # 设置特定属性
+    # Set specific properties
     if light_type in ['POINT', 'SPOT']:
         light_data.shadow_soft_size = radius
     elif light_type == 'AREA':
         light_data.size = radius * 4
     
-    # 创建灯光对象
+    # Create light object
     light_obj = bpy.data.objects.new(name=name or light_type, object_data=light_data)
     light_obj.location = location
     light_obj.rotation_euler = rotation
     
-    # 链接到场景
+    # Link to scene
     bpy.context.collection.objects.link(light_obj)
     
     return {
@@ -46,7 +46,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_set_properties(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置灯光属性"""
+    """Set light properties"""
     light_name = params.get("light_name")
     properties = params.get("properties", {})
     
@@ -56,7 +56,7 @@ def handle_set_properties(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "LIGHT_NOT_FOUND",
-                "message": f"灯光不存在: {light_name}"
+                "message": f"Light not found: {light_name}"
             }
         }
     
@@ -93,7 +93,7 @@ def handle_set_properties(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
-    """删除灯光"""
+    """Delete light"""
     light_name = params.get("light_name")
     
     obj = bpy.data.objects.get(light_name)
@@ -102,7 +102,7 @@ def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "LIGHT_NOT_FOUND",
-                "message": f"灯光不存在: {light_name}"
+                "message": f"Light not found: {light_name}"
             }
         }
     
@@ -117,7 +117,7 @@ def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_set_energy(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置灯光强度"""
+    """Set light energy"""
     name = params.get("name")
     energy = params.get("energy", 1000.0)
     
@@ -127,7 +127,7 @@ def handle_set_energy(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "LIGHT_NOT_FOUND",
-                "message": f"灯光不存在: {name}"
+                "message": f"Light not found: {name}"
             }
         }
     
@@ -142,12 +142,12 @@ def handle_set_energy(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_hdri_setup(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置 HDRI 环境光"""
+    """Set up HDRI environment lighting"""
     hdri_path = params.get("hdri_path")
     strength = params.get("strength", 1.0)
     rotation = params.get("rotation", 0.0)
     
-    # 获取或创建世界
+    # Get or create world
     world = bpy.context.scene.world
     if not world:
         world = bpy.data.worlds.new("World")
@@ -157,10 +157,10 @@ def handle_hdri_setup(params: Dict[str, Any]) -> Dict[str, Any]:
     nodes = world.node_tree.nodes
     links = world.node_tree.links
     
-    # 清除现有节点
+    # Clear existing nodes
     nodes.clear()
     
-    # 创建节点
+    # Create nodes
     output = nodes.new(type='ShaderNodeOutputWorld')
     output.location = (300, 0)
     
@@ -178,7 +178,7 @@ def handle_hdri_setup(params: Dict[str, Any]) -> Dict[str, Any]:
     tex_coord = nodes.new(type='ShaderNodeTexCoord')
     tex_coord.location = (-700, 0)
     
-    # 加载 HDRI
+    # Load HDRI
     try:
         image = bpy.data.images.load(hdri_path)
         env_tex.image = image
@@ -187,11 +187,11 @@ def handle_hdri_setup(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "IMAGE_LOAD_ERROR",
-                "message": f"无法加载 HDRI: {e}"
+                "message": f"Failed to load HDRI: {e}"
             }
         }
     
-    # 连接节点
+    # Connect nodes
     links.new(tex_coord.outputs["Generated"], mapping.inputs["Vector"])
     links.new(mapping.outputs["Vector"], env_tex.inputs["Vector"])
     links.new(env_tex.outputs["Color"], background.inputs["Color"])

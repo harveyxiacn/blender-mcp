@@ -1,276 +1,120 @@
 # Blender MCP 架构设计
 
-## 概述
+## 系统摘要
 
-Blender MCP 实现了 [Model Context Protocol](https://modelcontextprotocol.io/)，在 AI 助手和 Blender 之间架起桥梁。由两个主要组件构成：**MCP 服务器**（Python）和 **Blender 插件**（Python/Blender API）。
+截至 2026-03-10，仓库当前包含：
 
-```
-┌──────────────┐     MCP 协议          ┌──────────────┐    Socket/TCP    ┌──────────┐
-│   AI IDE     │ ◄──── stdio ────────► │  MCP 服务器  │ ◄────────────► │  Blender │
-│ (Cursor,     │   tools/list          │  (FastMCP)   │   JSON-RPC     │  插件    │
-│  Windsurf)   │   tools/call          │              │                │          │
-└──────────────┘                        └──────────────┘                └──────────┘
-```
+- `src/blender_mcp/tools` 下 51 个服务端工具模块
+- 源码中 359 个 `@mcp.tool(...)` 注册
+- `skill_manager.py` 中 12 个 Skill 分组
+- `tools_config.py` 中 6 个加载 Profile
 
-## 系统架构
+## 运行拓扑
 
-### 组件图
-
-```
-blender-mcp/
-├── src/blender_mcp/          # MCP 服务器（作为独立进程运行）
-│   ├── server.py             # BlenderMCPServer — 主入口
-│   ├── connection.py         # BlenderConnection — 到 Blender 的 TCP 连接
-│   ├── skill_manager.py      # SkillManager — 动态工具加载
-│   ├── tools_config.py       # 基于 Profile 的工具配置
-│   └── tools/                # MCP 工具定义（按模块分组）
-│       ├── scene.py          # 场景管理工具
-│       ├── object.py         # 对象 CRUD 工具
-│       ├── modeling.py       # 网格编辑与修改器
-│       ├── material.py       # 材质系统
-│       ├── skills.py         # Skill 元工具（list/activate/deactivate）
-│       └── ...               # 25+ 工具模块
-│
-├── addon/blender_mcp_addon/  # Blender 插件（在 Blender 内运行）
-│   ├── __init__.py           # 插件注册
-│   ├── server.py             # TCP 服务器（监听 MCP 命令）
-│   ├── executor.py           # 命令调度器
-│   ├── handlers/             # 命令处理器（执行 Blender API 调用）
-│   │   ├── scene.py
-│   │   ├── object.py
-│   │   ├── modeling.py
-│   │   └── ...
-│   ├── operators/            # Blender 操作符
-│   ├── panels/               # UI 面板
-│   └── utils/                # 工具函数
+```text
+AI 客户端
+  -> MCP stdio / streamable-http
+Blender MCP 服务端
+  -> TCP JSON 消息
+Blender 插件
+  -> Blender Python API
 ```
 
-### 数据流
+## 主要组件
 
-```
-用户 → AI IDE → MCP 服务器 → Blender 插件 → Blender API → 结果
-                                                            ↓
-用户 ← AI IDE ← MCP 服务器 ← Blender 插件 ← JSON 响应 ←────┘
-```
+### MCP 服务端
 
-1. **用户** 在 IDE 中向 AI 发送自然语言请求
-2. **AI** 选择合适的 MCP 工具并调用
-3. **MCP 服务器** 接收工具调用，格式化命令，通过 TCP 发送到 Blender
-4. **Blender 插件** 接收命令，分发到处理器，执行 Blender Python API
-5. **结果** 通过链路返回为 JSON
+关键文件：
 
-## MCP 服务器
+- `src/blender_mcp/server.py`
+- `src/blender_mcp/connection.py`
+- `src/blender_mcp/skill_manager.py`
+- `src/blender_mcp/tools_config.py`
 
-### BlenderMCPServer
+职责：
 
-主服务器类（`server.py`）管理：
+- 按 Profile 注册工具
+- 维护到 Blender 的 TCP 连接
+- 暴露 `list/activate/deactivate` Skill 元工具
+- 将 MCP 工具调用转成插件可执行的 `{category, action, params}`
 
-- **FastMCP 实例** — 处理 MCP 协议（stdio 传输）
-- **BlenderConnection** — 到 Blender 插件的 TCP 连接（延迟初始化）
-- **SkillManager** — 动态工具加载/卸载（延迟初始化）
-- **工具注册** — 根据配置的 Profile 加载工具模块
+### Blender 插件
 
-```python
-class BlenderMCPServer:
-    def __init__(self, name="Blender MCP", blender_host="127.0.0.1", blender_port=9876):
-        self.mcp = FastMCP(name)
-        self._connection = None      # 延迟：BlenderConnection
-        self._skill_manager = None   # 延迟：SkillManager
-        self._register_tools()       # 根据 TOOL_PROFILE 加载工具
-```
+关键文件：
 
-### 工具模块
+- `addon/blender_mcp_addon/__init__.py`
+- `addon/blender_mcp_addon/server.py`
+- `addon/blender_mcp_addon/executor.py`
+- `addon/blender_mcp_addon/handlers/__init__.py`
 
-每个工具模块遵循一致的模式：
+职责：
 
-```python
-# tools/example.py
-from pydantic import BaseModel, Field
+- 在 Blender 内运行 socket 服务
+- 将命令调度回 Blender 主线程执行
+- 按类别路由到具体 handler
+- 提供面板、偏好设置和热更新辅助
 
-class ExampleInput(BaseModel):
-    name: str = Field(..., description="对象名称")
+## Profile 盘点
 
-def register_example_tools(mcp: FastMCP, server: BlenderMCPServer) -> None:
-    @mcp.tool()
-    async def blender_example_action(params: ExampleInput) -> str:
-        result = await server.execute_command("category", "action", params.model_dump())
-        return format_result(result)
-```
+以下 Profile 数字来自当前工具装饰器的静态统计：
 
-### 工具配置（Profiles）
+| Profile | 模块数 | 工具数 | 说明 |
+|---------|--------|--------|------|
+| `minimal` | 4 | 29 | 最小核心操作面 |
+| `skill` | 5 | 32 | 核心工具 + 3 个 Skill 元工具 |
+| `focused` | 14 | 108 | 静态精选工作集 |
+| `standard` | 23 | 165 | 较完整的日常工作集 |
+| `extended` | 27 | 194 | 增加物理与批处理 |
+| `full` | 50 | 356 | 所有用户可见模块 |
 
-`tools_config.py` 定义启动时加载哪些模块：
+若把 3 个 Skill 元工具单独算入，仓库总计 359 个工具。
 
-| Profile | 模块数 | 工具数 | 适用场景 |
-|---------|--------|--------|---------|
-| `skill` | 5（核心 + skills） | ~31 | 推荐：按需加载 |
-| `minimal` | 4（仅核心） | ~28 | 最小可用集 |
-| `focused` | 12 | ~82 | 静态精选集 |
-| `standard` | 20 | ~146 | 大部分功能 |
-| `full` | 26+ | ~319 | 所有功能 |
+## Skill 盘点
 
-## Skill 系统（动态工具加载）
+| Skill | 预估工具数 | 模块集 |
+|-------|------------|--------|
+| `modeling` | ~38 | modeling, curves, uv_mapping |
+| `materials` | ~17 | material, procedural_materials |
+| `style` | ~8 | style_presets, mesh_edit_advanced |
+| `character` | ~23 | character_templates, rigging, auto_rig |
+| `animation` | ~17 | animation, animation_presets |
+| `scene_setup` | ~18 | lighting, camera, world, render |
+| `automation` | ~12 | pipeline, quality_audit, style_presets, procedural_materials |
+| `physics` | ~18 | physics, constraints |
+| `batch_assets` | ~11 | batch, assets |
+| `advanced_3d` | ~32 | nodes, compositor, sculpting, texture_painting |
+| `sport_character` | ~7 | sport_character |
+| `training` | ~11 | training |
 
-Skill 系统通过按需加载工具来减少初始 Context Window 占用。
+## 命令流
 
-### 架构
+1. 客户端调用 MCP 工具。
+2. 服务端将工具输入转换为 `{category, action, params}`。
+3. `BlenderConnection` 通过 TCP 发送请求。
+4. Blender 插件的 socket 服务接收消息。
+5. `CommandExecutor` 按类别路由到 handler 模块。
+6. handler 执行 Blender API 并返回 JSON。
 
-```
-启动时：加载 CORE_MODULES + skills 模块 → ~31 个工具
-         ├── scene（6 个工具）
-         ├── object（12 个工具）
-         ├── utility（7 个工具）
-         ├── export（3 个工具）
-         └── skills（3 个元工具）
+## 当前执行缺口
 
-运行时：AI 调用 activate_skill("modeling")
-         → SkillManager 动态导入 modeling/curves/uv_mapping 模块
-         → FastMCP.add_tool() 注册每个工具
-         → 服务器发送 tools/list_changed 通知
-         → 客户端刷新工具列表
-         → AI 现在有 +38 个建模工具可用
+2026-03 审查中最重要的架构缺口是：
 
-         AI 调用 deactivate_skill("modeling")
-         → FastMCP.remove_tool() 移除每个已注册的工具
-         → 服务器发送 tools/list_changed 通知
-         → 工具被移除，上下文释放
-```
+- `pipeline` 与 `quality_audit` 已在 `src/blender_mcp/tools_config.py` 注册
+- `automation` Skill 也会对外暴露这两个模块
+- 但 `addon/blender_mcp_addon/handlers/__init__.py` 里还没有这两个类别的映射
 
-### Skill 定义
+结果：
 
-11 个 Skill 组覆盖所有功能：
+- 这些工具可能会出现在 MCP 工具列表里
+- 但真正执行时，插件层仍可能返回未知类别错误
 
-| Skill | 工具数 | 模块 |
-|-------|--------|------|
-| modeling | ~38 | modeling, curves, uv_mapping |
-| materials | ~17 | material, procedural_materials |
-| style | ~8 | style_presets, mesh_edit_advanced |
-| character | ~23 | character_templates, rigging, auto_rig |
-| animation | ~17 | animation, animation_presets |
-| scene_setup | ~18 | lighting, camera, world, render |
-| physics | ~18 | physics, constraints |
-| batch_assets | ~11 | batch, assets |
-| advanced_3d | ~32 | nodes, compositor, sculpting, texture_painting |
-| sport_character | ~7 | sport_character |
-| training | ~11 | training |
+在插件侧完成执行层对齐之前，应把 automation 视为实验性能力。
 
-### 关键 API
+## 扩展规则
 
-```python
-# 动态工具管理（FastMCP）
-mcp.add_tool(fn, name="...", description="...")
-mcp.remove_tool("tool_name")
+新增工具族时，需要同时更新两层：
 
-# 客户端通知（MCP 协议）
-await ctx.session.send_tool_list_changed()
-```
-
-## Blender 插件
-
-### TCP 服务器
-
-插件在 Blender 内运行 TCP 服务器（默认端口 9876）：
-
-1. 监听来自 MCP 服务器的 JSON-RPC 命令
-2. 将命令分发到对应的处理器
-3. 返回 JSON 结果
-
-### 命令调度器
-
-`executor.py` 按类别路由命令：
-
-```python
-HANDLER_MAP = {
-    "scene": scene_handler,
-    "object": object_handler,
-    "modeling": modeling_handler,
-    "material": material_handler,
-    # ... 更多处理器
-}
-```
-
-### 处理器
-
-每个处理器执行 Blender Python API 调用：
-
-```python
-# handlers/object.py
-def handle(action: str, params: dict) -> dict:
-    if action == "create":
-        return _create_object(params)
-    elif action == "delete":
-        return _delete_object(params)
-    # ...
-```
-
-## 通信协议
-
-### MCP 服务器 ↔ Blender 插件
-
-基于 TCP socket 的 JSON-RPC：
-
-```json
-// 请求（MCP 服务器 → Blender）
-{
-    "category": "object",
-    "action": "create",
-    "params": {"type": "CUBE", "name": "MyCube", "location": [0, 0, 0]}
-}
-
-// 响应（Blender → MCP 服务器）
-{
-    "success": true,
-    "result": "Created CUBE 'MyCube' at [0, 0, 0]"
-}
-```
-
-### MCP 服务器 ↔ AI IDE
-
-标准 MCP 协议，通过 stdio：
-
-- `tools/list` — 列出可用工具
-- `tools/call` — 执行工具
-- `notifications/tools/list_changed` — 动态工具更新
-
-## 设计决策
-
-### 复合工具替代原子工具
-
-10 个复合工具替代了 58 个原子工具，防止 AI 工具选择混乱：
-
-```
-之前：create_cube, create_sphere, create_cylinder, ...（20 个工具）
-之后：blender_object_create(type="CUBE|SPHERE|CYLINDER|...")（1 个工具）
-```
-
-### 延迟初始化
-
-`BlenderConnection` 和 `SkillManager` 均使用延迟初始化，避免启动开销和循环导入。
-
-### 基于 Profile 的加载
-
-多个 Profile 允许同一代码库服务不同场景——只需修改配置，无需改代码。
-
-## 扩展指南
-
-### 添加新工具模块
-
-1. 创建 `src/blender_mcp/tools/my_module.py`，包含 `register_my_module_tools(mcp, server)`
-2. 创建 `addon/blender_mcp_addon/handlers/my_module.py`，包含 `handle(action, params)`
-3. 在 `tools_config.py` → `MODULE_REGISTRY` 中注册
-4. 在 `addon/blender_mcp_addon/executor.py` 中注册处理器
-5. 添加到合适的 Profile 或 Skill 定义
-
-### 添加新 Skill
-
-编辑 `skill_manager.py` → `SKILL_DEFINITIONS`：
-
-```python
-"my_skill": SkillInfo(
-    name="my_skill",
-    description="AI 可理解的描述",
-    modules=["my_module_a", "my_module_b"],
-    estimated_tools=15,
-    workflow_guide="## My Skill 工作流\n...",
-),
-```
+1. 服务端工具模块与 `MODULE_REGISTRY`
+2. 插件 handler 模块与 handler 注册表
+3. Profile / Skill 定义
+4. 验证服务端类别与插件类别一致性的测试

@@ -1,7 +1,7 @@
 """
-油笔/2D动画工具
+Grease Pencil / 2D Animation Tools
 
-提供油笔（Grease Pencil）相关的MCP工具。
+Provides Grease Pencil related MCP tools.
 """
 
 from typing import Any, Dict, List, Optional
@@ -9,87 +9,87 @@ from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
 
 
-# ============ Pydantic 模型 ============
+# ============ Pydantic Models ============
 
 class GPencilCreateInput(BaseModel):
-    """创建油笔对象"""
-    name: str = Field("GPencil", description="对象名称")
-    location: List[float] = Field([0, 0, 0], description="位置")
-    stroke_depth_order: str = Field("3D", description="深度顺序: 2D, 3D")
+    """Create grease pencil object"""
+    name: str = Field("GPencil", description="Object name")
+    location: List[float] = Field([0, 0, 0], description="Location")
+    stroke_depth_order: str = Field("3D", description="Depth order: 2D, 3D")
 
 
 class GPencilLayerInput(BaseModel):
-    """图层操作"""
-    gpencil_name: str = Field(..., description="油笔对象名称")
-    action: str = Field("ADD", description="操作: ADD, REMOVE, RENAME, MOVE")
-    layer_name: str = Field("Layer", description="图层名称")
-    new_name: Optional[str] = Field(None, description="新名称（重命名时）")
-    color: Optional[List[float]] = Field(None, description="图层颜色")
+    """Layer operations"""
+    gpencil_name: str = Field(..., description="Grease pencil object name")
+    action: str = Field("ADD", description="Action: ADD, REMOVE, RENAME, MOVE")
+    layer_name: str = Field("Layer", description="Layer name")
+    new_name: Optional[str] = Field(None, description="New name (for renaming)")
+    color: Optional[List[float]] = Field(None, description="Layer color")
 
 
 class GPencilFrameInput(BaseModel):
-    """帧操作"""
-    gpencil_name: str = Field(..., description="油笔对象名称")
-    layer_name: str = Field("Layer", description="图层名称")
-    action: str = Field("ADD", description="操作: ADD, REMOVE, COPY, DUPLICATE")
-    frame_number: int = Field(1, description="帧号")
-    target_frame: Optional[int] = Field(None, description="目标帧（复制时）")
+    """Frame operations"""
+    gpencil_name: str = Field(..., description="Grease pencil object name")
+    layer_name: str = Field("Layer", description="Layer name")
+    action: str = Field("ADD", description="Action: ADD, REMOVE, COPY, DUPLICATE")
+    frame_number: int = Field(1, description="Frame number")
+    target_frame: Optional[int] = Field(None, description="Target frame (for copying)")
 
 
 class GPencilDrawInput(BaseModel):
-    """绘制笔触"""
-    gpencil_name: str = Field(..., description="油笔对象名称")
-    layer_name: str = Field("Layer", description="图层名称")
+    """Draw strokes"""
+    gpencil_name: str = Field(..., description="Grease pencil object name")
+    layer_name: str = Field("Layer", description="Layer name")
     points: List[List[float]] = Field(
         ...,
-        description="点列表 [[x,y,z,pressure,strength], ...]"
+        description="Point list [[x,y,z,pressure,strength], ...]"
     )
-    material_index: int = Field(0, description="材质索引")
-    line_width: int = Field(10, description="线宽")
+    material_index: int = Field(0, description="Material index")
+    line_width: int = Field(10, description="Line width")
 
 
 class GPencilMaterialInput(BaseModel):
-    """油笔材质"""
-    gpencil_name: str = Field(..., description="油笔对象名称")
-    name: str = Field("GPMaterial", description="材质名称")
-    mode: str = Field("LINE", description="模式: LINE, DOTS, BOX, FILL")
-    stroke_color: List[float] = Field([0, 0, 0, 1], description="笔触颜色")
-    fill_color: Optional[List[float]] = Field(None, description="填充颜色")
+    """Grease pencil material"""
+    gpencil_name: str = Field(..., description="Grease pencil object name")
+    name: str = Field("GPMaterial", description="Material name")
+    mode: str = Field("LINE", description="Mode: LINE, DOTS, BOX, FILL")
+    stroke_color: List[float] = Field([0, 0, 0, 1], description="Stroke color")
+    fill_color: Optional[List[float]] = Field(None, description="Fill color")
 
 
 class GPencilModifierInput(BaseModel):
-    """油笔修改器"""
-    gpencil_name: str = Field(..., description="油笔对象名称")
+    """Grease pencil modifier"""
+    gpencil_name: str = Field(..., description="Grease pencil object name")
     modifier_type: str = Field(
         "SMOOTH",
-        description="修改器类型: SMOOTH, NOISE, THICKNESS, TINT, OFFSET, OPACITY, etc."
+        description="Modifier type: SMOOTH, NOISE, THICKNESS, TINT, OFFSET, OPACITY, etc."
     )
-    modifier_name: Optional[str] = Field(None, description="修改器名称")
-    settings: Optional[Dict[str, Any]] = Field(None, description="修改器设置")
+    modifier_name: Optional[str] = Field(None, description="Modifier name")
+    settings: Optional[Dict[str, Any]] = Field(None, description="Modifier settings")
 
 
 class GPencilEffectInput(BaseModel):
-    """油笔特效"""
-    gpencil_name: str = Field(..., description="油笔对象名称")
+    """Grease pencil effect"""
+    gpencil_name: str = Field(..., description="Grease pencil object name")
     effect_type: str = Field(
         "BLUR",
-        description="特效类型: BLUR, COLORIZE, FLIP, GLOW, LIGHT, PIXELATE, RIM, SHADOW, SWIRL, WAVE"
+        description="Effect type: BLUR, COLORIZE, FLIP, GLOW, LIGHT, PIXELATE, RIM, SHADOW, SWIRL, WAVE"
     )
-    effect_name: Optional[str] = Field(None, description="特效名称")
+    effect_name: Optional[str] = Field(None, description="Effect name")
 
 
 class GPencilConvertInput(BaseModel):
-    """转换"""
-    gpencil_name: str = Field(..., description="油笔对象名称")
-    target_type: str = Field("CURVE", description="目标类型: CURVE, MESH")
-    keep_original: bool = Field(True, description="保留原对象")
+    """Conversion"""
+    gpencil_name: str = Field(..., description="Grease pencil object name")
+    target_type: str = Field("CURVE", description="Target type: CURVE, MESH")
+    keep_original: bool = Field(True, description="Keep original object")
 
 
-# ============ 工具注册 ============
+# ============ Tool Registration ============
 
 def register_grease_pencil_tools(mcp: FastMCP, server):
-    """注册油笔工具"""
-    
+    """Register grease pencil tools"""
+
     @mcp.tool()
     async def blender_gpencil_create(
         name: str = "GPencil",
@@ -97,12 +97,12 @@ def register_grease_pencil_tools(mcp: FastMCP, server):
         stroke_depth_order: str = "3D"
     ) -> Dict[str, Any]:
         """
-        创建油笔对象
-        
+        Create a grease pencil object
+
         Args:
-            name: 对象名称
-            location: 位置 [x, y, z]
-            stroke_depth_order: 深度顺序 (2D或3D)
+            name: Object name
+            location: Location [x, y, z]
+            stroke_depth_order: Depth order (2D or 3D)
         """
         params = GPencilCreateInput(
             name=name,
@@ -110,7 +110,7 @@ def register_grease_pencil_tools(mcp: FastMCP, server):
             stroke_depth_order=stroke_depth_order
         )
         return await server.send_command("gpencil", "create", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_gpencil_layer(
         gpencil_name: str,
@@ -120,14 +120,14 @@ def register_grease_pencil_tools(mcp: FastMCP, server):
         color: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """
-        油笔图层操作
-        
+        Grease pencil layer operations
+
         Args:
-            gpencil_name: 油笔对象名称
-            action: 操作类型 (ADD, REMOVE, RENAME, MOVE)
-            layer_name: 图层名称
-            new_name: 新名称（重命名时使用）
-            color: 图层颜色 [R,G,B]
+            gpencil_name: Grease pencil object name
+            action: Action type (ADD, REMOVE, RENAME, MOVE)
+            layer_name: Layer name
+            new_name: New name (used when renaming)
+            color: Layer color [R,G,B]
         """
         params = GPencilLayerInput(
             gpencil_name=gpencil_name,
@@ -137,7 +137,7 @@ def register_grease_pencil_tools(mcp: FastMCP, server):
             color=color
         )
         return await server.send_command("gpencil", "layer", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_gpencil_frame(
         gpencil_name: str,
@@ -147,14 +147,14 @@ def register_grease_pencil_tools(mcp: FastMCP, server):
         target_frame: Optional[int] = None
     ) -> Dict[str, Any]:
         """
-        油笔帧操作
-        
+        Grease pencil frame operations
+
         Args:
-            gpencil_name: 油笔对象名称
-            layer_name: 图层名称
-            action: 操作类型 (ADD, REMOVE, COPY, DUPLICATE)
-            frame_number: 帧号
-            target_frame: 目标帧（复制时使用）
+            gpencil_name: Grease pencil object name
+            layer_name: Layer name
+            action: Action type (ADD, REMOVE, COPY, DUPLICATE)
+            frame_number: Frame number
+            target_frame: Target frame (used when copying)
         """
         params = GPencilFrameInput(
             gpencil_name=gpencil_name,
@@ -164,7 +164,7 @@ def register_grease_pencil_tools(mcp: FastMCP, server):
             target_frame=target_frame
         )
         return await server.send_command("gpencil", "frame", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_gpencil_draw(
         gpencil_name: str,
@@ -174,14 +174,14 @@ def register_grease_pencil_tools(mcp: FastMCP, server):
         line_width: int = 10
     ) -> Dict[str, Any]:
         """
-        绘制油笔笔触
-        
+        Draw grease pencil strokes
+
         Args:
-            gpencil_name: 油笔对象名称
-            layer_name: 图层名称
-            points: 点列表 [[x,y,z,pressure,strength], ...]
-            material_index: 材质索引
-            line_width: 线宽
+            gpencil_name: Grease pencil object name
+            layer_name: Layer name
+            points: Point list [[x,y,z,pressure,strength], ...]
+            material_index: Material index
+            line_width: Line width
         """
         params = GPencilDrawInput(
             gpencil_name=gpencil_name,
@@ -191,7 +191,7 @@ def register_grease_pencil_tools(mcp: FastMCP, server):
             line_width=line_width
         )
         return await server.send_command("gpencil", "draw", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_gpencil_material(
         gpencil_name: str,
@@ -201,14 +201,14 @@ def register_grease_pencil_tools(mcp: FastMCP, server):
         fill_color: Optional[List[float]] = None
     ) -> Dict[str, Any]:
         """
-        创建油笔材质
-        
+        Create a grease pencil material
+
         Args:
-            gpencil_name: 油笔对象名称
-            name: 材质名称
-            mode: 模式 (LINE, DOTS, BOX, FILL)
-            stroke_color: 笔触颜色 [R,G,B,A]
-            fill_color: 填充颜色 [R,G,B,A]
+            gpencil_name: Grease pencil object name
+            name: Material name
+            mode: Mode (LINE, DOTS, BOX, FILL)
+            stroke_color: Stroke color [R,G,B,A]
+            fill_color: Fill color [R,G,B,A]
         """
         params = GPencilMaterialInput(
             gpencil_name=gpencil_name,
@@ -218,7 +218,7 @@ def register_grease_pencil_tools(mcp: FastMCP, server):
             fill_color=fill_color
         )
         return await server.send_command("gpencil", "material", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_gpencil_modifier(
         gpencil_name: str,
@@ -227,13 +227,13 @@ def register_grease_pencil_tools(mcp: FastMCP, server):
         settings: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
-        添加油笔修改器
-        
+        Add a grease pencil modifier
+
         Args:
-            gpencil_name: 油笔对象名称
-            modifier_type: 修改器类型 (SMOOTH, NOISE, THICKNESS, TINT, OFFSET等)
-            modifier_name: 修改器名称
-            settings: 修改器设置
+            gpencil_name: Grease pencil object name
+            modifier_type: Modifier type (SMOOTH, NOISE, THICKNESS, TINT, OFFSET, etc.)
+            modifier_name: Modifier name
+            settings: Modifier settings
         """
         params = GPencilModifierInput(
             gpencil_name=gpencil_name,
@@ -242,7 +242,7 @@ def register_grease_pencil_tools(mcp: FastMCP, server):
             settings=settings
         )
         return await server.send_command("gpencil", "modifier", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_gpencil_effect(
         gpencil_name: str,
@@ -250,12 +250,12 @@ def register_grease_pencil_tools(mcp: FastMCP, server):
         effect_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        添加油笔特效
-        
+        Add a grease pencil effect
+
         Args:
-            gpencil_name: 油笔对象名称
-            effect_type: 特效类型 (BLUR, GLOW, SHADOW, RIM, WAVE等)
-            effect_name: 特效名称
+            gpencil_name: Grease pencil object name
+            effect_type: Effect type (BLUR, GLOW, SHADOW, RIM, WAVE, etc.)
+            effect_name: Effect name
         """
         params = GPencilEffectInput(
             gpencil_name=gpencil_name,
@@ -263,7 +263,7 @@ def register_grease_pencil_tools(mcp: FastMCP, server):
             effect_name=effect_name
         )
         return await server.send_command("gpencil", "effect", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_gpencil_convert(
         gpencil_name: str,
@@ -271,12 +271,12 @@ def register_grease_pencil_tools(mcp: FastMCP, server):
         keep_original: bool = True
     ) -> Dict[str, Any]:
         """
-        转换油笔为其他类型
-        
+        Convert grease pencil to another type
+
         Args:
-            gpencil_name: 油笔对象名称
-            target_type: 目标类型 (CURVE或MESH)
-            keep_original: 是否保留原对象
+            gpencil_name: Grease pencil object name
+            target_type: Target type (CURVE or MESH)
+            keep_original: Whether to keep the original object
         """
         params = GPencilConvertInput(
             gpencil_name=gpencil_name,

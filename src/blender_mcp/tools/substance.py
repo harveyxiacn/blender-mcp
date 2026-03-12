@@ -1,7 +1,7 @@
 """
-Substance 连接工具
+Substance Connection Tools
 
-提供与 Substance Painter 集成的 MCP 工具。
+Provides MCP tools for integration with Substance Painter.
 """
 
 from typing import Any, Dict, List, Optional
@@ -9,44 +9,44 @@ from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
 
 
-# ============ Pydantic 模型 ============
+# ============ Pydantic Models ============
 
 class SubstanceExportInput(BaseModel):
-    """导出到 Substance"""
-    object_name: str = Field(..., description="对象名称")
-    filepath: str = Field(..., description="导出路径")
-    format: str = Field("FBX", description="格式: FBX, OBJ")
-    export_uvs: bool = Field(True, description="导出 UV")
-    triangulate: bool = Field(True, description="三角化")
+    """Export to Substance"""
+    object_name: str = Field(..., description="Object name")
+    filepath: str = Field(..., description="Export file path")
+    format: str = Field("FBX", description="Format: FBX, OBJ")
+    export_uvs: bool = Field(True, description="Export UVs")
+    triangulate: bool = Field(True, description="Triangulate mesh")
 
 
 class SubstanceImportInput(BaseModel):
-    """导入 Substance 纹理"""
-    texture_folder: str = Field(..., description="纹理文件夹")
-    object_name: str = Field(..., description="目标对象")
-    naming_convention: str = Field("substance", description="命名约定: substance, custom")
+    """Import Substance textures"""
+    texture_folder: str = Field(..., description="Texture folder path")
+    object_name: str = Field(..., description="Target object name")
+    naming_convention: str = Field("substance", description="Naming convention: substance, custom")
 
 
 class SubstanceLinkInput(BaseModel):
-    """建立实时链接"""
-    project_path: str = Field(..., description="Substance 项目路径")
-    watch_interval: float = Field(2.0, description="监控间隔（秒）")
+    """Establish live link"""
+    project_path: str = Field(..., description="Substance project path (.spp)")
+    watch_interval: float = Field(2.0, description="Watch interval in seconds")
 
 
 class SubstanceBakeInput(BaseModel):
-    """请求烘焙贴图"""
-    high_poly: str = Field(..., description="高模对象")
-    low_poly: str = Field(..., description="低模对象")
-    output_folder: str = Field(..., description="输出文件夹")
-    maps: List[str] = Field(["normal", "ao", "curvature"], description="烘焙贴图类型")
-    resolution: int = Field(2048, description="分辨率")
+    """Request texture baking"""
+    high_poly: str = Field(..., description="High-poly object name")
+    low_poly: str = Field(..., description="Low-poly object name")
+    output_folder: str = Field(..., description="Output folder path")
+    maps: List[str] = Field(["normal", "ao", "curvature"], description="Map types to bake")
+    resolution: int = Field(2048, description="Texture resolution")
 
 
-# ============ 工具注册 ============
+# ============ Tool Registration ============
 
 def register_substance_tools(mcp: FastMCP, server):
-    """注册 Substance 连接工具"""
-    
+    """Register Substance connection tools."""
+
     @mcp.tool()
     async def blender_substance_export(
         object_name: str,
@@ -56,14 +56,14 @@ def register_substance_tools(mcp: FastMCP, server):
         triangulate: bool = True
     ) -> Dict[str, Any]:
         """
-        导出模型到 Substance Painter
-        
+        Export model to Substance Painter.
+
         Args:
-            object_name: 对象名称
-            filepath: 导出路径
-            format: 导出格式 (FBX, OBJ)
-            export_uvs: 是否导出 UV
-            triangulate: 是否三角化
+            object_name: Object name
+            filepath: Export file path
+            format: Export format (FBX, OBJ)
+            export_uvs: Whether to export UVs
+            triangulate: Whether to triangulate the mesh
         """
         params = SubstanceExportInput(
             object_name=object_name,
@@ -73,7 +73,7 @@ def register_substance_tools(mcp: FastMCP, server):
             triangulate=triangulate
         )
         return await server.send_command("substance", "export", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_substance_import(
         texture_folder: str,
@@ -81,12 +81,12 @@ def register_substance_tools(mcp: FastMCP, server):
         naming_convention: str = "substance"
     ) -> Dict[str, Any]:
         """
-        导入 Substance Painter 输出的纹理
-        
+        Import textures exported from Substance Painter.
+
         Args:
-            texture_folder: 纹理文件夹路径
-            object_name: 目标对象名称
-            naming_convention: 命名约定 (substance, custom)
+            texture_folder: Path to the texture folder
+            object_name: Target object name
+            naming_convention: Naming convention (substance, custom)
         """
         params = SubstanceImportInput(
             texture_folder=texture_folder,
@@ -94,32 +94,32 @@ def register_substance_tools(mcp: FastMCP, server):
             naming_convention=naming_convention
         )
         return await server.send_command("substance", "import", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_substance_link(
         project_path: str,
         watch_interval: float = 2.0
     ) -> Dict[str, Any]:
         """
-        建立与 Substance Painter 的实时链接
-        
+        Establish a live link with Substance Painter.
+
         Args:
-            project_path: Substance 项目路径 (.spp)
-            watch_interval: 监控间隔（秒）
+            project_path: Substance project path (.spp)
+            watch_interval: Watch interval in seconds
         """
         params = SubstanceLinkInput(
             project_path=project_path,
             watch_interval=watch_interval
         )
         return await server.send_command("substance", "link", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_substance_unlink() -> Dict[str, Any]:
         """
-        断开 Substance Painter 链接
+        Disconnect the Substance Painter live link.
         """
         return await server.send_command("substance", "unlink", {})
-    
+
     @mcp.tool()
     async def blender_substance_bake(
         high_poly: str,
@@ -129,14 +129,14 @@ def register_substance_tools(mcp: FastMCP, server):
         resolution: int = 2048
     ) -> Dict[str, Any]:
         """
-        准备并导出用于 Substance 烘焙的模型
-        
+        Prepare and export models for Substance baking.
+
         Args:
-            high_poly: 高模对象名称
-            low_poly: 低模对象名称
-            output_folder: 输出文件夹
-            maps: 要烘焙的贴图类型
-            resolution: 分辨率
+            high_poly: High-poly object name
+            low_poly: Low-poly object name
+            output_folder: Output folder path
+            maps: Map types to bake
+            resolution: Texture resolution
         """
         params = SubstanceBakeInput(
             high_poly=high_poly,
@@ -146,10 +146,10 @@ def register_substance_tools(mcp: FastMCP, server):
             resolution=resolution
         )
         return await server.send_command("substance", "bake", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_substance_detect() -> Dict[str, Any]:
         """
-        检测 Substance Painter 安装
+        Detect Substance Painter installation.
         """
         return await server.send_command("substance", "detect", {})

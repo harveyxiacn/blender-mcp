@@ -1,7 +1,7 @@
 """
-场景管理工具
+Scene Management Tools
 
-提供场景创建、列表、切换、删除等功能。
+Provides scene creation, listing, switching, deletion, and other features.
 """
 
 from typing import TYPE_CHECKING, Optional
@@ -15,75 +15,75 @@ if TYPE_CHECKING:
 
 
 class ResponseFormat(str, Enum):
-    """响应格式"""
+    """Response format"""
     MARKDOWN = "markdown"
     JSON = "json"
 
 
 class UnitSystem(str, Enum):
-    """单位系统"""
+    """Unit system"""
     NONE = "NONE"
     METRIC = "METRIC"
     IMPERIAL = "IMPERIAL"
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class SceneCreateInput(BaseModel):
-    """创建场景输入"""
+    """Create scene input"""
     model_config = ConfigDict(str_strip_whitespace=True)
-    
-    name: str = Field(..., description="场景名称", min_length=1, max_length=100)
-    copy_from: Optional[str] = Field(default=None, description="复制来源场景名称")
+
+    name: str = Field(..., description="Scene name", min_length=1, max_length=100)
+    copy_from: Optional[str] = Field(default=None, description="Source scene name to copy from")
 
 
 class SceneListInput(BaseModel):
-    """列出场景输入"""
+    """List scenes input"""
     response_format: ResponseFormat = Field(
         default=ResponseFormat.MARKDOWN,
-        description="输出格式: markdown 或 json"
+        description="Output format: markdown or json"
     )
 
 
 class SceneGetInfoInput(BaseModel):
-    """获取场景信息输入"""
+    """Get scene info input"""
     scene_name: Optional[str] = Field(
         default=None,
-        description="场景名称，为空则返回当前场景"
+        description="Scene name; returns current scene if empty"
     )
 
 
 class SceneSwitchInput(BaseModel):
-    """切换场景输入"""
-    scene_name: str = Field(..., description="要切换到的场景名称")
+    """Switch scene input"""
+    scene_name: str = Field(..., description="Name of the scene to switch to")
 
 
 class SceneDeleteInput(BaseModel):
-    """删除场景输入"""
-    scene_name: str = Field(..., description="要删除的场景名称")
+    """Delete scene input"""
+    scene_name: str = Field(..., description="Name of the scene to delete")
 
 
 class SceneSettingsInput(BaseModel):
-    """场景设置输入"""
+    """Scene settings input"""
     model_config = ConfigDict(str_strip_whitespace=True)
-    
-    scene_name: Optional[str] = Field(default=None, description="场景名称")
-    frame_start: Optional[int] = Field(default=None, description="起始帧", ge=0)
-    frame_end: Optional[int] = Field(default=None, description="结束帧", ge=1)
-    fps: Optional[int] = Field(default=None, description="帧率", ge=1, le=120)
-    unit_system: Optional[UnitSystem] = Field(default=None, description="单位系统")
-    unit_scale: Optional[float] = Field(default=None, description="单位缩放", gt=0)
+
+    scene_name: Optional[str] = Field(default=None, description="Scene name")
+    frame_start: Optional[int] = Field(default=None, description="Start frame", ge=0)
+    frame_end: Optional[int] = Field(default=None, description="End frame", ge=1)
+    fps: Optional[int] = Field(default=None, description="Frame rate", ge=1, le=120)
+    unit_system: Optional[UnitSystem] = Field(default=None, description="Unit system")
+    unit_scale: Optional[float] = Field(default=None, description="Unit scale", gt=0)
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册场景管理工具"""
-    
+    """Register scene management tools"""
+
     @mcp.tool(
         name="blender_scene_create",
         annotations={
-            "title": "创建场景",
+            "title": "Create Scene",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -91,31 +91,31 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_scene_create(params: SceneCreateInput) -> str:
-        """在 Blender 中创建新场景。
-        
-        创建一个新的场景，可以选择从现有场景复制。
-        
+        """Create a new scene in Blender.
+
+        Creates a new scene, optionally copied from an existing scene.
+
         Args:
-            params: 包含场景名称和可选的复制来源
-            
+            params: Contains scene name and optional copy source
+
         Returns:
-            创建结果的 JSON 字符串
+            Creation result as JSON string
         """
         result = await server.execute_command(
             "scene", "create",
             {"name": params.name, "copy_from": params.copy_from}
         )
-        
+
         if result.get("success"):
-            return f"成功创建场景 '{params.name}'"
+            return f"Successfully created scene '{params.name}'"
         else:
             error = result.get("error", {})
-            return f"创建场景失败: {error.get('message', '未知错误')}"
-    
+            return f"Failed to create scene: {error.get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_scene_list",
         annotations={
-            "title": "列出场景",
+            "title": "List Scenes",
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -123,44 +123,44 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_scene_list(params: SceneListInput) -> str:
-        """列出 Blender 中的所有场景。
-        
-        返回所有场景的列表，包括名称、对象数量等信息。
-        
+        """List all scenes in Blender.
+
+        Returns a list of all scenes including name, object count, and other info.
+
         Args:
-            params: 输出格式选项
-            
+            params: Output format options
+
         Returns:
-            场景列表（Markdown 或 JSON 格式）
+            Scene list (Markdown or JSON format)
         """
         result = await server.execute_command("scene", "list", {})
-        
+
         if not result.get("success"):
-            return f"获取场景列表失败: {result.get('error', {}).get('message', '未知错误')}"
-        
+            return f"Failed to get scene list: {result.get('error', {}).get('message', 'Unknown error')}"
+
         scenes = result.get("data", {}).get("scenes", [])
-        
+
         if params.response_format == ResponseFormat.JSON:
             import json
             return json.dumps({"scenes": scenes, "total": len(scenes)}, indent=2)
-        
-        # Markdown 格式
-        lines = ["# Blender 场景列表", ""]
-        lines.append(f"共 {len(scenes)} 个场景")
+
+        # Markdown format
+        lines = ["# Blender Scene List", ""]
+        lines.append(f"Total: {len(scenes)} scene(s)")
         lines.append("")
-        
+
         for scene in scenes:
-            active = " (当前)" if scene.get("is_active") else ""
+            active = " (current)" if scene.get("is_active") else ""
             lines.append(f"## {scene['name']}{active}")
-            lines.append(f"- 对象数量: {scene.get('objects_count', 0)}")
+            lines.append(f"- Object count: {scene.get('objects_count', 0)}")
             lines.append("")
-        
+
         return "\n".join(lines)
-    
+
     @mcp.tool(
         name="blender_scene_get_info",
         annotations={
-            "title": "获取场景信息",
+            "title": "Get Scene Info",
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -168,40 +168,40 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_scene_get_info(params: SceneGetInfoInput) -> str:
-        """获取场景的详细信息。
-        
-        返回场景的帧范围、FPS、单位设置等详细信息。
-        
+        """Get detailed information about a scene.
+
+        Returns the scene's frame range, FPS, unit settings, and other detailed info.
+
         Args:
-            params: 场景名称（可选）
-            
+            params: Scene name (optional)
+
         Returns:
-            场景详细信息
+            Detailed scene information
         """
         result = await server.execute_command(
             "scene", "get_info",
             {"scene_name": params.scene_name}
         )
-        
+
         if not result.get("success"):
-            return f"获取场景信息失败: {result.get('error', {}).get('message', '未知错误')}"
-        
+            return f"Failed to get scene info: {result.get('error', {}).get('message', 'Unknown error')}"
+
         data = result.get("data", {})
-        
-        lines = [f"# 场景: {data.get('name', '未知')}", ""]
-        lines.append(f"- **帧范围**: {data.get('frame_start', 1)} - {data.get('frame_end', 250)}")
-        lines.append(f"- **当前帧**: {data.get('frame_current', 1)}")
-        lines.append(f"- **帧率**: {data.get('fps', 24)} FPS")
-        lines.append(f"- **对象数量**: {data.get('objects_count', 0)}")
-        lines.append(f"- **单位系统**: {data.get('unit_system', 'METRIC')}")
-        lines.append(f"- **单位缩放**: {data.get('unit_scale', 1.0)}")
-        
+
+        lines = [f"# Scene: {data.get('name', 'Unknown')}", ""]
+        lines.append(f"- **Frame Range**: {data.get('frame_start', 1)} - {data.get('frame_end', 250)}")
+        lines.append(f"- **Current Frame**: {data.get('frame_current', 1)}")
+        lines.append(f"- **Frame Rate**: {data.get('fps', 24)} FPS")
+        lines.append(f"- **Object Count**: {data.get('objects_count', 0)}")
+        lines.append(f"- **Unit System**: {data.get('unit_system', 'METRIC')}")
+        lines.append(f"- **Unit Scale**: {data.get('unit_scale', 1.0)}")
+
         return "\n".join(lines)
-    
+
     @mcp.tool(
         name="blender_scene_switch",
         annotations={
-            "title": "切换场景",
+            "title": "Switch Scene",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -209,28 +209,28 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_scene_switch(params: SceneSwitchInput) -> str:
-        """切换到指定场景。
-        
+        """Switch to the specified scene.
+
         Args:
-            params: 目标场景名称
-            
+            params: Target scene name
+
         Returns:
-            切换结果
+            Switch result
         """
         result = await server.execute_command(
             "scene", "switch",
             {"scene_name": params.scene_name}
         )
-        
+
         if result.get("success"):
-            return f"已切换到场景 '{params.scene_name}'"
+            return f"Switched to scene '{params.scene_name}'"
         else:
-            return f"切换场景失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to switch scene: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_scene_delete",
         annotations={
-            "title": "删除场景",
+            "title": "Delete Scene",
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
@@ -238,30 +238,30 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_scene_delete(params: SceneDeleteInput) -> str:
-        """删除指定场景。
-        
-        注意：不能删除最后一个场景。
-        
+        """Delete the specified scene.
+
+        Note: Cannot delete the last remaining scene.
+
         Args:
-            params: 要删除的场景名称
-            
+            params: Name of the scene to delete
+
         Returns:
-            删除结果
+            Deletion result
         """
         result = await server.execute_command(
             "scene", "delete",
             {"scene_name": params.scene_name}
         )
-        
+
         if result.get("success"):
-            return f"已删除场景 '{params.scene_name}'"
+            return f"Deleted scene '{params.scene_name}'"
         else:
-            return f"删除场景失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to delete scene: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_scene_set_settings",
         annotations={
-            "title": "设置场景参数",
+            "title": "Set Scene Settings",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -269,15 +269,15 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_scene_set_settings(params: SceneSettingsInput) -> str:
-        """设置场景参数。
-        
-        可以设置帧范围、帧率、单位系统等。
-        
+        """Set scene settings.
+
+        Can set frame range, frame rate, unit system, etc.
+
         Args:
-            params: 场景设置参数
-            
+            params: Scene settings parameters
+
         Returns:
-            设置结果
+            Settings result
         """
         settings = {}
         if params.frame_start is not None:
@@ -290,16 +290,16 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             settings["unit_system"] = params.unit_system.value
         if params.unit_scale is not None:
             settings["unit_scale"] = params.unit_scale
-        
+
         if not settings:
-            return "没有指定任何设置参数"
-        
+            return "No settings parameters specified"
+
         result = await server.execute_command(
             "scene", "set_settings",
             {"scene_name": params.scene_name, "settings": settings}
         )
-        
+
         if result.get("success"):
-            return f"场景设置已更新"
+            return f"Scene settings updated"
         else:
-            return f"设置失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Settings failed: {result.get('error', {}).get('message', 'Unknown error')}"

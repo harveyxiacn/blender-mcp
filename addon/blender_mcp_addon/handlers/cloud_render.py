@@ -1,7 +1,7 @@
 """
-云渲染集成处理器
+Cloud rendering integration handler
 
-处理云渲染服务集成的命令。
+Handles cloud rendering service integration commands.
 """
 
 from typing import Any, Dict, List
@@ -13,7 +13,7 @@ import shutil
 from datetime import datetime
 
 
-# 云渲染配置
+# Cloud rendering configuration
 CLOUD_CONFIG = {
     "service": "local",
     "api_key": None,
@@ -21,7 +21,7 @@ CLOUD_CONFIG = {
     "jobs": {}
 }
 
-# 本地渲染农场配置
+# Local render farm configuration
 LOCAL_FARM = {
     "nodes": [],
     "port": 5000
@@ -29,23 +29,23 @@ LOCAL_FARM = {
 
 
 def _generate_job_id() -> str:
-    """生成任务 ID"""
+    """Generate job ID"""
     return f"job_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
 
 def _pack_blend_file() -> str:
-    """打包 blend 文件及资源"""
-    # 保存当前文件
+    """Pack blend file and resources"""
+    # Save current file
     if bpy.data.is_dirty:
         bpy.ops.wm.save_mainfile()
     
     blend_path = bpy.data.filepath
     if not blend_path:
-        # 保存到临时目录
+        # Save to temp directory
         blend_path = os.path.join(tempfile.gettempdir(), "render_job.blend")
         bpy.ops.wm.save_as_mainfile(filepath=blend_path)
     
-    # 打包所有外部资源
+    # Pack all external resources
     bpy.ops.file.pack_all()
     bpy.ops.wm.save_mainfile()
     
@@ -53,7 +53,7 @@ def _pack_blend_file() -> str:
 
 
 def handle_setup(params: Dict[str, Any]) -> Dict[str, Any]:
-    """配置云渲染服务"""
+    """Configure cloud rendering service"""
     service = params.get("service", "local")
     api_key = params.get("api_key")
     endpoint = params.get("endpoint")
@@ -65,12 +65,12 @@ def handle_setup(params: Dict[str, Any]) -> Dict[str, Any]:
         CLOUD_CONFIG["api_key"] = api_key
         CLOUD_CONFIG["endpoint"] = endpoint
         
-        # 验证服务配置
+        # Validate service configuration
         if service == "sheepit":
             if not api_key:
                 return {
                     "success": False,
-                    "error": {"code": "API_KEY_REQUIRED", "message": "SheepIt 需要 API 密钥"}
+                    "error": {"code": "API_KEY_REQUIRED", "message": "SheepIt requires an API key"}
                 }
         
         return {
@@ -90,7 +90,7 @@ def handle_setup(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_submit(params: Dict[str, Any]) -> Dict[str, Any]:
-    """提交渲染任务"""
+    """Submit render job"""
     frame_start = params.get("frame_start", 1)
     frame_end = params.get("frame_end", 250)
     output_path = params.get("output_path", "")
@@ -101,7 +101,7 @@ def handle_submit(params: Dict[str, Any]) -> Dict[str, Any]:
     try:
         scene = bpy.context.scene
         
-        # 设置渲染参数
+        # Set render parameters
         scene.frame_start = frame_start
         scene.frame_end = frame_end
         scene.render.resolution_x = resolution_x
@@ -112,17 +112,17 @@ def handle_submit(params: Dict[str, Any]) -> Dict[str, Any]:
         elif scene.render.engine == 'BLENDER_EEVEE_NEXT':
             scene.eevee.taa_render_samples = samples
         
-        # 设置输出路径
+        # Set output path
         if output_path:
             scene.render.filepath = output_path
         
-        # 生成任务 ID
+        # Generate job ID
         job_id = _generate_job_id()
         
-        # 打包文件
+        # Pack file
         blend_path = _pack_blend_file()
         
-        # 记录任务
+        # Record job
         global CLOUD_CONFIG
         CLOUD_CONFIG["jobs"][job_id] = {
             "status": "pending",
@@ -134,18 +134,18 @@ def handle_submit(params: Dict[str, Any]) -> Dict[str, Any]:
             "output_path": output_path
         }
         
-        # 根据服务类型处理
+        # Handle by service type
         if CLOUD_CONFIG["service"] == "local":
-            # 本地渲染
+            # Local rendering
             CLOUD_CONFIG["jobs"][job_id]["status"] = "rendering"
             
-            # 在后台渲染（异步）
-            # 注意：实际实现需要使用线程或子进程
+            # Render in background (async)
+            # Note: Actual implementation needs threads or subprocesses
             bpy.ops.render.render('INVOKE_DEFAULT', animation=True)
             
             CLOUD_CONFIG["jobs"][job_id]["status"] = "completed"
         else:
-            # 外部服务
+            # External service
             CLOUD_CONFIG["jobs"][job_id]["status"] = "queued"
         
         return {
@@ -167,7 +167,7 @@ def handle_submit(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_status(params: Dict[str, Any]) -> Dict[str, Any]:
-    """查询任务状态"""
+    """Query job status"""
     job_id = params.get("job_id")
     
     try:
@@ -177,7 +177,7 @@ def handle_status(params: Dict[str, Any]) -> Dict[str, Any]:
             if job_id not in CLOUD_CONFIG["jobs"]:
                 return {
                     "success": False,
-                    "error": {"code": "JOB_NOT_FOUND", "message": f"任务不存在: {job_id}"}
+                    "error": {"code": "JOB_NOT_FOUND", "message": f"Job not found: {job_id}"}
                 }
             
             return {
@@ -203,7 +203,7 @@ def handle_status(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_cancel(params: Dict[str, Any]) -> Dict[str, Any]:
-    """取消任务"""
+    """Cancel job"""
     job_id = params.get("job_id")
     
     try:
@@ -212,14 +212,14 @@ def handle_cancel(params: Dict[str, Any]) -> Dict[str, Any]:
         if job_id not in CLOUD_CONFIG["jobs"]:
             return {
                 "success": False,
-                "error": {"code": "JOB_NOT_FOUND", "message": f"任务不存在: {job_id}"}
+                "error": {"code": "JOB_NOT_FOUND", "message": f"Job not found: {job_id}"}
             }
         
         CLOUD_CONFIG["jobs"][job_id]["status"] = "cancelled"
         
-        # 尝试取消渲染
+        # Try to cancel rendering
         try:
-            bpy.ops.render.render('INVOKE_DEFAULT')  # 取消
+            bpy.ops.render.render('INVOKE_DEFAULT')  # Cancel
         except:
             pass
         
@@ -239,7 +239,7 @@ def handle_cancel(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_download(params: Dict[str, Any]) -> Dict[str, Any]:
-    """下载渲染结果"""
+    """Download render results"""
     job_id = params.get("job_id")
     output_folder = params.get("output_folder")
     
@@ -249,7 +249,7 @@ def handle_download(params: Dict[str, Any]) -> Dict[str, Any]:
         if job_id not in CLOUD_CONFIG["jobs"]:
             return {
                 "success": False,
-                "error": {"code": "JOB_NOT_FOUND", "message": f"任务不存在: {job_id}"}
+                "error": {"code": "JOB_NOT_FOUND", "message": f"Job not found: {job_id}"}
             }
         
         job = CLOUD_CONFIG["jobs"][job_id]
@@ -257,13 +257,13 @@ def handle_download(params: Dict[str, Any]) -> Dict[str, Any]:
         if job["status"] != "completed":
             return {
                 "success": False,
-                "error": {"code": "JOB_NOT_COMPLETED", "message": "任务尚未完成"}
+                "error": {"code": "JOB_NOT_COMPLETED", "message": "Job has not completed yet"}
             }
         
-        # 确保输出目录存在
+        # Ensure output directory exists
         os.makedirs(output_folder, exist_ok=True)
         
-        # 复制渲染结果
+        # Copy render results
         source_path = job.get("output_path", "")
         if source_path and os.path.exists(os.path.dirname(source_path)):
             import glob
@@ -289,7 +289,7 @@ def handle_download(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_local_farm(params: Dict[str, Any]) -> Dict[str, Any]:
-    """配置本地渲染农场"""
+    """Configure local render farm"""
     nodes = params.get("nodes", [])
     port = params.get("port", 5000)
     
@@ -316,19 +316,19 @@ def handle_local_farm(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_discover(params: Dict[str, Any]) -> Dict[str, Any]:
-    """发现渲染节点"""
+    """Discover render nodes"""
     try:
         import socket
         
-        # 获取本机 IP
+        # Get local IP
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
         
-        # 扫描局域网（简化版）
-        # 实际实现需要更复杂的网络发现逻辑
+        # Scan LAN (simplified)
+        # Actual implementation needs more complex network discovery logic
         discovered_nodes = []
         
-        # 返回本机作为默认节点
+        # Return local machine as default node
         discovered_nodes.append({
             "address": local_ip,
             "hostname": hostname,
@@ -351,30 +351,30 @@ def handle_discover(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_estimate(params: Dict[str, Any]) -> Dict[str, Any]:
-    """估算渲染成本/时间"""
+    """Estimate render cost/time"""
     frame_count = params.get("frame_count", 1)
     samples = params.get("samples", 128)
     resolution_x = params.get("resolution_x", 1920)
     resolution_y = params.get("resolution_y", 1080)
     
     try:
-        # 简单的估算公式
-        # 基础时间：每帧 1 秒（1080p, 128 samples）
-        base_time_per_frame = 1.0  # 秒
+        # Simple estimation formula
+        # Base time: 1 second per frame (1080p, 128 samples)
+        base_time_per_frame = 1.0  # seconds
         
-        # 分辨率因子
+        # Resolution factor
         resolution_factor = (resolution_x * resolution_y) / (1920 * 1080)
         
-        # 采样因子
+        # Sample factor
         sample_factor = samples / 128
         
-        # 估算每帧时间（秒）
+        # Estimate time per frame (seconds)
         time_per_frame = base_time_per_frame * resolution_factor * sample_factor
         
-        # 总时间
+        # Total time
         total_time_seconds = time_per_frame * frame_count
         
-        # 转换为更易读的格式
+        # Convert to more readable format
         hours = int(total_time_seconds // 3600)
         minutes = int((total_time_seconds % 3600) // 60)
         seconds = int(total_time_seconds % 60)
@@ -390,7 +390,7 @@ def handle_estimate(params: Dict[str, Any]) -> Dict[str, Any]:
                     "resolution": round(resolution_factor, 2),
                     "samples": round(sample_factor, 2)
                 },
-                "note": "这是基于标准硬件的粗略估算，实际时间可能因场景复杂度而异"
+                "note": "This is a rough estimate based on standard hardware; actual time may vary with scene complexity"
             }
         }
     

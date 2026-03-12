@@ -1,15 +1,15 @@
 """
-Blender MCP Server - 主服务器模块
+Blender MCP Server - Main Server Module
 
-实现 MCP 协议，注册所有工具，处理请求和响应。
+Implements the MCP protocol, registers all tools, and handles requests and responses.
 
-工具模块配置:
-- 编辑 tools_config.py 中的 TOOL_PROFILE 来控制启用的工具数量
-- "skill": ~31个工具 + 按需加载 (推荐)
-- "minimal": ~30个工具 (仅核心功能)
-- "focused": ~82个工具
-- "standard": ~146个工具
-- "full": ~319个工具 (所有功能)
+Tool module configuration:
+- Edit TOOL_PROFILE in tools_config.py to control the number of enabled tools
+- "skill": ~31 tools + on-demand loading (recommended)
+- "minimal": ~30 tools (core functionality only)
+- "focused": ~82 tools
+- "standard": ~146 tools
+- "full": ~319 tools (all features)
 """
 
 import logging
@@ -21,20 +21,20 @@ from blender_mcp.connection import BlenderConnection
 from blender_mcp.tools_config import get_enabled_modules, MODULE_REGISTRY, TOOL_PROFILE
 from blender_mcp import config
 
-# 动态导入启用的工具模块
+# Dynamically import enabled tool modules
 import importlib
 
 logger = logging.getLogger(__name__)
 
 
 class BlenderMCPServer:
-    """Blender MCP 服务器
-    
-    负责：
-    - 初始化 MCP 服务器
-    - 注册所有工具
-    - 管理 Blender 连接
-    - 处理请求和响应
+    """Blender MCP Server
+
+    Responsible for:
+    - Initializing the MCP server
+    - Registering all tools
+    - Managing the Blender connection
+    - Handling requests and responses
     """
     
     def __init__(
@@ -43,33 +43,33 @@ class BlenderMCPServer:
         blender_port: int = config.BLENDER_PORT,
         name: str = "blender_mcp"
     ):
-        """初始化服务器
-        
+        """Initialize the server
+
         Args:
-            blender_host: Blender 插件服务器主机
-            blender_port: Blender 插件服务器端口
-            name: MCP 服务器名称
+            blender_host: Blender addon server host
+            blender_port: Blender addon server port
+            name: MCP server name
         """
         self.blender_host = blender_host
         self.blender_port = blender_port
         
-        # 创建 MCP 服务器实例
+        # Create MCP server instance
         self.mcp = FastMCP(name)
-        
-        # Blender 连接（延迟初始化）
+
+        # Blender connection (lazy initialization)
         self._connection: Optional[BlenderConnection] = None
-        
-        # Skill 管理器（延迟初始化，仅在 skill profile 下使用）
+
+        # Skill manager (lazy initialization, only used in skill profile)
         self._skill_manager = None
-        
-        # 注册所有工具
+
+        # Register all tools
         self._register_tools()
-        
-        logger.info(f"Blender MCP 服务器初始化完成: {name}")
+
+        logger.info(f"Blender MCP server initialized: {name}")
     
     @property
     def skill_manager(self):
-        """获取 Skill 管理器实例（仅 skill profile 下可用）"""
+        """Get the skill manager instance (only available in skill profile)"""
         if self._skill_manager is None:
             from blender_mcp.skill_manager import SkillManager
             self._skill_manager = SkillManager(self)
@@ -77,7 +77,7 @@ class BlenderMCPServer:
     
     @property
     def connection(self) -> BlenderConnection:
-        """获取 Blender 连接实例"""
+        """Get the Blender connection instance"""
         if self._connection is None:
             self._connection = BlenderConnection(
                 host=self.blender_host,
@@ -86,46 +86,46 @@ class BlenderMCPServer:
         return self._connection
     
     def _register_tools(self) -> None:
-        """注册启用的 MCP 工具模块
-        
-        根据 tools_config.py 中的 TOOL_PROFILE 设置动态加载模块。
-        可以通过修改 TOOL_PROFILE 来控制工具数量：
-        - "skill": ~31个工具 + 按需加载 (推荐)
-        - "minimal": ~30个工具
-        - "focused": ~82个工具
-        - "standard": ~146个工具
-        - "full": ~319个工具
+        """Register enabled MCP tool modules
+
+        Dynamically loads modules based on the TOOL_PROFILE setting in tools_config.py.
+        Control the number of tools by modifying TOOL_PROFILE:
+        - "skill": ~31 tools + on-demand loading (recommended)
+        - "minimal": ~30 tools
+        - "focused": ~82 tools
+        - "standard": ~146 tools
+        - "full": ~319 tools
         """
         enabled_modules = get_enabled_modules()
         loaded_count = 0
         
-        logger.info(f"工具配置: {TOOL_PROFILE} (启用 {len(enabled_modules)} 个模块)")
+        logger.info(f"Tool profile: {TOOL_PROFILE} ({len(enabled_modules)} modules enabled)")
         
         for module_name in enabled_modules:
             if module_name not in MODULE_REGISTRY:
-                logger.warning(f"未知模块: {module_name}")
+                logger.warning(f"Unknown module: {module_name}")
                 continue
             
             register_func_name = MODULE_REGISTRY[module_name]
             
             try:
-                # 动态导入模块
+                # Dynamically import module
                 tool_module = importlib.import_module(f"blender_mcp.tools.{module_name}")
                 register_func = getattr(tool_module, register_func_name)
-                
-                # 调用注册函数
+
+                # Call register function
                 register_func(self.mcp, self)
                 loaded_count += 1
-                logger.debug(f"已加载模块: {module_name}")
-                
+                logger.debug(f"Loaded module: {module_name}")
+
             except ImportError as e:
-                logger.warning(f"无法导入模块 {module_name}: {e}")
+                logger.warning(f"Cannot import module {module_name}: {e}")
             except AttributeError as e:
-                logger.warning(f"模块 {module_name} 缺少注册函数 {register_func_name}: {e}")
+                logger.warning(f"Module {module_name} missing register function {register_func_name}: {e}")
             except Exception as e:
-                logger.warning(f"加载模块 {module_name} 失败: {e}")
-        
-        logger.info(f"工具注册完成: 加载了 {loaded_count}/{len(enabled_modules)} 个模块")
+                logger.warning(f"Failed to load module {module_name}: {e}")
+
+        logger.info(f"Tool registration complete: loaded {loaded_count}/{len(enabled_modules)} modules")
     
     async def execute_command(
         self,
@@ -133,28 +133,28 @@ class BlenderMCPServer:
         action: str,
         params: dict[str, Any]
     ) -> dict[str, Any]:
-        """执行 Blender 命令
-        
+        """Execute a Blender command
+
         Args:
-            category: 命令类别（如 scene, object, modeling 等）
-            action: 具体操作
-            params: 操作参数
-            
+            category: Command category (e.g. scene, object, modeling, etc.)
+            action: Specific operation
+            params: Operation parameters
+
         Returns:
-            执行结果字典
+            Result dictionary
         """
         try:
-            # 确保连接
+            # Ensure connection
             if not self.connection.connected:
                 await self.connection.connect()
-            
-            # 发送命令并等待响应
+
+            # Send command and wait for response
             result = await self.connection.send_command(category, action, params)
-            
+
             return result
-            
+
         except Exception as e:
-            logger.error(f"命令执行失败: {category}.{action} - {e}")
+            logger.error(f"Command execution failed: {category}.{action} - {e}")
             return {
                 "success": False,
                 "error": {
@@ -173,23 +173,23 @@ class BlenderMCPServer:
         return await self.execute_command(category, action, params)
     
     def run_stdio(self) -> None:
-        """以 stdio 模式运行服务器（同步方法）"""
-        logger.info("启动 stdio 传输")
+        """Run the server in stdio mode (synchronous method)"""
+        logger.info("Starting stdio transport")
         self.mcp.run(transport="stdio")
-    
+
     def run_http(self, port: int = 8080) -> None:
-        """以 HTTP 模式运行服务器（同步方法）
-        
+        """Run the server in HTTP mode (synchronous method)
+
         Args:
-            port: HTTP 服务端口
+            port: HTTP server port
         """
-        logger.info(f"启动 HTTP 传输，端口: {port}")
-        # FastMCP 的 run() 不接收端口参数，需要通过 settings 注入
+        logger.info(f"Starting HTTP transport on port: {port}")
+        # FastMCP's run() does not accept a port parameter; inject via settings
         self.mcp.settings.port = port
         self.mcp.run(transport="streamable-http")
-    
+
     async def shutdown(self) -> None:
-        """关闭服务器"""
+        """Shut down the server"""
         if self._connection:
             await self._connection.disconnect()
-        logger.info("服务器已关闭")
+        logger.info("Server shut down")

@@ -253,12 +253,12 @@ bm.verts.ensure_lookup_table()
 for v in bm.verts:
     lz = v.co.z
     # 下巴收窄 (V形)
-    if lz < 1.56:
-        f = max(0, (1.56 - lz) / 0.10)
+    if lz < -0.02:
+        f = max(0, (-0.02 - lz) / 0.10)
         v.co.x *= (1.0 - f * 0.45)
         v.co.y *= (1.0 - f * 0.35)
     # 颧骨略宽
-    if 1.58 < lz < 1.65:
+    if 0.00 < lz < 0.06:
         v.co.x *= 1.05
     # 后脑略扁
     if v.co.y > 0.02:
@@ -415,7 +415,7 @@ bpy.ops.object.transform_apply(scale=True)
 bpy.ops.object.mode_set(mode='EDIT')
 bm = bmesh.from_edit_mesh(hbase.data)
 bm.verts.ensure_lookup_table()
-to_del = [v for v in bm.verts if v.co.z < 1.60 and v.co.y < 0.02]
+to_del = [v for v in bm.verts if v.co.z < -0.02 and v.co.y < 0.02]
 bmesh.ops.delete(bm, geom=to_del, context='VERTS')
 bmesh.update_edit_mesh(hbase.data)
 bpy.ops.object.mode_set(mode='OBJECT')

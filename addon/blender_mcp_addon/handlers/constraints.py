@@ -1,7 +1,7 @@
 """
-约束系统处理器
+Constraint system handler
 
-处理Blender对象和骨骼约束命令。
+Handles Blender object and bone constraint commands.
 """
 
 from typing import Any, Dict
@@ -9,7 +9,7 @@ import bpy
 
 
 def _get_constraint_target(obj: bpy.types.Object, is_bone: bool = False, bone_name: str = None):
-    """获取约束目标（对象或骨骼）"""
+    """Get constraint target (object or bone)"""
     if is_bone and bone_name:
         if obj.type == 'ARMATURE' and bone_name in obj.pose.bones:
             return obj.pose.bones[bone_name]
@@ -17,7 +17,7 @@ def _get_constraint_target(obj: bpy.types.Object, is_bone: bool = False, bone_na
 
 
 def handle_add(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加约束"""
+    """Add constraint"""
     object_name = params.get("object_name")
     constraint_type = params.get("constraint_type")
     name = params.get("name")
@@ -28,7 +28,7 @@ def handle_add(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
@@ -60,7 +60,7 @@ def handle_add(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_remove(params: Dict[str, Any]) -> Dict[str, Any]:
-    """移除约束"""
+    """Remove constraint"""
     object_name = params.get("object_name")
     constraint_name = params.get("constraint_name")
     
@@ -68,7 +68,7 @@ def handle_remove(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
@@ -82,7 +82,7 @@ def handle_remove(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             return {
                 "success": False,
-                "error": {"code": "CONSTRAINT_NOT_FOUND", "message": f"约束不存在: {constraint_name}"}
+                "error": {"code": "CONSTRAINT_NOT_FOUND", "message": f"Constraint not found: {constraint_name}"}
             }
     
     except Exception as e:
@@ -93,7 +93,7 @@ def handle_remove(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_copy_location(params: Dict[str, Any]) -> Dict[str, Any]:
-    """位置复制约束"""
+    """Copy location constraint"""
     object_name = params.get("object_name")
     target = params.get("target")
     subtarget = params.get("subtarget")
@@ -106,14 +106,14 @@ def handle_copy_location(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     target_obj = bpy.data.objects.get(target)
     if not target_obj:
         return {
             "success": False,
-            "error": {"code": "TARGET_NOT_FOUND", "message": f"目标不存在: {target}"}
+            "error": {"code": "TARGET_NOT_FOUND", "message": f"Target not found: {target}"}
         }
     
     try:
@@ -143,7 +143,7 @@ def handle_copy_location(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_copy_rotation(params: Dict[str, Any]) -> Dict[str, Any]:
-    """旋转复制约束"""
+    """Copy rotation constraint"""
     object_name = params.get("object_name")
     target = params.get("target")
     subtarget = params.get("subtarget")
@@ -156,14 +156,14 @@ def handle_copy_rotation(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     target_obj = bpy.data.objects.get(target)
     if not target_obj:
         return {
             "success": False,
-            "error": {"code": "TARGET_NOT_FOUND", "message": f"目标不存在: {target}"}
+            "error": {"code": "TARGET_NOT_FOUND", "message": f"Target not found: {target}"}
         }
     
     try:
@@ -193,7 +193,7 @@ def handle_copy_rotation(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_copy_scale(params: Dict[str, Any]) -> Dict[str, Any]:
-    """缩放复制约束"""
+    """Copy scale constraint"""
     object_name = params.get("object_name")
     target = params.get("target")
     subtarget = params.get("subtarget")
@@ -206,14 +206,14 @@ def handle_copy_scale(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     target_obj = bpy.data.objects.get(target)
     if not target_obj:
         return {
             "success": False,
-            "error": {"code": "TARGET_NOT_FOUND", "message": f"目标不存在: {target}"}
+            "error": {"code": "TARGET_NOT_FOUND", "message": f"Target not found: {target}"}
         }
     
     try:
@@ -243,7 +243,7 @@ def handle_copy_scale(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_track_to(params: Dict[str, Any]) -> Dict[str, Any]:
-    """跟踪约束"""
+    """Track to constraint"""
     object_name = params.get("object_name")
     target = params.get("target")
     subtarget = params.get("subtarget")
@@ -255,14 +255,14 @@ def handle_track_to(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     target_obj = bpy.data.objects.get(target)
     if not target_obj:
         return {
             "success": False,
-            "error": {"code": "TARGET_NOT_FOUND", "message": f"目标不存在: {target}"}
+            "error": {"code": "TARGET_NOT_FOUND", "message": f"Target not found: {target}"}
         }
     
     try:
@@ -291,7 +291,7 @@ def handle_track_to(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_limit(params: Dict[str, Any]) -> Dict[str, Any]:
-    """限制约束"""
+    """Limit constraint"""
     object_name = params.get("object_name")
     limit_type = params.get("limit_type", "LOCATION")
     min_x = params.get("min_x")
@@ -305,7 +305,7 @@ def handle_limit(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
@@ -353,7 +353,7 @@ def handle_limit(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_ik(params: Dict[str, Any]) -> Dict[str, Any]:
-    """IK约束"""
+    """IK constraint"""
     object_name = params.get("object_name")
     bone_name = params.get("bone_name")
     target = params.get("target")
@@ -367,13 +367,13 @@ def handle_ik(params: Dict[str, Any]) -> Dict[str, Any]:
     if not armature or armature.type != 'ARMATURE':
         return {
             "success": False,
-            "error": {"code": "ARMATURE_NOT_FOUND", "message": f"骨架不存在: {object_name}"}
+            "error": {"code": "ARMATURE_NOT_FOUND", "message": f"Armature not found: {object_name}"}
         }
     
     if bone_name not in armature.pose.bones:
         return {
             "success": False,
-            "error": {"code": "BONE_NOT_FOUND", "message": f"骨骼不存在: {bone_name}"}
+            "error": {"code": "BONE_NOT_FOUND", "message": f"Bone not found: {bone_name}"}
         }
     
     try:
@@ -413,7 +413,7 @@ def handle_ik(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_parent(params: Dict[str, Any]) -> Dict[str, Any]:
-    """父级约束"""
+    """Parent constraint"""
     object_name = params.get("object_name")
     target = params.get("target")
     subtarget = params.get("subtarget")
@@ -423,14 +423,14 @@ def handle_parent(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     target_obj = bpy.data.objects.get(target)
     if not target_obj:
         return {
             "success": False,
-            "error": {"code": "TARGET_NOT_FOUND", "message": f"目标不存在: {target}"}
+            "error": {"code": "TARGET_NOT_FOUND", "message": f"Target not found: {target}"}
         }
     
     try:
@@ -457,14 +457,14 @@ def handle_parent(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_list(params: Dict[str, Any]) -> Dict[str, Any]:
-    """列出约束"""
+    """List constraints"""
     object_name = params.get("object_name")
     
     obj = bpy.data.objects.get(object_name)
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:

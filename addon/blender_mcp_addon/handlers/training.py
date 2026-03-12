@@ -1,8 +1,8 @@
 """
-培训系统命令处理器
+Training System Command Handler
 
-在 Blender 端处理培训系统相关的命令。
-主要负责执行练习中的场景创建和模型操作命令。
+Handles training system-related commands on the Blender side.
+Primarily responsible for executing scene creation and model operation commands in exercises.
 """
 
 import bpy
@@ -10,7 +10,7 @@ from typing import Dict, Any
 
 
 def handle_training(params: Dict[str, Any]) -> Dict[str, Any]:
-    """处理培训系统命令"""
+    """Handle training system commands"""
     action = params.get("action", "")
 
     handlers = {
@@ -24,16 +24,16 @@ def handle_training(params: Dict[str, Any]) -> Dict[str, Any]:
     handler = handlers.get(action)
     if handler:
         return handler(params)
-    return {"success": False, "error": f"未知的培训操作: {action}"}
+    return {"success": False, "error": f"Unknown training action: {action}"}
 
 
 def _setup_penglai_scene(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置蓬莱九章训练场景"""
+    """Set up Penglai Nine Chapters training scene"""
     try:
         scene_name = params.get("scene_name", "PenglaiTraining")
         level = params.get("level", "basic")
 
-        # 创建或切换场景
+        # Create or switch scene
         if scene_name in bpy.data.scenes:
             bpy.context.window.scene = bpy.data.scenes[scene_name]
         else:
@@ -42,18 +42,18 @@ def _setup_penglai_scene(params: Dict[str, Any]) -> Dict[str, Any]:
 
         scene = bpy.context.scene
 
-        # 清空场景
+        # Clear scene
         for obj in list(scene.objects):
             bpy.data.objects.remove(obj, do_unlink=True)
 
-        # 基础场景设置
+        # Basic scene setup
         if level in ("basic", "full"):
-            # 地面
+            # Ground
             bpy.ops.mesh.primitive_plane_add(size=30, location=(0, 0, 0))
             ground = bpy.context.active_object
             ground.name = "SM_Ground"
 
-            # 设置绿色材质
+            # Set green material
             mat = bpy.data.materials.new("MAT_Ground_Grass")
             mat.use_nodes = True
             bsdf = mat.node_tree.nodes["Principled BSDF"]
@@ -62,7 +62,7 @@ def _setup_penglai_scene(params: Dict[str, Any]) -> Dict[str, Any]:
             ground.data.materials.append(mat)
 
         if level in ("intermediate", "full"):
-            # 添加树木占位
+            # Add tree placeholders
             import math
             for i in range(6):
                 angle = i * math.pi * 2 / 6
@@ -72,13 +72,13 @@ def _setup_penglai_scene(params: Dict[str, Any]) -> Dict[str, Any]:
                 trunk = bpy.context.active_object
                 trunk.name = f"SM_Tree_Trunk_{i+1:02d}"
 
-                # 树冠
+                # Tree canopy
                 bpy.ops.mesh.primitive_uv_sphere_add(radius=2, location=(x, y, 5))
                 canopy = bpy.context.active_object
                 canopy.name = f"SM_Tree_Canopy_{i+1:02d}"
 
         if level == "full":
-            # 添加月亮
+            # Add moon
             bpy.ops.mesh.primitive_uv_sphere_add(radius=1.5, location=(10, -5, 15))
             moon = bpy.context.active_object
             moon.name = "SM_Moon"
@@ -89,7 +89,7 @@ def _setup_penglai_scene(params: Dict[str, Any]) -> Dict[str, Any]:
             bsdf.inputs["Emission Strength"].default_value = 5.0
             moon.data.materials.append(mat_moon)
 
-            # 添加雾效果
+            # Add fog effect
             bpy.context.scene.world = bpy.data.worlds.new("World_MistyForest")
             bpy.context.scene.world.use_nodes = True
 
@@ -99,7 +99,7 @@ def _setup_penglai_scene(params: Dict[str, Any]) -> Dict[str, Any]:
             "scene": scene_name,
             "level": level,
             "objects_created": obj_count,
-            "message": f"蓬莱九章训练场景已创建 ({level}), 共 {obj_count} 个对象",
+            "message": f"Penglai Nine Chapters training scene created ({level}), {obj_count} objects total",
         }
 
     except Exception as e:
@@ -107,12 +107,12 @@ def _setup_penglai_scene(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _setup_fanzhendong_scene(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置Q版樊振东训练场景"""
+    """Set up chibi Fan Zhendong training scene"""
     try:
         scene_name = params.get("scene_name", "FZDTraining")
         level = params.get("level", "basic")
 
-        # 创建或切换场景
+        # Create or switch scene
         if scene_name in bpy.data.scenes:
             bpy.context.window.scene = bpy.data.scenes[scene_name]
         else:
@@ -121,19 +121,19 @@ def _setup_fanzhendong_scene(params: Dict[str, Any]) -> Dict[str, Any]:
 
         scene = bpy.context.scene
 
-        # 清空场景
+        # Clear scene
         for obj in list(scene.objects):
             bpy.data.objects.remove(obj, do_unlink=True)
 
         if level in ("basic", "full"):
-            # 乒乓球台
+            # Table tennis table
             bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, 0.76))
             table = bpy.context.active_object
             table.name = "TT_Table"
             table.scale = (1.37, 0.7625, 0.025)
             bpy.ops.object.transform_apply(scale=True)
 
-            # 球台材质
+            # Table material
             mat_table = bpy.data.materials.new("MAT_Table_Blue")
             mat_table.use_nodes = True
             bsdf = mat_table.node_tree.nodes["Principled BSDF"]
@@ -141,7 +141,7 @@ def _setup_fanzhendong_scene(params: Dict[str, Any]) -> Dict[str, Any]:
             bsdf.inputs["Roughness"].default_value = 0.3
             table.data.materials.append(mat_table)
 
-            # 球台腿
+            # Table legs
             for i, (x, y) in enumerate([(-1.1, -0.55), (1.1, -0.55), (-1.1, 0.55), (1.1, 0.55)]):
                 bpy.ops.mesh.primitive_cube_add(size=1, location=(x, y, 0.37))
                 leg = bpy.context.active_object
@@ -149,7 +149,7 @@ def _setup_fanzhendong_scene(params: Dict[str, Any]) -> Dict[str, Any]:
                 leg.scale = (0.03, 0.03, 0.37)
                 bpy.ops.object.transform_apply(scale=True)
 
-            # 球网
+            # Net
             bpy.ops.mesh.primitive_plane_add(size=1, location=(0, 0, 0.915))
             net = bpy.context.active_object
             net.name = "TT_Net"
@@ -157,7 +157,7 @@ def _setup_fanzhendong_scene(params: Dict[str, Any]) -> Dict[str, Any]:
             bpy.ops.object.transform_apply(scale=True)
 
         if level in ("intermediate", "full"):
-            # 乒乓球
+            # Table tennis ball
             bpy.ops.mesh.primitive_uv_sphere_add(radius=0.02, location=(0.3, 0, 0.81))
             ball = bpy.context.active_object
             ball.name = "TT_Ball"
@@ -167,7 +167,7 @@ def _setup_fanzhendong_scene(params: Dict[str, Any]) -> Dict[str, Any]:
             bsdf.inputs["Base Color"].default_value = (1.0, 0.55, 0.05, 1.0)
             ball.data.materials.append(mat_ball)
 
-            # 球拍
+            # Paddle
             bpy.ops.mesh.primitive_cylinder_add(radius=0.08, depth=0.01, location=(-0.5, 0, 0.85))
             paddle = bpy.context.active_object
             paddle.name = "Paddle_Blade"
@@ -178,14 +178,14 @@ def _setup_fanzhendong_scene(params: Dict[str, Any]) -> Dict[str, Any]:
             paddle.data.materials.append(mat_paddle)
 
         if level == "full":
-            # 巴黎奥运五环
+            # Paris Olympic rings
             import math
             ring_colors = [
-                (0.0, 0.3, 0.7, 1.0),   # 蓝
-                (0.0, 0.0, 0.0, 1.0),   # 黑
-                (0.8, 0.1, 0.1, 1.0),   # 红
-                (1.0, 0.75, 0.0, 1.0),  # 黄
-                (0.0, 0.5, 0.2, 1.0),   # 绿
+                (0.0, 0.3, 0.7, 1.0),   # Blue
+                (0.0, 0.0, 0.0, 1.0),   # Black
+                (0.8, 0.1, 0.1, 1.0),   # Red
+                (1.0, 0.75, 0.0, 1.0),  # Yellow
+                (0.0, 0.5, 0.2, 1.0),   # Green
             ]
             for i, color in enumerate(ring_colors):
                 x = (i - 2) * 0.5
@@ -203,7 +203,7 @@ def _setup_fanzhendong_scene(params: Dict[str, Any]) -> Dict[str, Any]:
                 bsdf.inputs["Metallic"].default_value = 0.8
                 ring.data.materials.append(mat_ring)
 
-            # 灯光
+            # Lighting
             bpy.ops.object.light_add(type='AREA', location=(0, -2, 4))
             light = bpy.context.active_object
             light.name = "StadiumLight_Key"
@@ -216,7 +216,7 @@ def _setup_fanzhendong_scene(params: Dict[str, Any]) -> Dict[str, Any]:
             "scene": scene_name,
             "level": level,
             "objects_created": obj_count,
-            "message": f"Q版樊振东训练场景已创建 ({level}), 共 {obj_count} 个对象",
+            "message": f"Chibi Fan Zhendong training scene created ({level}), {obj_count} objects total",
         }
 
     except Exception as e:
@@ -224,7 +224,7 @@ def _setup_fanzhendong_scene(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _create_exercise_scene(params: Dict[str, Any]) -> Dict[str, Any]:
-    """为练习创建干净的场景"""
+    """Create a clean scene for exercises"""
     try:
         exercise_id = params.get("exercise_id", "exercise")
         scene_name = f"Training_{exercise_id}"
@@ -235,7 +235,7 @@ def _create_exercise_scene(params: Dict[str, Any]) -> Dict[str, Any]:
             scene = bpy.data.scenes.new(scene_name)
             bpy.context.window.scene = scene
 
-        # 添加基础灯光和相机
+        # Add basic lighting and camera
         bpy.ops.object.light_add(type='SUN', location=(5, -5, 10))
         sun = bpy.context.active_object
         sun.name = "Training_Sun"
@@ -250,7 +250,7 @@ def _create_exercise_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         return {
             "success": True,
             "scene": scene_name,
-            "message": f"练习场景 {scene_name} 已准备就绪",
+            "message": f"Exercise scene {scene_name} is ready",
         }
 
     except Exception as e:
@@ -258,7 +258,7 @@ def _create_exercise_scene(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _verify_exercise(params: Dict[str, Any]) -> Dict[str, Any]:
-    """验证练习结果"""
+    """Verify exercise results"""
     try:
         expected_objects = params.get("expected_objects", [])
         scene = bpy.context.scene
@@ -277,7 +277,7 @@ def _verify_exercise(params: Dict[str, Any]) -> Dict[str, Any]:
             "found": found,
             "missing": missing,
             "total_objects": len(scene.objects),
-            "message": f"验证{'通过' if success else '未通过'}: 找到 {len(found)}/{len(expected_objects)} 个预期对象",
+            "message": f"Verification {'passed' if success else 'failed'}: Found {len(found)}/{len(expected_objects)} expected objects",
         }
 
     except Exception as e:
@@ -285,7 +285,7 @@ def _verify_exercise(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _cleanup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
-    """清理训练场景"""
+    """Clean up training scenes"""
     try:
         keep_scenes = params.get("keep_scenes", ["Scene"])
         removed = 0

@@ -1,7 +1,7 @@
 """
-灯光工具
+Lighting Tools
 
-提供灯光创建和设置功能。
+Provides light creation and configuration functionality.
 """
 
 from typing import TYPE_CHECKING, Optional, List
@@ -15,66 +15,66 @@ if TYPE_CHECKING:
 
 
 class LightType(str, Enum):
-    """灯光类型"""
-    POINT = "POINT"      # 点光源
-    SUN = "SUN"          # 太阳光
-    SPOT = "SPOT"        # 聚光灯
-    AREA = "AREA"        # 面光源
+    """Light type"""
+    POINT = "POINT"      # Point light
+    SUN = "SUN"          # Sun light
+    SPOT = "SPOT"        # Spot light
+    AREA = "AREA"        # Area light
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class LightCreateInput(BaseModel):
-    """创建灯光输入"""
-    type: LightType = Field(..., description="灯光类型")
-    name: Optional[str] = Field(default=None, description="灯光名称")
-    location: Optional[List[float]] = Field(default=None, description="位置 [x, y, z]")
-    rotation: Optional[List[float]] = Field(default=None, description="旋转 [x, y, z]")
-    color: Optional[List[float]] = Field(default=None, description="RGB 颜色")
-    energy: float = Field(default=1000.0, description="能量/强度（瓦特）", ge=0)
-    radius: float = Field(default=0.25, description="灯光半径", ge=0)
-    
+    """Create light input"""
+    type: LightType = Field(..., description="Light type")
+    name: Optional[str] = Field(default=None, description="Light name")
+    location: Optional[List[float]] = Field(default=None, description="Location [x, y, z]")
+    rotation: Optional[List[float]] = Field(default=None, description="Rotation [x, y, z]")
+    color: Optional[List[float]] = Field(default=None, description="RGB color")
+    energy: float = Field(default=1000.0, description="Energy/intensity (watts)", ge=0)
+    radius: float = Field(default=0.25, description="Light radius", ge=0)
+
     @field_validator("color")
     @classmethod
     def validate_color(cls, v):
         if v is not None and len(v) != 3:
-            raise ValueError("颜色必须包含 3 个分量 (RGB)")
+            raise ValueError("Color must contain 3 components (RGB)")
         return v
 
 
 class LightSetPropertiesInput(BaseModel):
-    """设置灯光属性输入"""
-    light_name: str = Field(..., description="灯光名称")
-    color: Optional[List[float]] = Field(default=None, description="RGB 颜色")
-    energy: Optional[float] = Field(default=None, description="能量", ge=0)
-    radius: Optional[float] = Field(default=None, description="半径", ge=0)
-    spot_size: Optional[float] = Field(default=None, description="聚光灯角度（弧度）", ge=0)
-    spot_blend: Optional[float] = Field(default=None, description="聚光灯边缘柔和度", ge=0, le=1)
-    shadow_soft_size: Optional[float] = Field(default=None, description="阴影柔和度", ge=0)
-    use_shadow: Optional[bool] = Field(default=None, description="是否投射阴影")
+    """Set light properties input"""
+    light_name: str = Field(..., description="Light name")
+    color: Optional[List[float]] = Field(default=None, description="RGB color")
+    energy: Optional[float] = Field(default=None, description="Energy", ge=0)
+    radius: Optional[float] = Field(default=None, description="Radius", ge=0)
+    spot_size: Optional[float] = Field(default=None, description="Spot light angle (radians)", ge=0)
+    spot_blend: Optional[float] = Field(default=None, description="Spot light edge softness", ge=0, le=1)
+    shadow_soft_size: Optional[float] = Field(default=None, description="Shadow softness", ge=0)
+    use_shadow: Optional[bool] = Field(default=None, description="Whether to cast shadows")
 
 
 class LightDeleteInput(BaseModel):
-    """删除灯光输入"""
-    light_name: str = Field(..., description="灯光名称")
+    """Delete light input"""
+    light_name: str = Field(..., description="Light name")
 
 
 class HDRISetupInput(BaseModel):
-    """HDRI 设置输入"""
-    hdri_path: str = Field(..., description="HDRI 文件路径")
-    strength: float = Field(default=1.0, description="环境光强度", ge=0)
-    rotation: float = Field(default=0.0, description="旋转角度（弧度）")
+    """HDRI setup input"""
+    hdri_path: str = Field(..., description="HDRI file path")
+    strength: float = Field(default=1.0, description="Environment light strength", ge=0)
+    rotation: float = Field(default=0.0, description="Rotation angle (radians)")
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_lighting_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册灯光工具"""
-    
+    """Register lighting tools"""
+
     @mcp.tool(
         name="blender_light_create",
         annotations={
-            "title": "创建灯光",
+            "title": "Create Light",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -82,15 +82,15 @@ def register_lighting_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_light_create(params: LightCreateInput) -> str:
-        """创建灯光。
-        
-        支持点光源、太阳光、聚光灯和面光源。
-        
+        """Create a light.
+
+        Supports point light, sun light, spot light, and area light.
+
         Args:
-            params: 灯光类型和属性
-            
+            params: Light type and properties
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "lighting", "create",
@@ -104,23 +104,23 @@ def register_lighting_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "radius": params.radius
             }
         )
-        
+
         if result.get("success"):
             name = result.get("data", {}).get("light_name", params.name or params.type.value)
             light_names = {
-                "POINT": "点光源",
-                "SUN": "太阳光",
-                "SPOT": "聚光灯",
-                "AREA": "面光源"
+                "POINT": "Point Light",
+                "SUN": "Sun Light",
+                "SPOT": "Spot Light",
+                "AREA": "Area Light"
             }
-            return f"成功创建{light_names.get(params.type.value, params.type.value)} '{name}'，能量: {params.energy}W"
+            return f"Successfully created {light_names.get(params.type.value, params.type.value)} '{name}', energy: {params.energy}W"
         else:
-            return f"创建灯光失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to create light: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_light_set_properties",
         annotations={
-            "title": "设置灯光属性",
+            "title": "Set Light Properties",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -128,15 +128,15 @@ def register_lighting_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_light_set_properties(params: LightSetPropertiesInput) -> str:
-        """设置灯光属性。
-        
-        可以设置颜色、能量、阴影等属性。
-        
+        """Set light properties.
+
+        Can set color, energy, shadow, and other properties.
+
         Args:
-            params: 灯光名称和要设置的属性
-            
+            params: Light name and properties to set
+
         Returns:
-            设置结果
+            Setting result
         """
         properties = {}
         if params.color is not None:
@@ -153,24 +153,24 @@ def register_lighting_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             properties["shadow_soft_size"] = params.shadow_soft_size
         if params.use_shadow is not None:
             properties["use_shadow"] = params.use_shadow
-        
+
         if not properties:
-            return "没有指定任何属性"
-        
+            return "No properties specified"
+
         result = await server.execute_command(
             "lighting", "set_properties",
             {"light_name": params.light_name, "properties": properties}
         )
-        
+
         if result.get("success"):
-            return f"灯光 '{params.light_name}' 属性已更新"
+            return f"Light '{params.light_name}' properties updated"
         else:
-            return f"设置灯光属性失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to set light properties: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_light_delete",
         annotations={
-            "title": "删除灯光",
+            "title": "Delete Light",
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
@@ -178,28 +178,28 @@ def register_lighting_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_light_delete(params: LightDeleteInput) -> str:
-        """删除灯光。
-        
+        """Delete a light.
+
         Args:
-            params: 灯光名称
-            
+            params: Light name
+
         Returns:
-            删除结果
+            Deletion result
         """
         result = await server.execute_command(
             "lighting", "delete",
             {"light_name": params.light_name}
         )
-        
+
         if result.get("success"):
-            return f"已删除灯光 '{params.light_name}'"
+            return f"Deleted light '{params.light_name}'"
         else:
-            return f"删除灯光失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to delete light: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_hdri_setup",
         annotations={
-            "title": "设置 HDRI 环境光",
+            "title": "Set Up HDRI Environment Light",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -207,15 +207,15 @@ def register_lighting_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_hdri_setup(params: HDRISetupInput) -> str:
-        """设置 HDRI 环境光。
-        
-        加载 HDRI 图像作为场景的环境光照。
-        
+        """Set up HDRI environment lighting.
+
+        Load an HDRI image as the scene's environment lighting.
+
         Args:
-            params: HDRI 文件路径和设置
-            
+            params: HDRI file path and settings
+
         Returns:
-            设置结果
+            Setup result
         """
         result = await server.execute_command(
             "lighting", "hdri_setup",
@@ -225,8 +225,8 @@ def register_lighting_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "rotation": params.rotation
             }
         )
-        
+
         if result.get("success"):
-            return f"HDRI 环境光已设置，强度: {params.strength}"
+            return f"HDRI environment lighting set up, strength: {params.strength}"
         else:
-            return f"设置 HDRI 失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Failed to set up HDRI: {result.get('error', {}).get('message', 'Unknown error')}"

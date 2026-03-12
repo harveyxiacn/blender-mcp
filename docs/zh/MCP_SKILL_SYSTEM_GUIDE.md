@@ -2,7 +2,7 @@
 
 > **适用场景**: 任何拥有大量工具（>30个）的 MCP Server  
 > **核心收益**: 启动时减少 60-80% 的工具 schema 开销，节省 AI Context Window  
-> **验证状态**: 已在 Blender MCP 项目中实测通过（100工具→31启动+按需加载）
+> **验证状态**: 已在 Blender MCP 项目中实测通过（`focused` Profile 108 工具 → `skill` Profile 32 启动工具 + 按需加载）
 
 ---
 
@@ -21,8 +21,8 @@ MCP Server 注册的每个工具（Tool）都会以 JSON Schema 形式发送给 
 **Skill 系统解决方案**: 启动时只注册核心工具 + 几个元工具（meta-tools），AI 根据任务按需加载/卸载工具组。
 
 ```
-传统模式:  启动 → 注册全部 100 个工具 → AI 面对 100 个选择
-Skill 模式: 启动 → 注册 31 个核心工具 → AI 按需加载 → 用完卸载
+传统模式:  启动 → 注册全部 108 个 focused 工具 → AI 面对 108 个选择
+Skill 模式: 启动 → 注册 32 个启动工具 → AI 按需加载 → 用完卸载
 ```
 
 ---
@@ -280,7 +280,7 @@ SKILL_MODULES = CORE_MODULES + ["skills"]
 
 def get_enabled_modules():
     if TOOL_PROFILE == "skill":
-        return SKILL_MODULES       # ~31 个工具
+        return SKILL_MODULES       # ~32 个工具
     elif TOOL_PROFILE == "full":
         return ALL_MODULES          # ~300 个工具
 ```
@@ -424,7 +424,7 @@ MODULE_REGISTRY = {
 # AI 可以同时激活多个 Skill
 activate_skill("modeling")    # +38 工具
 activate_skill("materials")   # +17 工具
-# 此时共 31 + 38 + 17 = 86 个工具
+# 此时共 32 + 38 + 17 = 87 个工具
 
 # 用完后逐个卸载
 deactivate_skill("modeling")
@@ -459,7 +459,7 @@ def activate_skill(self, skill_name):
 
 | 指标 | 传统模式 (focused) | Skill 模式 | 改善 |
 |------|-------------------|------------|------|
-| 启动工具数 | 100 | 31 | **-69%** |
+| 启动工具数 | 108 | 32 | **-70%** |
 | 估算 Schema Tokens | ~20K | ~6K | **-70%** |
 | 工具选择准确率 | 一般 | 高 | AI 面对更少选项 |
 | 功能完整性 | 100% | 100% | 按需加载不丢功能 |
@@ -555,7 +555,7 @@ mcp._tool_manager.remove_tool(name)                # 移除
 ```
 src/blender_mcp/
 ├── server.py              # 添加 skill_manager 属性
-├── skill_manager.py       # SkillManager + 11 个 SKILL_DEFINITIONS
+├── skill_manager.py       # SkillManager + 12 个 SKILL_DEFINITIONS
 ├── tools_config.py        # "skill" Profile, SKILL_MODULES
 ├── tools/
 │   ├── __init__.py        # 注册 skills 模块

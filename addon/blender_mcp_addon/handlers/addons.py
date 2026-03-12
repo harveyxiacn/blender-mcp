@@ -1,7 +1,7 @@
 """
-插件管理处理器
+Addon management handler
 
-处理Blender插件管理命令。
+Handles Blender addon management commands.
 """
 
 from typing import Any, Dict
@@ -10,7 +10,7 @@ import addon_utils
 
 
 def handle_list(params: Dict[str, Any]) -> Dict[str, Any]:
-    """列出所有插件"""
+    """List all addons"""
     try:
         addons = []
         
@@ -18,7 +18,7 @@ def handle_list(params: Dict[str, Any]) -> Dict[str, Any]:
             name = mod.__name__
             bl_info = getattr(mod, "bl_info", {})
             
-            # 检查是否启用
+            # Check if enabled
             is_enabled = addon_utils.check(name)[0]
             
             addons.append({
@@ -47,7 +47,7 @@ def handle_list(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_enable(params: Dict[str, Any]) -> Dict[str, Any]:
-    """启用插件"""
+    """Enable an addon"""
     addon_name = params.get("addon_name")
     
     try:
@@ -69,7 +69,7 @@ def handle_enable(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_disable(params: Dict[str, Any]) -> Dict[str, Any]:
-    """禁用插件"""
+    """Disable an addon"""
     addon_name = params.get("addon_name")
     
     try:
@@ -91,7 +91,7 @@ def handle_disable(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_install(params: Dict[str, Any]) -> Dict[str, Any]:
-    """安装插件"""
+    """Install an addon"""
     filepath = params.get("filepath")
     overwrite = params.get("overwrite", True)
     enable = params.get("enable", True)
@@ -102,7 +102,7 @@ def handle_install(params: Dict[str, Any]) -> Dict[str, Any]:
             overwrite=overwrite
         )
         
-        # 获取安装的插件名称
+        # Get the installed addon name
         import os
         addon_name = os.path.splitext(os.path.basename(filepath))[0]
         
@@ -126,7 +126,7 @@ def handle_install(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_info(params: Dict[str, Any]) -> Dict[str, Any]:
-    """获取插件详细信息"""
+    """Get detailed addon information"""
     addon_name = params.get("addon_name")
     
     try:
@@ -156,7 +156,7 @@ def handle_info(params: Dict[str, Any]) -> Dict[str, Any]:
         
         return {
             "success": False,
-            "error": {"code": "NOT_FOUND", "message": f"插件不存在: {addon_name}"}
+            "error": {"code": "NOT_FOUND", "message": f"Addon not found: {addon_name}"}
         }
     
     except Exception as e:

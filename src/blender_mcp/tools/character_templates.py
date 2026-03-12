@@ -1,7 +1,7 @@
 """
-角色模板工具
+Character Template Tools
 
-提供预设角色模板创建、面部系统、服装系统、发型系统等功能。
+Provides preset character template creation, face system, clothing system, hair system, and more.
 """
 
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
@@ -13,82 +13,82 @@ if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class CharacterTemplateInput(BaseModel):
-    """角色模板输入"""
+    """Character template input"""
     template: str = Field(
         default="chibi",
-        description="模板类型: chibi(Q版), realistic(写实), anime(动漫), stylized(风格化), mascot(吉祥物)"
+        description="Template type: chibi, realistic, anime, stylized, mascot"
     )
-    name: str = Field(default="Character", description="角色名称")
-    height: float = Field(default=1.7, description="角色高度", ge=0.5, le=3.0)
-    location: Optional[List[float]] = Field(default=None, description="位置")
-    skin_color: Optional[List[float]] = Field(default=None, description="皮肤颜色 RGBA")
-    gender: str = Field(default="neutral", description="性别: male, female, neutral")
+    name: str = Field(default="Character", description="Character name")
+    height: float = Field(default=1.7, description="Character height", ge=0.5, le=3.0)
+    location: Optional[List[float]] = Field(default=None, description="Location")
+    skin_color: Optional[List[float]] = Field(default=None, description="Skin color RGBA")
+    gender: str = Field(default="neutral", description="Gender: male, female, neutral")
 
 
 class FaceExpressionInput(BaseModel):
-    """面部表情输入"""
-    character_name: str = Field(..., description="角色名称前缀")
+    """Face expression input"""
+    character_name: str = Field(..., description="Character name prefix")
     expression: str = Field(
         default="neutral",
-        description="表情: neutral, happy, sad, angry, surprised, wink, smile"
+        description="Expression: neutral, happy, sad, angry, surprised, wink, smile"
     )
-    intensity: float = Field(default=1.0, description="表情强度", ge=0.0, le=1.0)
+    intensity: float = Field(default=1.0, description="Expression intensity", ge=0.0, le=1.0)
 
 
 class FaceSetupInput(BaseModel):
-    """面部设置输入"""
-    character_name: str = Field(..., description="角色名称前缀")
-    eye_size: float = Field(default=1.0, description="眼睛大小", ge=0.5, le=2.0)
-    eye_spacing: float = Field(default=1.0, description="眼睛间距", ge=0.5, le=1.5)
-    mouth_width: float = Field(default=1.0, description="嘴巴宽度", ge=0.5, le=1.5)
-    nose_size: float = Field(default=1.0, description="鼻子大小", ge=0.5, le=1.5)
+    """Face setup input"""
+    character_name: str = Field(..., description="Character name prefix")
+    eye_size: float = Field(default=1.0, description="Eye size", ge=0.5, le=2.0)
+    eye_spacing: float = Field(default=1.0, description="Eye spacing", ge=0.5, le=1.5)
+    mouth_width: float = Field(default=1.0, description="Mouth width", ge=0.5, le=1.5)
+    nose_size: float = Field(default=1.0, description="Nose size", ge=0.5, le=1.5)
 
 
 class ClothingAddInput(BaseModel):
-    """添加服装输入"""
-    character_name: str = Field(..., description="角色名称前缀")
+    """Add clothing input"""
+    character_name: str = Field(..., description="Character name prefix")
     clothing_type: str = Field(
         default="shirt",
-        description="服装类型: shirt, pants, jacket, dress, uniform, sportswear"
+        description="Clothing type: shirt, pants, jacket, dress, uniform, sportswear"
     )
-    color: Optional[List[float]] = Field(default=None, description="颜色 RGBA")
-    style: str = Field(default="casual", description="风格: casual, formal, sport, fantasy")
+    color: Optional[List[float]] = Field(default=None, description="Color RGBA")
+    style: str = Field(default="casual", description="Style: casual, formal, sport, fantasy")
 
 
 class HairCreateInput(BaseModel):
-    """创建发型输入"""
-    character_name: str = Field(..., description="角色名称前缀")
+    """Create hair input"""
+    character_name: str = Field(..., description="Character name prefix")
     hair_style: str = Field(
         default="short",
-        description="发型: short, medium, long, ponytail, braided, spiky, bald"
+        description="Hair style: short, medium, long, ponytail, braided, spiky, bald"
     )
-    color: Optional[List[float]] = Field(default=None, description="发色 RGBA")
-    volume: float = Field(default=1.0, description="蓬松度", ge=0.5, le=2.0)
+    color: Optional[List[float]] = Field(default=None, description="Hair color RGBA")
+    volume: float = Field(default=1.0, description="Volume", ge=0.5, le=2.0)
 
 
 class AccessoryAddInput(BaseModel):
-    """添加配饰输入"""
-    character_name: str = Field(..., description="角色名称前缀")
+    """Add accessory input"""
+    character_name: str = Field(..., description="Character name prefix")
     accessory_type: str = Field(
         default="glasses",
-        description="配饰类型: glasses, hat, earrings, necklace, watch, medal, badge"
+        description="Accessory type: glasses, hat, earrings, necklace, watch, medal, badge"
     )
-    color: Optional[List[float]] = Field(default=None, description="颜色 RGBA")
-    location: str = Field(default="auto", description="位置: auto, head, neck, wrist, chest")
+    color: Optional[List[float]] = Field(default=None, description="Color RGBA")
+    location: str = Field(default="auto", description="Location: auto, head, neck, wrist, chest")
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_character_template_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册角色模板工具"""
-    
+    """Register character template tools"""
+
     @mcp.tool(
         name="blender_character_template_create",
         annotations={
-            "title": "从模板创建角色",
+            "title": "Create Character from Template",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -96,20 +96,20 @@ def register_character_template_tools(mcp: FastMCP, server: "BlenderMCPServer") 
         }
     )
     async def blender_character_template_create(params: CharacterTemplateInput) -> str:
-        """从预设模板创建角色。
-        
-        支持的模板:
-        - chibi: Q版可爱风格，大头小身体
-        - realistic: 写实人体比例
-        - anime: 动漫风格
-        - stylized: 风格化卡通
-        - mascot: 吉祥物风格
-        
+        """Create a character from a preset template.
+
+        Supported templates:
+        - chibi: Cute chibi style, big head small body
+        - realistic: Realistic human proportions
+        - anime: Anime style
+        - stylized: Stylized cartoon
+        - mascot: Mascot style
+
         Args:
-            params: 模板类型、名称、尺寸等
-            
+            params: Template type, name, size, etc.
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "character_template", "create",
@@ -122,17 +122,17 @@ def register_character_template_tools(mcp: FastMCP, server: "BlenderMCPServer") 
                 "gender": params.gender
             }
         )
-        
+
         if result.get("success"):
             parts = result.get("data", {}).get("parts_created", 0)
-            return f"成功创建 {params.template} 风格角色 '{params.name}'，共 {parts} 个部件"
+            return f"Successfully created {params.template} style character '{params.name}' with {parts} parts"
         else:
-            return f"创建失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Creation failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_character_face_expression",
         annotations={
-            "title": "设置面部表情",
+            "title": "Set Facial Expression",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -140,13 +140,13 @@ def register_character_template_tools(mcp: FastMCP, server: "BlenderMCPServer") 
         }
     )
     async def blender_character_face_expression(params: FaceExpressionInput) -> str:
-        """设置角色面部表情。
-        
+        """Set a character's facial expression.
+
         Args:
-            params: 角色名称、表情类型、强度
-            
+            params: Character name, expression type, intensity
+
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "character_template", "face_expression",
@@ -156,16 +156,16 @@ def register_character_template_tools(mcp: FastMCP, server: "BlenderMCPServer") 
                 "intensity": params.intensity
             }
         )
-        
+
         if result.get("success"):
-            return f"已将 '{params.character_name}' 的表情设置为 {params.expression}"
+            return f"Set expression of '{params.character_name}' to {params.expression}"
         else:
-            return f"设置失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Setting failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_character_face_setup",
         annotations={
-            "title": "调整面部特征",
+            "title": "Adjust Face Features",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -173,13 +173,13 @@ def register_character_template_tools(mcp: FastMCP, server: "BlenderMCPServer") 
         }
     )
     async def blender_character_face_setup(params: FaceSetupInput) -> str:
-        """调整角色面部特征比例。
-        
+        """Adjust a character's face feature proportions.
+
         Args:
-            params: 眼睛大小、间距、嘴巴宽度等
-            
+            params: Eye size, spacing, mouth width, etc.
+
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "character_template", "face_setup",
@@ -191,16 +191,16 @@ def register_character_template_tools(mcp: FastMCP, server: "BlenderMCPServer") 
                 "nose_size": params.nose_size
             }
         )
-        
+
         if result.get("success"):
-            return f"已调整 '{params.character_name}' 的面部特征"
+            return f"Adjusted face features for '{params.character_name}'"
         else:
-            return f"调整失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Adjustment failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_character_clothing_add",
         annotations={
-            "title": "添加服装",
+            "title": "Add Clothing",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -208,13 +208,13 @@ def register_character_template_tools(mcp: FastMCP, server: "BlenderMCPServer") 
         }
     )
     async def blender_character_clothing_add(params: ClothingAddInput) -> str:
-        """为角色添加服装。
-        
+        """Add clothing to a character.
+
         Args:
-            params: 服装类型、颜色、风格
-            
+            params: Clothing type, color, style
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "character_template", "clothing_add",
@@ -225,16 +225,16 @@ def register_character_template_tools(mcp: FastMCP, server: "BlenderMCPServer") 
                 "style": params.style
             }
         )
-        
+
         if result.get("success"):
-            return f"已为 '{params.character_name}' 添加 {params.clothing_type}"
+            return f"Added {params.clothing_type} to '{params.character_name}'"
         else:
-            return f"添加失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Addition failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_character_hair_create",
         annotations={
-            "title": "创建发型",
+            "title": "Create Hair Style",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -242,13 +242,13 @@ def register_character_template_tools(mcp: FastMCP, server: "BlenderMCPServer") 
         }
     )
     async def blender_character_hair_create(params: HairCreateInput) -> str:
-        """为角色创建发型。
-        
+        """Create a hair style for a character.
+
         Args:
-            params: 发型类型、颜色、蓬松度
-            
+            params: Hair style type, color, volume
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "character_template", "hair_create",
@@ -259,16 +259,16 @@ def register_character_template_tools(mcp: FastMCP, server: "BlenderMCPServer") 
                 "volume": params.volume
             }
         )
-        
+
         if result.get("success"):
-            return f"已为 '{params.character_name}' 创建 {params.hair_style} 发型"
+            return f"Created {params.hair_style} hair style for '{params.character_name}'"
         else:
-            return f"创建失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Creation failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_character_accessory_add",
         annotations={
-            "title": "添加配饰",
+            "title": "Add Accessory",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -276,13 +276,13 @@ def register_character_template_tools(mcp: FastMCP, server: "BlenderMCPServer") 
         }
     )
     async def blender_character_accessory_add(params: AccessoryAddInput) -> str:
-        """为角色添加配饰（眼镜、帽子、首饰等）。
-        
+        """Add an accessory to a character (glasses, hat, jewelry, etc.).
+
         Args:
-            params: 配饰类型、颜色、位置
-            
+            params: Accessory type, color, location
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "character_template", "accessory_add",
@@ -293,8 +293,8 @@ def register_character_template_tools(mcp: FastMCP, server: "BlenderMCPServer") 
                 "location": params.location
             }
         )
-        
+
         if result.get("success"):
-            return f"已为 '{params.character_name}' 添加 {params.accessory_type}"
+            return f"Added {params.accessory_type} to '{params.character_name}'"
         else:
-            return f"添加失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Addition failed: {result.get('error', {}).get('message', 'unknown error')}"

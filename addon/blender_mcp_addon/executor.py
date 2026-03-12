@@ -1,8 +1,8 @@
 """
-命令执行器
+Command Executor
 
-解析并执行 MCP 命令，调用相应的 Blender 操作。
-使用懒加载避免启动时循环导入。
+Parses and executes MCP commands, invoking the corresponding Blender operations.
+Uses lazy loading to avoid circular imports at startup.
 """
 
 from typing import Any, Dict
@@ -14,10 +14,10 @@ from .handlers import get_handler
 
 
 class CommandExecutor:
-    """命令执行器 - 使用懒加载按需导入处理器模块"""
+    """Command executor - uses lazy loading to import handler modules on demand"""
     
     def __init__(self):
-        """初始化执行器"""
+        """Initialize the executor"""
         pass
     
     def execute(
@@ -26,18 +26,18 @@ class CommandExecutor:
         action: str,
         params: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """执行命令
-        
+        """Execute a command
+
         Args:
-            category: 命令类别
-            action: 具体操作
-            params: 操作参数
-            
+            category: Command category
+            action: Specific action
+            params: Action parameters
+
         Returns:
-            执行结果
+            Execution result
         """
         try:
-            # 系统命令由自己处理
+            # System commands are handled internally
             if category == "system":
                 method_name = f"handle_{action}"
                 method = getattr(self, method_name, None)
@@ -46,23 +46,23 @@ class CommandExecutor:
                         "success": False,
                         "error": {
                             "code": "UNKNOWN_ACTION",
-                            "message": f"未知的操作: system.{action}"
+                            "message": f"Unknown action: system.{action}"
                         }
                     }
                 return method(params)
             
-            # 懒加载获取处理器
+            # Lazy load the handler
             handler = get_handler(category)
             if handler is None:
                 return {
                     "success": False,
                     "error": {
                         "code": "UNKNOWN_CATEGORY",
-                        "message": f"未知的命令类别: {category}"
+                        "message": f"Unknown command category: {category}"
                     }
                 }
             
-            # 获取操作方法
+            # Get the action method
             method_name = f"handle_{action}"
             method = getattr(handler, method_name, None)
             
@@ -71,11 +71,11 @@ class CommandExecutor:
                     "success": False,
                     "error": {
                         "code": "UNKNOWN_ACTION",
-                        "message": f"未知的操作: {category}.{action}"
+                        "message": f"Unknown action: {category}.{action}"
                     }
                 }
             
-            # 执行操作
+            # Execute the action
             result = method(params)
             
             return result
@@ -90,9 +90,9 @@ class CommandExecutor:
                 }
             }
     
-    # 系统命令处理
+    # System command handlers
     def handle_get_info(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """获取 Blender 信息"""
+        """Get Blender information"""
         return {
             "success": True,
             "data": {
@@ -105,10 +105,10 @@ class CommandExecutor:
         }
     
     def handle_execute_python(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """在 Blender 中执行 Python 代码（含安全检查）"""
+        """Execute Python code in Blender (with safety checks)"""
         code = params.get("code", "")
         if not code:
-            return {"success": False, "error": {"code": "MISSING_CODE", "message": "缺少code参数"}}
+            return {"success": False, "error": {"code": "MISSING_CODE", "message": "Missing 'code' parameter"}}
         
         from .handlers.utility import _check_code_safety
         warning = _check_code_safety(code)

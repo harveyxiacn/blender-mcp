@@ -1,5 +1,5 @@
 """
-操作符模块
+Operators module
 """
 
 import bpy
@@ -9,40 +9,40 @@ from .. import server
 
 
 class MCP_OT_StartServer(bpy.types.Operator):
-    """启动 MCP 服务器"""
+    """Start the MCP server"""
     bl_idname = "mcp.start_server"
-    bl_label = "启动 MCP 服务器"
-    bl_description = "启动 MCP 通信服务器"
+    bl_label = "Start MCP Server"
+    bl_description = "Start the MCP communication server"
     
     def execute(self, context):
         prefs = context.preferences.addons.get("blender_mcp_addon")
         port = prefs.preferences.port if prefs else 9876
         
         if server.start_server(port=port):
-            self.report({'INFO'}, f"MCP 服务器已启动，端口: {port}")
+            self.report({'INFO'}, f"MCP server started on port: {port}")
         else:
-            self.report({'ERROR'}, "MCP 服务器启动失败")
+            self.report({'ERROR'}, "Failed to start MCP server")
         
         return {'FINISHED'}
 
 
 class MCP_OT_StopServer(bpy.types.Operator):
-    """停止 MCP 服务器"""
+    """Stop the MCP server"""
     bl_idname = "mcp.stop_server"
-    bl_label = "停止 MCP 服务器"
-    bl_description = "停止 MCP 通信服务器"
+    bl_label = "Stop MCP Server"
+    bl_description = "Stop the MCP communication server"
     
     def execute(self, context):
         server.stop_server()
-        self.report({'INFO'}, "MCP 服务器已停止")
+        self.report({'INFO'}, "MCP server stopped")
         return {'FINISHED'}
 
 
 class MCP_OT_RestartServer(bpy.types.Operator):
-    """重启 MCP 服务器"""
+    """Restart the MCP server"""
     bl_idname = "mcp.restart_server"
-    bl_label = "重启 MCP 服务器"
-    bl_description = "重启 MCP 通信服务器"
+    bl_label = "Restart MCP Server"
+    bl_description = "Restart the MCP communication server"
     
     def execute(self, context):
         server.stop_server()
@@ -51,21 +51,21 @@ class MCP_OT_RestartServer(bpy.types.Operator):
         port = prefs.preferences.port if prefs else 9876
         
         if server.start_server(port=port):
-            self.report({'INFO'}, f"MCP 服务器已重启，端口: {port}")
+            self.report({'INFO'}, f"MCP server restarted on port: {port}")
         else:
-            self.report({'ERROR'}, "MCP 服务器重启失败")
+            self.report({'ERROR'}, "Failed to restart MCP server")
         
         return {'FINISHED'}
 
 
 class MCP_OT_HotReload(bpy.types.Operator):
-    """热更新 - 从源代码目录更新addon"""
+    """Hot Reload - Update addon from source directory"""
     bl_idname = "mcp.hot_reload"
-    bl_label = "热更新"
-    bl_description = "从开发源代码目录更新addon代码并重新加载"
+    bl_label = "Hot Reload"
+    bl_description = "Update addon code from the development source directory and reload"
     
     def execute(self, context):
-        # 导入热更新函数
+        # Import hot reload function
         from .. import hot_reload
         
         success, message = hot_reload()

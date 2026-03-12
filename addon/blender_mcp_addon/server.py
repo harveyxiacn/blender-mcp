@@ -1,7 +1,7 @@
 """
-MCP 通信服务器
+MCP Communication Server
 
-在 Blender 中运行的 Socket 服务器，接收并处理 MCP 命令。
+A socket server running inside Blender that receives and processes MCP commands.
 """
 
 import json
@@ -16,7 +16,7 @@ from .executor import CommandExecutor
 
 
 class MCPServer:
-    """MCP Socket 服务器"""
+    """MCP Socket Server"""
     
     def __init__(self, host: str = "127.0.0.1", port: int = 9876):
         self.host = host
@@ -28,7 +28,7 @@ class MCPServer:
         self.clients: list = []
     
     def start(self) -> bool:
-        """启动服务器"""
+        """Start the server"""
         if self.running:
             return True
         
@@ -37,25 +37,25 @@ class MCPServer:
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.socket.bind((self.host, self.port))
             self.socket.listen(5)
-            self.socket.settimeout(1.0)  # 允许定期检查停止信号
+            self.socket.settimeout(1.0)  # Allow periodic checking of stop signal
             
             self.running = True
             self.thread = threading.Thread(target=self._server_loop, daemon=True)
             self.thread.start()
             
-            print(f"[MCP] 服务器已启动: {self.host}:{self.port}")
+            print(f"[MCP] Server started: {self.host}:{self.port}")
             return True
             
         except Exception as e:
-            print(f"[MCP] 启动服务器失败: {e}")
+            print(f"[MCP] Failed to start server: {e}")
             self.running = False
             return False
     
     def stop(self):
-        """停止服务器"""
+        """Stop the server"""
         self.running = False
         
-        # 关闭所有客户端连接
+        # Close all client connections
         for client in self.clients:
             try:
                 client.close()
@@ -63,7 +63,7 @@ class MCPServer:
                 pass
         self.clients.clear()
         
-        # 关闭服务器 socket
+        # Close the server socket
         if self.socket:
             try:
                 self.socket.close()
@@ -71,22 +71,22 @@ class MCPServer:
                 pass
             self.socket = None
         
-        # 等待线程结束
+        # Wait for the thread to finish
         if self.thread and self.thread.is_alive():
             self.thread.join(timeout=2.0)
         
-        print("[MCP] 服务器已停止")
+        print("[MCP] Server stopped")
     
     def _server_loop(self):
-        """服务器主循环"""
+        """Server main loop"""
         while self.running and self.socket:
             try:
                 client_socket, address = self.socket.accept()
-                print(f"[MCP] 客户端连接: {address}")
+                print(f"[MCP] Client connected: {address}")
                 
                 self.clients.append(client_socket)
                 
-                # 为每个客户端创建处理线程
+                # Create a handler thread for each client
                 client_thread = threading.Thread(
                     target=self._handle_client,
                     args=(client_socket, address),
@@ -98,10 +98,10 @@ class MCPServer:
                 continue
             except Exception as e:
                 if self.running:
-                    print(f"[MCP] 接受连接错误: {e}")
+                    print(f"[MCP] Error accepting connection: {e}")
     
     def _handle_client(self, client_socket: socket.socket, address):
-        """处理客户端连接"""
+        """Handle a client connection"""
         buffer = ""
         
         try:
@@ -113,7 +113,7 @@ class MCPServer:
                     
                     buffer += data.decode("utf-8")
                     
-                    # 处理完整的 JSON 消息（以换行符分隔）
+                    # Process complete JSON messages (delimited by newlines)
                     while "\n" in buffer:
                         line, buffer = buffer.split("\n", 1)
                         if line.strip():
@@ -124,7 +124,7 @@ class MCPServer:
                 except socket.timeout:
                     continue
                 except Exception as e:
-                    print(f"[MCP] 处理消息错误: {e}")
+                    print(f"[MCP] Error processing message: {e}")
                     traceback.print_exc()
                     break
                     
@@ -137,10 +137,10 @@ class MCPServer:
             if client_socket in self.clients:
                 self.clients.remove(client_socket)
             
-            print(f"[MCP] 客户端断开: {address}")
+            print(f"[MCP] Client disconnected: {address}")
     
     def _process_message(self, message: str) -> Dict[str, Any]:
-        """处理收到的消息"""
+        """Process a received message"""
         try:
             request = json.loads(message)
             request_id = request.get("id", "unknown")
@@ -151,7 +151,7 @@ class MCPServer:
                 action = request.get("action", "")
                 params = request.get("params", {})
                 
-                # 在主线程中执行 Blender 操作
+                # Execute Blender operations in the main thread
                 result = self._execute_in_main_thread(category, action, params)
                 
                 return {
@@ -165,7 +165,7 @@ class MCPServer:
                     "success": False,
                     "error": {
                         "code": "UNKNOWN_MESSAGE_TYPE",
-                        "message": f"未知的消息类型: {msg_type}"
+                        "message": f"Unknown message type: {msg_type}"
                     }
                 }
                 
@@ -175,7 +175,7 @@ class MCPServer:
                 "success": False,
                 "error": {
                     "code": "INVALID_JSON",
-                    "message": f"无效的 JSON: {e}"
+                    "message": f"Invalid JSON: {e}"
                 }
             }
         except Exception as e:
@@ -194,7 +194,7 @@ class MCPServer:
         action: str,
         params: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """在 Blender 主线程中执行命令"""
+        """Execute a command in Blender's main thread"""
         import time
         
         done_event = threading.Event()
@@ -229,19 +229,19 @@ class MCPServer:
                 "success": False,
                 "error": {
                     "code": "TIMEOUT",
-                    "message": "命令执行超时"
+                    "message": "Command execution timed out"
                 }
             }
         
         return result_container["result"]
 
 
-# 全局服务器实例
+# Global server instance
 _server: Optional[MCPServer] = None
 
 
 def start_server(host: str = "127.0.0.1", port: int = 9876) -> bool:
-    """启动 MCP 服务器"""
+    """Start the MCP server"""
     global _server
     
     if _server and _server.running:
@@ -252,7 +252,7 @@ def start_server(host: str = "127.0.0.1", port: int = 9876) -> bool:
 
 
 def stop_server():
-    """停止 MCP 服务器"""
+    """Stop the MCP server"""
     global _server
     
     if _server:
@@ -261,10 +261,10 @@ def stop_server():
 
 
 def is_running() -> bool:
-    """检查服务器是否运行中"""
+    """Check if the server is running"""
     return _server is not None and _server.running
 
 
 def get_port() -> int:
-    """获取当前端口"""
+    """Get the current port"""
     return _server.port if _server else 9876

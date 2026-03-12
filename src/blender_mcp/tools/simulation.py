@@ -1,7 +1,7 @@
 """
-高级模拟工具
+Advanced simulation tools
 
-提供流体、烟雾、海洋等高级模拟的MCP工具。
+Provides MCP tools for fluid, smoke, ocean, and other advanced simulations.
 """
 
 from typing import Any, Dict, List, Optional
@@ -9,86 +9,86 @@ from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
 
 
-# ============ Pydantic 模型 ============
+# ============ Pydantic Models ============
 
 class FluidDomainInput(BaseModel):
-    """流体域设置"""
-    object_name: str = Field(..., description="对象名称")
-    domain_type: str = Field("LIQUID", description="域类型: LIQUID, GAS")
-    resolution: int = Field(64, description="分辨率")
-    use_adaptive_domain: bool = Field(False, description="自适应域")
+    """Fluid domain settings"""
+    object_name: str = Field(..., description="Object name")
+    domain_type: str = Field("LIQUID", description="Domain type: LIQUID, GAS")
+    resolution: int = Field(64, description="Resolution")
+    use_adaptive_domain: bool = Field(False, description="Adaptive domain")
 
 
 class FluidFlowInput(BaseModel):
-    """流体流入/流出"""
-    object_name: str = Field(..., description="对象名称")
-    flow_type: str = Field("INFLOW", description="类型: INFLOW, OUTFLOW, GEOMETRY")
-    flow_behavior: str = Field("GEOMETRY", description="行为: INFLOW, OUTFLOW, GEOMETRY")
-    use_initial_velocity: bool = Field(False, description="使用初始速度")
-    velocity: List[float] = Field([0, 0, 0], description="速度 [x, y, z]")
+    """Fluid inflow/outflow"""
+    object_name: str = Field(..., description="Object name")
+    flow_type: str = Field("INFLOW", description="Type: INFLOW, OUTFLOW, GEOMETRY")
+    flow_behavior: str = Field("GEOMETRY", description="Behavior: INFLOW, OUTFLOW, GEOMETRY")
+    use_initial_velocity: bool = Field(False, description="Use initial velocity")
+    velocity: List[float] = Field([0, 0, 0], description="Velocity [x, y, z]")
 
 
 class FluidEffectorInput(BaseModel):
-    """流体效果器"""
-    object_name: str = Field(..., description="对象名称")
-    effector_type: str = Field("COLLISION", description="类型: COLLISION, GUIDE")
+    """Fluid effector"""
+    object_name: str = Field(..., description="Object name")
+    effector_type: str = Field("COLLISION", description="Type: COLLISION, GUIDE")
 
 
 class SmokeDomainInput(BaseModel):
-    """烟雾/火焰域"""
-    object_name: str = Field(..., description="对象名称")
-    smoke_type: str = Field("SMOKE", description="类型: SMOKE, FIRE, BOTH")
-    resolution: int = Field(32, description="分辨率")
-    use_high_resolution: bool = Field(False, description="高分辨率")
+    """Smoke/fire domain"""
+    object_name: str = Field(..., description="Object name")
+    smoke_type: str = Field("SMOKE", description="Type: SMOKE, FIRE, BOTH")
+    resolution: int = Field(32, description="Resolution")
+    use_high_resolution: bool = Field(False, description="High resolution")
 
 
 class SmokeFlowInput(BaseModel):
-    """烟雾流入"""
-    object_name: str = Field(..., description="对象名称")
-    flow_type: str = Field("SMOKE", description="类型: SMOKE, FIRE, BOTH")
-    temperature: float = Field(1.0, description="温度")
-    density: float = Field(1.0, description="密度")
-    smoke_color: List[float] = Field([1, 1, 1], description="烟雾颜色")
+    """Smoke flow emitter"""
+    object_name: str = Field(..., description="Object name")
+    flow_type: str = Field("SMOKE", description="Type: SMOKE, FIRE, BOTH")
+    temperature: float = Field(1.0, description="Temperature")
+    density: float = Field(1.0, description="Density")
+    smoke_color: List[float] = Field([1, 1, 1], description="Smoke color")
 
 
 class OceanModifierInput(BaseModel):
-    """海洋修改器"""
-    object_name: str = Field(..., description="对象名称")
-    resolution: int = Field(7, description="分辨率 (2^n)")
-    spatial_size: int = Field(50, description="空间大小")
-    wave_scale: float = Field(1.0, description="波浪缩放")
-    choppiness: float = Field(1.0, description="波涛汹涌度")
-    wind_velocity: float = Field(30.0, description="风速")
-    use_foam: bool = Field(False, description="使用泡沫")
+    """Ocean modifier"""
+    object_name: str = Field(..., description="Object name")
+    resolution: int = Field(7, description="Resolution (2^n)")
+    spatial_size: int = Field(50, description="Spatial size")
+    wave_scale: float = Field(1.0, description="Wave scale")
+    choppiness: float = Field(1.0, description="Choppiness")
+    wind_velocity: float = Field(30.0, description="Wind velocity")
+    use_foam: bool = Field(False, description="Use foam")
 
 
 class DynamicPaintCanvasInput(BaseModel):
-    """动态绘制画布"""
-    object_name: str = Field(..., description="对象名称")
-    surface_type: str = Field("PAINT", description="类型: PAINT, DISPLACE, WAVE, WEIGHT")
-    use_dissolve: bool = Field(False, description="使用溶解")
-    dissolve_speed: int = Field(80, description="溶解速度")
+    """Dynamic paint canvas"""
+    object_name: str = Field(..., description="Object name")
+    surface_type: str = Field("PAINT", description="Type: PAINT, DISPLACE, WAVE, WEIGHT")
+    use_dissolve: bool = Field(False, description="Use dissolve")
+    dissolve_speed: int = Field(80, description="Dissolve speed")
 
 
 class DynamicPaintBrushInput(BaseModel):
-    """动态绘制笔刷"""
-    object_name: str = Field(..., description="对象名称")
-    paint_color: List[float] = Field([1, 0, 0], description="绘制颜色")
-    paint_alpha: float = Field(1.0, description="透明度")
+    """Dynamic paint brush"""
+    object_name: str = Field(..., description="Object name")
+    paint_color: List[float] = Field([1, 0, 0], description="Paint color")
+    paint_alpha: float = Field(1.0, description="Alpha")
 
 
 class SimulationBakeInput(BaseModel):
-    """烘焙模拟"""
-    object_name: str = Field(..., description="域对象名称")
-    frame_start: int = Field(1, description="开始帧")
-    frame_end: int = Field(250, description="结束帧")
+    """Bake simulation"""
+    object_name: str = Field(..., description="Domain object name")
+    frame_start: int = Field(1, description="Start frame")
+    frame_end: int = Field(250, description="End frame")
 
 
-# ============ 工具注册 ============
+# ============ Tool Registration ============
 
 def register_simulation_tools(mcp: FastMCP, server):
-    """注册高级模拟工具"""
-    
+    """Register advanced simulation tools"""
+
     @mcp.tool()
     async def blender_sim_fluid_domain(
         object_name: str,
@@ -97,13 +97,13 @@ def register_simulation_tools(mcp: FastMCP, server):
         use_adaptive_domain: bool = False
     ) -> Dict[str, Any]:
         """
-        设置流体域
-        
+        Set up fluid domain
+
         Args:
-            object_name: 域对象名称（通常是包围盒）
-            domain_type: 域类型 (LIQUID液体 或 GAS气体)
-            resolution: 模拟分辨率
-            use_adaptive_domain: 是否使用自适应域
+            object_name: Domain object name (usually a bounding box)
+            domain_type: Domain type (LIQUID or GAS)
+            resolution: Simulation resolution
+            use_adaptive_domain: Whether to use adaptive domain
         """
         params = FluidDomainInput(
             object_name=object_name,
@@ -112,7 +112,7 @@ def register_simulation_tools(mcp: FastMCP, server):
             use_adaptive_domain=use_adaptive_domain
         )
         return await server.send_command("simulation", "fluid_domain", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_sim_fluid_flow(
         object_name: str,
@@ -122,14 +122,14 @@ def register_simulation_tools(mcp: FastMCP, server):
         velocity: List[float] = [0, 0, 0]
     ) -> Dict[str, Any]:
         """
-        设置流体流入/流出
-        
+        Set up fluid inflow/outflow
+
         Args:
-            object_name: 流体源对象名称
-            flow_type: 流类型 (INFLOW, OUTFLOW, GEOMETRY)
-            flow_behavior: 流行为
-            use_initial_velocity: 使用初始速度
-            velocity: 速度向量 [x, y, z]
+            object_name: Fluid source object name
+            flow_type: Flow type (INFLOW, OUTFLOW, GEOMETRY)
+            flow_behavior: Flow behavior
+            use_initial_velocity: Use initial velocity
+            velocity: Velocity vector [x, y, z]
         """
         params = FluidFlowInput(
             object_name=object_name,
@@ -139,25 +139,25 @@ def register_simulation_tools(mcp: FastMCP, server):
             velocity=velocity
         )
         return await server.send_command("simulation", "fluid_flow", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_sim_fluid_effector(
         object_name: str,
         effector_type: str = "COLLISION"
     ) -> Dict[str, Any]:
         """
-        设置流体效果器（碰撞体）
-        
+        Set up fluid effector (collision body)
+
         Args:
-            object_name: 效果器对象名称
-            effector_type: 效果器类型 (COLLISION, GUIDE)
+            object_name: Effector object name
+            effector_type: Effector type (COLLISION, GUIDE)
         """
         params = FluidEffectorInput(
             object_name=object_name,
             effector_type=effector_type
         )
         return await server.send_command("simulation", "fluid_effector", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_sim_smoke_domain(
         object_name: str,
@@ -166,13 +166,13 @@ def register_simulation_tools(mcp: FastMCP, server):
         use_high_resolution: bool = False
     ) -> Dict[str, Any]:
         """
-        设置烟雾/火焰域
-        
+        Set up smoke/fire domain
+
         Args:
-            object_name: 域对象名称
-            smoke_type: 类型 (SMOKE, FIRE, BOTH)
-            resolution: 基础分辨率
-            use_high_resolution: 使用高分辨率
+            object_name: Domain object name
+            smoke_type: Type (SMOKE, FIRE, BOTH)
+            resolution: Base resolution
+            use_high_resolution: Use high resolution
         """
         params = SmokeDomainInput(
             object_name=object_name,
@@ -181,7 +181,7 @@ def register_simulation_tools(mcp: FastMCP, server):
             use_high_resolution=use_high_resolution
         )
         return await server.send_command("simulation", "smoke_domain", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_sim_smoke_flow(
         object_name: str,
@@ -191,14 +191,14 @@ def register_simulation_tools(mcp: FastMCP, server):
         smoke_color: List[float] = [1, 1, 1]
     ) -> Dict[str, Any]:
         """
-        设置烟雾/火焰发射器
-        
+        Set up smoke/fire emitter
+
         Args:
-            object_name: 发射器对象名称
-            flow_type: 流类型 (SMOKE, FIRE, BOTH)
-            temperature: 温度
-            density: 密度
-            smoke_color: 烟雾颜色 [R, G, B]
+            object_name: Emitter object name
+            flow_type: Flow type (SMOKE, FIRE, BOTH)
+            temperature: Temperature
+            density: Density
+            smoke_color: Smoke color [R, G, B]
         """
         params = SmokeFlowInput(
             object_name=object_name,
@@ -208,7 +208,7 @@ def register_simulation_tools(mcp: FastMCP, server):
             smoke_color=smoke_color
         )
         return await server.send_command("simulation", "smoke_flow", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_sim_ocean(
         object_name: str,
@@ -220,16 +220,16 @@ def register_simulation_tools(mcp: FastMCP, server):
         use_foam: bool = False
     ) -> Dict[str, Any]:
         """
-        添加海洋修改器
-        
+        Add ocean modifier
+
         Args:
-            object_name: 对象名称（通常是平面）
-            resolution: 分辨率 (2^n)
-            spatial_size: 空间大小
-            wave_scale: 波浪缩放
-            choppiness: 波涛汹涌度
-            wind_velocity: 风速
-            use_foam: 是否生成泡沫
+            object_name: Object name (usually a plane)
+            resolution: Resolution (2^n)
+            spatial_size: Spatial size
+            wave_scale: Wave scale
+            choppiness: Choppiness
+            wind_velocity: Wind velocity
+            use_foam: Whether to generate foam
         """
         params = OceanModifierInput(
             object_name=object_name,
@@ -241,7 +241,7 @@ def register_simulation_tools(mcp: FastMCP, server):
             use_foam=use_foam
         )
         return await server.send_command("simulation", "ocean", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_sim_dynamic_paint_canvas(
         object_name: str,
@@ -250,13 +250,13 @@ def register_simulation_tools(mcp: FastMCP, server):
         dissolve_speed: int = 80
     ) -> Dict[str, Any]:
         """
-        设置动态绘制画布
-        
+        Set up dynamic paint canvas
+
         Args:
-            object_name: 画布对象名称
-            surface_type: 表面类型 (PAINT, DISPLACE, WAVE, WEIGHT)
-            use_dissolve: 使用溶解效果
-            dissolve_speed: 溶解速度
+            object_name: Canvas object name
+            surface_type: Surface type (PAINT, DISPLACE, WAVE, WEIGHT)
+            use_dissolve: Use dissolve effect
+            dissolve_speed: Dissolve speed
         """
         params = DynamicPaintCanvasInput(
             object_name=object_name,
@@ -265,7 +265,7 @@ def register_simulation_tools(mcp: FastMCP, server):
             dissolve_speed=dissolve_speed
         )
         return await server.send_command("simulation", "dynamic_paint_canvas", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_sim_dynamic_paint_brush(
         object_name: str,
@@ -273,12 +273,12 @@ def register_simulation_tools(mcp: FastMCP, server):
         paint_alpha: float = 1.0
     ) -> Dict[str, Any]:
         """
-        设置动态绘制笔刷
-        
+        Set up dynamic paint brush
+
         Args:
-            object_name: 笔刷对象名称
-            paint_color: 绘制颜色 [R, G, B]
-            paint_alpha: 透明度
+            object_name: Brush object name
+            paint_color: Paint color [R, G, B]
+            paint_alpha: Alpha
         """
         params = DynamicPaintBrushInput(
             object_name=object_name,
@@ -286,7 +286,7 @@ def register_simulation_tools(mcp: FastMCP, server):
             paint_alpha=paint_alpha
         )
         return await server.send_command("simulation", "dynamic_paint_brush", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_sim_bake(
         object_name: str,
@@ -294,12 +294,12 @@ def register_simulation_tools(mcp: FastMCP, server):
         frame_end: int = 250
     ) -> Dict[str, Any]:
         """
-        烘焙模拟
-        
+        Bake simulation
+
         Args:
-            object_name: 域对象名称
-            frame_start: 开始帧
-            frame_end: 结束帧
+            object_name: Domain object name
+            frame_start: Start frame
+            frame_end: End frame
         """
         params = SimulationBakeInput(
             object_name=object_name,

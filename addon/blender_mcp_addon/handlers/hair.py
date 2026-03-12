@@ -1,7 +1,7 @@
 """
-毛发系统处理器
+Hair System Handler
 
-处理毛发创建和编辑命令。
+Handles hair creation and editing commands.
 """
 
 from typing import Any, Dict
@@ -9,7 +9,7 @@ import bpy
 
 
 def handle_add(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加毛发系统"""
+    """Add hair system"""
     object_name = params.get("object_name")
     name = params.get("name", "Hair")
     hair_length = params.get("hair_length", 0.1)
@@ -20,16 +20,16 @@ def handle_add(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"网格对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Mesh object not found: {object_name}"}
         }
     
     try:
-        # 选择对象
+        # Select object
         bpy.ops.object.select_all(action='DESELECT')
         obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
-        
-        # 添加粒子系统
+
+        # Add particle system
         bpy.ops.object.particle_system_add()
         
         ps = obj.particle_systems[-1]
@@ -57,7 +57,7 @@ def handle_add(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_settings(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置毛发属性"""
+    """Set hair properties"""
     object_name = params.get("object_name")
     system_name = params.get("system_name")
     hair_length = params.get("hair_length")
@@ -70,21 +70,21 @@ def handle_settings(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 获取粒子系统
+        # Get particle system
         ps = None
         if system_name:
             ps = obj.particle_systems.get(system_name)
         elif len(obj.particle_systems) > 0:
             ps = obj.particle_systems[-1]
-        
+
         if not ps:
             return {
                 "success": False,
-                "error": {"code": "NO_PARTICLE_SYSTEM", "message": "未找到粒子系统"}
+                "error": {"code": "NO_PARTICLE_SYSTEM", "message": "No particle system found"}
             }
         
         settings = ps.settings
@@ -114,7 +114,7 @@ def handle_settings(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_dynamics(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置毛发动力学"""
+    """Set hair dynamics"""
     object_name = params.get("object_name")
     enable = params.get("enable", True)
     stiffness = params.get("stiffness", 0.5)
@@ -125,32 +125,32 @@ def handle_dynamics(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 获取粒子系统
+        # Get particle system
         if len(obj.particle_systems) == 0:
             return {
                 "success": False,
-                "error": {"code": "NO_PARTICLE_SYSTEM", "message": "未找到粒子系统"}
+                "error": {"code": "NO_PARTICLE_SYSTEM", "message": "No particle system found"}
             }
         
         ps = obj.particle_systems[-1]
         settings = ps.settings
         
-        # 启用/禁用动力学
+        # Enable/disable dynamics
         settings.use_hair_dynamics = enable
         
         if enable:
-            # 设置动力学参数
+            # Set dynamics parameters
             cloth = settings.cloth
             cloth.settings.quality = 5
             cloth.settings.mass = 0.3
             cloth.settings.bending_stiffness = stiffness * 100
             cloth.settings.air_damping = damping * 10
             
-            # 重力
+            # Gravity
             settings.effector_weights.gravity = gravity
         
         return {
@@ -167,7 +167,7 @@ def handle_dynamics(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_material(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置毛发材质"""
+    """Set hair material"""
     object_name = params.get("object_name")
     color = params.get("color", [0.1, 0.05, 0.02, 1.0])
     roughness = params.get("roughness", 0.4)
@@ -177,26 +177,26 @@ def handle_material(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 创建毛发材质
+        # Create hair material
         mat = bpy.data.materials.new(name=f"{object_name}_Hair_Material")
         mat.use_nodes = True
         
         nodes = mat.node_tree.nodes
         links = mat.node_tree.links
         
-        # 清除默认节点
+        # Clear default nodes
         nodes.clear()
         
-        # 创建输出节点
+        # Create output node
         output = nodes.new('ShaderNodeOutputMaterial')
         output.location = (300, 0)
         
         if use_hair_bsdf:
-            # 使用 Principled Hair BSDF
+            # Use Principled Hair BSDF
             hair_bsdf = nodes.new('ShaderNodeBsdfHairPrincipled')
             hair_bsdf.location = (0, 0)
             hair_bsdf.inputs['Color'].default_value = color[:4] if len(color) >= 4 else color + [1.0]
@@ -204,7 +204,7 @@ def handle_material(params: Dict[str, Any]) -> Dict[str, Any]:
             
             links.new(hair_bsdf.outputs['BSDF'], output.inputs['Surface'])
         else:
-            # 使用 Principled BSDF
+            # Use Principled BSDF
             bsdf = nodes.new('ShaderNodeBsdfPrincipled')
             bsdf.location = (0, 0)
             bsdf.inputs['Base Color'].default_value = color[:4] if len(color) >= 4 else color + [1.0]
@@ -212,12 +212,12 @@ def handle_material(params: Dict[str, Any]) -> Dict[str, Any]:
             
             links.new(bsdf.outputs['BSDF'], output.inputs['Surface'])
         
-        # 分配材质到粒子系统
+        # Assign material to particle system
         obj.data.materials.append(mat)
         
         if len(obj.particle_systems) > 0:
             ps = obj.particle_systems[-1]
-            # Blender 5.0: material_slot 需要材质槽名称字符串
+            # Blender 5.0: material_slot requires the material slot name string
             ps.settings.material_slot = mat.name
         
         return {
@@ -234,7 +234,7 @@ def handle_material(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_children(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置毛发子代"""
+    """Set hair children"""
     object_name = params.get("object_name")
     child_type = params.get("child_type", "INTERPOLATED")
     child_count = params.get("child_count", 10)
@@ -245,19 +245,19 @@ def handle_children(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
         if len(obj.particle_systems) == 0:
             return {
                 "success": False,
-                "error": {"code": "NO_PARTICLE_SYSTEM", "message": "未找到粒子系统"}
+                "error": {"code": "NO_PARTICLE_SYSTEM", "message": "No particle system found"}
             }
-        
+
         ps = obj.particle_systems[-1]
         settings = ps.settings
-        
+
         settings.child_type = child_type
         
         if child_type != 'NONE':
@@ -281,7 +281,7 @@ def handle_children(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_groom(params: Dict[str, Any]) -> Dict[str, Any]:
-    """毛发梳理操作"""
+    """Hair grooming operations"""
     object_name = params.get("object_name")
     action = params.get("action", "COMB")
     strength = params.get("strength", 0.5)
@@ -290,19 +290,19 @@ def handle_groom(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 选择对象
+        # Select object
         bpy.ops.object.select_all(action='DESELECT')
         obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
-        
-        # 进入粒子编辑模式
+
+        # Enter particle edit mode
         bpy.ops.object.mode_set(mode='PARTICLE_EDIT')
         
-        # 设置工具
+        # Set tool
         tool_settings = bpy.context.tool_settings.particle_edit
         
         action_map = {
@@ -317,7 +317,7 @@ def handle_groom(params: Dict[str, Any]) -> Dict[str, Any]:
             tool_settings.tool = action_map[action]
             tool_settings.brush.strength = strength
         
-        # 返回对象模式
+        # Return to object mode
         bpy.ops.object.mode_set(mode='OBJECT')
         
         return {

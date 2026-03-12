@@ -1,7 +1,7 @@
 """
-外部集成处理器
+External Integration Handler
 
-处理与外部工具（Unity、Unreal等）集成的命令。
+Handles commands for integration with external tools (Unity, Unreal, etc.).
 """
 
 from typing import Any, Dict, List
@@ -10,7 +10,7 @@ import os
 
 
 def _select_objects(object_names: List[str] = None):
-    """选择指定对象"""
+    """Select specified objects"""
     bpy.ops.object.select_all(action='DESELECT')
     
     if object_names:
@@ -19,14 +19,14 @@ def _select_objects(object_names: List[str] = None):
             if obj:
                 obj.select_set(True)
     else:
-        # 选择所有可见的网格对象
+        # Select all visible mesh objects
         for obj in bpy.context.view_layer.objects:
             if obj.type in ('MESH', 'ARMATURE', 'CURVE'):
                 obj.select_set(True)
 
 
 def handle_unity_export(params: Dict[str, Any]) -> Dict[str, Any]:
-    """Unity导出"""
+    """Unity export"""
     filepath = params.get("filepath")
     objects = params.get("objects")
     apply_modifiers = params.get("apply_modifiers", True)
@@ -35,12 +35,12 @@ def handle_unity_export(params: Dict[str, Any]) -> Dict[str, Any]:
     bake_animation = params.get("bake_animation", False)
     
     try:
-        # 确保目录存在
+        # Ensure directory exists
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         
         _select_objects(objects)
         
-        # Unity FBX 导出设置
+        # Unity FBX export settings
         bpy.ops.export_scene.fbx(
             filepath=filepath,
             use_selection=bool(objects),
@@ -50,17 +50,17 @@ def handle_unity_export(params: Dict[str, Any]) -> Dict[str, Any]:
             bake_anim_use_all_actions=export_animations,
             bake_anim_use_nla_strips=export_animations,
             bake_anim_force_startend_keying=bake_animation,
-            # Unity 特定设置
+            # Unity-specific settings
             axis_forward='-Z',
             axis_up='Y',
             global_scale=1.0,
             apply_unit_scale=True,
-            # 几何设置
+            # Geometry settings
             mesh_smooth_type='FACE',
             use_mesh_edges=False,
             use_triangles=False,
             use_tspace=True,
-            # 骨架设置
+            # Armature settings
             add_leaf_bones=False,
             primary_bone_axis='Y',
             secondary_bone_axis='X',
@@ -83,7 +83,7 @@ def handle_unity_export(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_unreal_export(params: Dict[str, Any]) -> Dict[str, Any]:
-    """Unreal导出"""
+    """Unreal export"""
     filepath = params.get("filepath")
     objects = params.get("objects")
     export_animations = params.get("export_animations", True)
@@ -95,7 +95,7 @@ def handle_unreal_export(params: Dict[str, Any]) -> Dict[str, Any]:
         
         _select_objects(objects)
         
-        # Unreal FBX 导出设置
+        # Unreal FBX export settings
         bpy.ops.export_scene.fbx(
             filepath=filepath,
             use_selection=bool(objects),
@@ -103,22 +103,22 @@ def handle_unreal_export(params: Dict[str, Any]) -> Dict[str, Any]:
             use_mesh_modifiers=True,
             bake_anim=export_animations,
             bake_anim_use_all_actions=export_animations,
-            # Unreal 特定设置
+            # Unreal-specific settings
             axis_forward='X',
             axis_up='Z',
             global_scale=1.0,
             apply_unit_scale=True,
-            # 几何设置
+            # Geometry settings
             mesh_smooth_type=smoothing,
             use_mesh_edges=False,
             use_triangles=False,
             use_tspace=use_tspace,
-            # 骨架设置
+            # Armature settings
             add_leaf_bones=False,
             primary_bone_axis='Y',
             secondary_bone_axis='X',
             use_armature_deform_only=True,
-            # 其他
+            # Other
             batch_mode='OFF',
             use_metadata=True
         )
@@ -139,7 +139,7 @@ def handle_unreal_export(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_godot_export(params: Dict[str, Any]) -> Dict[str, Any]:
-    """Godot导出"""
+    """Godot export"""
     filepath = params.get("filepath")
     objects = params.get("objects")
     export_format = params.get("export_format", "GLTF")
@@ -149,7 +149,7 @@ def handle_godot_export(params: Dict[str, Any]) -> Dict[str, Any]:
         
         _select_objects(objects)
         
-        # 确保扩展名正确
+        # Ensure correct file extension
         if export_format == "GLB":
             if not filepath.lower().endswith('.glb'):
                 filepath = os.path.splitext(filepath)[0] + '.glb'
@@ -159,19 +159,19 @@ def handle_godot_export(params: Dict[str, Any]) -> Dict[str, Any]:
                 filepath = os.path.splitext(filepath)[0] + '.gltf'
             export_format_enum = 'GLTF_SEPARATE'
         
-        # Godot GLTF 导出设置
+        # Godot GLTF export settings
         bpy.ops.export_scene.gltf(
             filepath=filepath,
             use_selection=bool(objects),
             export_format=export_format_enum,
-            # Godot 特定设置
+            # Godot-specific settings
             export_apply=True,
             export_animations=True,
             export_materials='EXPORT',
             export_colors=True,
             export_cameras=False,
             export_lights=False,
-            # 变换设置
+            # Transform settings
             export_yup=True
         )
         
@@ -192,7 +192,7 @@ def handle_godot_export(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_batch_export(params: Dict[str, Any]) -> Dict[str, Any]:
-    """批量导出"""
+    """Batch export"""
     output_dir = params.get("output_dir")
     format = params.get("format", "FBX")
     separate_files = params.get("separate_files", True)
@@ -201,7 +201,7 @@ def handle_batch_export(params: Dict[str, Any]) -> Dict[str, Any]:
     try:
         os.makedirs(output_dir, exist_ok=True)
         
-        # 获取要导出的对象
+        # Get objects to export
         if objects:
             export_objects = [bpy.data.objects.get(name) for name in objects if bpy.data.objects.get(name)]
         else:
@@ -210,7 +210,7 @@ def handle_batch_export(params: Dict[str, Any]) -> Dict[str, Any]:
         exported_files = []
         
         if separate_files:
-            # 每个对象单独导出
+            # Export each object separately
             for obj in export_objects:
                 bpy.ops.object.select_all(action='DESELECT')
                 obj.select_set(True)
@@ -239,7 +239,7 @@ def handle_batch_export(params: Dict[str, Any]) -> Dict[str, Any]:
                 
                 exported_files.append(filepath)
         else:
-            # 所有对象导出到一个文件
+            # Export all objects to a single file
             _select_objects([obj.name for obj in export_objects])
             
             filename = f"export_all.{format.lower()}"
@@ -271,7 +271,7 @@ def handle_batch_export(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_collection_export(params: Dict[str, Any]) -> Dict[str, Any]:
-    """集合导出"""
+    """Collection export"""
     collection_name = params.get("collection_name")
     filepath = params.get("filepath")
     format = params.get("format", "FBX")
@@ -280,13 +280,13 @@ def handle_collection_export(params: Dict[str, Any]) -> Dict[str, Any]:
     if not collection:
         return {
             "success": False,
-            "error": {"code": "COLLECTION_NOT_FOUND", "message": f"集合不存在: {collection_name}"}
+            "error": {"code": "COLLECTION_NOT_FOUND", "message": f"Collection not found: {collection_name}"}
         }
     
     try:
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         
-        # 选择集合中的所有对象
+        # Select all objects in the collection
         bpy.ops.object.select_all(action='DESELECT')
         for obj in collection.objects:
             obj.select_set(True)

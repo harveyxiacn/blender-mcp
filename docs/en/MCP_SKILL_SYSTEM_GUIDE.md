@@ -2,7 +2,7 @@
 
 > **Applicable to**: Any MCP Server with 30+ tools  
 > **Core benefit**: Reduce tool schema overhead by 60-80% at startup, saving AI Context Window  
-> **Verified**: Tested in Blender MCP (100 tools → 31 startup + on-demand loading)
+> **Verified**: Tested in Blender MCP (`focused` profile 108 tools → `skill` profile 32 startup tools + on-demand loading)
 
 ---
 
@@ -21,8 +21,8 @@ Every tool registered by an MCP Server is sent to the AI client as a JSON Schema
 **Skill system solution**: Register only core tools + a few meta-tools at startup. AI loads/unloads tool groups on demand.
 
 ```
-Traditional: Startup → Register all 100 tools → AI faces 100 choices
-Skill mode:  Startup → Register 31 core tools → AI loads on demand → Unloads when done
+Traditional: Startup → Register all 108 focused-profile tools → AI faces 108 choices
+Skill mode:  Startup → Register 32 startup tools → AI loads on demand → Unloads when done
 ```
 
 ---
@@ -241,7 +241,7 @@ SKILL_MODULES = CORE_MODULES + ["skills"]
 
 def get_enabled_modules():
     if TOOL_PROFILE == "skill":
-        return SKILL_MODULES       # ~31 tools
+        return SKILL_MODULES       # ~32 tools
     elif TOOL_PROFILE == "full":
         return ALL_MODULES          # ~300 tools
 ```
@@ -281,11 +281,11 @@ Startup core tools should be:
 ```python
 activate_skill("modeling")    # +38 tools
 activate_skill("materials")   # +17 tools
-# Now: 31 + 38 + 17 = 86 tools
+# Now: 32 + 38 + 17 = 87 tools
 
 deactivate_skill("modeling")
 deactivate_skill("materials")
-# Back to 31
+# Back to 32
 ```
 
 ### Workflow Guides
@@ -303,7 +303,7 @@ Each skill should include a concise workflow guide (200-400 words) that tells th
 
 | Metric | Traditional (focused) | Skill Mode | Improvement |
 |--------|----------------------|------------|-------------|
-| Startup tools | 100 | 31 | **-69%** |
+| Startup tools | 108 | 32 | **-70%** |
 | Schema tokens | ~20K | ~6K | **-70%** |
 | Tool selection accuracy | Average | High | Fewer choices |
 | Feature completeness | 100% | 100% | No loss |

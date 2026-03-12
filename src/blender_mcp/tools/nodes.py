@@ -1,7 +1,7 @@
 """
-节点系统工具
+Node System Tools
 
-提供着色器节点、几何节点、合成器节点的创建和编辑功能。
+Provides creation and editing functionality for shader nodes, geometry nodes, and compositor nodes.
 """
 
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
@@ -13,74 +13,74 @@ if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class NodeAddInput(BaseModel):
-    """添加节点输入"""
-    target: str = Field(..., description="目标: material名称 或 'compositor' 或 object名称(几何节点)")
-    node_type: str = Field(..., description="节点类型 (如 ShaderNodeBsdfPrincipled)")
-    location: Optional[List[float]] = Field(default=None, description="节点位置 [x, y]")
-    name: Optional[str] = Field(default=None, description="节点名称")
+    """Add node input"""
+    target: str = Field(..., description="Target: material name, 'compositor', or object name (geometry nodes)")
+    node_type: str = Field(..., description="Node type (e.g. ShaderNodeBsdfPrincipled)")
+    location: Optional[List[float]] = Field(default=None, description="Node position [x, y]")
+    name: Optional[str] = Field(default=None, description="Node name")
 
 
 class NodeConnectInput(BaseModel):
-    """连接节点输入"""
-    target: str = Field(..., description="目标材质/合成器/对象名称")
-    from_node: str = Field(..., description="源节点名称")
-    from_socket: str = Field(..., description="源插槽名称或索引")
-    to_node: str = Field(..., description="目标节点名称")
-    to_socket: str = Field(..., description="目标插槽名称或索引")
+    """Connect nodes input"""
+    target: str = Field(..., description="Target material/compositor/object name")
+    from_node: str = Field(..., description="Source node name")
+    from_socket: str = Field(..., description="Source socket name or index")
+    to_node: str = Field(..., description="Target node name")
+    to_socket: str = Field(..., description="Target socket name or index")
 
 
 class NodeSetValueInput(BaseModel):
-    """设置节点值输入"""
-    target: str = Field(..., description="目标材质/合成器/对象名称")
-    node_name: str = Field(..., description="节点名称")
-    input_name: str = Field(..., description="输入名称")
-    value: Any = Field(..., description="值 (数字、颜色数组等)")
+    """Set node value input"""
+    target: str = Field(..., description="Target material/compositor/object name")
+    node_name: str = Field(..., description="Node name")
+    input_name: str = Field(..., description="Input name")
+    value: Any = Field(..., description="Value (number, color array, etc.)")
 
 
 class NodeGroupCreateInput(BaseModel):
-    """创建节点组输入"""
-    group_name: str = Field(..., description="节点组名称")
-    node_type: str = Field(default="SHADER", description="类型: SHADER, GEOMETRY, COMPOSITOR")
+    """Create node group input"""
+    group_name: str = Field(..., description="Node group name")
+    node_type: str = Field(default="SHADER", description="Type: SHADER, GEOMETRY, COMPOSITOR")
 
 
 class ShaderPresetInput(BaseModel):
-    """着色器预设输入"""
-    material_name: str = Field(..., description="材质名称")
+    """Shader preset input"""
+    material_name: str = Field(..., description="Material name")
     preset: str = Field(
         default="pbr_basic",
-        description="预设: pbr_basic, glass, metal, emission, subsurface, toon"
+        description="Preset: pbr_basic, glass, metal, emission, subsurface, toon"
     )
-    color: Optional[List[float]] = Field(default=None, description="基础颜色 RGBA")
+    color: Optional[List[float]] = Field(default=None, description="Base color RGBA")
 
 
 class GeometryNodesAddInput(BaseModel):
-    """添加几何节点修改器输入"""
-    object_name: str = Field(..., description="对象名称")
-    modifier_name: str = Field(default="GeometryNodes", description="修改器名称")
+    """Add geometry nodes modifier input"""
+    object_name: str = Field(..., description="Object name")
+    modifier_name: str = Field(default="GeometryNodes", description="Modifier name")
 
 
 class GeometryNodesPresetInput(BaseModel):
-    """几何节点预设输入"""
-    object_name: str = Field(..., description="对象名称")
+    """Geometry nodes preset input"""
+    object_name: str = Field(..., description="Object name")
     preset: str = Field(
         default="scatter",
-        description="预设: scatter, array, curve_to_mesh, instance_points"
+        description="Preset: scatter, array, curve_to_mesh, instance_points"
     )
-    params: Optional[Dict[str, Any]] = Field(default=None, description="预设参数")
+    params: Optional[Dict[str, Any]] = Field(default=None, description="Preset parameters")
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册节点系统工具"""
-    
+    """Register node system tools"""
+
     @mcp.tool(
         name="blender_node_add",
         annotations={
-            "title": "添加节点",
+            "title": "Add Node",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -88,23 +88,23 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_node_add(params: NodeAddInput) -> str:
-        """在节点树中添加节点。
-        
-        常用着色器节点类型:
-        - ShaderNodeBsdfPrincipled (原理化BSDF)
-        - ShaderNodeMixShader (混合着色器)
-        - ShaderNodeTexImage (图像纹理)
-        - ShaderNodeTexNoise (噪波纹理)
-        - ShaderNodeBump (凹凸)
-        - ShaderNodeNormalMap (法线贴图)
-        - ShaderNodeMath (数学)
-        - ShaderNodeMixRGB (混合RGB)
-        
+        """Add a node to a node tree.
+
+        Common shader node types:
+        - ShaderNodeBsdfPrincipled (Principled BSDF)
+        - ShaderNodeMixShader (Mix Shader)
+        - ShaderNodeTexImage (Image Texture)
+        - ShaderNodeTexNoise (Noise Texture)
+        - ShaderNodeBump (Bump)
+        - ShaderNodeNormalMap (Normal Map)
+        - ShaderNodeMath (Math)
+        - ShaderNodeMixRGB (Mix RGB)
+
         Args:
-            params: 目标、节点类型、位置
-            
+            params: Target, node type, position
+
         Returns:
-            添加结果
+            Addition result
         """
         result = await server.execute_command(
             "nodes", "add",
@@ -115,17 +115,17 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "name": params.name
             }
         )
-        
+
         if result.get("success"):
             node_name = result.get("data", {}).get("node_name", "")
-            return f"成功添加节点 '{node_name}'"
+            return f"Successfully added node '{node_name}'"
         else:
-            return f"添加失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to add: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_node_connect",
         annotations={
-            "title": "连接节点",
+            "title": "Connect Nodes",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -133,13 +133,13 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_node_connect(params: NodeConnectInput) -> str:
-        """连接两个节点。
-        
+        """Connect two nodes.
+
         Args:
-            params: 源节点、目标节点、插槽
-            
+            params: Source node, target node, sockets
+
         Returns:
-            连接结果
+            Connection result
         """
         result = await server.execute_command(
             "nodes", "connect",
@@ -151,16 +151,16 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "to_socket": params.to_socket
             }
         )
-        
+
         if result.get("success"):
-            return f"成功连接 {params.from_node} -> {params.to_node}"
+            return f"Successfully connected {params.from_node} -> {params.to_node}"
         else:
-            return f"连接失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to connect: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_node_set_value",
         annotations={
-            "title": "设置节点值",
+            "title": "Set Node Value",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -168,13 +168,13 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_node_set_value(params: NodeSetValueInput) -> str:
-        """设置节点输入值。
-        
+        """Set a node input value.
+
         Args:
-            params: 目标、节点名称、输入名称、值
-            
+            params: Target, node name, input name, value
+
         Returns:
-            设置结果
+            Setting result
         """
         result = await server.execute_command(
             "nodes", "set_value",
@@ -185,16 +185,16 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "value": params.value
             }
         )
-        
+
         if result.get("success"):
-            return f"成功设置 {params.node_name}.{params.input_name}"
+            return f"Successfully set {params.node_name}.{params.input_name}"
         else:
-            return f"设置失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to set: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_shader_preset",
         annotations={
-            "title": "应用着色器预设",
+            "title": "Apply Shader Preset",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -202,21 +202,21 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_shader_preset(params: ShaderPresetInput) -> str:
-        """应用着色器预设（PBR、玻璃、金属等）。
-        
-        可用预设:
-        - pbr_basic: 基础PBR材质
-        - glass: 玻璃材质
-        - metal: 金属材质
-        - emission: 自发光材质
-        - subsurface: 次表面散射（皮肤）
-        - toon: 卡通着色
-        
+        """Apply a shader preset (PBR, glass, metal, etc.).
+
+        Available presets:
+        - pbr_basic: Basic PBR material
+        - glass: Glass material
+        - metal: Metal material
+        - emission: Emission material
+        - subsurface: Subsurface scattering (skin)
+        - toon: Toon shading
+
         Args:
-            params: 材质名称、预设类型、颜色
-            
+            params: Material name, preset type, color
+
         Returns:
-            应用结果
+            Application result
         """
         result = await server.execute_command(
             "nodes", "shader_preset",
@@ -226,16 +226,16 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "color": params.color
             }
         )
-        
+
         if result.get("success"):
-            return f"成功为 '{params.material_name}' 应用 {params.preset} 预设"
+            return f"Successfully applied {params.preset} preset to '{params.material_name}'"
         else:
-            return f"应用失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to apply: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_geometry_nodes_add",
         annotations={
-            "title": "添加几何节点修改器",
+            "title": "Add Geometry Nodes Modifier",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -243,13 +243,13 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_geometry_nodes_add(params: GeometryNodesAddInput) -> str:
-        """为对象添加几何节点修改器。
-        
+        """Add a geometry nodes modifier to an object.
+
         Args:
-            params: 对象名称、修改器名称
-            
+            params: Object name, modifier name
+
         Returns:
-            添加结果
+            Addition result
         """
         result = await server.execute_command(
             "nodes", "geonodes_add",
@@ -258,16 +258,16 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "modifier_name": params.modifier_name
             }
         )
-        
+
         if result.get("success"):
-            return f"成功为 '{params.object_name}' 添加几何节点"
+            return f"Successfully added geometry nodes to '{params.object_name}'"
         else:
-            return f"添加失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to add: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_geometry_nodes_preset",
         annotations={
-            "title": "应用几何节点预设",
+            "title": "Apply Geometry Nodes Preset",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -275,19 +275,19 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_geometry_nodes_preset(params: GeometryNodesPresetInput) -> str:
-        """应用几何节点预设（散布、阵列等）。
-        
-        可用预设:
-        - scatter: 在表面散布实例
-        - array: 线性阵列
-        - curve_to_mesh: 曲线转网格
-        - instance_points: 点实例化
-        
+        """Apply a geometry nodes preset (scatter, array, etc.).
+
+        Available presets:
+        - scatter: Scatter instances on surface
+        - array: Linear array
+        - curve_to_mesh: Curve to mesh
+        - instance_points: Instance on points
+
         Args:
-            params: 对象名称、预设类型、参数
-            
+            params: Object name, preset type, parameters
+
         Returns:
-            应用结果
+            Application result
         """
         result = await server.execute_command(
             "nodes", "geonodes_preset",
@@ -297,8 +297,8 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "params": params.params or {}
             }
         )
-        
+
         if result.get("success"):
-            return f"成功为 '{params.object_name}' 应用 {params.preset} 几何节点"
+            return f"Successfully applied {params.preset} geometry nodes to '{params.object_name}'"
         else:
-            return f"应用失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Failed to apply: {result.get('error', {}).get('message', 'Unknown error')}"

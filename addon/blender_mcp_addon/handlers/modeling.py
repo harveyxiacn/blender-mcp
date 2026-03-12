@@ -1,7 +1,7 @@
 """
-建模处理器
+Modeling Handler
 
-处理建模相关的命令。
+Handles modeling-related commands.
 """
 
 from typing import Any, Dict
@@ -9,7 +9,7 @@ import bpy
 
 
 def handle_edit_mode(params: Dict[str, Any]) -> Dict[str, Any]:
-    """进入/退出编辑模式"""
+    """Enter/exit edit mode"""
     object_name = params.get("object_name")
     enter = params.get("enter", True)
     
@@ -19,16 +19,16 @@ def handle_edit_mode(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
-    
-    # 选择对象
+
+    # Select object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
-    
-    # 切换模式
+
+    # Switch mode
     if enter:
         bpy.ops.object.mode_set(mode='EDIT')
     else:
@@ -43,7 +43,7 @@ def handle_edit_mode(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_select(params: Dict[str, Any]) -> Dict[str, Any]:
-    """网格选择"""
+    """Mesh selection"""
     object_name = params.get("object_name")
     select_mode = params.get("select_mode", "VERT")
     action = params.get("action", "ALL")
@@ -55,17 +55,17 @@ def handle_select(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_OBJECT",
-                "message": "对象不存在或不是网格"
+                "message": "Object not found or is not a mesh"
             }
         }
-    
-    # 确保在编辑模式
+
+    # Ensure in edit mode
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.mode_set(mode='EDIT')
-    
-    # 设置选择模式
+
+    # Set selection mode
     mode_map = {
         "VERT": (True, False, False),
         "EDGE": (False, True, False),
@@ -73,7 +73,7 @@ def handle_select(params: Dict[str, Any]) -> Dict[str, Any]:
     }
     bpy.context.tool_settings.mesh_select_mode = mode_map.get(select_mode, (True, False, False))
     
-    # 执行选择操作
+    # Execute selection operation
     if action == "ALL":
         bpy.ops.mesh.select_all(action='SELECT')
     elif action == "NONE":
@@ -92,7 +92,7 @@ def handle_select(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_extrude(params: Dict[str, Any]) -> Dict[str, Any]:
-    """挤出"""
+    """Extrude"""
     object_name = params.get("object_name")
     direction = params.get("direction", [0, 0, 1])
     distance = params.get("distance", 1.0)
@@ -104,16 +104,16 @@ def handle_extrude(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_OBJECT",
-                "message": "对象不存在或不是网格"
+                "message": "Object not found or is not a mesh"
             }
         }
-    
-    # 确保在编辑模式
+
+    # Ensure in edit mode
     bpy.context.view_layer.objects.active = obj
     if bpy.context.mode != 'EDIT_MESH':
         bpy.ops.object.mode_set(mode='EDIT')
-    
-    # 挤出
+
+    # Extrude
     if use_normal:
         bpy.ops.mesh.extrude_region_shrink_fatten(
             TRANSFORM_OT_shrink_fatten={"value": distance}
@@ -134,7 +134,7 @@ def handle_extrude(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_subdivide(params: Dict[str, Any]) -> Dict[str, Any]:
-    """细分"""
+    """Subdivide"""
     object_name = params.get("object_name")
     cuts = params.get("cuts", 1)
     smoothness = params.get("smoothness", 0.0)
@@ -145,15 +145,15 @@ def handle_subdivide(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_OBJECT",
-                "message": "对象不存在或不是网格"
+                "message": "Object not found or is not a mesh"
             }
         }
-    
-    # 确保在编辑模式
+
+    # Ensure in edit mode
     bpy.context.view_layer.objects.active = obj
     if bpy.context.mode != 'EDIT_MESH':
         bpy.ops.object.mode_set(mode='EDIT')
-    
+
     bpy.ops.mesh.subdivide(number_cuts=cuts, smoothness=smoothness)
     
     return {
@@ -163,7 +163,7 @@ def handle_subdivide(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_bevel(params: Dict[str, Any]) -> Dict[str, Any]:
-    """倒角"""
+    """Bevel"""
     object_name = params.get("object_name")
     width = params.get("width", 0.1)
     segments = params.get("segments", 1)
@@ -176,15 +176,15 @@ def handle_bevel(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_OBJECT",
-                "message": "对象不存在或不是网格"
+                "message": "Object not found or is not a mesh"
             }
         }
-    
-    # 确保在编辑模式
+
+    # Ensure in edit mode
     bpy.context.view_layer.objects.active = obj
     if bpy.context.mode != 'EDIT_MESH':
         bpy.ops.object.mode_set(mode='EDIT')
-    
+
     bpy.ops.mesh.bevel(
         offset=width,
         segments=segments,
@@ -199,7 +199,7 @@ def handle_bevel(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_modifier_add(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加修改器"""
+    """Add modifier"""
     object_name = params.get("object_name")
     modifier_type = params.get("modifier_type")
     modifier_name = params.get("modifier_name")
@@ -211,18 +211,18 @@ def handle_modifier_add(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
-    
-    # 确保在对象模式
+
+    # Ensure in object mode
     if bpy.context.mode != 'OBJECT':
         bpy.ops.object.mode_set(mode='OBJECT')
-    
-    # 添加修改器
+
+    # Add modifier
     mod = obj.modifiers.new(name=modifier_name or modifier_type, type=modifier_type)
-    
-    # 应用设置
+
+    # Apply settings
     for key, value in settings.items():
         if hasattr(mod, key):
             setattr(mod, key, value)
@@ -236,7 +236,7 @@ def handle_modifier_add(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_modifier_apply(params: Dict[str, Any]) -> Dict[str, Any]:
-    """应用修改器"""
+    """Apply modifier"""
     object_name = params.get("object_name")
     modifier_name = params.get("modifier_name")
     
@@ -246,25 +246,25 @@ def handle_modifier_apply(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
-    
+
     mod = obj.modifiers.get(modifier_name)
     if not mod:
         return {
             "success": False,
             "error": {
                 "code": "MODIFIER_NOT_FOUND",
-                "message": f"修改器不存在: {modifier_name}"
+                "message": f"Modifier not found: {modifier_name}"
             }
         }
-    
-    # 确保在对象模式
+
+    # Ensure in object mode
     bpy.context.view_layer.objects.active = obj
     if bpy.context.mode != 'OBJECT':
         bpy.ops.object.mode_set(mode='OBJECT')
-    
+
     bpy.ops.object.modifier_apply(modifier=modifier_name)
     
     return {
@@ -274,7 +274,7 @@ def handle_modifier_apply(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_modifier_remove(params: Dict[str, Any]) -> Dict[str, Any]:
-    """移除修改器"""
+    """Remove modifier"""
     object_name = params.get("object_name")
     modifier_name = params.get("modifier_name")
     
@@ -284,20 +284,20 @@ def handle_modifier_remove(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
-    
+
     mod = obj.modifiers.get(modifier_name)
     if not mod:
         return {
             "success": False,
             "error": {
                 "code": "MODIFIER_NOT_FOUND",
-                "message": f"修改器不存在: {modifier_name}"
+                "message": f"Modifier not found: {modifier_name}"
             }
         }
-    
+
     obj.modifiers.remove(mod)
     
     return {
@@ -307,7 +307,7 @@ def handle_modifier_remove(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_boolean(params: Dict[str, Any]) -> Dict[str, Any]:
-    """布尔运算"""
+    """Boolean operation"""
     object_name = params.get("object_name")
     target_name = params.get("target_name")
     operation = params.get("operation", "DIFFERENCE")
@@ -322,30 +322,30 @@ def handle_boolean(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
-    
+
     if not target:
         return {
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"目标对象不存在: {target_name}"
+                "message": f"Target object not found: {target_name}"
             }
         }
-    
-    # 添加布尔修改器
+
+    # Add boolean modifier
     mod = obj.modifiers.new(name="Boolean", type='BOOLEAN')
     mod.operation = operation
     mod.object = target
-    
-    # 应用修改器
+
+    # Apply modifier
     if apply:
         bpy.context.view_layer.objects.active = obj
         bpy.ops.object.modifier_apply(modifier=mod.name)
-    
-    # 隐藏目标
+
+    # Hide target
     if hide_target:
         target.hide_viewport = True
         target.hide_render = True
@@ -356,16 +356,16 @@ def handle_boolean(params: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-# ==================== 形态键（Shape Keys）功能 ====================
+# ==================== Shape Keys Functions ====================
 
 def handle_shapekey_create(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建形态键
-    
+    """Create shape key
+
     Args:
         params:
-            - object_name: 对象名称
-            - key_name: 形态键名称
-            - from_mix: 是否从当前混合状态创建
+            - object_name: Object name
+            - key_name: Shape key name
+            - from_mix: Whether to create from current mix state
     """
     object_name = params.get("object_name")
     key_name = params.get("key_name", "Key")
@@ -377,7 +377,7 @@ def handle_shapekey_create(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
     
@@ -386,24 +386,24 @@ def handle_shapekey_create(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_TYPE",
-                "message": "形态键只支持网格对象"
+                "message": "Shape keys are only supported for mesh objects"
             }
         }
-    
-    # 选择对象
+
+    # Select object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
-    
-    # 确保在对象模式
+
+    # Ensure in object mode
     if bpy.context.mode != 'OBJECT':
         bpy.ops.object.mode_set(mode='OBJECT')
-    
-    # 如果没有形态键，先创建基础形态键
+
+    # If no shape keys exist, create the basis shape key first
     if not obj.data.shape_keys:
         obj.shape_key_add(name="Basis", from_mix=False)
-    
-    # 创建新形态键
+
+    # Create new shape key
     shape_key = obj.shape_key_add(name=key_name, from_mix=from_mix)
     
     return {
@@ -417,15 +417,15 @@ def handle_shapekey_create(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_shapekey_edit(params: Dict[str, Any]) -> Dict[str, Any]:
-    """编辑形态键
-    
+    """Edit shape key
+
     Args:
         params:
-            - object_name: 对象名称
-            - key_name: 形态键名称
-            - vertex_offsets: 顶点偏移列表 [{"index": int, "offset": [x, y, z]}, ...]
-            - value: 形态键值 (0.0 - 1.0)
-            - mute: 是否静音
+            - object_name: Object name
+            - key_name: Shape key name
+            - vertex_offsets: Vertex offset list [{"index": int, "offset": [x, y, z]}, ...]
+            - value: Shape key value (0.0 - 1.0)
+            - mute: Whether to mute
     """
     object_name = params.get("object_name")
     key_name = params.get("key_name")
@@ -439,7 +439,7 @@ def handle_shapekey_edit(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
     
@@ -448,29 +448,29 @@ def handle_shapekey_edit(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "NO_SHAPE_KEYS",
-                "message": "对象没有形态键"
+                "message": "Object has no shape keys"
             }
         }
-    
+
     shape_key = obj.data.shape_keys.key_blocks.get(key_name)
     if not shape_key:
         return {
             "success": False,
             "error": {
                 "code": "SHAPE_KEY_NOT_FOUND",
-                "message": f"形态键不存在: {key_name}"
+                "message": f"Shape key not found: {key_name}"
             }
         }
-    
-    # 设置值
+
+    # Set value
     if value is not None:
         shape_key.value = value
-    
-    # 设置静音
+
+    # Set mute
     if mute is not None:
         shape_key.mute = mute
-    
-    # 应用顶点偏移
+
+    # Apply vertex offsets
     if vertex_offsets:
         basis = obj.data.shape_keys.key_blocks.get("Basis")
         if not basis:
@@ -478,16 +478,16 @@ def handle_shapekey_edit(params: Dict[str, Any]) -> Dict[str, Any]:
                 "success": False,
                 "error": {
                     "code": "NO_BASIS",
-                    "message": "找不到基础形态键"
+                    "message": "Basis shape key not found"
                 }
             }
-        
+
         for offset_data in vertex_offsets:
             idx = offset_data.get("index")
             offset = offset_data.get("offset", [0, 0, 0])
-            
+
             if idx is not None and 0 <= idx < len(shape_key.data):
-                # 获取基础位置并应用偏移
+                # Get basis position and apply offset
                 base_co = basis.data[idx].co
                 shape_key.data[idx].co = (
                     base_co.x + offset[0],
@@ -507,12 +507,12 @@ def handle_shapekey_edit(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_shapekey_delete(params: Dict[str, Any]) -> Dict[str, Any]:
-    """删除形态键
-    
+    """Delete shape key
+
     Args:
         params:
-            - object_name: 对象名称
-            - key_name: 形态键名称
+            - object_name: Object name
+            - key_name: Shape key name
     """
     object_name = params.get("object_name")
     key_name = params.get("key_name")
@@ -523,7 +523,7 @@ def handle_shapekey_delete(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
     
@@ -532,11 +532,11 @@ def handle_shapekey_delete(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "NO_SHAPE_KEYS",
-                "message": "对象没有形态键"
+                "message": "Object has no shape keys"
             }
         }
     
-    # 找到形态键索引
+    # Find shape key index
     key_index = None
     for i, key in enumerate(obj.data.shape_keys.key_blocks):
         if key.name == key_name:
@@ -548,19 +548,19 @@ def handle_shapekey_delete(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "SHAPE_KEY_NOT_FOUND",
-                "message": f"形态键不存在: {key_name}"
+                "message": f"Shape key not found: {key_name}"
             }
         }
     
-    # 选择对象
+    # Select object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     
-    # 设置活动形态键
+    # Set active shape key
     obj.active_shape_key_index = key_index
     
-    # 删除形态键
+    # Delete shape key
     bpy.ops.object.shape_key_remove()
     
     return {
@@ -573,11 +573,11 @@ def handle_shapekey_delete(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_shapekey_list(params: Dict[str, Any]) -> Dict[str, Any]:
-    """列出形态键
+    """List shape keys
     
     Args:
         params:
-            - object_name: 对象名称
+            - object_name: Object name
     """
     object_name = params.get("object_name")
     
@@ -587,7 +587,7 @@ def handle_shapekey_list(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
     
@@ -623,24 +623,24 @@ def handle_shapekey_list(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_shapekey_create_expression(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建表情形态键集
-    
-    为角色快速创建一组常用表情形态键。
-    
+    """Create expression shape key set
+
+    Quickly create a set of commonly used expression shape keys for a character.
+
     Args:
         params:
-            - object_name: 对象名称
-            - expressions: 要创建的表情列表，可选值:
-                - smile: 微笑
-                - frown: 皱眉
-                - surprise: 惊讶
-                - angry: 愤怒
-                - sad: 悲伤
-                - blink_l: 左眼闭合
-                - blink_r: 右眼闭合
-                - blink: 双眼闭合
-                - mouth_open: 张嘴
-                - mouth_wide: 大张嘴
+            - object_name: Object name
+            - expressions: List of expressions to create, possible values:
+                - smile: Smile
+                - frown: Frown
+                - surprise: Surprise
+                - angry: Angry
+                - sad: Sad
+                - blink_l: Left eye close
+                - blink_r: Right eye close
+                - blink: Both eyes close
+                - mouth_open: Mouth open
+                - mouth_wide: Mouth wide open
     """
     object_name = params.get("object_name")
     expressions = params.get("expressions", ["smile", "blink", "surprise", "angry"])
@@ -651,7 +651,7 @@ def handle_shapekey_create_expression(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
     
@@ -660,37 +660,37 @@ def handle_shapekey_create_expression(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_TYPE",
-                "message": "形态键只支持网格对象"
+                "message": "Shape keys only support mesh objects"
             }
         }
     
-    # 选择对象
+    # Select object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
-    
-    # 确保有基础形态键
+
+    # Ensure base shape key exists
     if not obj.data.shape_keys:
         obj.shape_key_add(name="Basis", from_mix=False)
     
-    # 表情名称映射
+    # Expression name mapping
     expression_names = {
-        "smile": "Smile_微笑",
-        "frown": "Frown_皱眉",
-        "surprise": "Surprise_惊讶",
-        "angry": "Angry_愤怒",
-        "sad": "Sad_悲伤",
-        "blink_l": "Blink_L_左眼闭合",
-        "blink_r": "Blink_R_右眼闭合",
-        "blink": "Blink_双眼闭合",
-        "mouth_open": "MouthOpen_张嘴",
-        "mouth_wide": "MouthWide_大张嘴"
+        "smile": "Smile",
+        "frown": "Frown",
+        "surprise": "Surprise",
+        "angry": "Angry",
+        "sad": "Sad",
+        "blink_l": "Blink_L",
+        "blink_r": "Blink_R",
+        "blink": "Blink",
+        "mouth_open": "MouthOpen",
+        "mouth_wide": "MouthWide"
     }
     
     created_keys = []
     for expr in expressions:
         name = expression_names.get(expr, expr)
-        # 检查是否已存在
+        # Check if already exists
         if obj.data.shape_keys.key_blocks.get(name):
             continue
         
@@ -708,14 +708,14 @@ def handle_shapekey_create_expression(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_mesh_assign_material_to_faces(params: Dict[str, Any]) -> Dict[str, Any]:
-    """给特定面分配材质
-    
+    """Assign material to specific faces
+
     Args:
         params:
-            - object_name: 对象名称
-            - face_indices: 面索引列表
-            - material_slot: 材质槽索引
-            - material_name: 或者通过材质名称指定
+            - object_name: Object name
+            - face_indices: List of face indices
+            - material_slot: Material slot index
+            - material_name: Or specify by material name
     """
     object_name = params.get("object_name")
     face_indices = params.get("face_indices", [])
@@ -728,7 +728,7 @@ def handle_mesh_assign_material_to_faces(params: Dict[str, Any]) -> Dict[str, An
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
     
@@ -737,11 +737,11 @@ def handle_mesh_assign_material_to_faces(params: Dict[str, Any]) -> Dict[str, An
             "success": False,
             "error": {
                 "code": "INVALID_TYPE",
-                "message": "只支持网格对象"
+                "message": "Only mesh objects are supported"
             }
         }
     
-    # 通过材质名称找到槽索引
+    # Find slot index by material name
     if material_name and material_slot is None:
         for i, slot in enumerate(obj.material_slots):
             if slot.material and slot.material.name == material_name:
@@ -753,7 +753,7 @@ def handle_mesh_assign_material_to_faces(params: Dict[str, Any]) -> Dict[str, An
                 "success": False,
                 "error": {
                     "code": "MATERIAL_NOT_FOUND",
-                    "message": f"材质不在对象的材质槽中: {material_name}"
+                    "message": f"Material not in object's material slots: {material_name}"
                 }
             }
     
@@ -762,7 +762,7 @@ def handle_mesh_assign_material_to_faces(params: Dict[str, Any]) -> Dict[str, An
             "success": False,
             "error": {
                 "code": "INVALID_PARAMS",
-                "message": "请指定 material_slot 或 material_name"
+                "message": "Please specify material_slot or material_name"
             }
         }
     
@@ -771,17 +771,17 @@ def handle_mesh_assign_material_to_faces(params: Dict[str, Any]) -> Dict[str, An
             "success": False,
             "error": {
                 "code": "INVALID_SLOT",
-                "message": f"材质槽索引超出范围: {material_slot}"
+                "message": f"Material slot index out of range: {material_slot}"
             }
         }
     
-    # 分配材质到面
+    # Assign material to faces
     mesh = obj.data
     
-    # 确保在对象模式
+    # Ensure in object mode
     if bpy.context.mode != 'OBJECT':
         bpy.ops.object.mode_set(mode='OBJECT')
-    
+
     assigned_count = 0
     for idx in face_indices:
         if 0 <= idx < len(mesh.polygons):
@@ -799,13 +799,13 @@ def handle_mesh_assign_material_to_faces(params: Dict[str, Any]) -> Dict[str, An
 
 
 def handle_select_faces_by_material(params: Dict[str, Any]) -> Dict[str, Any]:
-    """按材质选择面
-    
+    """Select faces by material
+
     Args:
         params:
-            - object_name: 对象名称
-            - material_slot: 材质槽索引
-            - material_name: 或通过材质名称指定
+            - object_name: Object name
+            - material_slot: Material slot index
+            - material_name: Or specify by material name
     """
     object_name = params.get("object_name")
     material_slot = params.get("material_slot")
@@ -817,7 +817,7 @@ def handle_select_faces_by_material(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
     
@@ -826,11 +826,11 @@ def handle_select_faces_by_material(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_TYPE",
-                "message": "只支持网格对象"
+                "message": "Only mesh objects are supported"
             }
         }
     
-    # 通过材质名称找到槽索引
+    # Find slot index by material name
     if material_name and material_slot is None:
         for i, slot in enumerate(obj.material_slots):
             if slot.material and slot.material.name == material_name:
@@ -842,32 +842,32 @@ def handle_select_faces_by_material(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_PARAMS",
-                "message": "请指定 material_slot 或 material_name"
+                "message": "Please specify material_slot or material_name"
             }
         }
     
-    # 选择对象并进入编辑模式
+    # Select object and enter edit mode
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.mode_set(mode='EDIT')
-    
-    # 取消所有选择
+
+    # Deselect all
     bpy.ops.mesh.select_all(action='DESELECT')
-    
-    # 设置面选择模式
+
+    # Set face selection mode
     bpy.context.tool_settings.mesh_select_mode = (False, False, True)
-    
-    # 设置活动材质槽
+
+    # Set active material slot
     obj.active_material_index = material_slot
-    
-    # 选择使用该材质的面
+
+    # Select faces using this material
     bpy.ops.object.material_slot_select()
-    
-    # 返回对象模式
+
+    # Return to object mode
     bpy.ops.object.mode_set(mode='OBJECT')
-    
-    # 统计选中的面数
+
+    # Count selected faces
     selected_count = sum(1 for p in obj.data.polygons if p.select)
     
     return {
@@ -880,9 +880,9 @@ def handle_select_faces_by_material(params: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-# ==================== 生产标准优化工具 ====================
+# ==================== Production-grade optimization tools ====================
 
-# 平台三角形限制配置
+# Platform triangle limit configuration
 PLATFORM_LIMITS = {
     "MOBILE": {"min": 500, "max": 2000, "recommended": 1500},
     "PC_CONSOLE": {"min": 2000, "max": 50000, "recommended": 20000},
@@ -892,12 +892,12 @@ PLATFORM_LIMITS = {
 
 
 def handle_mesh_analyze(params: Dict[str, Any]) -> Dict[str, Any]:
-    """分析网格拓扑质量
+    """Analyze mesh topology quality
     
     Args:
         params:
-            - object_name: 对象名称
-            - target_platform: 目标平台
+            - object_name: Object name
+            - target_platform: Target platform
     """
     import bmesh
     
@@ -910,7 +910,7 @@ def handle_mesh_analyze(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
     
@@ -919,18 +919,18 @@ def handle_mesh_analyze(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_TYPE",
-                "message": "只支持网格对象"
+                "message": "Only mesh objects are supported"
             }
         }
     
     mesh = obj.data
     
-    # 基础统计
+    # Basic statistics
     vertex_count = len(mesh.vertices)
     edge_count = len(mesh.edges)
     face_count = len(mesh.polygons)
     
-    # 计算三角形数量和面类型分布
+    # Calculate triangle count and face type distribution
     tris = 0
     quads = 0
     ngons = 0
@@ -943,83 +943,83 @@ def handle_mesh_analyze(params: Dict[str, Any]) -> Dict[str, Any]:
             triangle_count += 1
         elif vert_count == 4:
             quads += 1
-            triangle_count += 2  # 一个四边形 = 2个三角形
+            triangle_count += 2  # One quad = 2 triangles
         else:
             ngons += 1
-            triangle_count += vert_count - 2  # N-gon转三角形数量
+            triangle_count += vert_count - 2  # N-gon to triangle count
     
-    # 计算百分比
+    # Calculate percentages
     total_faces = max(face_count, 1)
     tris_percent = (tris / total_faces) * 100
     quads_percent = (quads / total_faces) * 100
     ngons_percent = (ngons / total_faces) * 100
     
-    # 使用bmesh进行高级分析
+    # Use bmesh for advanced analysis
     bm = bmesh.new()
     bm.from_mesh(mesh)
     
-    # 检测问题
+    # Detect issues
     issues = []
     
-    # 非流形边
+    # Non-manifold edges
     non_manifold_edges = [e for e in bm.edges if not e.is_manifold]
     if non_manifold_edges:
-        issues.append(f"非流形边: {len(non_manifold_edges)} 条")
+        issues.append(f"Non-manifold edges: {len(non_manifold_edges)}")
     
-    # 非流形顶点
+    # Non-manifold vertices
     non_manifold_verts = [v for v in bm.verts if not v.is_manifold]
     if non_manifold_verts:
-        issues.append(f"非流形顶点: {len(non_manifold_verts)} 个")
+        issues.append(f"Non-manifold vertices: {len(non_manifold_verts)}")
     
-    # 孤立顶点
+    # Loose vertices
     loose_verts = [v for v in bm.verts if not v.link_edges]
     if loose_verts:
-        issues.append(f"孤立顶点: {len(loose_verts)} 个")
+        issues.append(f"Loose vertices: {len(loose_verts)}")
     
-    # 孤立边
+    # Loose edges
     loose_edges = [e for e in bm.edges if not e.link_faces]
     if loose_edges:
-        issues.append(f"孤立边: {len(loose_edges)} 条")
+        issues.append(f"Loose edges: {len(loose_edges)}")
     
-    # 退化面（面积为0）
+    # Degenerate faces (zero area)
     degenerate_faces = [f for f in bm.faces if f.calc_area() < 1e-8]
     if degenerate_faces:
-        issues.append(f"退化面: {len(degenerate_faces)} 个")
+        issues.append(f"Degenerate faces: {len(degenerate_faces)}")
     
-    # N-gon警告
+    # N-gon warning
     if ngons > 0:
-        issues.append(f"包含N-gon，可能导致变形问题")
+        issues.append(f"Contains N-gons, may cause deformation issues")
     
-    # 检查法线一致性（简单检查是否有反向法线）
-    # 通过检查面法线方向的一致性
+    # Check normal consistency (simple check for flipped normals)
+    # By checking face normal direction consistency
     
     bm.free()
     
-    # 平台兼容性检查
+    # Platform compatibility check
     limits = PLATFORM_LIMITS.get(target_platform, PLATFORM_LIMITS["PC_CONSOLE"])
     platform_passed = limits["min"] <= triangle_count <= limits["max"]
     
     suggestion = ""
     if triangle_count > limits["max"]:
-        suggestion = f"面数过高，建议使用网格优化工具减少到 {limits['recommended']} 以下"
+        suggestion = f"Triangle count too high, recommend using mesh optimization to reduce below {limits['recommended']}"
     elif triangle_count < limits["min"]:
-        suggestion = f"面数过低，可能需要增加细节"
+        suggestion = f"Triangle count too low, may need more detail"
     
-    # 计算质量评分（0-100）
+    # Calculate quality score (0-100)
     quality_score = 100
     
-    # N-gon惩罚
+    # N-gon penalty
     if ngons_percent > 0:
         quality_score -= min(20, ngons_percent)
     
-    # 问题惩罚
+    # Issue penalty
     quality_score -= min(30, len(issues) * 5)
     
-    # 平台兼容性惩罚
+    # Platform compatibility penalty
     if not platform_passed:
         quality_score -= 20
     
-    # 四边形奖励（游戏和动画中首选）
+    # Quad bonus (preferred in games and animation)
     if quads_percent > 80:
         quality_score = min(100, quality_score + 10)
     
@@ -1045,7 +1045,7 @@ def handle_mesh_analyze(params: Dict[str, Any]) -> Dict[str, Any]:
             "platform_check": {
                 "passed": platform_passed,
                 "min_tris": limits["min"],
-                "max_tris": limits["max"] if limits["max"] != float('inf') else "无限制",
+                "max_tris": limits["max"] if limits["max"] != float('inf') else "unlimited",
                 "suggestion": suggestion
             },
             "issues": issues,
@@ -1055,16 +1055,16 @@ def handle_mesh_analyze(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_mesh_optimize(params: Dict[str, Any]) -> Dict[str, Any]:
-    """优化网格（减面）
-    
+    """Optimize mesh (decimation)
+
     Args:
         params:
-            - object_name: 对象名称
-            - target_triangles: 目标三角形数量
-            - target_platform: 目标平台
-            - preserve_uvs: 保留UV
-            - preserve_normals: 保留法线
-            - symmetry: 保持对称性
+            - object_name: Object name
+            - target_triangles: Target triangle count
+            - target_platform: Target platform
+            - preserve_uvs: Preserve UVs
+            - preserve_normals: Preserve normals
+            - symmetry: Maintain symmetry
     """
     object_name = params.get("object_name")
     target_triangles = params.get("target_triangles")
@@ -1079,7 +1079,7 @@ def handle_mesh_optimize(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
     
@@ -1088,19 +1088,19 @@ def handle_mesh_optimize(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_TYPE",
-                "message": "只支持网格对象"
+                "message": "Only mesh objects are supported"
             }
         }
     
-    # 计算原始三角形数量
+    # Calculate original triangle count
     original_triangles = sum(len(p.vertices) - 2 for p in obj.data.polygons)
     
-    # 确定目标三角形数量
+    # Determine target triangle count
     if target_triangles is None:
         limits = PLATFORM_LIMITS.get(target_platform, PLATFORM_LIMITS["PC_CONSOLE"])
         target_triangles = limits["recommended"]
     
-    # 计算需要的减面比例
+    # Calculate required decimation ratio
     if original_triangles <= target_triangles:
         return {
             "success": True,
@@ -1108,18 +1108,18 @@ def handle_mesh_optimize(params: Dict[str, Any]) -> Dict[str, Any]:
                 "original_triangles": original_triangles,
                 "optimized_triangles": original_triangles,
                 "reduction_percent": 0,
-                "message": "面数已在目标范围内，无需优化"
+                "message": "Face count is already within target range, no optimization needed"
             }
         }
     
     ratio = target_triangles / original_triangles
     
-    # 添加Decimate修改器
+    # Add Decimate modifier
     decimate = obj.modifiers.new(name="MCP_Decimate", type='DECIMATE')
     decimate.decimate_type = 'COLLAPSE'
     decimate.ratio = ratio
     
-    # 设置UV和法线保留
+    # Set UV and normal preservation
     if preserve_uvs:
         decimate.use_collapse_triangulate = False
     
@@ -1127,13 +1127,13 @@ def handle_mesh_optimize(params: Dict[str, Any]) -> Dict[str, Any]:
         decimate.use_symmetry = True
         decimate.symmetry_axis = 'X'
     
-    # 应用修改器
+    # Apply modifier
     bpy.context.view_layer.objects.active = obj
     if bpy.context.mode != 'OBJECT':
         bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.object.modifier_apply(modifier=decimate.name)
-    
-    # 计算优化后的三角形数量
+
+    # Calculate optimized triangle count
     optimized_triangles = sum(len(p.vertices) - 2 for p in obj.data.polygons)
     reduction_percent = ((original_triangles - optimized_triangles) / original_triangles) * 100
     
@@ -1148,17 +1148,17 @@ def handle_mesh_optimize(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_mesh_cleanup(params: Dict[str, Any]) -> Dict[str, Any]:
-    """清理网格
-    
+    """Clean up mesh
+
     Args:
         params:
-            - object_name: 对象名称
-            - merge_distance: 合并距离
-            - remove_doubles: 移除重复顶点
-            - dissolve_degenerate: 溶解退化几何体
-            - fix_non_manifold: 修复非流形
-            - recalculate_normals: 重新计算法线
-            - remove_loose: 移除孤立几何体
+            - object_name: Object name
+            - merge_distance: Merge distance
+            - remove_doubles: Remove duplicate vertices
+            - dissolve_degenerate: Dissolve degenerate geometry
+            - fix_non_manifold: Fix non-manifold geometry
+            - recalculate_normals: Recalculate normals
+            - remove_loose: Remove loose geometry
     """
     import bmesh
     
@@ -1176,7 +1176,7 @@ def handle_mesh_cleanup(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
     
@@ -1185,11 +1185,11 @@ def handle_mesh_cleanup(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_TYPE",
-                "message": "只支持网格对象"
+                "message": "Only mesh objects are supported"
             }
         }
     
-    # 选择对象并进入编辑模式
+    # Select object and enter edit mode
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
@@ -1200,41 +1200,41 @@ def handle_mesh_cleanup(params: Dict[str, Any]) -> Dict[str, Any]:
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
     
-    # 移除重复顶点
+    # Remove duplicate vertices
     if remove_doubles:
         result = bpy.ops.mesh.remove_doubles(threshold=merge_distance)
-        # 统计移除的顶点在后面计算
-    
-    # 溶解退化几何体
+        # Removed vertex count calculated later
+
+    # Dissolve degenerate geometry
     if dissolve_degenerate:
         bpy.ops.mesh.dissolve_degenerate(threshold=0.0001)
         fixed_issues += 1
     
-    # 移除孤立几何体
+    # Remove loose geometry
     if remove_loose:
         bpy.ops.mesh.delete_loose(use_verts=True, use_edges=True, use_faces=False)
         fixed_issues += 1
     
-    # 重新计算法线
+    # Recalculate normals
     if recalculate_normals:
         bpy.ops.mesh.normals_make_consistent(inside=False)
         fixed_issues += 1
     
-    # 修复非流形（尝试填充孔洞）
+    # Fix non-manifold (try to fill holes)
     if fix_non_manifold:
-        # 选择非流形几何体
+        # Select non-manifold geometry
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.ops.mesh.select_non_manifold()
-        # 尝试填充小孔洞
+        # Try to fill small holes
         try:
             bpy.ops.mesh.fill_holes(sides=4)
             fixed_issues += 1
         except:
-            pass  # 如果没有选中的非流形边，则跳过
+            pass  # Skip if no non-manifold edges selected
     
     bpy.ops.object.mode_set(mode='OBJECT')
     
-    # 计算移除的顶点数
+    # Calculate removed vertex count
     removed_verts = original_verts - len(obj.data.vertices)
     
     return {
@@ -1248,15 +1248,15 @@ def handle_mesh_cleanup(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_tris_to_quads(params: Dict[str, Any]) -> Dict[str, Any]:
-    """三角形转四边形
+    """Convert triangles to quads
     
     Args:
         params:
-            - object_name: 对象名称
-            - max_angle: 最大角度
-            - compare_uvs: 比较UV
-            - compare_vcol: 比较顶点色
-            - compare_materials: 比较材质
+            - object_name: Object name
+            - max_angle: Maximum angle
+            - compare_uvs: Compare UVs
+            - compare_vcol: Compare vertex colors
+            - compare_materials: Compare materials
     """
     object_name = params.get("object_name")
     max_angle = params.get("max_angle", 40.0)
@@ -1270,7 +1270,7 @@ def handle_tris_to_quads(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
     
@@ -1279,24 +1279,24 @@ def handle_tris_to_quads(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_TYPE",
-                "message": "只支持网格对象"
+                "message": "Only mesh objects are supported"
             }
         }
     
-    # 记录原始面数
+    # Record original face count
     original_faces = len(obj.data.polygons)
     original_tris = sum(1 for p in obj.data.polygons if len(p.vertices) == 3)
     
-    # 选择对象并进入编辑模式
+    # Select object and enter edit mode
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.mode_set(mode='EDIT')
     
-    # 选择所有面
+    # Select all faces
     bpy.ops.mesh.select_all(action='SELECT')
     
-    # 转换三角形为四边形
+    # Convert triangles to quads
     import math
     bpy.ops.mesh.tris_convert_to_quads(
         face_threshold=math.radians(max_angle),
@@ -1310,9 +1310,9 @@ def handle_tris_to_quads(params: Dict[str, Any]) -> Dict[str, Any]:
     
     bpy.ops.object.mode_set(mode='OBJECT')
     
-    # 计算转换后的面数
+    # Calculate face count after conversion
     new_faces = len(obj.data.polygons)
-    converted = original_faces - new_faces  # 每对三角形转换为一个四边形会减少一个面
+    converted = original_faces - new_faces  # Each pair of triangles converted to a quad reduces face count by one
     
     return {
         "success": True,
@@ -1325,14 +1325,14 @@ def handle_tris_to_quads(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_lod_generate(params: Dict[str, Any]) -> Dict[str, Any]:
-    """生成LOD（细节层次）
+    """Generate LOD (Level of Detail)
     
     Args:
         params:
-            - object_name: 对象名称
-            - lod_levels: LOD级别数量
-            - ratio_step: 每级减少比例
-            - create_collection: 是否创建集合
+            - object_name: Object name
+            - lod_levels: Number of LOD levels
+            - ratio_step: Reduction ratio per level
+            - create_collection: Whether to create a collection
     """
     object_name = params.get("object_name")
     lod_levels = params.get("lod_levels", 3)
@@ -1345,7 +1345,7 @@ def handle_lod_generate(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
     
@@ -1354,11 +1354,11 @@ def handle_lod_generate(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_TYPE",
-                "message": "只支持网格对象"
+                "message": "Only mesh objects are supported"
             }
         }
     
-    # 创建LOD集合
+    # Create LOD collection
     if create_collection:
         lod_collection_name = f"{obj.name}_LOD"
         if lod_collection_name not in bpy.data.collections:
@@ -1370,14 +1370,14 @@ def handle_lod_generate(params: Dict[str, Any]) -> Dict[str, Any]:
     lod_objects = []
     original_triangles = sum(len(p.vertices) - 2 for p in obj.data.polygons)
     
-    # LOD0 是原始模型
+    # LOD0 is the original model
     lod_objects.append({
         "name": f"{obj.name}_LOD0",
         "triangles": original_triangles,
         "level": 0
     })
     
-    # 复制原始对象作为LOD0
+    # Copy original object as LOD0
     lod0 = obj.copy()
     lod0.data = obj.data.copy()
     lod0.name = f"{obj.name}_LOD0"
@@ -1386,12 +1386,12 @@ def handle_lod_generate(params: Dict[str, Any]) -> Dict[str, Any]:
     else:
         bpy.context.scene.collection.objects.link(lod0)
     
-    # 生成其他LOD级别
+    # Generate other LOD levels
     current_ratio = 1.0
     for level in range(1, lod_levels + 1):
         current_ratio *= ratio_step
         
-        # 复制原始对象
+        # Copy original object
         lod_obj = obj.copy()
         lod_obj.data = obj.data.copy()
         lod_obj.name = f"{obj.name}_LOD{level}"
@@ -1401,16 +1401,16 @@ def handle_lod_generate(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             bpy.context.scene.collection.objects.link(lod_obj)
         
-        # 添加Decimate修改器
+        # Add Decimate modifier
         decimate = lod_obj.modifiers.new(name="LOD_Decimate", type='DECIMATE')
         decimate.decimate_type = 'COLLAPSE'
         decimate.ratio = current_ratio
         
-        # 应用修改器
+        # Apply modifier
         bpy.context.view_layer.objects.active = lod_obj
         bpy.ops.object.modifier_apply(modifier=decimate.name)
         
-        # 计算三角形数
+        # Calculate triangle count
         lod_triangles = sum(len(p.vertices) - 2 for p in lod_obj.data.polygons)
         
         lod_objects.append({
@@ -1419,7 +1419,7 @@ def handle_lod_generate(params: Dict[str, Any]) -> Dict[str, Any]:
             "level": level
         })
         
-        # 偏移位置以便查看
+        # Offset position for viewing
         lod_obj.location.x = obj.location.x + (level * 3)
     
     return {
@@ -1433,16 +1433,16 @@ def handle_lod_generate(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_smart_subdivide(params: Dict[str, Any]) -> Dict[str, Any]:
-    """智能细分
+    """Smart subdivision
     
     Args:
         params:
-            - object_name: 对象名称
-            - levels: 细分级别
-            - render_levels: 渲染级别
-            - use_creases: 使用折痕边
-            - apply_smooth: 应用平滑着色
-            - quality: 质量等级
+            - object_name: Object name
+            - levels: Subdivision levels
+            - render_levels: Render levels
+            - use_creases: Use crease edges
+            - apply_smooth: Apply smooth shading
+            - quality: Quality level
     """
     object_name = params.get("object_name")
     levels = params.get("levels", 1)
@@ -1457,7 +1457,7 @@ def handle_smart_subdivide(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
     
@@ -1466,16 +1466,16 @@ def handle_smart_subdivide(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_TYPE",
-                "message": "只支持网格对象"
+                "message": "Only mesh objects are supported"
             }
         }
     
-    # 选择对象
+    # Select object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     
-    # 如果使用折痕边，先自动检测并标记锐边
+    # If using crease edges, auto-detect and mark sharp edges first
     if use_creases:
         if bpy.context.mode != 'EDIT':
             bpy.ops.object.mode_set(mode='EDIT')
@@ -1483,10 +1483,10 @@ def handle_smart_subdivide(params: Dict[str, Any]) -> Dict[str, Any]:
         import bmesh
         bm = bmesh.from_edit_mesh(obj.data)
         
-        # 获取或创建折痕层
+        # Get or create crease layer
         crease_layer = bm.edges.layers.crease.verify()
         
-        # 根据质量设置角度阈值
+        # Set angle threshold based on quality
         angle_threshold = {1: 60, 2: 45, 3: 30, 4: 20, 5: 10}.get(quality, 30)
         
         import math
@@ -1499,7 +1499,7 @@ def handle_smart_subdivide(params: Dict[str, Any]) -> Dict[str, Any]:
         bmesh.update_edit_mesh(obj.data)
         bpy.ops.object.mode_set(mode='OBJECT')
     
-    # 添加细分曲面修改器
+    # Add subdivision surface modifier
     subsurf = obj.modifiers.new(name="MCP_Subdivision", type='SUBSURF')
     subsurf.levels = levels
     subsurf.render_levels = render_levels
@@ -1507,7 +1507,7 @@ def handle_smart_subdivide(params: Dict[str, Any]) -> Dict[str, Any]:
     subsurf.use_creases = use_creases
     subsurf.quality = quality
     
-    # 应用平滑着色
+    # Apply smooth shading
     if apply_smooth:
         bpy.ops.object.shade_smooth()
     
@@ -1523,18 +1523,18 @@ def handle_smart_subdivide(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_auto_smooth(params: Dict[str, Any]) -> Dict[str, Any]:
-    """自动平滑
+    """Auto smooth
     
-    根据 Blender 版本使用不同的实现方式：
-    - Blender < 4.1: 使用 use_auto_smooth 属性
-    - Blender 4.1+: 使用 Smooth by Angle 修改器
-    - Blender 5.0+: 使用 Weighted Normal 修改器或几何节点
+    Uses different implementations based on Blender version:
+    - Blender < 4.1: Uses the use_auto_smooth property
+    - Blender 4.1+: Uses Smooth by Angle modifier
+    - Blender 5.0+: Uses Weighted Normal modifier or geometry nodes
     
     Args:
         params:
-            - object_name: 对象名称
-            - angle: 平滑角度阈值（度）
-            - use_sharp_edges: 对锐边使用硬边
+            - object_name: Object name
+            - angle: Smooth angle threshold (degrees)
+            - use_sharp_edges: Use hard edges for sharp edges
     """
     import math
     
@@ -1548,7 +1548,7 @@ def handle_auto_smooth(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {object_name}"
+                "message": f"Object not found: {object_name}"
             }
         }
     
@@ -1557,11 +1557,11 @@ def handle_auto_smooth(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_TYPE",
-                "message": "只支持网格对象"
+                "message": "Only mesh objects are supported"
             }
         }
     
-    # 选择对象
+    # Select object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
@@ -1570,17 +1570,17 @@ def handle_auto_smooth(params: Dict[str, Any]) -> Dict[str, Any]:
     method_used = "unknown"
     sharp_count = 0
     
-    # 根据 Blender 版本选择实现方式
+    # Choose implementation based on Blender version
     if blender_version >= (4, 1, 0):
-        # Blender 4.1+ (包括 5.0): 使用 WEIGHTED_NORMAL 修改器
-        # 注意: SMOOTH_BY_ANGLE 在 Blender 5.0 中不存在
+        # Blender 4.1+ (including 5.0): Use WEIGHTED_NORMAL modifier
+        # Note: SMOOTH_BY_ANGLE does not exist in Blender 5.0
         method_used = "weighted_normal"
         
-        # 步骤1: 设置平滑着色
+        # Step 1: Set smooth shading
         for poly in obj.data.polygons:
             poly.use_smooth = True
         
-        # 步骤2: 添加或更新 WEIGHTED_NORMAL 修改器
+        # Step 2: Add or update WEIGHTED_NORMAL modifier
         wn_mod = None
         for mod in obj.modifiers:
             if mod.type == 'WEIGHTED_NORMAL':
@@ -1591,19 +1591,19 @@ def handle_auto_smooth(params: Dict[str, Any]) -> Dict[str, Any]:
             wn_mod = obj.modifiers.new(name="WeightedNormal", type='WEIGHTED_NORMAL')
         
         if wn_mod:
-            wn_mod.weight = 50  # 面积权重
-            wn_mod.keep_sharp = use_sharp_edges  # 是否保持锐边
+            wn_mod.weight = 50  # Area weight
+            wn_mod.keep_sharp = use_sharp_edges  # Whether to keep sharp edges
             wn_mod.mode = 'FACE_AREA'
         
-        # 步骤3: 如果需要，基于角度标记锐边
+        # Step 3: Mark sharp edges based on angle if needed
         if use_sharp_edges:
             import bmesh
             
-            # 确保在对象模式
+            # Ensure in object mode
             if bpy.context.mode != 'OBJECT':
                 bpy.ops.object.mode_set(mode='OBJECT')
             
-            # 进入编辑模式
+            # Enter edit mode
             bpy.ops.object.mode_set(mode='EDIT')
             bm = bmesh.from_edit_mesh(obj.data)
             
@@ -1614,7 +1614,7 @@ def handle_auto_smooth(params: Dict[str, Any]) -> Dict[str, Any]:
                     try:
                         face_angle = edge.calc_face_angle()
                         if face_angle is not None and face_angle > angle_rad:
-                            edge.smooth = False  # 标记为锐边
+                            edge.smooth = False  # Mark as sharp edge
                             sharp_count += 1
                         else:
                             edge.smooth = True
@@ -1625,16 +1625,16 @@ def handle_auto_smooth(params: Dict[str, Any]) -> Dict[str, Any]:
             bpy.ops.object.mode_set(mode='OBJECT')
     
     else:
-        # Blender < 4.1: 使用旧的 use_auto_smooth 属性
+        # Blender < 4.1: Use legacy use_auto_smooth property
         method_used = "legacy_auto_smooth"
         try:
-            # 应用平滑着色
+            # Apply smooth shading
             bpy.ops.object.shade_smooth()
-            # 设置自动平滑
+            # Set auto smooth
             obj.data.use_auto_smooth = True
             obj.data.auto_smooth_angle = math.radians(angle)
         except AttributeError:
-            # 如果属性不存在，回退到手动设置
+            # If property does not exist, fall back to manual settings
             for poly in obj.data.polygons:
                 poly.use_smooth = True
     

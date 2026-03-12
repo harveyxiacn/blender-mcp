@@ -1,7 +1,8 @@
 """
-Blender 插件安装器
+Blender Addon Installer
 
-自动检测 Blender 安装路径并安装 MCP 插件。
+Automatically detects the Blender installation path and installs the MCP addon.
+Supports Blender 4.x and 5.x with automatic version detection.
 """
 
 import os
@@ -15,17 +16,17 @@ logger = logging.getLogger(__name__)
 
 
 def resolve_addon_source() -> Path:
-    """解析 addon 源码目录。
+    """Resolve the addon source directory.
 
-    优先支持仓库源码布局:
+    Supports the standard repository layout:
       repo_root/src/blender_mcp/installer.py
       repo_root/addon/blender_mcp_addon
     """
     module_file = Path(__file__).resolve()
     candidates = [
         module_file.parents[2] / "addon" / "blender_mcp_addon",  # repo_root/addon/...
-        module_file.parents[1] / "addon" / "blender_mcp_addon",  # src/addon/... (备用)
-        Path.cwd() / "addon" / "blender_mcp_addon",              # 从仓库根目录运行时的备用路径
+        module_file.parents[1] / "addon" / "blender_mcp_addon",  # src/addon/... (fallback)
+        Path.cwd() / "addon" / "blender_mcp_addon",              # cwd fallback
     ]
 
     for candidate in candidates:
@@ -33,44 +34,39 @@ def resolve_addon_source() -> Path:
             return candidate
 
     tried = "\n".join(f"  - {path}" for path in candidates)
-    raise FileNotFoundError(f"插件源文件不存在，已尝试路径:\n{tried}")
+    raise FileNotFoundError(f"Addon source not found. Tried:\n{tried}")
 
 
 def find_blender_paths() -> List[Path]:
-    """查找系统中的 Blender 安装路径"""
+    """Find Blender installation paths on the system."""
     paths = []
-    
+
     if sys.platform == "win32":
-        # Windows 常见路径
         common_paths = [
             Path(os.environ.get("PROGRAMFILES", "C:/Program Files")) / "Blender Foundation",
             Path(os.environ.get("PROGRAMFILES(X86)", "C:/Program Files (x86)")) / "Blender Foundation",
             Path.home() / "AppData" / "Roaming" / "Blender Foundation",
         ]
-        
         for base in common_paths:
             if base.exists():
                 for item in base.iterdir():
                     if item.is_dir() and item.name.startswith("Blender"):
                         paths.append(item)
-    
+
     elif sys.platform == "darwin":
-        # macOS 常见路径
         common_paths = [
             Path("/Applications/Blender.app"),
             Path.home() / "Applications" / "Blender.app",
         ]
         paths.extend([p for p in common_paths if p.exists()])
-    
+
     else:
-        # Linux 常见路径
         common_paths = [
             Path("/usr/share/blender"),
             Path("/usr/local/share/blender"),
             Path.home() / ".local" / "share" / "blender",
             Path("/opt/blender"),
         ]
-        
         for base in common_paths:
             if base.exists():
                 if base.name == "blender":
@@ -79,82 +75,115 @@ def find_blender_paths() -> List[Path]:
                     for item in base.iterdir():
                         if item.is_dir():
                             paths.append(item)
-    
+
     return paths
 
 
 def get_addon_path(blender_path: Path) -> Optional[Path]:
-    """获取 Blender 插件目录路径"""
+    """Get the addon directory for a specific Blender installation."""
     if sys.platform == "darwin":
-        # macOS
         if blender_path.suffix == ".app":
-            # 查找版本号目录
             contents = blender_path / "Contents" / "Resources"
-            for item in contents.iterdir():
-                if item.is_dir() and item.name[0].isdigit():
-                    return item / "scripts" / "addons"
+            if contents.exists():
+                for item in sorted(contents.iterdir(), reverse=True):
+                    if item.is_dir() and item.name[0].isdigit():
+                        return item / "scripts" / "addons"
     else:
-        # Windows / Linux
-        for item in blender_path.iterdir():
+        for item in sorted(blender_path.iterdir(), reverse=True):
             if item.is_dir() and item.name[0].isdigit():
                 return item / "scripts" / "addons"
-    
+
     return None
 
 
-def get_user_addon_path() -> Path:
-    """获取用户插件目录路径"""
+def _detect_latest_blender_version() -> str:
+    """Auto-detect the latest Blender version from user config directories.
+
+    Scans the platform-specific Blender config directory and returns the
+    highest version number found (e.g. '5.0', '4.2'). Falls back to '4.0'
+    if no version directories are found.
+    """
     if sys.platform == "win32":
         base = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
-        return base / "Blender Foundation" / "Blender" / "5.0" / "scripts" / "addons"
+        config_dir = base / "Blender Foundation" / "Blender"
     elif sys.platform == "darwin":
-        return Path.home() / "Library" / "Application Support" / "Blender" / "5.0" / "scripts" / "addons"
+        config_dir = Path.home() / "Library" / "Application Support" / "Blender"
     else:
-        return Path.home() / ".config" / "blender" / "5.0" / "scripts" / "addons"
+        config_dir = Path.home() / ".config" / "blender"
+
+    if config_dir.exists():
+        versions = []
+        for item in config_dir.iterdir():
+            if item.is_dir() and item.name[0].isdigit():
+                try:
+                    parts = item.name.split(".")
+                    versions.append((int(parts[0]), int(parts[1]) if len(parts) > 1 else 0, item.name))
+                except (ValueError, IndexError):
+                    continue
+        if versions:
+            versions.sort(reverse=True)
+            return versions[0][2]
+
+    return "4.0"
+
+
+def get_user_addon_path(version: Optional[str] = None) -> Path:
+    """Get the user addon directory path.
+
+    Args:
+        version: Blender version string (e.g. '5.0', '4.2').
+                 If None, auto-detects the latest installed version.
+    """
+    if version is None:
+        version = _detect_latest_blender_version()
+
+    logger.info(f"Using Blender version: {version}")
+
+    if sys.platform == "win32":
+        base = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
+        return base / "Blender Foundation" / "Blender" / version / "scripts" / "addons"
+    elif sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "Blender" / version / "scripts" / "addons"
+    else:
+        return Path.home() / ".config" / "blender" / version / "scripts" / "addons"
 
 
 def install_blender_addon(
     blender_path: Optional[str] = None,
     force: bool = False
 ) -> bool:
-    """安装 Blender 插件
-    
+    """Install the Blender MCP addon.
+
     Args:
-        blender_path: Blender 安装路径（可选）
-        force: 是否强制重新安装
-        
+        blender_path: Explicit Blender installation path (optional).
+        force: Force reinstall even if addon already exists.
+
     Returns:
-        是否安装成功
+        True if installed successfully, False if already exists.
     """
-    # 确定源插件路径
     addon_source = resolve_addon_source()
-    
-    # 确定目标路径
+
     if blender_path:
         target_base = get_addon_path(Path(blender_path))
         if not target_base:
-            raise ValueError(f"无法确定 Blender 插件目录: {blender_path}")
+            raise ValueError(f"Cannot determine addon directory for: {blender_path}")
     else:
-        # 使用用户插件目录
         target_base = get_user_addon_path()
-    
+
     target_path = target_base / "blender_mcp_addon"
-    
-    # 创建目录
+
     target_base.mkdir(parents=True, exist_ok=True)
-    
-    # 检查是否已存在
+
     if target_path.exists():
         if force:
-            logger.info(f"删除现有插件: {target_path}")
+            logger.info(f"Removing existing addon: {target_path}")
             shutil.rmtree(target_path)
         else:
-            logger.info(f"插件已存在: {target_path}")
+            logger.info(f"Addon already exists: {target_path}")
             return False
-    
-    # 复制插件
-    logger.info(f"安装插件到: {target_path}")
+
+    logger.info(f"Installing addon to: {target_path}")
     shutil.copytree(addon_source, target_path)
-    
-    logger.info("插件安装完成")
+
+    logger.info("Addon installation complete")
     return True

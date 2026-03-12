@@ -1,7 +1,7 @@
 """
-资产管理处理器
+Asset Management Handler
 
-处理Blender资产库管理命令。
+Handles Blender asset library management commands.
 """
 
 from typing import Any, Dict
@@ -10,7 +10,7 @@ import os
 
 
 def handle_mark(params: Dict[str, Any]) -> Dict[str, Any]:
-    """标记为资产"""
+    """Mark as asset"""
     object_name = params.get("object_name")
     asset_type = params.get("asset_type", "OBJECT")
     description = params.get("description", "")
@@ -22,7 +22,7 @@ def handle_mark(params: Dict[str, Any]) -> Dict[str, Any]:
             if not obj:
                 return {
                     "success": False,
-                    "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+                    "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
                 }
             
             obj.asset_mark()
@@ -46,7 +46,7 @@ def handle_mark(params: Dict[str, Any]) -> Dict[str, Any]:
             if not mat:
                 return {
                     "success": False,
-                    "error": {"code": "MATERIAL_NOT_FOUND", "message": f"材质不存在: {object_name}"}
+                    "error": {"code": "MATERIAL_NOT_FOUND", "message": f"Material not found: {object_name}"}
                 }
             
             mat.asset_mark()
@@ -70,7 +70,7 @@ def handle_mark(params: Dict[str, Any]) -> Dict[str, Any]:
             if not world:
                 return {
                     "success": False,
-                    "error": {"code": "WORLD_NOT_FOUND", "message": f"世界不存在: {object_name}"}
+                    "error": {"code": "WORLD_NOT_FOUND", "message": f"World not found: {object_name}"}
                 }
             
             world.asset_mark()
@@ -85,7 +85,7 @@ def handle_mark(params: Dict[str, Any]) -> Dict[str, Any]:
         
         return {
             "success": False,
-            "error": {"code": "INVALID_TYPE", "message": f"不支持的资产类型: {asset_type}"}
+            "error": {"code": "INVALID_TYPE", "message": f"Unsupported asset type: {asset_type}"}
         }
     
     except Exception as e:
@@ -96,14 +96,14 @@ def handle_mark(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_catalog(params: Dict[str, Any]) -> Dict[str, Any]:
-    """目录操作"""
+    """Catalog operations"""
     action = params.get("action", "LIST")
     catalog_name = params.get("catalog_name")
     parent_catalog = params.get("parent_catalog")
     
     try:
         if action == "LIST":
-            # 列出所有资产
+            # List all assets
             assets = {
                 "objects": [],
                 "materials": [],
@@ -136,7 +136,7 @@ def handle_catalog(params: Dict[str, Any]) -> Dict[str, Any]:
             }
         
         elif action == "CREATE":
-            # Blender的资产目录需要通过资产浏览器创建
+            # Blender's asset catalogs need to be created via the Asset Browser
             return {
                 "success": True,
                 "data": {
@@ -154,7 +154,7 @@ def handle_catalog(params: Dict[str, Any]) -> Dict[str, Any]:
         
         return {
             "success": False,
-            "error": {"code": "INVALID_ACTION", "message": f"未知操作: {action}"}
+            "error": {"code": "INVALID_ACTION", "message": f"Unknown action: {action}"}
         }
     
     except Exception as e:
@@ -165,7 +165,7 @@ def handle_catalog(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_import(params: Dict[str, Any]) -> Dict[str, Any]:
-    """导入资产"""
+    """Import asset"""
     filepath = params.get("filepath")
     asset_name = params.get("asset_name")
     link = params.get("link", False)
@@ -173,28 +173,28 @@ def handle_import(params: Dict[str, Any]) -> Dict[str, Any]:
     if not os.path.exists(filepath):
         return {
             "success": False,
-            "error": {"code": "FILE_NOT_FOUND", "message": f"文件不存在: {filepath}"}
+            "error": {"code": "FILE_NOT_FOUND", "message": f"File not found: {filepath}"}
         }
     
     try:
-        # 使用 bpy.ops.wm.append 或 link
+        # Use bpy.ops.wm.append or link
         with bpy.data.libraries.load(filepath, link=link) as (data_from, data_to):
-            # 尝试导入对象
+            # Try to import objects
             if asset_name in data_from.objects:
                 data_to.objects = [asset_name]
-            # 尝试导入材质
+            # Try to import materials
             elif asset_name in data_from.materials:
                 data_to.materials = [asset_name]
-            # 尝试导入集合
+            # Try to import collections
             elif asset_name in data_from.collections:
                 data_to.collections = [asset_name]
             else:
                 return {
                     "success": False,
-                    "error": {"code": "ASSET_NOT_FOUND", "message": f"资产不存在: {asset_name}"}
+                    "error": {"code": "ASSET_NOT_FOUND", "message": f"Asset not found: {asset_name}"}
                 }
         
-        # 链接到场景
+        # Link to scene
         for obj in data_to.objects:
             if obj:
                 bpy.context.collection.objects.link(obj)
@@ -219,7 +219,7 @@ def handle_import(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_search(params: Dict[str, Any]) -> Dict[str, Any]:
-    """搜索资产"""
+    """Search assets"""
     query = params.get("query", "").lower()
     asset_type = params.get("asset_type")
     
@@ -269,24 +269,24 @@ def handle_search(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_preview(params: Dict[str, Any]) -> Dict[str, Any]:
-    """生成资产预览图"""
+    """Generate asset preview"""
     object_name = params.get("object_name")
     
     obj = bpy.data.objects.get(object_name)
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
         if not obj.asset_data:
             return {
                 "success": False,
-                "error": {"code": "NOT_ASSET", "message": "对象未标记为资产"}
+                "error": {"code": "NOT_ASSET", "message": "Object is not marked as an asset"}
             }
         
-        # 生成预览
+        # Generate preview
         obj.asset_generate_preview()
         
         return {
@@ -305,10 +305,10 @@ def handle_preview(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_clear(params: Dict[str, Any]) -> Dict[str, Any]:
-    """清除资产标记"""
+    """Clear asset marking"""
     object_name = params.get("object_name")
     
-    # 尝试在不同数据块中查找
+    # Try to find in different data blocks
     data_block = None
     
     if object_name in bpy.data.objects:
@@ -321,7 +321,7 @@ def handle_clear(params: Dict[str, Any]) -> Dict[str, Any]:
     if not data_block:
         return {
             "success": False,
-            "error": {"code": "NOT_FOUND", "message": f"未找到: {object_name}"}
+            "error": {"code": "NOT_FOUND", "message": f"Not found: {object_name}"}
         }
     
     try:

@@ -1,7 +1,7 @@
 """
-预设动画处理器
+Preset animation handler
 
-处理预设动画、动作库、NLA等命令。
+Handles preset animation, action library, NLA and related commands.
 """
 
 from typing import Any, Dict, List
@@ -9,11 +9,11 @@ import bpy
 import math
 
 
-# 预设动画配置 - 增强版，包含更多游戏动画
+# Preset animation configuration - enhanced version with more game animations
 ANIMATION_PRESETS = {
-    # ==================== 基础动作 ====================
+    # ==================== Basic Actions ====================
     "idle": {
-        "description": "待机呼吸",
+        "description": "Idle breathing",
         "category": "basic",
         "duration": 60,
         "loop": True,
@@ -24,7 +24,7 @@ ANIMATION_PRESETS = {
         }
     },
     "idle_combat": {
-        "description": "战斗待机",
+        "description": "Combat idle",
         "category": "combat",
         "duration": 40,
         "loop": True,
@@ -37,7 +37,7 @@ ANIMATION_PRESETS = {
         }
     },
     "walk": {
-        "description": "行走循环",
+        "description": "Walk cycle",
         "category": "locomotion",
         "duration": 24,
         "loop": True,
@@ -51,7 +51,7 @@ ANIMATION_PRESETS = {
         }
     },
     "run": {
-        "description": "跑步循环",
+        "description": "Run cycle",
         "category": "locomotion",
         "duration": 16,
         "loop": True,
@@ -66,7 +66,7 @@ ANIMATION_PRESETS = {
         }
     },
     "sprint": {
-        "description": "冲刺",
+        "description": "Sprint",
         "category": "locomotion",
         "duration": 12,
         "loop": True,
@@ -81,7 +81,7 @@ ANIMATION_PRESETS = {
         }
     },
     "jump": {
-        "description": "跳跃",
+        "description": "Jump",
         "category": "locomotion",
         "duration": 40,
         "loop": False,
@@ -94,7 +94,7 @@ ANIMATION_PRESETS = {
         }
     },
     "double_jump": {
-        "description": "二段跳",
+        "description": "Double jump",
         "category": "locomotion",
         "duration": 30,
         "loop": False,
@@ -106,7 +106,7 @@ ANIMATION_PRESETS = {
         }
     },
     "land": {
-        "description": "落地",
+        "description": "Land",
         "category": "locomotion",
         "duration": 20,
         "loop": False,
@@ -119,7 +119,7 @@ ANIMATION_PRESETS = {
         }
     },
     "dodge_roll": {
-        "description": "闪避翻滚",
+        "description": "Dodge roll",
         "category": "combat",
         "duration": 24,
         "loop": False,
@@ -132,7 +132,7 @@ ANIMATION_PRESETS = {
         }
     },
     "dodge_back": {
-        "description": "后跳闪避",
+        "description": "Back dodge",
         "category": "combat",
         "duration": 20,
         "loop": False,
@@ -143,9 +143,9 @@ ANIMATION_PRESETS = {
         }
     },
     
-    # ==================== 战斗动作 ====================
+    # ==================== Combat Actions ====================
     "attack": {
-        "description": "基础攻击",
+        "description": "Basic attack",
         "category": "combat",
         "duration": 20,
         "loop": False,
@@ -156,7 +156,7 @@ ANIMATION_PRESETS = {
         }
     },
     "attack_combo_1": {
-        "description": "连击第一段",
+        "description": "Combo hit 1",
         "category": "combat",
         "duration": 15,
         "loop": False,
@@ -167,7 +167,7 @@ ANIMATION_PRESETS = {
         }
     },
     "attack_combo_2": {
-        "description": "连击第二段",
+        "description": "Combo hit 2",
         "category": "combat",
         "duration": 18,
         "loop": False,
@@ -178,7 +178,7 @@ ANIMATION_PRESETS = {
         }
     },
     "attack_combo_3": {
-        "description": "连击第三段（重击）",
+        "description": "Combo hit 3 (heavy)",
         "category": "combat",
         "duration": 25,
         "loop": False,
@@ -190,7 +190,7 @@ ANIMATION_PRESETS = {
         }
     },
     "attack_heavy": {
-        "description": "重攻击",
+        "description": "Heavy attack",
         "category": "combat",
         "duration": 35,
         "loop": False,
@@ -202,7 +202,7 @@ ANIMATION_PRESETS = {
         }
     },
     "attack_spin": {
-        "description": "旋转攻击",
+        "description": "Spin attack",
         "category": "combat",
         "duration": 30,
         "loop": False,
@@ -213,7 +213,7 @@ ANIMATION_PRESETS = {
         }
     },
     "attack_uppercut": {
-        "description": "上勾拳",
+        "description": "Uppercut",
         "category": "combat",
         "duration": 20,
         "loop": False,
@@ -225,7 +225,7 @@ ANIMATION_PRESETS = {
         }
     },
     "block": {
-        "description": "格挡",
+        "description": "Block",
         "category": "combat",
         "duration": 15,
         "loop": False,
@@ -238,7 +238,7 @@ ANIMATION_PRESETS = {
         }
     },
     "parry": {
-        "description": "弹反",
+        "description": "Parry",
         "category": "combat",
         "duration": 12,
         "loop": False,
@@ -249,7 +249,7 @@ ANIMATION_PRESETS = {
         }
     },
     "hit_light": {
-        "description": "受击（轻）",
+        "description": "Hit reaction (light)",
         "category": "combat",
         "duration": 15,
         "loop": False,
@@ -259,7 +259,7 @@ ANIMATION_PRESETS = {
         }
     },
     "hit_heavy": {
-        "description": "受击（重）",
+        "description": "Hit reaction (heavy)",
         "category": "combat",
         "duration": 25,
         "loop": False,
@@ -271,7 +271,7 @@ ANIMATION_PRESETS = {
         }
     },
     "knockdown": {
-        "description": "击倒",
+        "description": "Knockdown",
         "category": "combat",
         "duration": 40,
         "loop": False,
@@ -282,7 +282,7 @@ ANIMATION_PRESETS = {
         }
     },
     "getup": {
-        "description": "起身",
+        "description": "Get up",
         "category": "combat",
         "duration": 35,
         "loop": False,
@@ -293,7 +293,7 @@ ANIMATION_PRESETS = {
         }
     },
     "death": {
-        "description": "死亡",
+        "description": "Death",
         "category": "combat",
         "duration": 50,
         "loop": False,
@@ -307,9 +307,9 @@ ANIMATION_PRESETS = {
         }
     },
     
-    # ==================== 技能动作 ====================
+    # ==================== Skill Actions ====================
     "cast_spell": {
-        "description": "施法",
+        "description": "Cast spell",
         "category": "skill",
         "duration": 40,
         "loop": False,
@@ -322,7 +322,7 @@ ANIMATION_PRESETS = {
         }
     },
     "cast_fireball": {
-        "description": "投掷火球",
+        "description": "Throw fireball",
         "category": "skill",
         "duration": 30,
         "loop": False,
@@ -333,7 +333,7 @@ ANIMATION_PRESETS = {
         }
     },
     "cast_heal": {
-        "description": "治疗施法",
+        "description": "Healing cast",
         "category": "skill",
         "duration": 50,
         "loop": False,
@@ -345,7 +345,7 @@ ANIMATION_PRESETS = {
         }
     },
     "charge_power": {
-        "description": "蓄力",
+        "description": "Charge power",
         "category": "skill",
         "duration": 60,
         "loop": False,
@@ -357,7 +357,7 @@ ANIMATION_PRESETS = {
         }
     },
     "release_power": {
-        "description": "释放能量",
+        "description": "Release power",
         "category": "skill",
         "duration": 25,
         "loop": False,
@@ -368,9 +368,9 @@ ANIMATION_PRESETS = {
         }
     },
     
-    # ==================== 交互动作 ====================
+    # ==================== Social/Interaction Actions ====================
     "wave": {
-        "description": "挥手",
+        "description": "Wave",
         "category": "social",
         "duration": 30,
         "loop": False,
@@ -380,7 +380,7 @@ ANIMATION_PRESETS = {
         }
     },
     "celebrate": {
-        "description": "庆祝",
+        "description": "Celebrate",
         "category": "social",
         "duration": 60,
         "loop": False,
@@ -392,7 +392,7 @@ ANIMATION_PRESETS = {
         }
     },
     "dance": {
-        "description": "跳舞",
+        "description": "Dance",
         "category": "social",
         "duration": 48,
         "loop": True,
@@ -404,7 +404,7 @@ ANIMATION_PRESETS = {
         }
     },
     "sit": {
-        "description": "坐下",
+        "description": "Sit down",
         "category": "social",
         "duration": 30,
         "loop": False,
@@ -417,7 +417,7 @@ ANIMATION_PRESETS = {
         }
     },
     "bow": {
-        "description": "鞠躬",
+        "description": "Bow",
         "category": "social",
         "duration": 40,
         "loop": False,
@@ -428,7 +428,7 @@ ANIMATION_PRESETS = {
         }
     },
     "salute": {
-        "description": "敬礼",
+        "description": "Salute",
         "category": "social",
         "duration": 35,
         "loop": False,
@@ -439,7 +439,7 @@ ANIMATION_PRESETS = {
         }
     },
     "point": {
-        "description": "指向",
+        "description": "Point",
         "category": "social",
         "duration": 25,
         "loop": False,
@@ -449,7 +449,7 @@ ANIMATION_PRESETS = {
         }
     },
     "pickup": {
-        "description": "拾取物品",
+        "description": "Pick up item",
         "category": "interaction",
         "duration": 30,
         "loop": False,
@@ -461,7 +461,7 @@ ANIMATION_PRESETS = {
         }
     },
     "use_item": {
-        "description": "使用物品",
+        "description": "Use item",
         "category": "interaction",
         "duration": 40,
         "loop": False,
@@ -472,7 +472,7 @@ ANIMATION_PRESETS = {
         }
     },
     "open_chest": {
-        "description": "开宝箱",
+        "description": "Open chest",
         "category": "interaction",
         "duration": 45,
         "loop": False,
@@ -488,7 +488,7 @@ ANIMATION_PRESETS = {
 
 
 def handle_apply(params: Dict[str, Any]) -> Dict[str, Any]:
-    """应用预设动画"""
+    """Apply preset animation"""
     armature_name = params.get("armature_name")
     preset = params.get("preset", "idle")
     speed = params.get("speed", 1.0)
@@ -498,30 +498,30 @@ def handle_apply(params: Dict[str, Any]) -> Dict[str, Any]:
     if not armature_obj or armature_obj.type != 'ARMATURE':
         return {
             "success": False,
-            "error": {"code": "ARMATURE_NOT_FOUND", "message": f"骨架不存在: {armature_name}"}
+            "error": {"code": "ARMATURE_NOT_FOUND", "message": f"Armature not found: {armature_name}"}
         }
     
     preset_config = ANIMATION_PRESETS.get(preset)
     if not preset_config:
         return {
             "success": False,
-            "error": {"code": "PRESET_NOT_FOUND", "message": f"预设不存在: {preset}"}
+            "error": {"code": "PRESET_NOT_FOUND", "message": f"Preset not found: {preset}"}
         }
     
-    # 创建动作
+    # Create action
     action_name = f"{armature_name}_{preset}"
     action = bpy.data.actions.new(name=action_name)
     
-    # 关联动作到骨架
+    # Associate action with armature
     if not armature_obj.animation_data:
         armature_obj.animation_data_create()
     armature_obj.animation_data.action = action
     
-    # 进入姿态模式
+    # Enter pose mode
     bpy.context.view_layer.objects.active = armature_obj
     bpy.ops.object.mode_set(mode='POSE')
     
-    # 应用关键帧
+    # Apply keyframes
     keyframes = preset_config["keyframes"]
     duration = int(preset_config["duration"] / speed)
     
@@ -535,7 +535,7 @@ def handle_apply(params: Dict[str, Any]) -> Dict[str, Any]:
             pose_bone.rotation_euler = rotation
             pose_bone.keyframe_insert(data_path="rotation_euler", frame=adjusted_frame)
     
-    # 设置循环
+    # Set loop
     if loop:
         for fcurve in action.fcurves:
             for modifier in fcurve.modifiers:
@@ -544,7 +544,7 @@ def handle_apply(params: Dict[str, Any]) -> Dict[str, Any]:
     
     bpy.ops.object.mode_set(mode='OBJECT')
     
-    # 设置时间线范围
+    # Set timeline range
     bpy.context.scene.frame_start = 1
     bpy.context.scene.frame_end = duration
     
@@ -559,17 +559,17 @@ def handle_apply(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_action_create(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建动作"""
+    """Create action"""
     action_name = params.get("action_name")
     armature_name = params.get("armature_name")
     frame_start = params.get("frame_start", 1)
     frame_end = params.get("frame_end", 60)
     
-    # 创建动作
+    # Create action
     action = bpy.data.actions.new(name=action_name)
     action.frame_range = (frame_start, frame_end)
     
-    # 如果指定了骨架，关联动作
+    # If armature is specified, associate action
     if armature_name:
         armature_obj = bpy.data.objects.get(armature_name)
         if armature_obj and armature_obj.type == 'ARMATURE':
@@ -586,7 +586,7 @@ def handle_action_create(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_nla_add(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加NLA条带"""
+    """Add NLA strip"""
     object_name = params.get("object_name")
     action_name = params.get("action_name")
     track_name = params.get("track_name", "NlaTrack")
@@ -598,25 +598,25 @@ def handle_nla_add(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     action = bpy.data.actions.get(action_name)
     if not action:
         return {
             "success": False,
-            "error": {"code": "ACTION_NOT_FOUND", "message": f"动作不存在: {action_name}"}
+            "error": {"code": "ACTION_NOT_FOUND", "message": f"Action not found: {action_name}"}
         }
     
-    # 确保有动画数据
+    # Ensure animation data exists
     if not obj.animation_data:
         obj.animation_data_create()
     
-    # 创建或获取NLA轨道
+    # Create or get NLA track
     track = obj.animation_data.nla_tracks.new()
     track.name = track_name
     
-    # 添加条带
+    # Add strip
     strip = track.strips.new(action_name, start_frame, action)
     strip.blend_type = blend_type
     strip.scale = scale
@@ -631,7 +631,7 @@ def handle_nla_add(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_follow_path(params: Dict[str, Any]) -> Dict[str, Any]:
-    """路径动画"""
+    """Path animation"""
     object_name = params.get("object_name")
     path_name = params.get("path_name")
     duration = params.get("duration", 100)
@@ -641,26 +641,26 @@ def handle_follow_path(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     path = bpy.data.objects.get(path_name)
     if not path or path.type != 'CURVE':
         return {
             "success": False,
-            "error": {"code": "PATH_NOT_FOUND", "message": f"路径不存在: {path_name}"}
+            "error": {"code": "PATH_NOT_FOUND", "message": f"Path not found: {path_name}"}
         }
     
-    # 添加跟随路径约束
+    # Add follow path constraint
     constraint = obj.constraints.new('FOLLOW_PATH')
     constraint.target = path
     constraint.use_curve_follow = follow_rotation
     
-    # 设置路径动画
+    # Set up path animation
     path.data.use_path = True
     path.data.path_duration = duration
     
-    # 动画化偏移
+    # Animate offset
     constraint.offset_factor = 0
     constraint.keyframe_insert(data_path="offset_factor", frame=1)
     constraint.offset_factor = 1
@@ -675,7 +675,7 @@ def handle_follow_path(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_bake(params: Dict[str, Any]) -> Dict[str, Any]:
-    """烘焙动画"""
+    """Bake animation"""
     object_name = params.get("object_name")
     frame_start = params.get("frame_start", 1)
     frame_end = params.get("frame_end", 250)
@@ -686,15 +686,15 @@ def handle_bake(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
-    # 选择对象
+    # Select object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     
-    # 如果是骨架，进入姿态模式
+    # If armature, enter pose mode
     if obj.type == 'ARMATURE':
         bpy.ops.object.mode_set(mode='POSE')
         bpy.ops.pose.select_all(action='SELECT')

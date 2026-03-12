@@ -1,7 +1,7 @@
 """
-纹理绘制处理器
+Texture Paint Handler
 
-处理纹理绘制相关的命令。
+Handles texture painting-related commands.
 """
 
 from typing import Any, Dict
@@ -10,7 +10,7 @@ import os
 
 
 def handle_mode(params: Dict[str, Any]) -> Dict[str, Any]:
-    """进入/退出纹理绘制模式"""
+    """Enter/exit texture paint mode"""
     object_name = params.get("object_name")
     enable = params.get("enable", True)
     
@@ -18,21 +18,21 @@ def handle_mode(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     if obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "INVALID_TYPE", "message": "只有网格对象可以进行纹理绘制"}
+            "error": {"code": "INVALID_TYPE", "message": "Only mesh objects can be texture painted"}
         }
     
-    # 选择对象
+    # Select object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     
-    # 切换模式
+    # Switch mode
     if enable:
         bpy.ops.object.mode_set(mode='TEXTURE_PAINT')
     else:
@@ -47,7 +47,7 @@ def handle_mode(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建新纹理"""
+    """Create new texture"""
     name = params.get("name", "Texture")
     width = params.get("width", 1024)
     height = params.get("height", 1024)
@@ -55,7 +55,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
     alpha = params.get("alpha", True)
     float_buffer = params.get("float_buffer", False)
     
-    # 创建新图像
+    # Create new image
     image = bpy.data.images.new(
         name=name,
         width=width,
@@ -64,7 +64,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
         float_buffer=float_buffer
     )
     
-    # 填充颜色
+    # Fill color
     if color:
         pixels = [0.0] * (width * height * 4)
         for i in range(width * height):
@@ -85,7 +85,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_set_brush(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置绘制笔刷"""
+    """Set paint brush"""
     brush_type = params.get("brush_type", "DRAW")
     color = params.get("color", [1.0, 1.0, 1.0])
     radius = params.get("radius", 50.0)
@@ -93,10 +93,10 @@ def handle_set_brush(params: Dict[str, Any]) -> Dict[str, Any]:
     blend = params.get("blend", "MIX")
     
     try:
-        # 获取当前工具设置
+        # Get current tool settings
         tool_settings = bpy.context.tool_settings
         
-        # 笔刷类型映射
+        # Brush type mapping
         brush_map = {
             "DRAW": "TexDraw",
             "SOFTEN": "Soften",
@@ -108,28 +108,28 @@ def handle_set_brush(params: Dict[str, Any]) -> Dict[str, Any]:
         
         brush_name = brush_map.get(brush_type, "TexDraw")
         
-        # 查找笔刷 - Blender 5.0+ 兼容
+        # Find brush - Blender 5.0+ compatible
         brush = bpy.data.brushes.get(brush_name)
         if not brush:
             for b in bpy.data.brushes:
-                # Blender 5.0+ 可能使用不同属性
+                # Blender 5.0+ may use different properties
                 tool = getattr(b, 'image_tool', None) or getattr(b, 'image_paint_tool', None)
                 if tool == brush_type:
                     brush = b
                     break
         
         if not brush:
-            # 创建新笔刷
+            # Create new brush
             brush = bpy.data.brushes.new(name=brush_name, mode='TEXTURE_PAINT')
         
         if brush:
-            # Blender 5.0+ brush 属性是只读的
-            # 直接设置笔刷属性
+            # Blender 5.0+ brush properties are read-only
+            # Set brush properties directly
             brush.size = int(radius)
             brush.strength = strength
             brush.color = color[:3] if len(color) >= 3 else [1, 1, 1]
             
-            # 设置混合模式
+            # Set blend mode
             blend_map = {
                 "MIX": "MIX",
                 "ADD": "ADD",
@@ -159,7 +159,7 @@ def handle_set_brush(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_stroke(params: Dict[str, Any]) -> Dict[str, Any]:
-    """执行绘制笔触"""
+    """Execute paint stroke"""
     object_name = params.get("object_name")
     uv_points = params.get("uv_points", [])
     color = params.get("color")
@@ -168,17 +168,17 @@ def handle_stroke(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
-    # 确保对象有材质和纹理
+    # Ensure object has material and texture
     if not obj.active_material:
         return {
             "success": False,
-            "error": {"code": "NO_MATERIAL", "message": "对象没有材质"}
+            "error": {"code": "NO_MATERIAL", "message": "Object has no material"}
         }
     
-    # 确保在纹理绘制模式
+    # Ensure in texture paint mode
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
@@ -186,14 +186,14 @@ def handle_stroke(params: Dict[str, Any]) -> Dict[str, Any]:
     if bpy.context.object.mode != 'TEXTURE_PAINT':
         bpy.ops.object.mode_set(mode='TEXTURE_PAINT')
     
-    # 设置颜色
+    # Set color
     if color:
         brush = bpy.context.tool_settings.image_paint.brush
         if brush:
             brush.color = color[:3] if len(color) >= 3 else [1, 1, 1]
     
-    # 注意：直接程序化绘制纹理
-    # 获取活动的绘制图像
+    # Note: Direct programmatic texture painting
+    # Get the active paint image
     paint_slot = obj.active_material.paint_active_slot
     tex_slot = obj.active_material.texture_paint_slots[paint_slot] if paint_slot < len(obj.active_material.texture_paint_slots) else None
     
@@ -204,16 +204,16 @@ def handle_stroke(params: Dict[str, Any]) -> Dict[str, Any]:
         
         brush_color = color if color else [1.0, 1.0, 1.0]
         
-        # 在UV坐标位置绘制
+        # Paint at UV coordinate positions
         for point in uv_points:
             u, v = point[:2]
             pressure = point[2] if len(point) > 2 else 1.0
             
-            # 转换UV到像素坐标
+            # Convert UV to pixel coordinates
             px = int(u * width)
             py = int(v * height)
             
-            # 简单的点绘制
+            # Simple dot painting
             radius = int(10 * pressure)
             
             for dy in range(-radius, radius + 1):
@@ -224,7 +224,7 @@ def handle_stroke(params: Dict[str, Any]) -> Dict[str, Any]:
                         
                         if 0 <= x < width and 0 <= y < height:
                             idx = (y * width + x) * 4
-                            # 混合颜色
+                            # Blend colors
                             alpha = pressure
                             pixels[idx] = pixels[idx] * (1-alpha) + brush_color[0] * alpha
                             pixels[idx+1] = pixels[idx+1] * (1-alpha) + brush_color[1] * alpha
@@ -243,12 +243,12 @@ def handle_stroke(params: Dict[str, Any]) -> Dict[str, Any]:
     
     return {
         "success": False,
-        "error": {"code": "NO_PAINT_SLOT", "message": "没有可绘制的纹理槽"}
+        "error": {"code": "NO_PAINT_SLOT", "message": "No paintable texture slot available"}
     }
 
 
 def handle_fill(params: Dict[str, Any]) -> Dict[str, Any]:
-    """填充颜色"""
+    """Fill color"""
     object_name = params.get("object_name")
     color = params.get("color", [1.0, 1.0, 1.0, 1.0])
     texture_slot = params.get("texture_slot", 0)
@@ -257,35 +257,35 @@ def handle_fill(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     if not obj.active_material:
         return {
             "success": False,
-            "error": {"code": "NO_MATERIAL", "message": "对象没有材质"}
+            "error": {"code": "NO_MATERIAL", "message": "Object has no material"}
         }
     
-    # 获取纹理
+    # Get texture
     mat = obj.active_material
     slots = mat.texture_paint_slots
     
     if texture_slot >= len(slots) or not slots[texture_slot]:
         return {
             "success": False,
-            "error": {"code": "INVALID_SLOT", "message": f"纹理槽 {texture_slot} 不存在"}
+            "error": {"code": "INVALID_SLOT", "message": f"Texture slot {texture_slot} does not exist"}
         }
     
     image = slots[texture_slot].image
     if not image:
         return {
             "success": False,
-            "error": {"code": "NO_IMAGE", "message": "纹理槽没有图像"}
+            "error": {"code": "NO_IMAGE", "message": "Texture slot has no image"}
         }
     
     width, height = image.size
     
-    # 填充颜色
+    # Fill color
     pixels = [0.0] * (width * height * 4)
     for i in range(width * height):
         pixels[i * 4] = color[0]
@@ -306,7 +306,7 @@ def handle_fill(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_bake(params: Dict[str, Any]) -> Dict[str, Any]:
-    """烘焙纹理"""
+    """Bake texture"""
     object_name = params.get("object_name")
     bake_type = params.get("bake_type", "DIFFUSE")
     width = params.get("width", 1024)
@@ -318,19 +318,19 @@ def handle_bake(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"网格对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Mesh object not found: {object_name}"}
         }
     
-    # 选择对象
+    # Select object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     
-    # 确保在对象模式
+    # Ensure in object mode
     if bpy.context.object.mode != 'OBJECT':
         bpy.ops.object.mode_set(mode='OBJECT')
     
-    # 创建烘焙用图像
+    # Create image for baking
     bake_image = bpy.data.images.new(
         name=f"{object_name}_bake",
         width=width,
@@ -338,7 +338,7 @@ def handle_bake(params: Dict[str, Any]) -> Dict[str, Any]:
         alpha=True
     )
     
-    # 确保有材质和UV
+    # Ensure material and UV exist
     if not obj.active_material:
         mat = bpy.data.materials.new(name=f"{object_name}_Material")
         obj.data.materials.append(mat)
@@ -348,22 +348,22 @@ def handle_bake(params: Dict[str, Any]) -> Dict[str, Any]:
     mat.use_nodes = True
     nodes = mat.node_tree.nodes
     
-    # 添加图像纹理节点用于烘焙
+    # Add image texture node for baking
     tex_node = nodes.new('ShaderNodeTexImage')
     tex_node.image = bake_image
     tex_node.select = True
     nodes.active = tex_node
     
-    # 设置烘焙参数
+    # Set bake parameters
     bpy.context.scene.render.engine = 'CYCLES'
     bpy.context.scene.cycles.bake_type = bake_type
     bpy.context.scene.render.bake.margin = margin
     
     try:
-        # 执行烘焙
+        # Execute bake
         bpy.ops.object.bake(type=bake_type)
         
-        # 保存图像
+        # Save image
         if output_path:
             bake_image.filepath_raw = output_path
             bake_image.file_format = 'PNG'
@@ -385,7 +385,7 @@ def handle_bake(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_slot(params: Dict[str, Any]) -> Dict[str, Any]:
-    """纹理槽管理"""
+    """Texture slot management"""
     object_name = params.get("object_name")
     action = params.get("action", "ADD")
     texture_name = params.get("texture_name")
@@ -395,10 +395,10 @@ def handle_slot(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
-    # 确保有材质
+    # Ensure material exists
     if not obj.active_material:
         mat = bpy.data.materials.new(name=f"{object_name}_Material")
         obj.data.materials.append(mat)
@@ -407,7 +407,7 @@ def handle_slot(params: Dict[str, Any]) -> Dict[str, Any]:
     mat = obj.active_material
     
     if action == "ADD":
-        # 创建或获取图像
+        # Create or get image
         if texture_name:
             image = bpy.data.images.get(texture_name)
             if not image:
@@ -415,7 +415,7 @@ def handle_slot(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             image = bpy.data.images.new(name=f"{object_name}_texture", width=1024, height=1024)
         
-        # 在节点中添加图像纹理
+        # Add image texture in node tree
         mat.use_nodes = True
         nodes = mat.node_tree.nodes
         
@@ -432,10 +432,10 @@ def handle_slot(params: Dict[str, Any]) -> Dict[str, Any]:
         }
     
     elif action == "REMOVE":
-        # 移除纹理槽
+        # Remove texture slot
         slots = mat.texture_paint_slots
         if slot_index < len(slots):
-            # 不能直接移除槽，但可以清除图像
+            # Cannot directly remove slot, but can clear the image
             pass
         
         return {
@@ -457,12 +457,12 @@ def handle_slot(params: Dict[str, Any]) -> Dict[str, Any]:
     
     return {
         "success": False,
-        "error": {"code": "INVALID_ACTION", "message": f"未知操作: {action}"}
+        "error": {"code": "INVALID_ACTION", "message": f"Unknown action: {action}"}
     }
 
 
 def handle_save(params: Dict[str, Any]) -> Dict[str, Any]:
-    """保存纹理"""
+    """Save texture"""
     texture_name = params.get("texture_name")
     filepath = params.get("filepath")
     file_format = params.get("file_format", "PNG")
@@ -471,15 +471,15 @@ def handle_save(params: Dict[str, Any]) -> Dict[str, Any]:
     if not image:
         return {
             "success": False,
-            "error": {"code": "IMAGE_NOT_FOUND", "message": f"图像不存在: {texture_name}"}
+            "error": {"code": "IMAGE_NOT_FOUND", "message": f"Image not found: {texture_name}"}
         }
     
-    # 确保目录存在
+    # Ensure directory exists
     dir_path = os.path.dirname(filepath)
     if dir_path and not os.path.exists(dir_path):
         os.makedirs(dir_path)
     
-    # 设置格式和保存
+    # Set format and save
     image.filepath_raw = filepath
     image.file_format = file_format
     image.save()

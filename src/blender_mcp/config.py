@@ -1,7 +1,7 @@
 """
-Blender MCP 统一配置
+Blender MCP Unified Configuration
 
-集中管理所有可配置的常量，支持环境变量覆盖。
+Centralized management of all configurable constants, with environment variable overrides.
 """
 
 import os

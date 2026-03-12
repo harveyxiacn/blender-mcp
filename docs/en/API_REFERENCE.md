@@ -4,6 +4,8 @@
 
 This document describes all tools provided by Blender MCP. Tools are exposed via the MCP protocol and can be used from any MCP-compatible IDE.
 
+Status note (2026-03-10): the repository now contains 51 tool modules and 359 total tool registrations. This reference remains strongest for the stable/core tool families. Newer modules such as `training`, `sport_character`, `style_presets`, `procedural_materials`, and the experimental automation surface should be cross-checked with source and the project review until this reference is expanded.
+
 ## Tool Naming Convention
 
 All tool names follow this pattern:
@@ -24,7 +26,7 @@ With the `"skill"` profile (default), only **core tools** are loaded at startup.
 
 | Tool | Description |
 |------|-------------|
-| `blender_list_skills` | List all 11 skill groups and their activation status |
+| `blender_list_skills` | List all 12 skill groups and their activation status |
 | `blender_activate_skill` | Load a skill's tool group dynamically |
 | `blender_deactivate_skill` | Unload a skill's tools to free context |
 

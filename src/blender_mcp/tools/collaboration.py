@@ -1,7 +1,7 @@
 """
-实时协作工具
+Real-time Collaboration Tools
 
-提供简化的场景同步协作功能的 MCP 工具。
+MCP tools providing simplified scene synchronization and collaboration features.
 """
 
 from typing import Any, Dict, List, Optional
@@ -9,38 +9,38 @@ from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
 
 
-# ============ Pydantic 模型 ============
+# ============ Pydantic Models ============
 
 class CollabHostInput(BaseModel):
-    """启动协作会话"""
-    session_name: str = Field(..., description="会话名称")
-    port: int = Field(9877, description="端口")
-    password: Optional[str] = Field(None, description="密码（可选）")
+    """Start collaboration session"""
+    session_name: str = Field(..., description="Session name")
+    port: int = Field(9877, description="Port")
+    password: Optional[str] = Field(None, description="Password (optional)")
 
 
 class CollabJoinInput(BaseModel):
-    """加入协作会话"""
-    host: str = Field(..., description="主机地址")
-    port: int = Field(9877, description="端口")
-    password: Optional[str] = Field(None, description="密码")
-    username: str = Field("Guest", description="用户名")
+    """Join collaboration session"""
+    host: str = Field(..., description="Host address")
+    port: int = Field(9877, description="Port")
+    password: Optional[str] = Field(None, description="Password")
+    username: str = Field("Guest", description="Username")
 
 
 class CollabLockInput(BaseModel):
-    """锁定对象"""
-    object_names: List[str] = Field(..., description="对象名称列表")
+    """Lock objects"""
+    object_names: List[str] = Field(..., description="Object name list")
 
 
 class CollabChatInput(BaseModel):
-    """发送消息"""
-    message: str = Field(..., description="消息内容")
+    """Send message"""
+    message: str = Field(..., description="Message content")
 
 
-# ============ 工具注册 ============
+# ============ Tool Registration ============
 
 def register_collaboration_tools(mcp: FastMCP, server):
-    """注册协作工具"""
-    
+    """Register collaboration tools"""
+
     @mcp.tool()
     async def blender_collab_host(
         session_name: str,
@@ -48,12 +48,12 @@ def register_collaboration_tools(mcp: FastMCP, server):
         password: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        作为主机启动协作会话
-        
+        Start a collaboration session as host
+
         Args:
-            session_name: 会话名称
-            port: 端口号
-            password: 访问密码（可选）
+            session_name: Session name
+            port: Port number
+            password: Access password (optional)
         """
         params = CollabHostInput(
             session_name=session_name,
@@ -61,7 +61,7 @@ def register_collaboration_tools(mcp: FastMCP, server):
             password=password
         )
         return await server.send_command("collaboration", "host", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_collab_join(
         host: str,
@@ -70,13 +70,13 @@ def register_collaboration_tools(mcp: FastMCP, server):
         username: str = "Guest"
     ) -> Dict[str, Any]:
         """
-        加入协作会话
-        
+        Join a collaboration session
+
         Args:
-            host: 主机地址
-            port: 端口号
-            password: 密码
-            username: 用户名
+            host: Host address
+            port: Port number
+            password: Password
+            username: Username
         """
         params = CollabJoinInput(
             host=host,
@@ -85,71 +85,71 @@ def register_collaboration_tools(mcp: FastMCP, server):
             username=username
         )
         return await server.send_command("collaboration", "join", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_collab_leave() -> Dict[str, Any]:
         """
-        离开协作会话
+        Leave the collaboration session
         """
         return await server.send_command("collaboration", "leave", {})
-    
+
     @mcp.tool()
     async def blender_collab_sync() -> Dict[str, Any]:
         """
-        同步场景状态
+        Synchronize scene state
         """
         return await server.send_command("collaboration", "sync", {})
-    
+
     @mcp.tool()
     async def blender_collab_lock(
         object_names: List[str]
     ) -> Dict[str, Any]:
         """
-        锁定对象（防止其他用户编辑）
-        
+        Lock objects (prevent other users from editing)
+
         Args:
-            object_names: 要锁定的对象名称列表
+            object_names: List of object names to lock
         """
         params = CollabLockInput(object_names=object_names)
         return await server.send_command("collaboration", "lock", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_collab_unlock(
         object_names: List[str]
     ) -> Dict[str, Any]:
         """
-        解锁对象
-        
+        Unlock objects
+
         Args:
-            object_names: 要解锁的对象名称列表
+            object_names: List of object names to unlock
         """
         return await server.send_command("collaboration", "unlock", {
             "object_names": object_names
         })
-    
+
     @mcp.tool()
     async def blender_collab_chat(
         message: str
     ) -> Dict[str, Any]:
         """
-        发送协作消息
-        
+        Send a collaboration message
+
         Args:
-            message: 消息内容
+            message: Message content
         """
         params = CollabChatInput(message=message)
         return await server.send_command("collaboration", "chat", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_collab_status() -> Dict[str, Any]:
         """
-        获取协作状态
+        Get collaboration status
         """
         return await server.send_command("collaboration", "status", {})
-    
+
     @mcp.tool()
     async def blender_collab_users() -> Dict[str, Any]:
         """
-        列出当前协作用户
+        List current collaboration users
         """
         return await server.send_command("collaboration", "users", {})

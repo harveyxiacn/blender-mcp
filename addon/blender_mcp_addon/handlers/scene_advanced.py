@@ -1,7 +1,7 @@
 """
-场景增强处理器
+Advanced Scene Handler
 
-处理环境预设、程序化生成、天空设置等命令。
+Handles environment presets, procedural generation, sky setup and other commands.
 """
 
 from typing import Any, Dict, List
@@ -10,7 +10,7 @@ import math
 import random
 
 
-# 环境预设配置
+# Environment preset configuration
 ENVIRONMENT_PRESETS = {
     "studio": {
         "world_color": [0.05, 0.05, 0.05],
@@ -80,7 +80,7 @@ ENVIRONMENT_PRESETS = {
     },
 }
 
-# 地面材质预设
+# Ground material presets
 GROUND_MATERIALS = {
     "concrete": {"color": [0.5, 0.5, 0.5, 1], "roughness": 0.8},
     "grass": {"color": [0.2, 0.5, 0.1, 1], "roughness": 0.9},
@@ -92,7 +92,7 @@ GROUND_MATERIALS = {
 
 
 def handle_environment_preset(params: Dict[str, Any]) -> Dict[str, Any]:
-    """应用环境预设"""
+    """Apply environment preset"""
     preset = params.get("preset", "studio")
     intensity = params.get("intensity", 1.0)
     
@@ -100,10 +100,10 @@ def handle_environment_preset(params: Dict[str, Any]) -> Dict[str, Any]:
     if not config:
         return {
             "success": False,
-            "error": {"code": "PRESET_NOT_FOUND", "message": f"预设不存在: {preset}"}
+            "error": {"code": "PRESET_NOT_FOUND", "message": f"Preset not found: {preset}"}
         }
     
-    # 设置世界背景颜色
+    # Set world background color
     world = bpy.context.scene.world
     if not world:
         world = bpy.data.worlds.new("World")
@@ -116,12 +116,12 @@ def handle_environment_preset(params: Dict[str, Any]) -> Dict[str, Any]:
         bg_node.inputs["Color"].default_value = [c * intensity for c in color] + [1]
         bg_node.inputs["Strength"].default_value = intensity
     
-    # 删除现有的环境灯光
+    # Delete existing environment lights
     for obj in list(bpy.data.objects):
         if obj.name.startswith("Env_Light_"):
             bpy.data.objects.remove(obj, do_unlink=True)
     
-    # 创建灯光
+    # Create lights
     for i, light_config in enumerate(config["lights"]):
         light_type = light_config["type"]
         
@@ -150,7 +150,7 @@ def handle_environment_preset(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_scatter(params: Dict[str, Any]) -> Dict[str, Any]:
-    """散布对象"""
+    """Scatter objects"""
     source_name = params.get("source_object")
     target_name = params.get("target_surface")
     count = params.get("count", 100)
@@ -166,24 +166,24 @@ def handle_scatter(params: Dict[str, Any]) -> Dict[str, Any]:
     if not source_obj:
         return {
             "success": False,
-            "error": {"code": "SOURCE_NOT_FOUND", "message": f"源对象不存在: {source_name}"}
+            "error": {"code": "SOURCE_NOT_FOUND", "message": f"Source object not found: {source_name}"}
         }
     
     if not target_obj or target_obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "TARGET_NOT_FOUND", "message": f"目标表面不存在: {target_name}"}
+            "error": {"code": "TARGET_NOT_FOUND", "message": f"Target surface not found: {target_name}"}
         }
     
     random.seed(seed)
     
-    # 获取目标网格数据
+    # Get target mesh data
     mesh = target_obj.data
     mesh.calc_loop_triangles()
     
     instances_created = 0
     
-    # 创建实例集合
+    # Create instance collection
     collection_name = f"Scatter_{source_name}"
     if collection_name in bpy.data.collections:
         scatter_collection = bpy.data.collections[collection_name]
@@ -191,15 +191,15 @@ def handle_scatter(params: Dict[str, Any]) -> Dict[str, Any]:
         scatter_collection = bpy.data.collections.new(collection_name)
         bpy.context.scene.collection.children.link(scatter_collection)
     
-    # 在三角面上随机采样
+    # Random sampling on triangles
     for i in range(count):
         if len(mesh.loop_triangles) == 0:
             break
         
-        # 随机选择一个三角面
+        # Randomly select a triangle
         tri = random.choice(list(mesh.loop_triangles))
         
-        # 在三角面上随机采样
+        # Random sampling on triangles
         u, v = random.random(), random.random()
         if u + v > 1:
             u, v = 1 - u, 1 - v
@@ -211,26 +211,26 @@ def handle_scatter(params: Dict[str, Any]) -> Dict[str, Any]:
         pos = v1 + u * (v2 - v1) + v * (v3 - v1)
         pos = target_obj.matrix_world @ pos
         
-        # 创建实例
+        # Create instance
         instance = source_obj.copy()
         instance.data = source_obj.data
         instance.name = f"{source_name}_instance_{i}"
         
-        # 设置位置
+        # Set location
         instance.location = pos
         
-        # 随机缩放
+        # Random scale
         scale = random.uniform(scale_min, scale_max)
         instance.scale = [scale, scale, scale]
         
-        # 随机旋转
+        # Random rotation
         if rotation_random:
             instance.rotation_euler[2] = random.uniform(0, 2 * math.pi)
         
-        # 对齐法线
+        # Align to normal
         if align_to_normal:
             normal = tri.normal
-            # 简化的法线对齐
+            # Simplified normal alignment
             instance.rotation_euler[0] = math.asin(normal[1])
             instance.rotation_euler[1] = -math.asin(normal[0])
         
@@ -247,7 +247,7 @@ def handle_scatter(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_array_generate(params: Dict[str, Any]) -> Dict[str, Any]:
-    """阵列生成"""
+    """Array generation"""
     object_name = params.get("object_name")
     count_x = params.get("count_x", 1)
     count_y = params.get("count_y", 1)
@@ -260,10 +260,10 @@ def handle_array_generate(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
-    # 创建集合
+    # Create collection
     collection_name = f"Array_{object_name}"
     if collection_name in bpy.data.collections:
         array_collection = bpy.data.collections[collection_name]
@@ -278,7 +278,7 @@ def handle_array_generate(params: Dict[str, Any]) -> Dict[str, Any]:
         for y in range(count_y):
             for z in range(count_z):
                 if x == 0 and y == 0 and z == 0:
-                    continue  # 跳过原始对象位置
+                    continue  # Skip original object position
                 
                 instance = obj.copy()
                 instance.data = obj.data
@@ -303,23 +303,23 @@ def handle_array_generate(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_ground_plane(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建地面"""
+    """Create ground plane"""
     size = params.get("size", 100.0)
     material_preset = params.get("material_preset", "concrete")
     location = params.get("location", [0, 0, 0])
     
-    # 创建平面
+    # Create plane
     bpy.ops.mesh.primitive_plane_add(size=size, location=location)
     ground = bpy.context.active_object
     ground.name = "Ground"
     
-    # 应用材质
+    # Apply material
     mat_config = GROUND_MATERIALS.get(material_preset, GROUND_MATERIALS["concrete"])
     
     mat = bpy.data.materials.new(name=f"Ground_{material_preset}")
     mat.use_nodes = True
     
-    # 兼容不同Blender版本查找Principled BSDF节点
+    # Find Principled BSDF node (compatible across Blender versions)
     bsdf = None
     for node in mat.node_tree.nodes:
         if node.type == 'BSDF_PRINCIPLED':
@@ -344,7 +344,7 @@ def handle_ground_plane(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_sky_setup(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置天空"""
+    """Set up sky"""
     sky_type = params.get("sky_type", "hosek_wilkie")
     sun_elevation = params.get("sun_elevation", 45.0)
     sun_rotation = params.get("sun_rotation", 0.0)
@@ -359,10 +359,10 @@ def handle_sky_setup(params: Dict[str, Any]) -> Dict[str, Any]:
     nodes = world.node_tree.nodes
     links = world.node_tree.links
     
-    # 清除现有节点
+    # Clear existing nodes
     nodes.clear()
     
-    # 创建天空纹理节点
+    # Create sky texture node
     sky_node = nodes.new('ShaderNodeTexSky')
     sky_node.sky_type = 'NISHITA' if sky_type == "nishita" else 'HOSEK_WILKIE'
     sky_node.sun_elevation = math.radians(sun_elevation)
@@ -370,14 +370,14 @@ def handle_sky_setup(params: Dict[str, Any]) -> Dict[str, Any]:
     if hasattr(sky_node, 'turbidity'):
         sky_node.turbidity = turbidity
     
-    # 创建背景节点
+    # Create background node
     bg_node = nodes.new('ShaderNodeBackground')
     bg_node.inputs["Strength"].default_value = 1.0
     
-    # 创建输出节点
+    # Create output node
     output_node = nodes.new('ShaderNodeOutputWorld')
     
-    # 连接节点
+    # Connect nodes
     links.new(sky_node.outputs["Color"], bg_node.inputs["Color"])
     links.new(bg_node.outputs["Background"], output_node.inputs["Surface"])
     
@@ -390,19 +390,19 @@ def handle_sky_setup(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_fog_add(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加雾效"""
+    """Add fog effect"""
     density = params.get("density", 0.1)
     color = params.get("color", [0.8, 0.9, 1.0])
     height = params.get("height", 0.0)
     falloff = params.get("falloff", 1.0)
     
-    # 创建体积立方体
+    # Create volume cube
     bpy.ops.mesh.primitive_cube_add(size=100, location=[0, 0, height + 25])
     fog_volume = bpy.context.active_object
     fog_volume.name = "Fog_Volume"
     fog_volume.scale = [1, 1, 0.5]
     
-    # 创建体积材质
+    # Create volume material
     mat = bpy.data.materials.new(name="Fog_Material")
     mat.use_nodes = True
     
@@ -411,12 +411,12 @@ def handle_fog_add(params: Dict[str, Any]) -> Dict[str, Any]:
     
     nodes.clear()
     
-    # 体积散射节点
+    # Volume scatter node
     scatter_node = nodes.new('ShaderNodeVolumeScatter')
     scatter_node.inputs["Color"].default_value = color + [1]
     scatter_node.inputs["Density"].default_value = density
     
-    # 输出节点
+    # Output node
     output_node = nodes.new('ShaderNodeOutputMaterial')
     
     links.new(scatter_node.outputs["Volume"], output_node.inputs["Volume"])

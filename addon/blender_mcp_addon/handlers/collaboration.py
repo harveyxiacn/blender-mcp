@@ -1,8 +1,8 @@
 """
-实时协作处理器
+Real-time collaboration handler
 
-处理简化的场景同步协作命令。
-注意：这是一个简化的实现，仅支持基本的对象级别同步。
+Handles simplified scene synchronization collaboration commands.
+Note: This is a simplified implementation that only supports basic object-level synchronization.
 """
 
 from typing import Any, Dict, List
@@ -11,7 +11,7 @@ import json
 from datetime import datetime
 
 
-# 协作会话状态
+# Collaboration session state
 COLLAB_SESSION = {
     "active": False,
     "role": None,  # "host" or "client"
@@ -27,7 +27,7 @@ COLLAB_SESSION = {
 
 
 def _get_scene_state() -> Dict:
-    """获取当前场景状态"""
+    """Get current scene state"""
     state = {
         "objects": [],
         "timestamp": datetime.now().isoformat()
@@ -44,7 +44,7 @@ def _get_scene_state() -> Dict:
             "parent": obj.parent.name if obj.parent else None
         }
         
-        # 材质信息
+        # Material info
         if hasattr(obj.data, 'materials') and obj.data.materials:
             obj_state["materials"] = [m.name if m else None for m in obj.data.materials]
         
@@ -54,7 +54,7 @@ def _get_scene_state() -> Dict:
 
 
 def _apply_scene_state(state: Dict):
-    """应用场景状态"""
+    """Apply scene state"""
     for obj_state in state.get("objects", []):
         obj = bpy.data.objects.get(obj_state["name"])
         if obj:
@@ -64,7 +64,7 @@ def _apply_scene_state(state: Dict):
 
 
 def handle_host(params: Dict[str, Any]) -> Dict[str, Any]:
-    """启动协作会话"""
+    """Start collaboration session"""
     session_name = params.get("session_name")
     port = params.get("port", 9877)
     password = params.get("password")
@@ -75,7 +75,7 @@ def handle_host(params: Dict[str, Any]) -> Dict[str, Any]:
         if COLLAB_SESSION["active"]:
             return {
                 "success": False,
-                "error": {"code": "SESSION_ACTIVE", "message": "已有活动的协作会话"}
+                "error": {"code": "SESSION_ACTIVE", "message": "A collaboration session is already active"}
             }
         
         COLLAB_SESSION["active"] = True
@@ -87,7 +87,7 @@ def handle_host(params: Dict[str, Any]) -> Dict[str, Any]:
         COLLAB_SESSION["locked_objects"] = {}
         COLLAB_SESSION["chat_history"] = []
         
-        # 获取初始场景状态
+        # Get initial scene state
         initial_state = _get_scene_state()
         COLLAB_SESSION["last_sync"] = initial_state["timestamp"]
         
@@ -98,7 +98,7 @@ def handle_host(params: Dict[str, Any]) -> Dict[str, Any]:
                 "port": port,
                 "role": "host",
                 "password_protected": bool(password),
-                "note": "协作会话已启动。其他用户可以通过 blender_collab_join 加入。"
+                "note": "Collaboration session started. Other users can join via blender_collab_join."
             }
         }
     
@@ -110,7 +110,7 @@ def handle_host(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_join(params: Dict[str, Any]) -> Dict[str, Any]:
-    """加入协作会话"""
+    """Join collaboration session"""
     host = params.get("host")
     port = params.get("port", 9877)
     password = params.get("password")
@@ -122,7 +122,7 @@ def handle_join(params: Dict[str, Any]) -> Dict[str, Any]:
         if COLLAB_SESSION["active"]:
             return {
                 "success": False,
-                "error": {"code": "SESSION_ACTIVE", "message": "已有活动的协作会话"}
+                "error": {"code": "SESSION_ACTIVE", "message": "A collaboration session is already active"}
             }
         
         COLLAB_SESSION["active"] = True
@@ -139,7 +139,7 @@ def handle_join(params: Dict[str, Any]) -> Dict[str, Any]:
                 "port": port,
                 "username": username,
                 "role": "client",
-                "note": "简化协作模式：使用 blender_collab_sync 手动同步场景"
+                "note": "Simplified collaboration mode: use blender_collab_sync to manually sync scene"
             }
         }
     
@@ -151,14 +151,14 @@ def handle_join(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_leave(params: Dict[str, Any]) -> Dict[str, Any]:
-    """离开协作会话"""
+    """Leave collaboration session"""
     try:
         global COLLAB_SESSION
         
         if not COLLAB_SESSION["active"]:
             return {
                 "success": False,
-                "error": {"code": "NO_SESSION", "message": "没有活动的协作会话"}
+                "error": {"code": "NO_SESSION", "message": "No active collaboration session"}
             }
         
         old_session = COLLAB_SESSION.copy()
@@ -192,17 +192,17 @@ def handle_leave(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_sync(params: Dict[str, Any]) -> Dict[str, Any]:
-    """同步场景状态"""
+    """Synchronize scene state"""
     try:
         global COLLAB_SESSION
         
         if not COLLAB_SESSION["active"]:
             return {
                 "success": False,
-                "error": {"code": "NO_SESSION", "message": "没有活动的协作会话"}
+                "error": {"code": "NO_SESSION", "message": "No active collaboration session"}
             }
         
-        # 获取当前场景状态
+        # Get current scene state
         state = _get_scene_state()
         COLLAB_SESSION["last_sync"] = state["timestamp"]
         
@@ -223,7 +223,7 @@ def handle_sync(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_lock(params: Dict[str, Any]) -> Dict[str, Any]:
-    """锁定对象"""
+    """Lock objects"""
     object_names = params.get("object_names", [])
     
     try:
@@ -232,7 +232,7 @@ def handle_lock(params: Dict[str, Any]) -> Dict[str, Any]:
         if not COLLAB_SESSION["active"]:
             return {
                 "success": False,
-                "error": {"code": "NO_SESSION", "message": "没有活动的协作会话"}
+                "error": {"code": "NO_SESSION", "message": "No active collaboration session"}
             }
         
         locked = []
@@ -253,7 +253,7 @@ def handle_lock(params: Dict[str, Any]) -> Dict[str, Any]:
             
             COLLAB_SESSION["locked_objects"][name] = COLLAB_SESSION["username"]
             
-            # 添加视觉标记
+            # Add visual marker
             obj["collab_locked"] = True
             obj["collab_locked_by"] = COLLAB_SESSION["username"]
             
@@ -276,7 +276,7 @@ def handle_lock(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_unlock(params: Dict[str, Any]) -> Dict[str, Any]:
-    """解锁对象"""
+    """Unlock objects"""
     object_names = params.get("object_names", [])
     
     try:
@@ -285,7 +285,7 @@ def handle_unlock(params: Dict[str, Any]) -> Dict[str, Any]:
         if not COLLAB_SESSION["active"]:
             return {
                 "success": False,
-                "error": {"code": "NO_SESSION", "message": "没有活动的协作会话"}
+                "error": {"code": "NO_SESSION", "message": "No active collaboration session"}
             }
         
         unlocked = []
@@ -295,14 +295,14 @@ def handle_unlock(params: Dict[str, Any]) -> Dict[str, Any]:
             if name not in COLLAB_SESSION["locked_objects"]:
                 continue
             
-            # 只能解锁自己锁定的对象（或主机可以解锁所有）
+            # Can only unlock objects locked by self (or host can unlock all)
             if COLLAB_SESSION["locked_objects"][name] != COLLAB_SESSION["username"] and COLLAB_SESSION["role"] != "host":
                 not_allowed.append(name)
                 continue
             
             del COLLAB_SESSION["locked_objects"][name]
             
-            # 移除视觉标记
+            # Remove visual marker
             obj = bpy.data.objects.get(name)
             if obj:
                 if "collab_locked" in obj:
@@ -328,7 +328,7 @@ def handle_unlock(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_chat(params: Dict[str, Any]) -> Dict[str, Any]:
-    """发送消息"""
+    """Send message"""
     message = params.get("message", "")
     
     try:
@@ -337,7 +337,7 @@ def handle_chat(params: Dict[str, Any]) -> Dict[str, Any]:
         if not COLLAB_SESSION["active"]:
             return {
                 "success": False,
-                "error": {"code": "NO_SESSION", "message": "没有活动的协作会话"}
+                "error": {"code": "NO_SESSION", "message": "No active collaboration session"}
             }
         
         chat_entry = {
@@ -348,7 +348,7 @@ def handle_chat(params: Dict[str, Any]) -> Dict[str, Any]:
         
         COLLAB_SESSION["chat_history"].append(chat_entry)
         
-        # 限制聊天历史长度
+        # Limit chat history length
         if len(COLLAB_SESSION["chat_history"]) > 100:
             COLLAB_SESSION["chat_history"] = COLLAB_SESSION["chat_history"][-100:]
         
@@ -365,7 +365,7 @@ def handle_chat(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_status(params: Dict[str, Any]) -> Dict[str, Any]:
-    """获取协作状态"""
+    """Get collaboration status"""
     try:
         global COLLAB_SESSION
         
@@ -392,7 +392,7 @@ def handle_status(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_users(params: Dict[str, Any]) -> Dict[str, Any]:
-    """列出用户"""
+    """List users"""
     try:
         global COLLAB_SESSION
         

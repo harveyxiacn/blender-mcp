@@ -1,7 +1,7 @@
 """
-对象处理器
+Object Handler
 
-处理对象相关的命令。
+Handles object-related commands.
 """
 
 from typing import Any, Dict, List
@@ -11,7 +11,7 @@ import fnmatch
 
 
 def _create_mesh_primitive(obj_type: str, mp: Dict[str, Any]) -> None:
-    """根据类型和mesh_params创建网格图元"""
+    """Create a mesh primitive based on type and mesh_params"""
     if obj_type in ("SPHERE", "UV_SPHERE"):
         bpy.ops.mesh.primitive_uv_sphere_add(
             segments=mp.get("segments", 32),
@@ -73,7 +73,7 @@ def _create_mesh_primitive(obj_type: str, mp: Dict[str, Any]) -> None:
 
 
 def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建对象"""
+    """Create an object"""
     obj_type = params.get("type", "CUBE")
     name = params.get("name")
     location = params.get("location", [0, 0, 0])
@@ -81,7 +81,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
     scale = params.get("scale", [1, 1, 1])
     mp = params.get("mesh_params", {}) or {}
     
-    # 创建网格对象
+    # Create mesh object
     mesh_types = [
         "CUBE", "SPHERE", "UV_SPHERE", "ICO_SPHERE", "CYLINDER",
         "CONE", "TORUS", "PLANE", "CIRCLE", "GRID", "MONKEY"
@@ -94,7 +94,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
                 "success": False,
                 "error": {
                     "code": "INVALID_TYPE",
-                    "message": f"不支持的网格类型: {obj_type}"
+                    "message": f"Unsupported mesh type: {obj_type}"
                 }
             }
     elif obj_type == "EMPTY":
@@ -121,19 +121,19 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_TYPE",
-                "message": f"不支持的对象类型: {obj_type}"
+                "message": f"Unsupported object type: {obj_type}"
             }
         }
     
-    # 获取新创建的对象
+    # Get the newly created object
     obj = bpy.context.active_object
     
-    # 设置变换
+    # Set transform
     obj.location = location
     obj.rotation_euler = rotation
     obj.scale = scale
     
-    # 重命名
+    # Rename
     if name:
         obj.name = name
     
@@ -148,7 +148,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
-    """删除对象"""
+    """Delete an object"""
     name = params.get("name")
     delete_data = params.get("delete_data", True)
     
@@ -158,23 +158,23 @@ def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {name}"
+                "message": f"Object not found: {name}"
             }
         }
-    
-    # 保存数据引用
+
+    # Save data reference
     data = obj.data if delete_data else None
     
-    # 删除对象
+    # Delete object
     bpy.data.objects.remove(obj, do_unlink=True)
-    
-    # 删除数据
+
+    # Delete data
     if data:
         if isinstance(data, bpy.types.Mesh):
             bpy.data.meshes.remove(data)
         elif isinstance(data, bpy.types.Curve):
             bpy.data.curves.remove(data)
-        # 其他类型...
+        # Other types...
     
     return {
         "success": True,
@@ -183,7 +183,7 @@ def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_duplicate(params: Dict[str, Any]) -> Dict[str, Any]:
-    """复制对象"""
+    """Duplicate an object"""
     name = params.get("name")
     new_name = params.get("new_name")
     linked = params.get("linked", False)
@@ -195,11 +195,11 @@ def handle_duplicate(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {name}"
+                "message": f"Object not found: {name}"
             }
         }
     
-    # 复制对象
+    # Duplicate object
     if linked:
         new_obj = obj.copy()
     else:
@@ -207,18 +207,18 @@ def handle_duplicate(params: Dict[str, Any]) -> Dict[str, Any]:
         if obj.data:
             new_obj.data = obj.data.copy()
     
-    # 设置名称
+    # Set name
     if new_name:
         new_obj.name = new_name
     
-    # 设置位置偏移
+    # Set position offset
     new_obj.location = (
         obj.location.x + offset[0],
         obj.location.y + offset[1],
         obj.location.z + offset[2]
     )
     
-    # 链接到场景
+    # Link to scene
     bpy.context.collection.objects.link(new_obj)
     
     return {
@@ -230,7 +230,7 @@ def handle_duplicate(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_transform(params: Dict[str, Any]) -> Dict[str, Any]:
-    """变换对象"""
+    """Transform an object"""
     name = params.get("name")
     
     obj = bpy.data.objects.get(name)
@@ -239,11 +239,11 @@ def handle_transform(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {name}"
+                "message": f"Object not found: {name}"
             }
         }
     
-    # 绝对变换
+    # Absolute transform
     if "location" in params:
         obj.location = params["location"]
     if "rotation" in params:
@@ -251,7 +251,7 @@ def handle_transform(params: Dict[str, Any]) -> Dict[str, Any]:
     if "scale" in params:
         obj.scale = params["scale"]
     
-    # 增量变换
+    # Incremental transform
     if "delta_location" in params:
         delta = params["delta_location"]
         obj.location = (
@@ -285,19 +285,19 @@ def handle_transform(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_select(params: Dict[str, Any]) -> Dict[str, Any]:
-    """选择对象"""
+    """Select objects"""
     names = params.get("names")
     pattern = params.get("pattern")
     deselect_all = params.get("deselect_all", True)
     set_active = params.get("set_active")
     
-    # 取消所有选择
+    # Deselect all
     if deselect_all:
         bpy.ops.object.select_all(action='DESELECT')
     
     selected_count = 0
     
-    # 按名称选择
+    # Select by name
     if names:
         for name in names:
             obj = bpy.data.objects.get(name)
@@ -305,14 +305,14 @@ def handle_select(params: Dict[str, Any]) -> Dict[str, Any]:
                 obj.select_set(True)
                 selected_count += 1
     
-    # 按模式选择
+    # Select by pattern
     if pattern:
         for obj in bpy.data.objects:
             if fnmatch.fnmatch(obj.name, pattern):
                 obj.select_set(True)
                 selected_count += 1
     
-    # 设置活动对象
+    # Set active object
     if set_active:
         obj = bpy.data.objects.get(set_active)
         if obj:
@@ -327,7 +327,7 @@ def handle_select(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_list(params: Dict[str, Any]) -> Dict[str, Any]:
-    """列出对象"""
+    """List objects"""
     type_filter = params.get("type_filter")
     name_pattern = params.get("name_pattern")
     limit = params.get("limit", 50)
@@ -335,11 +335,11 @@ def handle_list(params: Dict[str, Any]) -> Dict[str, Any]:
     objects = []
     
     for obj in bpy.data.objects:
-        # 类型过滤
+        # Type filter
         if type_filter and obj.type != type_filter:
             continue
         
-        # 名称过滤
+        # Name filter
         if name_pattern and not fnmatch.fnmatch(obj.name, name_pattern):
             continue
         
@@ -363,7 +363,7 @@ def handle_list(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_get_info(params: Dict[str, Any]) -> Dict[str, Any]:
-    """获取对象信息"""
+    """Get object info"""
     name = params.get("name")
     include_mesh_stats = params.get("include_mesh_stats", True)
     include_modifiers = params.get("include_modifiers", True)
@@ -375,7 +375,7 @@ def handle_get_info(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {name}"
+                "message": f"Object not found: {name}"
             }
         }
     
@@ -388,7 +388,7 @@ def handle_get_info(params: Dict[str, Any]) -> Dict[str, Any]:
         "dimensions": list(obj.dimensions)
     }
     
-    # 网格统计
+    # Mesh statistics
     if include_mesh_stats and obj.type == 'MESH' and obj.data:
         mesh = obj.data
         data["mesh_stats"] = {
@@ -398,11 +398,11 @@ def handle_get_info(params: Dict[str, Any]) -> Dict[str, Any]:
             "triangles": sum(len(p.vertices) - 2 for p in mesh.polygons)
         }
     
-    # 修改器
+    # Modifiers
     if include_modifiers:
         data["modifiers"] = [mod.name for mod in obj.modifiers]
     
-    # 材质
+    # Materials
     if include_materials:
         data["materials"] = [
             slot.material.name if slot.material else None
@@ -416,7 +416,7 @@ def handle_get_info(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_rename(params: Dict[str, Any]) -> Dict[str, Any]:
-    """重命名对象"""
+    """Rename an object"""
     name = params.get("name")
     new_name = params.get("new_name")
     
@@ -426,7 +426,7 @@ def handle_rename(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {name}"
+                "message": f"Object not found: {name}"
             }
         }
     
@@ -441,7 +441,7 @@ def handle_rename(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_set_parent(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置父子关系"""
+    """Set parent-child relationship"""
     child_name = params.get("child_name")
     parent_name = params.get("parent_name")
     keep_transform = params.get("keep_transform", True)
@@ -452,7 +452,7 @@ def handle_set_parent(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"子对象不存在: {child_name}"
+                "message": f"Child object not found: {child_name}"
             }
         }
     
@@ -463,7 +463,7 @@ def handle_set_parent(params: Dict[str, Any]) -> Dict[str, Any]:
                 "success": False,
                 "error": {
                     "code": "OBJECT_NOT_FOUND",
-                    "message": f"父对象不存在: {parent_name}"
+                    "message": f"Parent object not found: {parent_name}"
                 }
             }
         
@@ -482,7 +482,7 @@ def handle_set_parent(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_join(params: Dict[str, Any]) -> Dict[str, Any]:
-    """合并对象"""
+    """Join objects"""
     objects = params.get("objects", [])
     target = params.get("target")
     
@@ -491,14 +491,14 @@ def handle_join(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_PARAMS",
-                "message": "至少需要两个对象才能合并"
+                "message": "At least two objects are required to join"
             }
         }
     
-    # 取消所有选择
+    # Deselect all
     bpy.ops.object.select_all(action='DESELECT')
     
-    # 选择要合并的对象
+    # Select objects to join
     target_obj = None
     for name in objects:
         obj = bpy.data.objects.get(name)
@@ -514,14 +514,14 @@ def handle_join(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": "找不到要合并的对象"
+                "message": "No objects found to join"
             }
         }
     
-    # 设置活动对象
+    # Set active object
     bpy.context.view_layer.objects.active = target_obj
     
-    # 合并
+    # Join
     bpy.ops.object.join()
     
     return {
@@ -533,18 +533,18 @@ def handle_join(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_set_origin(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置对象原点
+    """Set object origin
     
     Args:
         params:
-            - name: 对象名称
-            - origin_type: 原点类型
-                - GEOMETRY: 原点到几何中心
-                - CURSOR: 原点到 3D 游标
-                - BOTTOM: 原点到底部中心（脚底）
-                - CENTER_OF_MASS: 原点到质心
-                - CENTER_OF_VOLUME: 原点到体积中心
-            - center: 几何中心计算方式（MEDIAN, BOUNDS）
+            - name: Object name
+            - origin_type: Origin type
+                - GEOMETRY: Origin to geometry center
+                - CURSOR: Origin to 3D cursor
+                - BOTTOM: Origin to bottom center (feet)
+                - CENTER_OF_MASS: Origin to center of mass
+                - CENTER_OF_VOLUME: Origin to center of volume
+            - center: Geometry center calculation method (MEDIAN, BOUNDS)
     """
     name = params.get("name")
     origin_type = params.get("origin_type", "GEOMETRY")
@@ -556,72 +556,72 @@ def handle_set_origin(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {name}"
+                "message": f"Object not found: {name}"
             }
         }
     
-    # 保存当前选择和活动对象
+    # Save current selection and active object
     original_active = bpy.context.view_layer.objects.active
     original_selected = [o for o in bpy.context.selected_objects]
     
-    # 选择目标对象
+    # Select target object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     
     try:
         if origin_type == "GEOMETRY":
-            # 原点到几何中心
+            # Origin to geometry center
             bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center=center)
         elif origin_type == "CURSOR":
-            # 原点到 3D 游标
+            # Origin to 3D cursor
             bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
         elif origin_type == "BOTTOM":
-            # 原点到底部中心（用于角色，脚底）
+            # Origin to bottom center (for characters, feet)
             if obj.type == 'MESH':
-                # 获取对象的边界框
+                # Get object bounding box
                 bbox = [obj.matrix_world @ mathutils.Vector(corner) for corner in obj.bound_box]
-                # 找到最低点
+                # Find lowest point
                 min_z = min(v.z for v in bbox)
-                # 计算底部中心
+                # Calculate bottom center
                 center_x = sum(v.x for v in bbox) / 8
                 center_y = sum(v.y for v in bbox) / 8
                 
-                # 保存当前游标位置
+                # Save current cursor position
                 cursor_loc = bpy.context.scene.cursor.location.copy()
                 
-                # 将游标移动到底部中心
+                # Move cursor to bottom center
                 bpy.context.scene.cursor.location = (center_x, center_y, min_z)
                 
-                # 设置原点到游标
+                # Set origin to cursor
                 bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
                 
-                # 恢复游标位置
+                # Restore cursor position
                 bpy.context.scene.cursor.location = cursor_loc
             else:
                 return {
                     "success": False,
                     "error": {
                         "code": "INVALID_TYPE",
-                        "message": "BOTTOM 原点类型仅支持网格对象"
+                        "message": "BOTTOM origin type only supports mesh objects"
                     }
                 }
         elif origin_type == "CENTER_OF_MASS":
-            # 原点到质心（表面）
+            # Origin to center of mass (surface)
             bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='MEDIAN')
         elif origin_type == "CENTER_OF_VOLUME":
-            # 原点到体积中心
+            # Origin to center of volume
             bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_VOLUME', center='MEDIAN')
         else:
             return {
                 "success": False,
                 "error": {
                     "code": "INVALID_ORIGIN_TYPE",
-                    "message": f"不支持的原点类型: {origin_type}"
+                    "message": f"Unsupported origin type: {origin_type}"
                 }
             }
         
-        # 恢复选择
+        # Restore selection
         bpy.ops.object.select_all(action='DESELECT')
         for o in original_selected:
             if o:
@@ -648,14 +648,14 @@ def handle_set_origin(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_apply_transform(params: Dict[str, Any]) -> Dict[str, Any]:
-    """应用变换
+    """Apply transform
     
     Args:
         params:
-            - name: 对象名称
-            - location: 应用位置
-            - rotation: 应用旋转
-            - scale: 应用缩放
+            - name: Object name
+            - location: Apply location
+            - rotation: Apply rotation
+            - scale: Apply scale
     """
     name = params.get("name")
     apply_location = params.get("location", False)
@@ -668,11 +668,11 @@ def handle_apply_transform(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"对象不存在: {name}"
+                "message": f"Object not found: {name}"
             }
         }
     
-    # 选择对象
+    # Select object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj

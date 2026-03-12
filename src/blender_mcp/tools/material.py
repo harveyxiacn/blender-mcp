@@ -1,7 +1,7 @@
 """
-材质工具
+Material Tools
 
-提供材质创建、分配、属性设置等功能。
+Provides material creation, assignment, property setting, and other features.
 """
 
 from typing import TYPE_CHECKING, Optional, List
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 class BlendMode(str, Enum):
-    """混合模式"""
+    """Blend mode"""
     OPAQUE = "OPAQUE"
     CLIP = "CLIP"
     HASHED = "HASHED"
@@ -24,7 +24,7 @@ class BlendMode(str, Enum):
 
 
 class TextureType(str, Enum):
-    """纹理类型"""
+    """Texture type"""
     COLOR = "COLOR"
     NORMAL = "NORMAL"
     ROUGHNESS = "ROUGHNESS"
@@ -33,231 +33,231 @@ class TextureType(str, Enum):
 
 
 class TextureMapping(str, Enum):
-    """纹理映射方式"""
+    """Texture mapping method"""
     UV = "UV"
     BOX = "BOX"
     SPHERE = "SPHERE"
     CYLINDER = "CYLINDER"
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class MaterialCreateInput(BaseModel):
-    """创建材质输入"""
+    """Create material input"""
     model_config = ConfigDict(str_strip_whitespace=True)
-    
-    name: str = Field(..., description="材质名称", min_length=1, max_length=100)
+
+    name: str = Field(..., description="Material name", min_length=1, max_length=100)
     color: Optional[List[float]] = Field(
         default=None,
-        description="RGBA 颜色 [r, g, b, a]，值范围 0-1"
+        description="RGBA color [r, g, b, a], value range 0-1"
     )
-    metallic: Optional[float] = Field(default=None, description="金属度", ge=0, le=1)
-    roughness: Optional[float] = Field(default=None, description="粗糙度", ge=0, le=1)
-    use_nodes: bool = Field(default=True, description="使用节点材质")
-    
+    metallic: Optional[float] = Field(default=None, description="Metallic", ge=0, le=1)
+    roughness: Optional[float] = Field(default=None, description="Roughness", ge=0, le=1)
+    use_nodes: bool = Field(default=True, description="Use node-based material")
+
     @field_validator("color")
     @classmethod
     def validate_color(cls, v):
         if v is not None:
             if len(v) not in [3, 4]:
-                raise ValueError("颜色必须包含 3 或 4 个分量")
+                raise ValueError("Color must contain 3 or 4 components")
             if any(c < 0 or c > 1 for c in v):
-                raise ValueError("颜色分量必须在 0-1 范围内")
+                raise ValueError("Color components must be in 0-1 range")
         return v
 
 
 class MaterialAssignInput(BaseModel):
-    """分配材质输入"""
-    object_name: str = Field(..., description="对象名称")
-    material_name: str = Field(..., description="材质名称")
-    slot_index: int = Field(default=0, description="材质槽索引", ge=0)
+    """Assign material input"""
+    object_name: str = Field(..., description="Object name")
+    material_name: str = Field(..., description="Material name")
+    slot_index: int = Field(default=0, description="Material slot index", ge=0)
 
 
 class MaterialSetPropertiesInput(BaseModel):
-    """设置材质属性输入"""
+    """Set material properties input"""
     model_config = ConfigDict(str_strip_whitespace=True)
-    
-    material_name: str = Field(..., description="材质名称")
-    color: Optional[List[float]] = Field(default=None, description="RGBA 颜色")
-    metallic: Optional[float] = Field(default=None, description="金属度", ge=0, le=1)
-    roughness: Optional[float] = Field(default=None, description="粗糙度", ge=0, le=1)
-    specular: Optional[float] = Field(default=None, description="高光强度", ge=0, le=1)
-    emission_color: Optional[List[float]] = Field(default=None, description="自发光颜色")
-    emission_strength: Optional[float] = Field(default=None, description="自发光强度", ge=0)
-    alpha: Optional[float] = Field(default=None, description="透明度", ge=0, le=1)
-    blend_mode: Optional[BlendMode] = Field(default=None, description="混合模式")
+
+    material_name: str = Field(..., description="Material name")
+    color: Optional[List[float]] = Field(default=None, description="RGBA color")
+    metallic: Optional[float] = Field(default=None, description="Metallic", ge=0, le=1)
+    roughness: Optional[float] = Field(default=None, description="Roughness", ge=0, le=1)
+    specular: Optional[float] = Field(default=None, description="Specular intensity", ge=0, le=1)
+    emission_color: Optional[List[float]] = Field(default=None, description="Emission color")
+    emission_strength: Optional[float] = Field(default=None, description="Emission strength", ge=0)
+    alpha: Optional[float] = Field(default=None, description="Alpha (opacity)", ge=0, le=1)
+    blend_mode: Optional[BlendMode] = Field(default=None, description="Blend mode")
 
 
 class MaterialAddTextureInput(BaseModel):
-    """添加纹理输入"""
-    material_name: str = Field(..., description="材质名称")
-    texture_path: str = Field(..., description="纹理文件路径")
-    texture_type: TextureType = Field(default=TextureType.COLOR, description="纹理类型")
-    mapping: TextureMapping = Field(default=TextureMapping.UV, description="映射方式")
+    """Add texture input"""
+    material_name: str = Field(..., description="Material name")
+    texture_path: str = Field(..., description="Texture file path")
+    texture_type: TextureType = Field(default=TextureType.COLOR, description="Texture type")
+    mapping: TextureMapping = Field(default=TextureMapping.UV, description="Mapping method")
 
 
 class MaterialListInput(BaseModel):
-    """列出材质输入"""
-    limit: int = Field(default=50, description="返回数量限制", ge=1, le=500)
+    """List materials input"""
+    limit: int = Field(default=50, description="Return count limit", ge=1, le=500)
 
 
 class MaterialDeleteInput(BaseModel):
-    """删除材质输入"""
-    material_name: str = Field(..., description="材质名称")
+    """Delete material input"""
+    material_name: str = Field(..., description="Material name")
 
 
 class NodeType(str, Enum):
-    """节点类型"""
-    SSS = "SSS"                     # 次表面散射配置
-    EMISSION = "EMISSION"           # 发光配置
-    MIX_RGB = "MIX_RGB"             # 混合 RGB
-    COLOR_RAMP = "COLOR_RAMP"       # 颜色渐变
-    NOISE_TEXTURE = "NOISE_TEXTURE" # 噪波纹理
-    IMAGE_TEXTURE = "IMAGE_TEXTURE" # 图像纹理
-    NORMAL_MAP = "NORMAL_MAP"       # 法线贴图
-    BUMP = "BUMP"                   # 凹凸贴图
+    """Node type"""
+    SSS = "SSS"                     # Subsurface scattering configuration
+    EMISSION = "EMISSION"           # Emission configuration
+    MIX_RGB = "MIX_RGB"             # Mix RGB
+    COLOR_RAMP = "COLOR_RAMP"       # Color ramp
+    NOISE_TEXTURE = "NOISE_TEXTURE" # Noise texture
+    IMAGE_TEXTURE = "IMAGE_TEXTURE" # Image texture
+    NORMAL_MAP = "NORMAL_MAP"       # Normal map
+    BUMP = "BUMP"                   # Bump map
 
 
 class MaterialNodeAddInput(BaseModel):
-    """添加材质节点输入"""
-    material_name: str = Field(..., description="材质名称")
-    node_type: NodeType = Field(..., description="节点类型")
+    """Add material node input"""
+    material_name: str = Field(..., description="Material name")
+    node_type: NodeType = Field(..., description="Node type")
     settings: Optional[dict] = Field(
         default=None,
-        description="节点设置（如 SSS: {subsurface: 0.3}, EMISSION: {color: [1,1,1], strength: 1.0}）"
+        description="Node settings (e.g. SSS: {subsurface: 0.3}, EMISSION: {color: [1,1,1], strength: 1.0})"
     )
     connect_to: Optional[dict] = Field(
         default=None,
-        description="连接配置 {input: 'Base Color', output: 'Color'}"
+        description="Connection config {input: 'Base Color', output: 'Color'}"
     )
-    location: Optional[List[float]] = Field(default=None, description="节点位置 [x, y]")
+    location: Optional[List[float]] = Field(default=None, description="Node position [x, y]")
 
 
 class TextureApplyInput(BaseModel):
-    """应用纹理贴图输入"""
-    material_name: str = Field(..., description="材质名称")
-    image_path: str = Field(..., description="图片文件路径")
-    mapping_type: TextureMapping = Field(default=TextureMapping.UV, description="映射类型")
-    texture_type: TextureType = Field(default=TextureType.COLOR, description="纹理用途")
+    """Apply texture map input"""
+    material_name: str = Field(..., description="Material name")
+    image_path: str = Field(..., description="Image file path")
+    mapping_type: TextureMapping = Field(default=TextureMapping.UV, description="Mapping type")
+    texture_type: TextureType = Field(default=TextureType.COLOR, description="Texture usage")
 
 
 class SkinTone(str, Enum):
-    """肤色类型"""
-    LIGHT = "LIGHT"     # 浅肤色
-    MEDIUM = "MEDIUM"   # 中等肤色
-    DARK = "DARK"       # 深肤色
-    CUSTOM = "CUSTOM"   # 自定义
+    """Skin tone type"""
+    LIGHT = "LIGHT"     # Light skin tone
+    MEDIUM = "MEDIUM"   # Medium skin tone
+    DARK = "DARK"       # Dark skin tone
+    CUSTOM = "CUSTOM"   # Custom
 
 
 class CreateSkinMaterialInput(BaseModel):
-    """创建皮肤材质输入"""
-    name: str = Field(default="SkinMaterial", description="材质名称")
-    skin_tone: SkinTone = Field(default=SkinTone.MEDIUM, description="肤色类型")
+    """Create skin material input"""
+    name: str = Field(default="SkinMaterial", description="Material name")
+    skin_tone: SkinTone = Field(default=SkinTone.MEDIUM, description="Skin tone type")
     custom_color: Optional[List[float]] = Field(
         default=None,
-        description="自定义颜色（当 skin_tone 为 CUSTOM 时使用）"
+        description="Custom color (used when skin_tone is CUSTOM)"
     )
 
 
 class CreateToonMaterialInput(BaseModel):
-    """创建卡通材质输入"""
-    name: str = Field(default="ToonMaterial", description="材质名称")
-    color: List[float] = Field(default=[0.8, 0.8, 0.8, 1.0], description="基础颜色")
-    shadow_color: Optional[List[float]] = Field(default=None, description="阴影颜色")
-    outline: bool = Field(default=False, description="是否添加描边效果")
+    """Create toon material input"""
+    name: str = Field(default="ToonMaterial", description="Material name")
+    color: List[float] = Field(default=[0.8, 0.8, 0.8, 1.0], description="Base color")
+    shadow_color: Optional[List[float]] = Field(default=None, description="Shadow color")
+    outline: bool = Field(default=False, description="Whether to add outline effect")
 
 
-# ==================== 生产标准优化输入模型 ====================
+# ==================== Production Standard Optimization Input Models ====================
 
 class GameEngine(str, Enum):
-    """目标游戏引擎"""
-    UNITY = "UNITY"                 # Unity引擎
-    UNREAL = "UNREAL"               # Unreal引擎
-    GODOT = "GODOT"                 # Godot引擎
-    GENERIC = "GENERIC"             # 通用glTF
+    """Target game engine"""
+    UNITY = "UNITY"                 # Unity engine
+    UNREAL = "UNREAL"               # Unreal engine
+    GODOT = "GODOT"                 # Godot engine
+    GENERIC = "GENERIC"             # Generic glTF
     BLENDER = "BLENDER"             # Blender Eevee/Cycles
 
 
 class MaterialAnalyzeInput(BaseModel):
-    """材质分析输入"""
-    material_name: str = Field(..., description="材质名称")
-    target_engine: GameEngine = Field(default=GameEngine.GENERIC, description="目标游戏引擎")
+    """Material analysis input"""
+    material_name: str = Field(..., description="Material name")
+    target_engine: GameEngine = Field(default=GameEngine.GENERIC, description="Target game engine")
 
 
 class MaterialOptimizeInput(BaseModel):
-    """材质优化输入"""
-    material_name: str = Field(..., description="材质名称")
-    target_engine: GameEngine = Field(default=GameEngine.GENERIC, description="目标游戏引擎")
-    fix_metallic: bool = Field(default=True, description="修复金属度值（确保为0或1）")
-    fix_color_space: bool = Field(default=True, description="修复纹理色彩空间")
-    combine_textures: bool = Field(default=False, description="合并纹理通道（ORM/RMA）")
+    """Material optimization input"""
+    material_name: str = Field(..., description="Material name")
+    target_engine: GameEngine = Field(default=GameEngine.GENERIC, description="Target game engine")
+    fix_metallic: bool = Field(default=True, description="Fix metallic value (ensure 0 or 1)")
+    fix_color_space: bool = Field(default=True, description="Fix texture color space")
+    combine_textures: bool = Field(default=False, description="Combine texture channels (ORM/RMA)")
 
 
 class PBRMaterialCreateInput(BaseModel):
-    """创建标准PBR材质输入"""
+    """Create standard PBR material input"""
     model_config = ConfigDict(str_strip_whitespace=True)
-    
-    name: str = Field(..., description="材质名称", min_length=1, max_length=100)
-    target_engine: GameEngine = Field(default=GameEngine.GENERIC, description="目标游戏引擎")
-    
-    # PBR基础属性
+
+    name: str = Field(..., description="Material name", min_length=1, max_length=100)
+    target_engine: GameEngine = Field(default=GameEngine.GENERIC, description="Target game engine")
+
+    # PBR base properties
     base_color: Optional[List[float]] = Field(
         default=None,
-        description="基础颜色 [r, g, b, a]，值范围 0-1"
+        description="Base color [r, g, b, a], value range 0-1"
     )
-    metallic: float = Field(default=0.0, description="金属度（生产标准：0=非金属，1=金属）", ge=0, le=1)
-    roughness: float = Field(default=0.5, description="粗糙度", ge=0, le=1)
-    
-    # 纹理路径（可选）
-    base_color_texture: Optional[str] = Field(default=None, description="基础颜色贴图路径")
-    normal_texture: Optional[str] = Field(default=None, description="法线贴图路径")
-    metallic_texture: Optional[str] = Field(default=None, description="金属度贴图路径")
-    roughness_texture: Optional[str] = Field(default=None, description="粗糙度贴图路径")
-    ao_texture: Optional[str] = Field(default=None, description="环境光遮蔽贴图路径")
-    emission_texture: Optional[str] = Field(default=None, description="自发光贴图路径")
-    
-    # 额外设置
-    emission_strength: float = Field(default=0.0, description="自发光强度", ge=0)
-    alpha_mode: BlendMode = Field(default=BlendMode.OPAQUE, description="透明度模式")
-    double_sided: bool = Field(default=False, description="双面渲染")
-    
+    metallic: float = Field(default=0.0, description="Metallic (production standard: 0=non-metal, 1=metal)", ge=0, le=1)
+    roughness: float = Field(default=0.5, description="Roughness", ge=0, le=1)
+
+    # Texture paths (optional)
+    base_color_texture: Optional[str] = Field(default=None, description="Base color texture path")
+    normal_texture: Optional[str] = Field(default=None, description="Normal map path")
+    metallic_texture: Optional[str] = Field(default=None, description="Metallic map path")
+    roughness_texture: Optional[str] = Field(default=None, description="Roughness map path")
+    ao_texture: Optional[str] = Field(default=None, description="Ambient occlusion map path")
+    emission_texture: Optional[str] = Field(default=None, description="Emission map path")
+
+    # Additional settings
+    emission_strength: float = Field(default=0.0, description="Emission strength", ge=0)
+    alpha_mode: BlendMode = Field(default=BlendMode.OPAQUE, description="Alpha mode")
+    double_sided: bool = Field(default=False, description="Double-sided rendering")
+
     @field_validator("base_color")
     @classmethod
     def validate_base_color(cls, v):
         if v is not None:
             if len(v) not in [3, 4]:
-                raise ValueError("颜色必须包含 3 或 4 个分量")
+                raise ValueError("Color must contain 3 or 4 components")
             if any(c < 0 or c > 1 for c in v):
-                raise ValueError("颜色分量必须在 0-1 范围内")
+                raise ValueError("Color components must be in 0-1 range")
         return v
 
 
 class TextureColorSpaceInput(BaseModel):
-    """纹理色彩空间设置输入"""
-    material_name: str = Field(..., description="材质名称")
-    auto_detect: bool = Field(default=True, description="自动检测并修复色彩空间")
+    """Texture color space setting input"""
+    material_name: str = Field(..., description="Material name")
+    auto_detect: bool = Field(default=True, description="Auto-detect and fix color space")
 
 
 class MaterialBakeTexturesInput(BaseModel):
-    """烘焙材质纹理输入"""
-    material_name: str = Field(..., description="材质名称")
-    output_directory: str = Field(..., description="输出目录路径")
-    resolution: int = Field(default=1024, description="纹理分辨率", ge=64, le=8192)
+    """Bake material textures input"""
+    material_name: str = Field(..., description="Material name")
+    output_directory: str = Field(..., description="Output directory path")
+    resolution: int = Field(default=1024, description="Texture resolution", ge=64, le=8192)
     bake_types: List[str] = Field(
         default=["DIFFUSE", "ROUGHNESS", "NORMAL"],
-        description="烘焙类型列表：DIFFUSE, ROUGHNESS, METALLIC, NORMAL, AO, EMISSION"
+        description="Bake type list: DIFFUSE, ROUGHNESS, METALLIC, NORMAL, AO, EMISSION"
     )
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册材质工具"""
-    
+    """Register material tools"""
+
     @mcp.tool(
         name="blender_material_create",
         annotations={
-            "title": "创建材质",
+            "title": "Create Material",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -265,15 +265,15 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_material_create(params: MaterialCreateInput) -> str:
-        """创建新材质。
-        
-        创建具有指定属性的 PBR 材质。
-        
+        """Create a new material.
+
+        Creates a PBR material with specified properties.
+
         Args:
-            params: 材质名称和属性
-            
+            params: Material name and properties
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "material", "create",
@@ -285,16 +285,16 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "use_nodes": params.use_nodes
             }
         )
-        
+
         if result.get("success"):
-            return f"成功创建材质 '{params.name}'"
+            return f"Successfully created material '{params.name}'"
         else:
-            return f"创建材质失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to create material: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_material_assign",
         annotations={
-            "title": "分配材质",
+            "title": "Assign Material",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -302,13 +302,13 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_material_assign(params: MaterialAssignInput) -> str:
-        """将材质分配给对象。
-        
+        """Assign a material to an object.
+
         Args:
-            params: 对象名称、材质名称、材质槽索引
-            
+            params: Object name, material name, material slot index
+
         Returns:
-            分配结果
+            Assignment result
         """
         result = await server.execute_command(
             "material", "assign",
@@ -318,16 +318,16 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "slot_index": params.slot_index
             }
         )
-        
+
         if result.get("success"):
-            return f"已将材质 '{params.material_name}' 分配给对象 '{params.object_name}'"
+            return f"Assigned material '{params.material_name}' to object '{params.object_name}'"
         else:
-            return f"分配材质失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to assign material: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_material_set_properties",
         annotations={
-            "title": "设置材质属性",
+            "title": "Set Material Properties",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -335,15 +335,15 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_material_set_properties(params: MaterialSetPropertiesInput) -> str:
-        """设置材质属性。
-        
-        可以设置颜色、金属度、粗糙度、自发光等属性。
-        
+        """Set material properties.
+
+        Can set color, metallic, roughness, emission, and other properties.
+
         Args:
-            params: 材质名称和要设置的属性
-            
+            params: Material name and properties to set
+
         Returns:
-            设置结果
+            Setting result
         """
         properties = {}
         if params.color is not None:
@@ -362,24 +362,24 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             properties["alpha"] = params.alpha
         if params.blend_mode is not None:
             properties["blend_mode"] = params.blend_mode.value
-        
+
         if not properties:
-            return "没有指定任何属性"
-        
+            return "No properties specified"
+
         result = await server.execute_command(
             "material", "set_properties",
             {"material_name": params.material_name, "properties": properties}
         )
-        
+
         if result.get("success"):
-            return f"材质 '{params.material_name}' 属性已更新"
+            return f"Material '{params.material_name}' properties updated"
         else:
-            return f"设置材质属性失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to set material properties: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_material_add_texture",
         annotations={
-            "title": "添加纹理",
+            "title": "Add Texture",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -387,15 +387,15 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_material_add_texture(params: MaterialAddTextureInput) -> str:
-        """为材质添加纹理。
-        
-        支持颜色、法线、粗糙度、金属度、自发光等纹理类型。
-        
+        """Add a texture to a material.
+
+        Supports color, normal, roughness, metallic, emission, and other texture types.
+
         Args:
-            params: 材质名称、纹理路径、纹理类型
-            
+            params: Material name, texture path, texture type
+
         Returns:
-            添加结果
+            Addition result
         """
         result = await server.execute_command(
             "material", "add_texture",
@@ -406,16 +406,16 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "mapping": params.mapping.value
             }
         )
-        
+
         if result.get("success"):
-            return f"已为材质 '{params.material_name}' 添加 {params.texture_type.value} 纹理"
+            return f"Added {params.texture_type.value} texture to material '{params.material_name}'"
         else:
-            return f"添加纹理失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to add texture: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_material_list",
         annotations={
-            "title": "列出材质",
+            "title": "List Materials",
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -423,45 +423,45 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_material_list(params: MaterialListInput) -> str:
-        """列出所有材质。
-        
+        """List all materials.
+
         Args:
-            params: 返回数量限制
-            
+            params: Return count limit
+
         Returns:
-            材质列表
+            Material list
         """
         result = await server.execute_command(
             "material", "list",
             {"limit": params.limit}
         )
-        
+
         if not result.get("success"):
-            return f"获取材质列表失败: {result.get('error', {}).get('message', '未知错误')}"
-        
+            return f"Failed to get material list: {result.get('error', {}).get('message', 'Unknown error')}"
+
         materials = result.get("data", {}).get("materials", [])
         total = result.get("data", {}).get("total", len(materials))
-        
-        lines = ["# 材质列表", ""]
-        lines.append(f"共 {total} 个材质")
+
+        lines = ["# Material List", ""]
+        lines.append(f"Total: {total} material(s)")
         lines.append("")
-        
+
         for mat in materials:
             lines.append(f"## {mat['name']}")
             if "color" in mat:
-                lines.append(f"- 颜色: {mat['color']}")
+                lines.append(f"- Color: {mat['color']}")
             if "metallic" in mat:
-                lines.append(f"- 金属度: {mat['metallic']}")
+                lines.append(f"- Metallic: {mat['metallic']}")
             if "roughness" in mat:
-                lines.append(f"- 粗糙度: {mat['roughness']}")
+                lines.append(f"- Roughness: {mat['roughness']}")
             lines.append("")
-        
+
         return "\n".join(lines)
-    
+
     @mcp.tool(
         name="blender_material_delete",
         annotations={
-            "title": "删除材质",
+            "title": "Delete Material",
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
@@ -469,28 +469,28 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_material_delete(params: MaterialDeleteInput) -> str:
-        """删除材质。
-        
+        """Delete a material.
+
         Args:
-            params: 材质名称
-            
+            params: Material name
+
         Returns:
-            删除结果
+            Deletion result
         """
         result = await server.execute_command(
             "material", "delete",
             {"material_name": params.material_name}
         )
-        
+
         if result.get("success"):
-            return f"已删除材质 '{params.material_name}'"
+            return f"Deleted material '{params.material_name}'"
         else:
-            return f"删除材质失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to delete material: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_material_node_add",
         annotations={
-            "title": "添加材质节点",
+            "title": "Add Material Node",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -498,16 +498,16 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_material_node_add(params: MaterialNodeAddInput) -> str:
-        """添加高级材质节点。
-        
-        支持 SSS（次表面散射）、Emission（发光）等节点，
-        用于创建皮肤材质或发光的乒乓球等效果。
-        
+        """Add an advanced material node.
+
+        Supports SSS (Subsurface Scattering), Emission, and other nodes
+        for creating skin materials or glowing effects.
+
         Args:
-            params: 材质名称、节点类型、设置
-            
+            params: Material name, node type, settings
+
         Returns:
-            添加结果
+            Addition result
         """
         result = await server.execute_command(
             "material", "node_add",
@@ -519,17 +519,17 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "location": params.location or [-300, 0]
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            return f"已为材质 '{params.material_name}' 添加 {params.node_type.value} 节点"
+            return f"Added {params.node_type.value} node to material '{params.material_name}'"
         else:
-            return f"添加节点失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to add node: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_texture_apply",
         annotations={
-            "title": "应用纹理贴图",
+            "title": "Apply Texture Map",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -537,15 +537,15 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_texture_apply(params: TextureApplyInput) -> str:
-        """应用纹理贴图到材质。
-        
-        支持多种纹理类型和映射方式，可用于添加国旗、队服Logo等。
-        
+        """Apply a texture map to a material.
+
+        Supports multiple texture types and mapping methods, can be used for adding flags, logos, etc.
+
         Args:
-            params: 材质名称、图片路径、映射类型、纹理用途
-            
+            params: Material name, image path, mapping type, texture usage
+
         Returns:
-            应用结果
+            Apply result
         """
         result = await server.execute_command(
             "material", "texture_apply",
@@ -556,17 +556,17 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "texture_type": params.texture_type.value
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            return f"已将纹理 '{data.get('image_name', 'N/A')}' 应用到材质 '{params.material_name}'"
+            return f"Applied texture '{data.get('image_name', 'N/A')}' to material '{params.material_name}'"
         else:
-            return f"应用纹理失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to apply texture: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_create_skin_material",
         annotations={
-            "title": "创建皮肤材质",
+            "title": "Create Skin Material",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -574,15 +574,15 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_create_skin_material(params: CreateSkinMaterialInput) -> str:
-        """创建预设的皮肤材质。
-        
-        包含次表面散射（SSS）效果，适用于 Q 版角色皮肤。
-        
+        """Create a preset skin material.
+
+        Includes subsurface scattering (SSS) effect, suitable for chibi/stylized character skin.
+
         Args:
-            params: 材质名称、肤色类型
-            
+            params: Material name, skin tone type
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "material", "create_skin_material",
@@ -592,23 +592,23 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "custom_color": params.custom_color
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
             tone_names = {
-                "LIGHT": "浅肤色",
-                "MEDIUM": "中等肤色",
-                "DARK": "深肤色",
-                "CUSTOM": "自定义"
+                "LIGHT": "light",
+                "MEDIUM": "medium",
+                "DARK": "dark",
+                "CUSTOM": "custom"
             }
-            return f"已创建{tone_names.get(params.skin_tone.value)}皮肤材质 '{data.get('material_name', params.name)}'"
+            return f"Created {tone_names.get(params.skin_tone.value)} skin material '{data.get('material_name', params.name)}'"
         else:
-            return f"创建皮肤材质失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to create skin material: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_create_toon_material",
         annotations={
-            "title": "创建卡通材质",
+            "title": "Create Toon Material",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -616,15 +616,15 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_create_toon_material(params: CreateToonMaterialInput) -> str:
-        """创建卡通风格材质。
-        
-        适用于 Q 版角色的风格化卡通渲染。
-        
+        """Create a toon-style material.
+
+        Suitable for stylized cartoon rendering of chibi characters.
+
         Args:
-            params: 材质名称、颜色、描边选项
-            
+            params: Material name, color, outline options
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "material", "create_toon_material",
@@ -635,19 +635,19 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "outline": params.outline
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            return f"已创建卡通材质 '{data.get('material_name', params.name)}'"
+            return f"Created toon material '{data.get('material_name', params.name)}'"
         else:
-            return f"创建卡通材质失败: {result.get('error', {}).get('message', '未知错误')}"
-    
-    # ==================== 生产标准优化工具 ====================
-    
+            return f"Failed to create toon material: {result.get('error', {}).get('message', 'Unknown error')}"
+
+    # ==================== Production Standard Optimization Tools ====================
+
     @mcp.tool(
         name="blender_material_analyze",
         annotations={
-            "title": "PBR材质分析",
+            "title": "PBR Material Analysis",
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -655,19 +655,19 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_material_analyze(params: MaterialAnalyzeInput) -> str:
-        """分析材质是否符合PBR生产标准。
-        
-        检查材质的PBR参数是否符合游戏引擎最佳实践：
-        - 金属度是否为0或1（生产标准）
-        - 纹理色彩空间是否正确
-        - 法线贴图设置是否正确
-        - 是否符合目标引擎要求
-        
+        """Analyze whether a material meets PBR production standards.
+
+        Checks if material PBR parameters follow game engine best practices:
+        - Whether metallic is 0 or 1 (production standard)
+        - Whether texture color spaces are correct
+        - Whether normal map settings are correct
+        - Whether it meets target engine requirements
+
         Args:
-            params: 材质名称和目标引擎
-            
+            params: Material name and target engine
+
         Returns:
-            详细的材质分析报告
+            Detailed material analysis report
         """
         result = await server.execute_command(
             "material", "analyze",
@@ -676,65 +676,65 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "target_engine": params.target_engine.value
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            
-            lines = [f"# PBR材质分析报告: {params.material_name}", ""]
-            
-            # 基础信息
-            lines.append("## 基础信息")
-            lines.append(f"- 使用节点: {'是' if data.get('uses_nodes') else '否'}")
-            lines.append(f"- 目标引擎: {params.target_engine.value}")
+
+            lines = [f"# PBR Material Analysis Report: {params.material_name}", ""]
+
+            # Basic info
+            lines.append("## Basic Info")
+            lines.append(f"- Uses nodes: {'Yes' if data.get('uses_nodes') else 'No'}")
+            lines.append(f"- Target engine: {params.target_engine.value}")
             lines.append("")
-            
-            # PBR参数
+
+            # PBR parameters
             pbr = data.get("pbr_values", {})
-            lines.append("## PBR参数")
-            lines.append(f"- 金属度: {pbr.get('metallic', 'N/A')}")
-            lines.append(f"- 粗糙度: {pbr.get('roughness', 'N/A')}")
-            lines.append(f"- 基础颜色: {pbr.get('base_color', 'N/A')}")
+            lines.append("## PBR Parameters")
+            lines.append(f"- Metallic: {pbr.get('metallic', 'N/A')}")
+            lines.append(f"- Roughness: {pbr.get('roughness', 'N/A')}")
+            lines.append(f"- Base color: {pbr.get('base_color', 'N/A')}")
             lines.append("")
-            
-            # 纹理信息
+
+            # Texture info
             textures = data.get("textures", [])
             if textures:
-                lines.append("## 纹理列表")
+                lines.append("## Texture List")
                 for tex in textures:
                     lines.append(f"- {tex.get('name', 'Unknown')}")
-                    lines.append(f"  - 类型: {tex.get('type', 'N/A')}")
-                    lines.append(f"  - 色彩空间: {tex.get('colorspace', 'N/A')}")
+                    lines.append(f"  - Type: {tex.get('type', 'N/A')}")
+                    lines.append(f"  - Color space: {tex.get('colorspace', 'N/A')}")
                     correct = tex.get('colorspace_correct', True)
-                    lines.append(f"  - 色彩空间正确: {'是' if correct else '否 ⚠️'}")
+                    lines.append(f"  - Color space correct: {'Yes' if correct else 'No ⚠️'}")
                 lines.append("")
-            
-            # 问题和建议
+
+            # Issues and suggestions
             issues = data.get("issues", [])
             if issues:
-                lines.append("## ⚠️ 发现的问题")
+                lines.append("## ⚠️ Issues Found")
                 for issue in issues:
                     lines.append(f"- {issue}")
                 lines.append("")
-            
+
             suggestions = data.get("suggestions", [])
             if suggestions:
-                lines.append("## 💡 优化建议")
+                lines.append("## Optimization Suggestions")
                 for suggestion in suggestions:
                     lines.append(f"- {suggestion}")
                 lines.append("")
-            
-            # 兼容性评分
+
+            # Compatibility score
             score = data.get("compatibility_score", 0)
-            lines.append(f"## 兼容性评分: {score}/100")
-            
+            lines.append(f"## Compatibility Score: {score}/100")
+
             return "\n".join(lines)
         else:
-            return f"分析失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Analysis failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_material_optimize",
         annotations={
-            "title": "优化PBR材质",
+            "title": "Optimize PBR Material",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -742,18 +742,18 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_material_optimize(params: MaterialOptimizeInput) -> str:
-        """优化材质以符合游戏引擎PBR标准。
-        
-        自动修复常见问题：
-        - 将金属度值修正为0或1
-        - 修复纹理色彩空间（法线/粗糙度等使用Non-Color）
-        - 针对目标引擎优化设置
-        
+        """Optimize material to meet game engine PBR standards.
+
+        Automatically fixes common issues:
+        - Corrects metallic values to 0 or 1
+        - Fixes texture color spaces (normal/roughness etc. use Non-Color)
+        - Optimizes settings for target engine
+
         Args:
-            params: 材质名称和优化选项
-            
+            params: Material name and optimization options
+
         Returns:
-            优化结果
+            Optimization result
         """
         result = await server.execute_command(
             "material", "optimize",
@@ -765,28 +765,28 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "combine_textures": params.combine_textures
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
             fixes = data.get("fixes_applied", [])
-            
-            lines = [f"材质 '{params.material_name}' 优化完成", ""]
-            
+
+            lines = [f"Material '{params.material_name}' optimization completed", ""]
+
             if fixes:
-                lines.append("已应用的修复:")
+                lines.append("Applied fixes:")
                 for fix in fixes:
                     lines.append(f"- {fix}")
             else:
-                lines.append("材质已符合标准，无需修复。")
-            
+                lines.append("Material already meets standards, no fixes needed.")
+
             return "\n".join(lines)
         else:
-            return f"优化失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Optimization failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_pbr_material_create",
         annotations={
-            "title": "创建标准PBR材质",
+            "title": "Create Standard PBR Material",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -794,18 +794,18 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_pbr_material_create(params: PBRMaterialCreateInput) -> str:
-        """创建符合生产标准的PBR材质。
-        
-        按照游戏引擎最佳实践创建材质：
-        - 自动设置正确的色彩空间
-        - 金属度遵循0/1规则
-        - 支持完整的PBR纹理工作流
-        
+        """Create a production-standard PBR material.
+
+        Creates material following game engine best practices:
+        - Automatically sets correct color spaces
+        - Metallic follows 0/1 rule
+        - Supports full PBR texture workflow
+
         Args:
-            params: PBR材质参数和纹理路径
-            
+            params: PBR material parameters and texture paths
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "material", "create_pbr",
@@ -826,30 +826,30 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "double_sided": params.double_sided
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
             textures_loaded = data.get("textures_loaded", [])
-            
-            lines = [f"成功创建PBR材质 '{params.name}'", ""]
-            lines.append(f"- 目标引擎: {params.target_engine.value}")
-            lines.append(f"- 金属度: {params.metallic}")
-            lines.append(f"- 粗糙度: {params.roughness}")
-            
+
+            lines = [f"Successfully created PBR material '{params.name}'", ""]
+            lines.append(f"- Target engine: {params.target_engine.value}")
+            lines.append(f"- Metallic: {params.metallic}")
+            lines.append(f"- Roughness: {params.roughness}")
+
             if textures_loaded:
                 lines.append("")
-                lines.append("已加载纹理:")
+                lines.append("Loaded textures:")
                 for tex in textures_loaded:
                     lines.append(f"- {tex}")
-            
+
             return "\n".join(lines)
         else:
-            return f"创建PBR材质失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to create PBR material: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_texture_colorspace_fix",
         annotations={
-            "title": "修复纹理色彩空间",
+            "title": "Fix Texture Color Space",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -857,17 +857,17 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_texture_colorspace_fix(params: TextureColorSpaceInput) -> str:
-        """自动修复材质中纹理的色彩空间设置。
-        
-        根据纹理用途自动设置正确的色彩空间：
-        - 颜色贴图: sRGB
-        - 法线/粗糙度/金属度: Non-Color
-        
+        """Automatically fix texture color space settings in a material.
+
+        Automatically sets correct color space based on texture usage:
+        - Color maps: sRGB
+        - Normal/roughness/metallic: Non-Color
+
         Args:
-            params: 材质名称
-            
+            params: Material name
+
         Returns:
-            修复结果
+            Fix result
         """
         result = await server.execute_command(
             "material", "fix_colorspace",
@@ -876,25 +876,25 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "auto_detect": params.auto_detect
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
             fixed = data.get("fixed_textures", [])
-            
+
             if fixed:
-                lines = ["已修复以下纹理的色彩空间:"]
+                lines = ["Fixed color space for the following textures:"]
                 for tex in fixed:
-                    lines.append(f"- {tex.get('name')}: {tex.get('old_space')} → {tex.get('new_space')}")
+                    lines.append(f"- {tex.get('name')}: {tex.get('old_space')} -> {tex.get('new_space')}")
                 return "\n".join(lines)
             else:
-                return "所有纹理色彩空间已正确设置，无需修复。"
+                return "All texture color spaces are already correct, no fixes needed."
         else:
-            return f"修复失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Fix failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_material_bake_textures",
         annotations={
-            "title": "烘焙材质纹理",
+            "title": "Bake Material Textures",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -902,16 +902,16 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_material_bake_textures(params: MaterialBakeTexturesInput) -> str:
-        """将程序化材质烘焙为纹理图像。
-        
-        支持烘焙：漫反射、粗糙度、金属度、法线、AO、自发光。
-        烘焙后的纹理可导出到游戏引擎使用。
-        
+        """Bake procedural material to texture images.
+
+        Supports baking: diffuse, roughness, metallic, normal, AO, emission.
+        Baked textures can be exported to game engines.
+
         Args:
-            params: 材质名称、输出目录、分辨率、烘焙类型
-            
+            params: Material name, output directory, resolution, bake types
+
         Returns:
-            烘焙结果
+            Bake result
         """
         result = await server.execute_command(
             "material", "bake_textures",
@@ -922,21 +922,21 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "bake_types": params.bake_types
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
             baked = data.get("baked_textures", [])
-            
-            lines = [f"材质 '{params.material_name}' 纹理烘焙完成", ""]
-            lines.append(f"输出目录: {params.output_directory}")
-            lines.append(f"分辨率: {params.resolution}x{params.resolution}")
+
+            lines = [f"Material '{params.material_name}' texture bake completed", ""]
+            lines.append(f"Output directory: {params.output_directory}")
+            lines.append(f"Resolution: {params.resolution}x{params.resolution}")
             lines.append("")
-            
+
             if baked:
-                lines.append("已烘焙的纹理:")
+                lines.append("Baked textures:")
                 for tex in baked:
                     lines.append(f"- {tex}")
-            
+
             return "\n".join(lines)
         else:
-            return f"烘焙失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Bake failed: {result.get('error', {}).get('message', 'Unknown error')}"

@@ -36,41 +36,41 @@ class QualityTarget(str, Enum):
 
 
 class CharacterPipelineInput(BaseModel):
-    name: str = Field(..., description="角色名称")
-    template: CharacterTemplate = Field(default=CharacterTemplate.CHIBI, description="模板类型")
-    style: PipelineStyle = Field(default=PipelineStyle.TOON, description="目标风格")
-    height: float = Field(default=1.7, ge=0.5, le=3.0, description="角色身高")
-    location: list[float] = Field(default_factory=lambda: [0.0, 0.0, 0.0], description="角色位置 [x, y, z]")
-    with_hair: bool = Field(default=True, description="自动创建头发")
-    hair_style: str = Field(default="short", description="头发风格")
-    with_clothing: bool = Field(default=True, description="自动添加服装")
-    clothing_type: str = Field(default="sportswear", description="服装类型")
-    with_accessory: bool = Field(default=True, description="自动添加配饰")
-    accessory_type: str = Field(default="medal", description="配饰类型")
-    auto_rig: bool = Field(default=True, description="是否自动绑定")
-    rig_type: str = Field(default="simple", description="绑定类型")
+    name: str = Field(..., description="Character name")
+    template: CharacterTemplate = Field(default=CharacterTemplate.CHIBI, description="Template type")
+    style: PipelineStyle = Field(default=PipelineStyle.TOON, description="Target style")
+    height: float = Field(default=1.7, ge=0.5, le=3.0, description="Character height")
+    location: list[float] = Field(default_factory=lambda: [0.0, 0.0, 0.0], description="Character location [x, y, z]")
+    with_hair: bool = Field(default=True, description="Auto-create hair")
+    hair_style: str = Field(default="short", description="Hair style")
+    with_clothing: bool = Field(default=True, description="Auto-add clothing")
+    clothing_type: str = Field(default="sportswear", description="Clothing type")
+    with_accessory: bool = Field(default=True, description="Auto-add accessories")
+    accessory_type: str = Field(default="medal", description="Accessory type")
+    auto_rig: bool = Field(default=True, description="Whether to auto-rig")
+    rig_type: str = Field(default="simple", description="Rig type")
 
 
 class PropPipelineInput(BaseModel):
-    name: str = Field(..., description="道具名称")
-    primitive: str = Field(default="CUBE", description="基础图元类型")
-    style: PipelineStyle = Field(default=PipelineStyle.LOW_POLY, description="目标风格")
-    quality_target: QualityTarget = Field(default=QualityTarget.PRODUCTION, description="质量档位")
-    location: list[float] = Field(default_factory=lambda: [0.0, 0.0, 0.0], description="位置 [x, y, z]")
-    scale: list[float] = Field(default_factory=lambda: [1.0, 1.0, 1.0], description="缩放 [x, y, z]")
-    material_preset: Optional[str] = Field(default=None, description="程序化材质预设（为空则自动按风格选择）")
-    auto_uv: bool = Field(default=True, description="自动UV展开")
-    add_outline: bool = Field(default=False, description="是否添加描边（卡通风格推荐）")
+    name: str = Field(..., description="Prop name")
+    primitive: str = Field(default="CUBE", description="Base primitive type")
+    style: PipelineStyle = Field(default=PipelineStyle.LOW_POLY, description="Target style")
+    quality_target: QualityTarget = Field(default=QualityTarget.PRODUCTION, description="Quality tier")
+    location: list[float] = Field(default_factory=lambda: [0.0, 0.0, 0.0], description="Location [x, y, z]")
+    scale: list[float] = Field(default_factory=lambda: [1.0, 1.0, 1.0], description="Scale [x, y, z]")
+    material_preset: Optional[str] = Field(default=None, description="Procedural material preset (empty to auto-select by style)")
+    auto_uv: bool = Field(default=True, description="Auto UV unwrap")
+    add_outline: bool = Field(default=False, description="Whether to add outline (recommended for toon style)")
 
 
 class ScenePipelineInput(BaseModel):
-    style: PipelineStyle = Field(default=PipelineStyle.SEMI_REALISTIC, description="场景目标风格")
-    environment_preset: Optional[str] = Field(default=None, description="环境预设（为空则按风格自动选择）")
-    create_ground: bool = Field(default=True, description="创建地面")
-    ground_size: float = Field(default=30.0, ge=1.0, le=500.0, description="地面尺寸")
-    ground_material: str = Field(default="concrete", description="地面材质预设")
-    create_camera: bool = Field(default=True, description="自动创建并激活相机")
-    camera_location: list[float] = Field(default_factory=lambda: [7.0, -7.0, 5.0], description="相机位置")
+    style: PipelineStyle = Field(default=PipelineStyle.SEMI_REALISTIC, description="Scene target style")
+    environment_preset: Optional[str] = Field(default=None, description="Environment preset (empty to auto-select by style)")
+    create_ground: bool = Field(default=True, description="Create ground plane")
+    ground_size: float = Field(default=30.0, ge=1.0, le=500.0, description="Ground size")
+    ground_material: str = Field(default="concrete", description="Ground material preset")
+    create_camera: bool = Field(default=True, description="Auto-create and activate camera")
+    camera_location: list[float] = Field(default_factory=lambda: [7.0, -7.0, 5.0], description="Camera location")
     resolution_x: int = Field(default=1920, ge=256, le=8192)
     resolution_y: int = Field(default=1080, ge=256, le=8192)
     samples: int = Field(default=128, ge=1, le=8192)
@@ -156,7 +156,7 @@ def register_pipeline_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     @mcp.tool(
         name="blender_pipeline_generate_character",
         annotations={
-            "title": "自动角色流程",
+            "title": "Auto Character Pipeline",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -164,7 +164,7 @@ def register_pipeline_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         },
     )
     async def blender_pipeline_generate_character(params: CharacterPipelineInput) -> dict[str, Any]:
-        """一键执行角色创建流程（模板 -> 服装/配饰 -> 绑定 -> 风格设置）。"""
+        """One-click character creation pipeline (template -> clothing/accessories -> rigging -> style setup)."""
         steps: list[dict[str, Any]] = []
 
         ok, create_result = await _run_step(
@@ -271,7 +271,7 @@ def register_pipeline_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     @mcp.tool(
         name="blender_pipeline_generate_prop",
         annotations={
-            "title": "自动道具流程",
+            "title": "Auto Prop Pipeline",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -279,7 +279,7 @@ def register_pipeline_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         },
     )
     async def blender_pipeline_generate_prop(params: PropPipelineInput) -> dict[str, Any]:
-        """一键执行道具流程（建模 -> 材质 -> UV -> 风格）。"""
+        """One-click prop pipeline (modeling -> material -> UV -> style)."""
         steps: list[dict[str, Any]] = []
         mesh_params = _mesh_params_for_quality(params.primitive, params.quality_target)
 
@@ -373,7 +373,7 @@ def register_pipeline_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     @mcp.tool(
         name="blender_pipeline_assemble_scene",
         annotations={
-            "title": "自动场景流程",
+            "title": "Auto Scene Pipeline",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -381,7 +381,7 @@ def register_pipeline_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         },
     )
     async def blender_pipeline_assemble_scene(params: ScenePipelineInput) -> dict[str, Any]:
-        """一键执行场景流程（风格 -> 环境 -> 地面 -> 灯光 -> 相机 -> 渲染设置）。"""
+        """One-click scene pipeline (style -> environment -> ground -> lighting -> camera -> render settings)."""
         steps: list[dict[str, Any]] = []
         env_preset = params.environment_preset or _environment_for_style(params.style)
 

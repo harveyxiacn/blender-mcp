@@ -1,7 +1,7 @@
 """
-合成器工具
+Compositor Tools
 
-提供后期合成、颜色校正、特效等功能。
+Provides post-processing compositing, color correction, effects, and more.
 """
 
 from typing import TYPE_CHECKING, Optional, List
@@ -13,55 +13,55 @@ if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class CompositorEnableInput(BaseModel):
-    """启用合成器输入"""
-    enable: bool = Field(default=True, description="是否启用")
-    use_backdrop: bool = Field(default=True, description="使用背景板预览")
+    """Enable compositor input"""
+    enable: bool = Field(default=True, description="Whether to enable")
+    use_backdrop: bool = Field(default=True, description="Use backdrop preview")
 
 
 class CompositorPresetInput(BaseModel):
-    """合成器预设输入"""
+    """Compositor preset input"""
     preset: str = Field(
         default="color_correction",
-        description="预设: color_correction, bloom, vignette, blur, sharpen, film_grain, chromatic_aberration"
+        description="Preset: color_correction, bloom, vignette, blur, sharpen, film_grain, chromatic_aberration"
     )
-    intensity: float = Field(default=1.0, description="效果强度", ge=0, le=2)
+    intensity: float = Field(default=1.0, description="Effect intensity", ge=0, le=2)
 
 
 class CompositorColorBalanceInput(BaseModel):
-    """颜色平衡输入"""
-    shadows: Optional[List[float]] = Field(default=None, description="阴影颜色 RGB")
-    midtones: Optional[List[float]] = Field(default=None, description="中间调颜色 RGB")
-    highlights: Optional[List[float]] = Field(default=None, description="高光颜色 RGB")
+    """Color balance input"""
+    shadows: Optional[List[float]] = Field(default=None, description="Shadow color RGB")
+    midtones: Optional[List[float]] = Field(default=None, description="Midtone color RGB")
+    highlights: Optional[List[float]] = Field(default=None, description="Highlight color RGB")
 
 
 class CompositorBlurInput(BaseModel):
-    """模糊输入"""
-    blur_type: str = Field(default="FAST_GAUSS", description="类型: FLAT, TENT, QUAD, CUBIC, GAUSS, FAST_GAUSS")
-    size_x: float = Field(default=10.0, description="X方向大小", ge=0)
-    size_y: float = Field(default=10.0, description="Y方向大小", ge=0)
+    """Blur input"""
+    blur_type: str = Field(default="FAST_GAUSS", description="Type: FLAT, TENT, QUAD, CUBIC, GAUSS, FAST_GAUSS")
+    size_x: float = Field(default=10.0, description="X direction size", ge=0)
+    size_y: float = Field(default=10.0, description="Y direction size", ge=0)
 
 
 class RenderLayerInput(BaseModel):
-    """渲染层输入"""
-    layer_name: str = Field(default="ViewLayer", description="视图层名称")
-    use_pass_combined: bool = Field(default=True, description="组合通道")
-    use_pass_z: bool = Field(default=False, description="Z深度通道")
-    use_pass_normal: bool = Field(default=False, description="法线通道")
-    use_pass_ao: bool = Field(default=False, description="环境光遮蔽通道")
+    """Render layer input"""
+    layer_name: str = Field(default="ViewLayer", description="View layer name")
+    use_pass_combined: bool = Field(default=True, description="Combined pass")
+    use_pass_z: bool = Field(default=False, description="Z depth pass")
+    use_pass_normal: bool = Field(default=False, description="Normal pass")
+    use_pass_ao: bool = Field(default=False, description="Ambient occlusion pass")
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_compositor_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册合成器工具"""
-    
+    """Register compositor tools"""
+
     @mcp.tool(
         name="blender_compositor_enable",
         annotations={
-            "title": "启用合成器",
+            "title": "Enable Compositor",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -69,13 +69,13 @@ def register_compositor_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_compositor_enable(params: CompositorEnableInput) -> str:
-        """启用或禁用合成器。
-        
+        """Enable or disable the compositor.
+
         Args:
-            params: 是否启用、是否使用背景板
-            
+            params: Whether to enable, whether to use backdrop
+
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "compositor", "enable",
@@ -84,17 +84,17 @@ def register_compositor_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "use_backdrop": params.use_backdrop
             }
         )
-        
+
         if result.get("success"):
-            status = "启用" if params.enable else "禁用"
-            return f"成功{status}合成器"
+            status = "enabled" if params.enable else "disabled"
+            return f"Successfully {status} compositor"
         else:
-            return f"操作失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Operation failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_compositor_preset",
         annotations={
-            "title": "应用合成器预设",
+            "title": "Apply Compositor Preset",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -102,22 +102,22 @@ def register_compositor_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_compositor_preset(params: CompositorPresetInput) -> str:
-        """应用合成器效果预设。
-        
-        可用预设:
-        - color_correction: 颜色校正
-        - bloom: 辉光效果
-        - vignette: 暗角
-        - blur: 模糊
-        - sharpen: 锐化
-        - film_grain: 胶片颗粒
-        - chromatic_aberration: 色差
-        
+        """Apply a compositor effect preset.
+
+        Available presets:
+        - color_correction: Color correction
+        - bloom: Bloom effect
+        - vignette: Vignette
+        - blur: Blur
+        - sharpen: Sharpen
+        - film_grain: Film grain
+        - chromatic_aberration: Chromatic aberration
+
         Args:
-            params: 预设类型、强度
-            
+            params: Preset type, intensity
+
         Returns:
-            应用结果
+            Application result
         """
         result = await server.execute_command(
             "compositor", "preset",
@@ -126,16 +126,16 @@ def register_compositor_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "intensity": params.intensity
             }
         )
-        
+
         if result.get("success"):
-            return f"成功应用 {params.preset} 效果"
+            return f"Successfully applied {params.preset} effect"
         else:
-            return f"应用失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Application failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_compositor_color_balance",
         annotations={
-            "title": "颜色平衡",
+            "title": "Color Balance",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -143,13 +143,13 @@ def register_compositor_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_compositor_color_balance(params: CompositorColorBalanceInput) -> str:
-        """调整颜色平衡。
-        
+        """Adjust color balance.
+
         Args:
-            params: 阴影、中间调、高光颜色
-            
+            params: Shadow, midtone, highlight colors
+
         Returns:
-            调整结果
+            Adjustment result
         """
         result = await server.execute_command(
             "compositor", "color_balance",
@@ -159,16 +159,16 @@ def register_compositor_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "highlights": params.highlights
             }
         )
-        
+
         if result.get("success"):
-            return f"成功调整颜色平衡"
+            return f"Successfully adjusted color balance"
         else:
-            return f"调整失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Adjustment failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_compositor_blur",
         annotations={
-            "title": "添加模糊",
+            "title": "Add Blur",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -176,13 +176,13 @@ def register_compositor_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_compositor_blur(params: CompositorBlurInput) -> str:
-        """添加模糊效果。
-        
+        """Add a blur effect.
+
         Args:
-            params: 模糊类型、大小
-            
+            params: Blur type, size
+
         Returns:
-            添加结果
+            Addition result
         """
         result = await server.execute_command(
             "compositor", "blur",
@@ -192,16 +192,16 @@ def register_compositor_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "size_y": params.size_y
             }
         )
-        
+
         if result.get("success"):
-            return f"成功添加模糊效果"
+            return f"Successfully added blur effect"
         else:
-            return f"添加失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Addition failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_render_layer_setup",
         annotations={
-            "title": "设置渲染层",
+            "title": "Setup Render Layer",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -209,13 +209,13 @@ def register_compositor_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_render_layer_setup(params: RenderLayerInput) -> str:
-        """设置渲染层通道。
-        
+        """Set up render layer passes.
+
         Args:
-            params: 各种通道开关
-            
+            params: Various pass toggles
+
         Returns:
-            设置结果
+            Setting result
         """
         result = await server.execute_command(
             "compositor", "render_layer",
@@ -227,8 +227,8 @@ def register_compositor_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "use_pass_ao": params.use_pass_ao
             }
         )
-        
+
         if result.get("success"):
-            return f"成功设置渲染层 '{params.layer_name}'"
+            return f"Successfully set up render layer '{params.layer_name}'"
         else:
-            return f"设置失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Setup failed: {result.get('error', {}).get('message', 'unknown error')}"

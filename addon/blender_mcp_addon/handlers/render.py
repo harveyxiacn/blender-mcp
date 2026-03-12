@@ -1,7 +1,7 @@
 """
-渲染处理器
+Render Handler
 
-处理渲染相关的命令。
+Handles rendering-related commands.
 """
 
 from typing import Any, Dict
@@ -11,7 +11,7 @@ import tempfile
 
 
 def handle_settings(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置渲染参数"""
+    """Set render parameters"""
     scene = bpy.context.scene
     render = scene.render
     
@@ -50,7 +50,7 @@ def handle_settings(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_image(params: Dict[str, Any]) -> Dict[str, Any]:
-    """渲染图像"""
+    """Render image"""
     output_path = params.get("output_path")
     frame = params.get("frame")
     camera = params.get("camera")
@@ -58,23 +58,23 @@ def handle_image(params: Dict[str, Any]) -> Dict[str, Any]:
     
     scene = bpy.context.scene
     
-    # 设置帧
+    # Set frame
     if frame is not None:
         scene.frame_set(frame)
     
-    # 设置相机
+    # Set camera
     if camera:
         cam_obj = bpy.data.objects.get(camera)
         if cam_obj and cam_obj.type == 'CAMERA':
             scene.camera = cam_obj
     
-    # 设置输出路径
+    # Set output path
     if output_path:
         scene.render.filepath = output_path
     elif not scene.render.filepath:
         scene.render.filepath = os.path.join(tempfile.gettempdir(), "render.png")
     
-    # 渲染
+    # Render
     import time
     start_time = time.time()
     
@@ -93,7 +93,7 @@ def handle_image(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_animation(params: Dict[str, Any]) -> Dict[str, Any]:
-    """渲染动画"""
+    """Render animation"""
     output_path = params.get("output_path")
     frame_start = params.get("frame_start")
     frame_end = params.get("frame_end")
@@ -101,7 +101,7 @@ def handle_animation(params: Dict[str, Any]) -> Dict[str, Any]:
     
     scene = bpy.context.scene
     
-    # 设置帧范围
+    # Set frame range
     if frame_start is not None:
         scene.frame_start = frame_start
     if frame_end is not None:
@@ -109,11 +109,11 @@ def handle_animation(params: Dict[str, Any]) -> Dict[str, Any]:
     
     scene.frame_step = frame_step
     
-    # 设置输出路径
+    # Set output path
     if output_path:
         scene.render.filepath = output_path
     
-    # 渲染动画
+    # Render animation
     bpy.ops.render.render(animation=True)
     
     frames_rendered = (scene.frame_end - scene.frame_start + 1) // frame_step
@@ -128,14 +128,14 @@ def handle_animation(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_preview(params: Dict[str, Any]) -> Dict[str, Any]:
-    """渲染预览"""
+    """Render preview"""
     resolution_percentage = params.get("resolution_percentage", 50)
     samples = params.get("samples", 32)
     
     scene = bpy.context.scene
     render = scene.render
     
-    # 保存原始设置
+    # Save original settings
     orig_res_pct = render.resolution_percentage
     orig_samples = None
     
@@ -143,13 +143,13 @@ def handle_preview(params: Dict[str, Any]) -> Dict[str, Any]:
         orig_samples = scene.cycles.samples
         scene.cycles.samples = samples
     
-    # 设置预览参数
+    # Set preview parameters
     render.resolution_percentage = resolution_percentage
     
-    # 渲染
+    # Render
     bpy.ops.render.render()
     
-    # 恢复设置
+    # Restore settings
     render.resolution_percentage = orig_res_pct
     if orig_samples is not None:
         scene.cycles.samples = orig_samples
@@ -161,12 +161,12 @@ def handle_preview(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_set_engine(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置渲染引擎"""
+    """Set render engine"""
     engine = params.get("engine", "CYCLES")
     
     scene = bpy.context.scene
     
-    # 有效的引擎列表
+    # Valid engine list
     valid_engines = ['CYCLES', 'BLENDER_EEVEE', 'BLENDER_EEVEE_NEXT', 'BLENDER_WORKBENCH']
     
     if engine not in valid_engines:
@@ -174,7 +174,7 @@ def handle_set_engine(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "INVALID_ENGINE",
-                "message": f"无效的渲染引擎: {engine}. 有效值: {valid_engines}"
+                "message": f"Invalid render engine: {engine}. Valid values: {valid_engines}"
             }
         }
     
@@ -189,7 +189,7 @@ def handle_set_engine(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_set_resolution(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置渲染分辨率"""
+    """Set render resolution"""
     width = params.get("width", 1920)
     height = params.get("height", 1080)
     percentage = params.get("percentage", 100)
@@ -212,7 +212,7 @@ def handle_set_resolution(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_set_samples(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置渲染采样"""
+    """Set render samples"""
     samples = params.get("samples", 128)
     
     scene = bpy.context.scene
@@ -237,20 +237,20 @@ def handle_set_samples(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_get_viewport_screenshot(params: Dict[str, Any]) -> Dict[str, Any]:
-    """获取视口截图
+    """Get viewport screenshot
     
-    使用 offscreen 渲染或直接渲染视口。
-    针对 Blender 5.0+ 优化的实现。
+    Uses offscreen rendering or direct viewport rendering.
+    Optimized implementation for Blender 5.0+.
     
     Args:
         params:
-            - output_path: 输出路径（可选，不提供则使用临时目录）
-            - width: 截图宽度（默认800）
-            - height: 截图高度（默认600）
-            - view_type: 视图类型 ('PERSP', 'FRONT', 'BACK', 'LEFT', 'RIGHT', 'TOP', 'BOTTOM')
+            - output_path: Output path (optional, uses temp directory if not provided)
+            - width: Screenshot width (default 800)
+            - height: Screenshot height (default 600)
+            - view_type: View type ('PERSP', 'FRONT', 'BACK', 'LEFT', 'RIGHT', 'TOP', 'BOTTOM')
     
     Returns:
-        截图文件路径和信息
+        Screenshot file path and information
     """
     import base64
     
@@ -260,7 +260,7 @@ def handle_get_viewport_screenshot(params: Dict[str, Any]) -> Dict[str, Any]:
     view_type = params.get("view_type")
     return_base64 = params.get("return_base64", False)
     
-    # 确定输出路径
+    # Determine output path
     if not output_path:
         import datetime
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -268,7 +268,7 @@ def handle_get_viewport_screenshot(params: Dict[str, Any]) -> Dict[str, Any]:
     
     scene = bpy.context.scene
     
-    # 保存原始设置
+    # Save original settings
     orig_res_x = scene.render.resolution_x
     orig_res_y = scene.render.resolution_y
     orig_res_pct = scene.render.resolution_percentage
@@ -276,18 +276,18 @@ def handle_get_viewport_screenshot(params: Dict[str, Any]) -> Dict[str, Any]:
     orig_file_format = scene.render.image_settings.file_format
     
     try:
-        # 设置渲染分辨率
+        # Set render resolution
         scene.render.resolution_x = width
         scene.render.resolution_y = height
         scene.render.resolution_percentage = 100
         scene.render.image_settings.file_format = 'PNG'
         scene.render.filepath = output_path
         
-        # 方法1: 尝试使用 screen.areas 直接获取 3D 视口
+        # Method 1: Try to get 3D viewport directly from screen.areas
         area = None
         region = None
         
-        # 优先使用当前屏幕的 areas
+        # Prefer using current screen's areas
         if hasattr(bpy.context, 'screen') and bpy.context.screen:
             for a in bpy.context.screen.areas:
                 if a.type == 'VIEW_3D':
@@ -298,7 +298,7 @@ def handle_get_viewport_screenshot(params: Dict[str, Any]) -> Dict[str, Any]:
                             break
                     break
         
-        # 如果没找到，遍历所有窗口
+        # If not found, iterate through all windows
         if not area:
             for window in bpy.context.window_manager.windows:
                 for a in window.screen.areas:
@@ -317,11 +317,11 @@ def handle_get_viewport_screenshot(params: Dict[str, Any]) -> Dict[str, Any]:
                 "success": False,
                 "error": {
                     "code": "NO_3D_VIEW",
-                    "message": "找不到3D视口"
+                    "message": "3D viewport not found"
                 }
             }
         
-        # 如果指定了视图类型，切换视图
+        # If view type specified, switch view
         if view_type:
             for space in area.spaces:
                 if space.type == 'VIEW_3D':
@@ -341,38 +341,38 @@ def handle_get_viewport_screenshot(params: Dict[str, Any]) -> Dict[str, Any]:
                         region_3d.view_perspective = view_types_map[view_type.upper()]
                     break
         
-        # 尝试多种方法执行截图
+        # Try multiple methods to take screenshot
         success = False
         error_msg = ""
         
-        # 方法1: 使用 temp_override (Blender 3.2+)
+        # Method 1: Use temp_override (Blender 3.2+)
         try:
             with bpy.context.temp_override(area=area, region=region):
                 bpy.ops.render.opengl(write_still=True)
             success = True
         except Exception as e1:
-            error_msg = f"temp_override 方法失败: {str(e1)}"
+            error_msg = f"temp_override method failed: {str(e1)}"
             
-            # 方法2: 使用标准渲染代替视口渲染
+            # Method 2: Use standard render instead of viewport render
             try:
-                # 使用 Workbench 引擎快速渲染
+                # Use Workbench engine for fast render
                 orig_engine = scene.render.engine
                 scene.render.engine = 'BLENDER_WORKBENCH'
                 bpy.ops.render.render(write_still=True)
                 scene.render.engine = orig_engine
                 success = True
             except Exception as e2:
-                error_msg += f"; 标准渲染方法失败: {str(e2)}"
+                error_msg += f"; Standard render method failed: {str(e2)}"
                 
-                # 方法3: 保存渲染结果图像
+                # Method 3: Save render result image
                 try:
                     if 'Render Result' in bpy.data.images:
                         bpy.data.images['Render Result'].save_render(output_path)
                         success = True
                 except Exception as e3:
-                    error_msg += f"; 保存渲染结果失败: {str(e3)}"
+                    error_msg += f"; Save render result failed: {str(e3)}"
         
-        # 检查文件是否创建
+        # Check if file was created
         if success and os.path.exists(output_path):
             file_size = os.path.getsize(output_path)
             
@@ -396,7 +396,7 @@ def handle_get_viewport_screenshot(params: Dict[str, Any]) -> Dict[str, Any]:
                 "success": False,
                 "error": {
                     "code": "SCREENSHOT_FAILED",
-                    "message": f"截图失败: {error_msg}" if error_msg else "截图文件未创建"
+                    "message": f"Screenshot failed: {error_msg}" if error_msg else "Screenshot file was not created"
                 }
             }
     
@@ -410,7 +410,7 @@ def handle_get_viewport_screenshot(params: Dict[str, Any]) -> Dict[str, Any]:
         }
     
     finally:
-        # 恢复原始设置
+        # Restore original settings
         scene.render.resolution_x = orig_res_x
         scene.render.resolution_y = orig_res_y
         scene.render.resolution_percentage = orig_res_pct

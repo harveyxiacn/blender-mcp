@@ -1,7 +1,7 @@
 """
-曲线建模工具
+Curve Modeling Tools
 
-提供曲线创建、编辑、转换等功能。
+Provides curve creation, editing, conversion, and more.
 """
 
 from typing import TYPE_CHECKING, Optional, List
@@ -13,85 +13,85 @@ if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class CurveCreateInput(BaseModel):
-    """创建曲线输入"""
+    """Create curve input"""
     curve_type: str = Field(
         default="BEZIER",
-        description="曲线类型: BEZIER, NURBS, POLY"
+        description="Curve type: BEZIER, NURBS, POLY"
     )
-    name: str = Field(default="Curve", description="曲线名称")
-    points: List[List[float]] = Field(..., description="控制点列表 [[x,y,z], ...]")
-    cyclic: bool = Field(default=False, description="闭合曲线")
-    location: Optional[List[float]] = Field(default=None, description="位置")
+    name: str = Field(default="Curve", description="Curve name")
+    points: List[List[float]] = Field(..., description="Control point list [[x,y,z], ...]")
+    cyclic: bool = Field(default=False, description="Closed curve")
+    location: Optional[List[float]] = Field(default=None, description="Location")
 
 
 class CurveCircleInput(BaseModel):
-    """创建圆形曲线输入"""
-    name: str = Field(default="Circle", description="名称")
-    radius: float = Field(default=1.0, description="半径", ge=0.001)
-    location: Optional[List[float]] = Field(default=None, description="位置")
-    fill_mode: str = Field(default="NONE", description="填充: NONE, FRONT, BACK, BOTH")
+    """Create circle curve input"""
+    name: str = Field(default="Circle", description="Name")
+    radius: float = Field(default=1.0, description="Radius", ge=0.001)
+    location: Optional[List[float]] = Field(default=None, description="Location")
+    fill_mode: str = Field(default="NONE", description="Fill: NONE, FRONT, BACK, BOTH")
 
 
 class CurvePathInput(BaseModel):
-    """创建路径曲线输入"""
-    name: str = Field(default="Path", description="名称")
-    length: float = Field(default=4.0, description="长度", ge=0.1)
-    points_count: int = Field(default=5, description="点数", ge=2)
-    location: Optional[List[float]] = Field(default=None, description="位置")
+    """Create path curve input"""
+    name: str = Field(default="Path", description="Name")
+    length: float = Field(default=4.0, description="Length", ge=0.1)
+    points_count: int = Field(default=5, description="Point count", ge=2)
+    location: Optional[List[float]] = Field(default=None, description="Location")
 
 
 class CurveSpiralInput(BaseModel):
-    """创建螺旋曲线输入"""
-    name: str = Field(default="Spiral", description="名称")
-    turns: float = Field(default=2.0, description="圈数", ge=0.1)
-    radius: float = Field(default=1.0, description="半径", ge=0.001)
-    height: float = Field(default=2.0, description="高度")
-    location: Optional[List[float]] = Field(default=None, description="位置")
+    """Create spiral curve input"""
+    name: str = Field(default="Spiral", description="Name")
+    turns: float = Field(default=2.0, description="Number of turns", ge=0.1)
+    radius: float = Field(default=1.0, description="Radius", ge=0.001)
+    height: float = Field(default=2.0, description="Height")
+    location: Optional[List[float]] = Field(default=None, description="Location")
 
 
 class CurveToMeshInput(BaseModel):
-    """曲线转网格输入"""
-    curve_name: str = Field(..., description="曲线名称")
-    resolution: int = Field(default=12, description="分辨率", ge=1, le=64)
-    keep_original: bool = Field(default=False, description="保留原曲线")
+    """Curve to mesh input"""
+    curve_name: str = Field(..., description="Curve name")
+    resolution: int = Field(default=12, description="Resolution", ge=1, le=64)
+    keep_original: bool = Field(default=False, description="Keep original curve")
 
 
 class CurveExtrudeInput(BaseModel):
-    """曲线挤出输入"""
-    curve_name: str = Field(..., description="曲线名称")
-    depth: float = Field(default=0.1, description="挤出深度", ge=0)
-    bevel_depth: float = Field(default=0.0, description="倒角深度", ge=0)
-    bevel_resolution: int = Field(default=0, description="倒角分辨率", ge=0)
+    """Curve extrude input"""
+    curve_name: str = Field(..., description="Curve name")
+    depth: float = Field(default=0.1, description="Extrude depth", ge=0)
+    bevel_depth: float = Field(default=0.0, description="Bevel depth", ge=0)
+    bevel_resolution: int = Field(default=0, description="Bevel resolution", ge=0)
 
 
 class CurveProfileInput(BaseModel):
-    """沿曲线挤出轮廓输入"""
-    path_curve: str = Field(..., description="路径曲线名称")
-    profile_curve: str = Field(..., description="轮廓曲线名称")
-    name: str = Field(default="Sweep", description="结果名称")
+    """Sweep profile along curve input"""
+    path_curve: str = Field(..., description="Path curve name")
+    profile_curve: str = Field(..., description="Profile curve name")
+    name: str = Field(default="Sweep", description="Result name")
 
 
 class CurveTextInput(BaseModel):
-    """创建文本曲线输入"""
-    text: str = Field(..., description="文本内容")
-    name: str = Field(default="Text", description="名称")
-    font_size: float = Field(default=1.0, description="字体大小", ge=0.01)
-    extrude: float = Field(default=0.0, description="挤出深度", ge=0)
-    location: Optional[List[float]] = Field(default=None, description="位置")
+    """Create text curve input"""
+    text: str = Field(..., description="Text content")
+    name: str = Field(default="Text", description="Name")
+    font_size: float = Field(default=1.0, description="Font size", ge=0.01)
+    extrude: float = Field(default=0.0, description="Extrude depth", ge=0)
+    location: Optional[List[float]] = Field(default=None, description="Location")
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_curve_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册曲线建模工具"""
-    
+    """Register curve modeling tools"""
+
     @mcp.tool(
         name="blender_curve_create",
         annotations={
-            "title": "创建曲线",
+            "title": "Create Curve",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -99,13 +99,13 @@ def register_curve_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_curve_create(params: CurveCreateInput) -> str:
-        """从控制点创建曲线。
-        
+        """Create a curve from control points.
+
         Args:
-            params: 曲线类型、控制点、是否闭合等
-            
+            params: Curve type, control points, whether to close, etc.
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "curves", "create",
@@ -117,16 +117,16 @@ def register_curve_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "location": params.location or [0, 0, 0]
             }
         )
-        
+
         if result.get("success"):
-            return f"成功创建 {params.curve_type} 曲线 '{params.name}' ({len(params.points)} 个点)"
+            return f"Successfully created {params.curve_type} curve '{params.name}' ({len(params.points)} points)"
         else:
-            return f"创建失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Creation failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_curve_circle",
         annotations={
-            "title": "创建圆形曲线",
+            "title": "Create Circle Curve",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -134,13 +134,13 @@ def register_curve_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_curve_circle(params: CurveCircleInput) -> str:
-        """创建圆形曲线。
-        
+        """Create a circle curve.
+
         Args:
-            params: 半径、位置、填充模式
-            
+            params: Radius, location, fill mode
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "curves", "circle",
@@ -151,16 +151,16 @@ def register_curve_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "fill_mode": params.fill_mode
             }
         )
-        
+
         if result.get("success"):
-            return f"成功创建圆形曲线 '{params.name}' (半径: {params.radius})"
+            return f"Successfully created circle curve '{params.name}' (radius: {params.radius})"
         else:
-            return f"创建失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Creation failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_curve_path",
         annotations={
-            "title": "创建路径曲线",
+            "title": "Create Path Curve",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -168,13 +168,13 @@ def register_curve_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_curve_path(params: CurvePathInput) -> str:
-        """创建路径曲线（用于动画）。
-        
+        """Create a path curve (for animation).
+
         Args:
-            params: 长度、点数、位置
-            
+            params: Length, point count, location
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "curves", "path",
@@ -185,16 +185,16 @@ def register_curve_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "location": params.location or [0, 0, 0]
             }
         )
-        
+
         if result.get("success"):
-            return f"成功创建路径曲线 '{params.name}'"
+            return f"Successfully created path curve '{params.name}'"
         else:
-            return f"创建失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Creation failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_curve_spiral",
         annotations={
-            "title": "创建螺旋曲线",
+            "title": "Create Spiral Curve",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -202,13 +202,13 @@ def register_curve_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_curve_spiral(params: CurveSpiralInput) -> str:
-        """创建螺旋曲线。
-        
+        """Create a spiral curve.
+
         Args:
-            params: 圈数、半径、高度
-            
+            params: Number of turns, radius, height
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "curves", "spiral",
@@ -220,16 +220,16 @@ def register_curve_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "location": params.location or [0, 0, 0]
             }
         )
-        
+
         if result.get("success"):
-            return f"成功创建螺旋曲线 '{params.name}' ({params.turns} 圈)"
+            return f"Successfully created spiral curve '{params.name}' ({params.turns} turns)"
         else:
-            return f"创建失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Creation failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_curve_to_mesh",
         annotations={
-            "title": "曲线转网格",
+            "title": "Curve to Mesh",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -237,13 +237,13 @@ def register_curve_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_curve_to_mesh(params: CurveToMeshInput) -> str:
-        """将曲线转换为网格。
-        
+        """Convert a curve to mesh.
+
         Args:
-            params: 曲线名称、分辨率
-            
+            params: Curve name, resolution
+
         Returns:
-            转换结果
+            Conversion result
         """
         result = await server.execute_command(
             "curves", "to_mesh",
@@ -253,17 +253,17 @@ def register_curve_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "keep_original": params.keep_original
             }
         )
-        
+
         if result.get("success"):
             mesh_name = result.get("data", {}).get("mesh_name", "")
-            return f"成功将曲线转换为网格 '{mesh_name}'"
+            return f"Successfully converted curve to mesh '{mesh_name}'"
         else:
-            return f"转换失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Conversion failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_curve_extrude",
         annotations={
-            "title": "曲线挤出",
+            "title": "Curve Extrude",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -271,13 +271,13 @@ def register_curve_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_curve_extrude(params: CurveExtrudeInput) -> str:
-        """设置曲线的挤出和倒角。
-        
+        """Set curve extrusion and bevel.
+
         Args:
-            params: 曲线名称、深度、倒角
-            
+            params: Curve name, depth, bevel
+
         Returns:
-            设置结果
+            Setting result
         """
         result = await server.execute_command(
             "curves", "extrude",
@@ -288,16 +288,16 @@ def register_curve_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "bevel_resolution": params.bevel_resolution
             }
         )
-        
+
         if result.get("success"):
-            return f"成功设置曲线挤出"
+            return f"Successfully set curve extrusion"
         else:
-            return f"设置失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Setting failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_curve_text",
         annotations={
-            "title": "创建文本曲线",
+            "title": "Create Text Curve",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -305,13 +305,13 @@ def register_curve_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_curve_text(params: CurveTextInput) -> str:
-        """创建3D文本。
-        
+        """Create 3D text.
+
         Args:
-            params: 文本内容、字体大小、挤出深度
-            
+            params: Text content, font size, extrude depth
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "curves", "text",
@@ -323,8 +323,8 @@ def register_curve_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "location": params.location or [0, 0, 0]
             }
         )
-        
+
         if result.get("success"):
-            return f"成功创建文本 '{params.text}'"
+            return f"Successfully created text '{params.text}'"
         else:
-            return f"创建失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Creation failed: {result.get('error', {}).get('message', 'unknown error')}"

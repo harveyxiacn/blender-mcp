@@ -1,7 +1,7 @@
 """
-场景处理器
+Scene Handler
 
-处理场景相关的命令。
+Handles scene-related commands.
 """
 
 from typing import Any, Dict
@@ -9,25 +9,25 @@ import bpy
 
 
 def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建场景"""
+    """Create scene"""
     name = params.get("name", "Scene")
     copy_from = params.get("copy_from")
     
     if copy_from:
-        # 从现有场景复制
+        # Copy from existing scene
         source = bpy.data.scenes.get(copy_from)
         if not source:
             return {
                 "success": False,
                 "error": {
                     "code": "SCENE_NOT_FOUND",
-                    "message": f"源场景不存在: {copy_from}"
+                    "message": f"Source scene not found: {copy_from}"
                 }
             }
         scene = source.copy()
         scene.name = name
     else:
-        # 创建新场景
+        # Create new scene
         scene = bpy.data.scenes.new(name)
     
     return {
@@ -39,7 +39,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_list(params: Dict[str, Any]) -> Dict[str, Any]:
-    """列出场景"""
+    """List scenes"""
     scenes = []
     active_scene = bpy.context.scene
     
@@ -60,7 +60,7 @@ def handle_list(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_get_info(params: Dict[str, Any]) -> Dict[str, Any]:
-    """获取场景信息"""
+    """Get scene info"""
     scene_name = params.get("scene_name")
     
     if scene_name:
@@ -70,7 +70,7 @@ def handle_get_info(params: Dict[str, Any]) -> Dict[str, Any]:
                 "success": False,
                 "error": {
                     "code": "SCENE_NOT_FOUND",
-                    "message": f"场景不存在: {scene_name}"
+                    "message": f"Scene not found: {scene_name}"
                 }
             }
     else:
@@ -92,7 +92,7 @@ def handle_get_info(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_switch(params: Dict[str, Any]) -> Dict[str, Any]:
-    """切换场景"""
+    """Switch scene"""
     scene_name = params.get("scene_name")
     
     scene = bpy.data.scenes.get(scene_name)
@@ -101,7 +101,7 @@ def handle_switch(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "SCENE_NOT_FOUND",
-                "message": f"场景不存在: {scene_name}"
+                "message": f"Scene not found: {scene_name}"
             }
         }
     
@@ -116,7 +116,7 @@ def handle_switch(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
-    """删除场景"""
+    """Delete scene"""
     scene_name = params.get("scene_name")
     
     if len(bpy.data.scenes) <= 1:
@@ -124,7 +124,7 @@ def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "CANNOT_DELETE_LAST_SCENE",
-                "message": "不能删除最后一个场景"
+                "message": "Cannot delete the last scene"
             }
         }
     
@@ -134,7 +134,7 @@ def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "SCENE_NOT_FOUND",
-                "message": f"场景不存在: {scene_name}"
+                "message": f"Scene not found: {scene_name}"
             }
         }
     
@@ -147,7 +147,7 @@ def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_set_settings(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置场景参数"""
+    """Set scene settings"""
     scene_name = params.get("scene_name")
     settings = params.get("settings", {})
     
@@ -158,13 +158,13 @@ def handle_set_settings(params: Dict[str, Any]) -> Dict[str, Any]:
                 "success": False,
                 "error": {
                     "code": "SCENE_NOT_FOUND",
-                    "message": f"场景不存在: {scene_name}"
+                    "message": f"Scene not found: {scene_name}"
                 }
             }
     else:
         scene = bpy.context.scene
     
-    # 应用设置
+    # Apply settings
     if "frame_start" in settings:
         scene.frame_start = settings["frame_start"]
     if "frame_end" in settings:
@@ -185,7 +185,7 @@ def handle_set_settings(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_set_frame_range(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置帧范围"""
+    """Set frame range"""
     start = params.get("start", 1)
     end = params.get("end", 250)
     

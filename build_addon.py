@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 """
-Blender MCP Addon 打包脚本
+Blender MCP Addon Build Script
 
-将 addon 目录打包为可直接在 Blender 中安装的 zip 文件。
+Packages the addon directory into a zip file that can be installed directly in Blender.
 
-用法:
+Usage:
     python build_addon.py
 
-输出:
+Output:
     dist/blender_mcp_addon.zip
 """
 
@@ -19,26 +19,26 @@ from datetime import datetime
 
 
 def build_addon():
-    """打包 addon 为 zip 文件"""
-    
-    # 路径配置
+    """Package the addon into a zip file"""
+
+    # Path configuration
     script_dir = Path(__file__).parent
     addon_source = script_dir / "addon" / "blender_mcp_addon"
     dist_dir = script_dir / "dist"
     
-    # 创建 dist 目录
+    # Create dist directory
     dist_dir.mkdir(exist_ok=True)
     
-    # 生成带时间戳的文件名（可选）
+    # Generate timestamped filename (optional)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     zip_name = f"blender_mcp_addon.zip"
     zip_path = dist_dir / zip_name
     
-    # 如果已存在，先删除
+    # Remove if already exists
     if zip_path.exists():
         zip_path.unlink()
     
-    # 要排除的文件/目录
+    # Files/directories to exclude
     exclude_patterns = [
         "__pycache__",
         "*.pyc",
@@ -51,7 +51,7 @@ def build_addon():
     ]
     
     def should_exclude(path: Path) -> bool:
-        """检查是否应该排除"""
+        """Check if the path should be excluded"""
         name = path.name
         for pattern in exclude_patterns:
             if pattern.startswith("*"):
@@ -62,26 +62,26 @@ def build_addon():
         return False
     
     def add_to_zip(zf: zipfile.ZipFile, source: Path, arcname: str):
-        """递归添加文件到 zip"""
+        """Recursively add files to the zip archive"""
         if source.is_file():
             if not should_exclude(source):
                 zf.write(source, arcname)
-                print(f"  添加: {arcname}")
+                print(f"  Added: {arcname}")
         elif source.is_dir():
             if not should_exclude(source):
                 for item in source.iterdir():
                     add_to_zip(zf, item, f"{arcname}/{item.name}")
     
-    print(f"打包 Blender MCP Addon...")
-    print(f"源目录: {addon_source}")
-    print(f"输出文件: {zip_path}")
+    print(f"Packaging Blender MCP Addon...")
+    print(f"Source directory: {addon_source}")
+    print(f"Output file: {zip_path}")
     print()
     
-    # 创建 zip 文件
+    # Create zip file
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
         add_to_zip(zf, addon_source, "blender_mcp_addon")
     
-    # 计算文件大小
+    # Calculate file size
     size_kb = zip_path.stat().st_size / 1024
     
     print()

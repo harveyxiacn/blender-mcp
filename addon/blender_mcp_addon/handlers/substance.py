@@ -1,7 +1,7 @@
 """
-Substance 连接处理器
+Substance Connection Handler
 
-处理与 Substance Painter 集成的命令。
+Handles commands for integration with Substance Painter.
 """
 
 from typing import Any, Dict, List
@@ -12,7 +12,7 @@ import os
 import glob
 
 
-# Substance 链接状态
+# Substance link status
 SUBSTANCE_LINK = {
     "active": False,
     "project_path": None,
@@ -22,13 +22,13 @@ SUBSTANCE_LINK = {
 
 
 def _find_substance_installation() -> str:
-    """查找 Substance Painter 安装路径"""
+    """Find Substance Painter installation path"""
     import platform
     
     system = platform.system()
     
     if system == "Windows":
-        # 常见安装路径
+        # Common installation paths
         paths = [
             r"C:\Program Files\Adobe\Adobe Substance 3D Painter",
             r"C:\Program Files\Allegorithmic\Substance Painter",
@@ -53,7 +53,7 @@ def _find_substance_installation() -> str:
 
 
 def handle_export(params: Dict[str, Any]) -> Dict[str, Any]:
-    """导出到 Substance"""
+    """Export to Substance"""
     object_name = params.get("object_name")
     filepath = params.get("filepath")
     format = params.get("format", "FBX")
@@ -64,19 +64,19 @@ def handle_export(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 确保目录存在
+        # Ensure directory exists
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         
-        # 选择对象
+        # Select object
         bpy.ops.object.select_all(action='DESELECT')
         obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
         
-        # 应用三角化修改器（如果需要）
+        # Apply triangulation modifier (if needed)
         if triangulate:
             mod = obj.modifiers.new(name="Triangulate_Export", type='TRIANGULATE')
             mod.quad_method = 'BEAUTY'
@@ -92,7 +92,7 @@ def handle_export(params: Dict[str, Any]) -> Dict[str, Any]:
                 use_mesh_modifiers=True,
                 mesh_smooth_type='FACE',
                 use_tspace=True,
-                # Substance 优化设置
+                # Substance optimized settings
                 axis_forward='-Z',
                 axis_up='Y',
                 global_scale=1.0
@@ -108,7 +108,7 @@ def handle_export(params: Dict[str, Any]) -> Dict[str, Any]:
                 export_triangulated_mesh=triangulate
             )
         
-        # 移除临时修改器
+        # Remove temporary modifier
         if triangulate and "Triangulate_Export" in obj.modifiers:
             obj.modifiers.remove(obj.modifiers["Triangulate_Export"])
         
@@ -129,7 +129,7 @@ def handle_export(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_import(params: Dict[str, Any]) -> Dict[str, Any]:
-    """导入 Substance 纹理"""
+    """Import Substance textures"""
     texture_folder = params.get("texture_folder")
     object_name = params.get("object_name")
     naming_convention = params.get("naming_convention", "substance")
@@ -137,18 +137,18 @@ def handle_import(params: Dict[str, Any]) -> Dict[str, Any]:
     if not os.path.exists(texture_folder):
         return {
             "success": False,
-            "error": {"code": "FOLDER_NOT_FOUND", "message": f"文件夹不存在: {texture_folder}"}
+            "error": {"code": "FOLDER_NOT_FOUND", "message": f"Folder not found: {texture_folder}"}
         }
     
     obj = bpy.data.objects.get(object_name)
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # Substance Painter 默认命名模式
+        # Substance Painter default naming convention
         texture_patterns = {
             "substance": {
                 "base_color": ["*_BaseColor.*", "*_basecolor.*", "*_diffuse.*"],
@@ -163,7 +163,7 @@ def handle_import(params: Dict[str, Any]) -> Dict[str, Any]:
         
         patterns = texture_patterns.get(naming_convention, texture_patterns["substance"])
         
-        # 查找纹理文件
+        # Find texture files
         found_textures = {}
         for tex_type, pattern_list in patterns.items():
             for pattern in pattern_list:
@@ -175,16 +175,16 @@ def handle_import(params: Dict[str, Any]) -> Dict[str, Any]:
         if not found_textures:
             return {
                 "success": False,
-                "error": {"code": "NO_TEXTURES", "message": "未找到符合命名规范的纹理文件"}
+                "error": {"code": "NO_TEXTURES", "message": "No texture files matching the naming convention were found"}
             }
         
-        # 创建材质
+        # Create material
         mat = bpy.data.materials.new(name=f"Substance_{object_name}")
         mat.use_nodes = True
         nodes = mat.node_tree.nodes
         links = mat.node_tree.links
         
-        # 获取 Principled BSDF
+        # Get Principled BSDF
         bsdf = get_principled_bsdf(nodes)
         if not bsdf:
             bsdf = nodes.new('ShaderNodeBsdfPrincipled')
@@ -197,7 +197,7 @@ def handle_import(params: Dict[str, Any]) -> Dict[str, Any]:
         
         links.new(bsdf.outputs['BSDF'], output.inputs['Surface'])
         
-        # 加载纹理
+        # Load textures
         x_offset = -600
         y_offset = 300
         
@@ -227,7 +227,7 @@ def handle_import(params: Dict[str, Any]) -> Dict[str, Any]:
             
             y_offset -= 300
         
-        # 应用材质
+        # Apply material
         if obj.type == 'MESH':
             if obj.data.materials:
                 obj.data.materials[0] = mat
@@ -251,7 +251,7 @@ def handle_import(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_link(params: Dict[str, Any]) -> Dict[str, Any]:
-    """建立实时链接"""
+    """Establish live link"""
     project_path = params.get("project_path")
     watch_interval = params.get("watch_interval", 2.0)
     
@@ -262,7 +262,7 @@ def handle_link(params: Dict[str, Any]) -> Dict[str, Any]:
         SUBSTANCE_LINK["project_path"] = project_path
         SUBSTANCE_LINK["watch_interval"] = watch_interval
         
-        # 获取导出目录
+        # Get export directory
         export_dir = os.path.dirname(project_path)
         
         return {
@@ -272,7 +272,7 @@ def handle_link(params: Dict[str, Any]) -> Dict[str, Any]:
                 "project_path": project_path,
                 "watch_interval": watch_interval,
                 "export_directory": export_dir,
-                "note": "监控功能需要在 Blender 中启用定时器"
+                "note": "Monitoring requires enabling a timer in Blender"
             }
         }
     
@@ -284,7 +284,7 @@ def handle_link(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_unlink(params: Dict[str, Any]) -> Dict[str, Any]:
-    """断开链接"""
+    """Disconnect link"""
     try:
         global SUBSTANCE_LINK
         
@@ -306,7 +306,7 @@ def handle_unlink(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_bake(params: Dict[str, Any]) -> Dict[str, Any]:
-    """准备烘焙"""
+    """Prepare for baking"""
     high_poly = params.get("high_poly")
     low_poly = params.get("low_poly")
     output_folder = params.get("output_folder")
@@ -319,26 +319,26 @@ def handle_bake(params: Dict[str, Any]) -> Dict[str, Any]:
     if not hp_obj:
         return {
             "success": False,
-            "error": {"code": "HIGH_POLY_NOT_FOUND", "message": f"高模不存在: {high_poly}"}
+            "error": {"code": "HIGH_POLY_NOT_FOUND", "message": f"High poly not found: {high_poly}"}
         }
     
     if not lp_obj:
         return {
             "success": False,
-            "error": {"code": "LOW_POLY_NOT_FOUND", "message": f"低模不存在: {low_poly}"}
+            "error": {"code": "LOW_POLY_NOT_FOUND", "message": f"Low poly not found: {low_poly}"}
         }
     
     try:
         os.makedirs(output_folder, exist_ok=True)
         
-        # 导出高模
+        # Export high poly
         hp_path = os.path.join(output_folder, f"{high_poly}_high.fbx")
         bpy.ops.object.select_all(action='DESELECT')
         hp_obj.select_set(True)
         bpy.context.view_layer.objects.active = hp_obj
         bpy.ops.export_scene.fbx(filepath=hp_path, use_selection=True)
         
-        # 导出低模
+        # Export low poly
         lp_path = os.path.join(output_folder, f"{low_poly}_low.fbx")
         bpy.ops.object.select_all(action='DESELECT')
         lp_obj.select_set(True)
@@ -353,7 +353,7 @@ def handle_bake(params: Dict[str, Any]) -> Dict[str, Any]:
                 "output_folder": output_folder,
                 "maps": maps,
                 "resolution": resolution,
-                "note": "模型已导出，请在 Substance Painter 中进行烘焙"
+                "note": "Models exported. Please bake in Substance Painter"
             }
         }
     
@@ -365,7 +365,7 @@ def handle_bake(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_detect(params: Dict[str, Any]) -> Dict[str, Any]:
-    """检测 Substance 安装"""
+    """Detect Substance installation"""
     try:
         install_path = _find_substance_installation()
         

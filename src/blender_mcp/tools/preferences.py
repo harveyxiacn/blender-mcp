@@ -1,7 +1,7 @@
 """
-偏好设置工具
+Preferences tools
 
-提供Blender偏好设置管理的MCP工具。
+Provides MCP tools for Blender preferences management.
 """
 
 from typing import Any, Dict, List, Optional
@@ -9,65 +9,65 @@ from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
 
 
-# ============ Pydantic 模型 ============
+# ============ Pydantic Models ============
 
 class PrefGetInput(BaseModel):
-    """获取设置"""
-    category: str = Field(..., description="设置类别")
-    key: str = Field(..., description="设置键")
+    """Get preference input"""
+    category: str = Field(..., description="Preference category")
+    key: str = Field(..., description="Preference key")
 
 
 class PrefSetInput(BaseModel):
-    """设置偏好"""
-    category: str = Field(..., description="设置类别")
-    key: str = Field(..., description="设置键")
-    value: Any = Field(..., description="设置值")
+    """Set preference input"""
+    category: str = Field(..., description="Preference category")
+    key: str = Field(..., description="Preference key")
+    value: Any = Field(..., description="Preference value")
 
 
 class PrefThemeInput(BaseModel):
-    """主题设置"""
-    preset: Optional[str] = Field(None, description="预设主题名称")
-    custom_colors: Optional[Dict[str, List[float]]] = Field(None, description="自定义颜色")
+    """Theme settings input"""
+    preset: Optional[str] = Field(None, description="Preset theme name")
+    custom_colors: Optional[Dict[str, List[float]]] = Field(None, description="Custom colors")
 
 
 class PrefViewportInput(BaseModel):
-    """视口设置"""
-    show_gizmo: Optional[bool] = Field(None, description="显示小工具")
-    show_floor: Optional[bool] = Field(None, description="显示地面")
-    show_axis_x: Optional[bool] = Field(None, description="显示X轴")
-    show_axis_y: Optional[bool] = Field(None, description="显示Y轴")
-    show_axis_z: Optional[bool] = Field(None, description="显示Z轴")
-    clip_start: Optional[float] = Field(None, description="近裁剪")
-    clip_end: Optional[float] = Field(None, description="远裁剪")
+    """Viewport settings input"""
+    show_gizmo: Optional[bool] = Field(None, description="Show gizmos")
+    show_floor: Optional[bool] = Field(None, description="Show floor grid")
+    show_axis_x: Optional[bool] = Field(None, description="Show X axis")
+    show_axis_y: Optional[bool] = Field(None, description="Show Y axis")
+    show_axis_z: Optional[bool] = Field(None, description="Show Z axis")
+    clip_start: Optional[float] = Field(None, description="Near clipping distance")
+    clip_end: Optional[float] = Field(None, description="Far clipping distance")
 
 
 class PrefSystemInput(BaseModel):
-    """系统设置"""
-    memory_cache_limit: Optional[int] = Field(None, description="内存缓存限制(MB)")
-    undo_steps: Optional[int] = Field(None, description="撤销步数")
-    use_gpu_subdivision: Optional[bool] = Field(None, description="GPU细分")
+    """System settings input"""
+    memory_cache_limit: Optional[int] = Field(None, description="Memory cache limit (MB)")
+    undo_steps: Optional[int] = Field(None, description="Undo steps")
+    use_gpu_subdivision: Optional[bool] = Field(None, description="GPU subdivision")
 
 
-# ============ 工具注册 ============
+# ============ Tool Registration ============
 
 def register_preferences_tools(mcp: FastMCP, server):
-    """注册偏好设置工具"""
-    
+    """Register preferences tools"""
+
     @mcp.tool()
     async def blender_pref_get(
         category: str,
         key: str
     ) -> Dict[str, Any]:
         """
-        获取Blender偏好设置
-        
+        Get Blender preference settings
+
         Args:
-            category: 设置类别 (view, system, edit, input, etc.)
-            key: 设置键名
+            category: Preference category (view, system, edit, input, etc.)
+            key: Preference key name
         """
         params = PrefGetInput(category=category, key=key)
         return await server.send_command("preferences", "get", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_pref_set(
         category: str,
@@ -75,31 +75,31 @@ def register_preferences_tools(mcp: FastMCP, server):
         value: Any
     ) -> Dict[str, Any]:
         """
-        设置Blender偏好
-        
+        Set Blender preference
+
         Args:
-            category: 设置类别 (view, system, edit, input, etc.)
-            key: 设置键名
-            value: 设置值
+            category: Preference category (view, system, edit, input, etc.)
+            key: Preference key name
+            value: Preference value
         """
         params = PrefSetInput(category=category, key=key, value=value)
         return await server.send_command("preferences", "set", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_pref_theme(
         preset: Optional[str] = None,
         custom_colors: Optional[Dict[str, List[float]]] = None
     ) -> Dict[str, Any]:
         """
-        设置主题
-        
+        Set theme
+
         Args:
-            preset: 预设主题名称 (Dark, Light, etc.)
-            custom_colors: 自定义颜色字典
+            preset: Preset theme name (Dark, Light, etc.)
+            custom_colors: Custom color dictionary
         """
         params = PrefThemeInput(preset=preset, custom_colors=custom_colors)
         return await server.send_command("preferences", "theme", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_pref_viewport(
         show_gizmo: Optional[bool] = None,
@@ -111,14 +111,14 @@ def register_preferences_tools(mcp: FastMCP, server):
         clip_end: Optional[float] = None
     ) -> Dict[str, Any]:
         """
-        设置视口偏好
-        
+        Set viewport preferences
+
         Args:
-            show_gizmo: 显示小工具
-            show_floor: 显示地面网格
-            show_axis_x/y/z: 显示坐标轴
-            clip_start: 近裁剪距离
-            clip_end: 远裁剪距离
+            show_gizmo: Show gizmos
+            show_floor: Show floor grid
+            show_axis_x/y/z: Show coordinate axes
+            clip_start: Near clipping distance
+            clip_end: Far clipping distance
         """
         params = PrefViewportInput(
             show_gizmo=show_gizmo,
@@ -130,7 +130,7 @@ def register_preferences_tools(mcp: FastMCP, server):
             clip_end=clip_end
         )
         return await server.send_command("preferences", "viewport", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_pref_system(
         memory_cache_limit: Optional[int] = None,
@@ -138,12 +138,12 @@ def register_preferences_tools(mcp: FastMCP, server):
         use_gpu_subdivision: Optional[bool] = None
     ) -> Dict[str, Any]:
         """
-        设置系统偏好
-        
+        Set system preferences
+
         Args:
-            memory_cache_limit: 内存缓存限制(MB)
-            undo_steps: 撤销步数
-            use_gpu_subdivision: 使用GPU细分
+            memory_cache_limit: Memory cache limit (MB)
+            undo_steps: Undo steps
+            use_gpu_subdivision: Use GPU subdivision
         """
         params = PrefSystemInput(
             memory_cache_limit=memory_cache_limit,
@@ -151,17 +151,17 @@ def register_preferences_tools(mcp: FastMCP, server):
             use_gpu_subdivision=use_gpu_subdivision
         )
         return await server.send_command("preferences", "system", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_pref_save() -> Dict[str, Any]:
         """
-        保存偏好设置
+        Save preferences
         """
         return await server.send_command("preferences", "save", {})
-    
+
     @mcp.tool()
     async def blender_pref_load_factory() -> Dict[str, Any]:
         """
-        加载出厂设置
+        Load factory settings
         """
         return await server.send_command("preferences", "load_factory", {})

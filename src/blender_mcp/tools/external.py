@@ -1,7 +1,7 @@
 """
-外部集成工具
+External Integration Tools
 
-提供与外部工具（Unity、Unreal等）集成的MCP工具。
+Provides MCP tools for integration with external tools (Unity, Unreal, etc.).
 """
 
 from typing import Any, Dict, List, Optional
@@ -9,54 +9,54 @@ from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
 
 
-# ============ Pydantic 模型 ============
+# ============ Pydantic Models ============
 
 class UnityExportInput(BaseModel):
-    """Unity导出"""
-    filepath: str = Field(..., description="导出文件路径")
-    objects: Optional[List[str]] = Field(None, description="要导出的对象列表")
-    apply_modifiers: bool = Field(True, description="应用修改器")
-    apply_scale: bool = Field(True, description="应用缩放")
-    export_animations: bool = Field(True, description="导出动画")
-    bake_animation: bool = Field(False, description="烘焙动画")
+    """Unity export"""
+    filepath: str = Field(..., description="Export file path")
+    objects: Optional[List[str]] = Field(None, description="List of objects to export")
+    apply_modifiers: bool = Field(True, description="Apply modifiers")
+    apply_scale: bool = Field(True, description="Apply scale")
+    export_animations: bool = Field(True, description="Export animations")
+    bake_animation: bool = Field(False, description="Bake animations")
 
 
 class UnrealExportInput(BaseModel):
-    """Unreal导出"""
-    filepath: str = Field(..., description="导出文件路径")
-    objects: Optional[List[str]] = Field(None, description="要导出的对象列表")
-    export_animations: bool = Field(True, description="导出动画")
-    smoothing: str = Field("FACE", description="平滑类型: FACE, EDGE, OFF")
-    use_tspace: bool = Field(True, description="使用切线空间")
+    """Unreal export"""
+    filepath: str = Field(..., description="Export file path")
+    objects: Optional[List[str]] = Field(None, description="List of objects to export")
+    export_animations: bool = Field(True, description="Export animations")
+    smoothing: str = Field("FACE", description="Smoothing type: FACE, EDGE, OFF")
+    use_tspace: bool = Field(True, description="Use tangent space")
 
 
 class GodotExportInput(BaseModel):
-    """Godot导出"""
-    filepath: str = Field(..., description="导出文件路径")
-    objects: Optional[List[str]] = Field(None, description="要导出的对象列表")
-    export_format: str = Field("GLTF", description="导出格式: GLTF, GLB")
+    """Godot export"""
+    filepath: str = Field(..., description="Export file path")
+    objects: Optional[List[str]] = Field(None, description="List of objects to export")
+    export_format: str = Field("GLTF", description="Export format: GLTF, GLB")
 
 
 class BatchExportInput(BaseModel):
-    """批量导出"""
-    output_dir: str = Field(..., description="输出目录")
-    format: str = Field("FBX", description="格式: FBX, GLTF, OBJ")
-    separate_files: bool = Field(True, description="分别导出到单独文件")
-    objects: Optional[List[str]] = Field(None, description="要导出的对象列表")
+    """Batch export"""
+    output_dir: str = Field(..., description="Output directory")
+    format: str = Field("FBX", description="Format: FBX, GLTF, OBJ")
+    separate_files: bool = Field(True, description="Export to separate files individually")
+    objects: Optional[List[str]] = Field(None, description="List of objects to export")
 
 
 class CollectionExportInput(BaseModel):
-    """集合导出"""
-    collection_name: str = Field(..., description="集合名称")
-    filepath: str = Field(..., description="导出文件路径")
-    format: str = Field("FBX", description="格式: FBX, GLTF, OBJ")
+    """Collection export"""
+    collection_name: str = Field(..., description="Collection name")
+    filepath: str = Field(..., description="Export file path")
+    format: str = Field("FBX", description="Format: FBX, GLTF, OBJ")
 
 
-# ============ 工具注册 ============
+# ============ Tool Registration ============
 
 def register_external_tools(mcp: FastMCP, server):
-    """注册外部集成工具"""
-    
+    """Register external integration tools"""
+
     @mcp.tool()
     async def blender_unity_export(
         filepath: str,
@@ -67,15 +67,15 @@ def register_external_tools(mcp: FastMCP, server):
         bake_animation: bool = False
     ) -> Dict[str, Any]:
         """
-        优化为Unity导出
-        
+        Export optimized for Unity
+
         Args:
-            filepath: 导出文件路径 (.fbx)
-            objects: 要导出的对象列表
-            apply_modifiers: 应用修改器
-            apply_scale: 应用缩放（Unity使用不同的坐标系）
-            export_animations: 导出动画
-            bake_animation: 烘焙动画
+            filepath: Export file path (.fbx)
+            objects: List of objects to export
+            apply_modifiers: Apply modifiers
+            apply_scale: Apply scale (Unity uses a different coordinate system)
+            export_animations: Export animations
+            bake_animation: Bake animations
         """
         params = UnityExportInput(
             filepath=filepath,
@@ -86,7 +86,7 @@ def register_external_tools(mcp: FastMCP, server):
             bake_animation=bake_animation
         )
         return await server.send_command("external", "unity_export", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_unreal_export(
         filepath: str,
@@ -96,14 +96,14 @@ def register_external_tools(mcp: FastMCP, server):
         use_tspace: bool = True
     ) -> Dict[str, Any]:
         """
-        优化为Unreal Engine导出
-        
+        Export optimized for Unreal Engine
+
         Args:
-            filepath: 导出文件路径 (.fbx)
-            objects: 要导出的对象列表
-            export_animations: 导出动画
-            smoothing: 平滑类型 (FACE, EDGE, OFF)
-            use_tspace: 使用切线空间
+            filepath: Export file path (.fbx)
+            objects: List of objects to export
+            export_animations: Export animations
+            smoothing: Smoothing type (FACE, EDGE, OFF)
+            use_tspace: Use tangent space
         """
         params = UnrealExportInput(
             filepath=filepath,
@@ -113,7 +113,7 @@ def register_external_tools(mcp: FastMCP, server):
             use_tspace=use_tspace
         )
         return await server.send_command("external", "unreal_export", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_godot_export(
         filepath: str,
@@ -121,12 +121,12 @@ def register_external_tools(mcp: FastMCP, server):
         export_format: str = "GLTF"
     ) -> Dict[str, Any]:
         """
-        优化为Godot导出
-        
+        Export optimized for Godot
+
         Args:
-            filepath: 导出文件路径
-            objects: 要导出的对象列表
-            export_format: 导出格式 (GLTF, GLB)
+            filepath: Export file path
+            objects: List of objects to export
+            export_format: Export format (GLTF, GLB)
         """
         params = GodotExportInput(
             filepath=filepath,
@@ -134,9 +134,9 @@ def register_external_tools(mcp: FastMCP, server):
             export_format=export_format
         )
         return await server.send_command("external", "godot_export", params.model_dump())
-    
-    # 注意：blender_batch_export 已移至 batch.py 避免重复注册
-    
+
+    # Note: blender_batch_export has been moved to batch.py to avoid duplicate registration
+
     @mcp.tool()
     async def blender_collection_export(
         collection_name: str,
@@ -144,12 +144,12 @@ def register_external_tools(mcp: FastMCP, server):
         format: str = "FBX"
     ) -> Dict[str, Any]:
         """
-        导出整个集合
-        
+        Export an entire collection
+
         Args:
-            collection_name: 集合名称
-            filepath: 导出文件路径
-            format: 导出格式 (FBX, GLTF, OBJ)
+            collection_name: Collection name
+            filepath: Export file path
+            format: Export format (FBX, GLTF, OBJ)
         """
         params = CollectionExportInput(
             collection_name=collection_name,

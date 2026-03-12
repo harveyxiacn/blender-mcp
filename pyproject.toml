@@ -7,22 +7,26 @@ name = "blender-mcp"
 version = "0.1.0"
 description = "MCP server for controlling Blender from AI assistants"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 authors = [
-    {name = "Blender MCP Team"}
+    {name = "Blender MCP Contributors"}
 ]
-keywords = ["blender", "mcp", "ai", "3d", "modeling", "animation"]
+keywords = ["blender", "mcp", "ai", "3d", "modeling", "animation", "model-context-protocol"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Multimedia :: Graphics :: 3D Modeling",
     "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
 ]
 
 dependencies = [
@@ -48,9 +52,10 @@ blender-mcp = "blender_mcp.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/harveyxiacn/blender-mcp"
-Documentation = "https://github.com/harveyxiacn/blender-mcp/docs"
+Documentation = "https://github.com/harveyxiacn/blender-mcp/tree/main/docs/en"
 Repository = "https://github.com/harveyxiacn/blender-mcp"
 Issues = "https://github.com/harveyxiacn/blender-mcp/issues"
+Changelog = "https://github.com/harveyxiacn/blender-mcp/blob/main/docs/en/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -64,8 +69,11 @@ target-version = ['py310', 'py311', 'py312']
 
 [tool.ruff]
 line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "ANN", "B", "C4", "SIM"]
-ignore = ["ANN101", "ANN102"]
+ignore = ["ANN101", "ANN102", "ANN401"]
 
 [tool.mypy]
 python_version = "3.10"

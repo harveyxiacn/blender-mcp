@@ -1,7 +1,7 @@
 """
-高级模拟处理器
+Advanced Simulation Handler
 
-处理流体、烟雾、海洋等高级模拟命令。
+Handles fluid, smoke, ocean and other advanced simulation commands.
 """
 
 from typing import Any, Dict
@@ -9,7 +9,7 @@ import bpy
 
 
 def handle_fluid_domain(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置流体域"""
+    """Set up fluid domain"""
     object_name = params.get("object_name")
     domain_type = params.get("domain_type", "LIQUID")
     resolution = params.get("resolution", 64)
@@ -19,11 +19,11 @@ def handle_fluid_domain(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 添加流体修改器
+        # Add fluid modifier
         mod = obj.modifiers.new(name="Fluid", type='FLUID')
         mod.fluid_type = 'DOMAIN'
         
@@ -32,7 +32,7 @@ def handle_fluid_domain(params: Dict[str, Any]) -> Dict[str, Any]:
         settings.resolution_max = resolution
         settings.use_adaptive_domain = use_adaptive_domain
         
-        # 设置缓存
+        # Set cache
         settings.cache_frame_start = 1
         settings.cache_frame_end = 250
         
@@ -52,7 +52,7 @@ def handle_fluid_domain(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_fluid_flow(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置流体流入/流出"""
+    """Set up fluid inflow/outflow"""
     object_name = params.get("object_name")
     flow_type = params.get("flow_type", "LIQUID")  # Blender 5.0: SMOKE, BOTH, FIRE, LIQUID
     flow_behavior = params.get("flow_behavior", "INFLOW")  # INFLOW, OUTFLOW, GEOMETRY
@@ -63,19 +63,19 @@ def handle_fluid_flow(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 添加流体修改器
+        # Add fluid modifier
         mod = obj.modifiers.new(name="Fluid", type='FLUID')
         mod.fluid_type = 'FLOW'
         
         settings = mod.flow_settings
-        # Blender 5.0: flow_type 是物质类型 (SMOKE, BOTH, FIRE, LIQUID)
-        # flow_behavior 是行为 (INFLOW, OUTFLOW, GEOMETRY)
+        # Blender 5.0: flow_type is substance type (SMOKE, BOTH, FIRE, LIQUID)
+        # flow_behavior is behavior (INFLOW, OUTFLOW, GEOMETRY)
         
-        # 映射旧的 INFLOW 到新的 API
+        # Map old INFLOW to new API
         if flow_type == "INFLOW":
             settings.flow_type = 'LIQUID'
             settings.flow_behavior = 'INFLOW'
@@ -107,7 +107,7 @@ def handle_fluid_flow(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_fluid_effector(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置流体效果器"""
+    """Set up fluid effector"""
     object_name = params.get("object_name")
     effector_type = params.get("effector_type", "COLLISION")
     
@@ -115,11 +115,11 @@ def handle_fluid_effector(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 添加流体修改器
+        # Add fluid modifier
         mod = obj.modifiers.new(name="Fluid", type='FLUID')
         mod.fluid_type = 'EFFECTOR'
         
@@ -141,7 +141,7 @@ def handle_fluid_effector(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_smoke_domain(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置烟雾/火焰域"""
+    """Set up smoke/fire domain"""
     object_name = params.get("object_name")
     smoke_type = params.get("smoke_type", "SMOKE")
     resolution = params.get("resolution", 32)
@@ -151,11 +151,11 @@ def handle_smoke_domain(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 添加流体修改器（烟雾是GAS类型的流体）
+        # Add fluid modifier (smoke is GAS type fluid)
         mod = obj.modifiers.new(name="Smoke", type='FLUID')
         mod.fluid_type = 'DOMAIN'
         
@@ -164,7 +164,7 @@ def handle_smoke_domain(params: Dict[str, Any]) -> Dict[str, Any]:
         settings.resolution_max = resolution
         settings.use_noise = use_high_resolution
         
-        # 设置烟雾/火焰
+        # Set smoke/fire
         if smoke_type == "FIRE":
             settings.use_flame_smoke = False
         elif smoke_type == "BOTH":
@@ -186,7 +186,7 @@ def handle_smoke_domain(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_smoke_flow(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置烟雾/火焰发射器"""
+    """Set up smoke/fire emitter"""
     object_name = params.get("object_name")
     flow_type = params.get("flow_type", "SMOKE")
     temperature = params.get("temperature", 1.0)
@@ -197,11 +197,11 @@ def handle_smoke_flow(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 添加流体修改器
+        # Add fluid modifier
         mod = obj.modifiers.new(name="SmokeFlow", type='FLUID')
         mod.fluid_type = 'FLOW'
         
@@ -227,7 +227,7 @@ def handle_smoke_flow(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_ocean(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加海洋修改器"""
+    """Add ocean modifier"""
     object_name = params.get("object_name")
     resolution = params.get("resolution", 7)
     spatial_size = params.get("spatial_size", 50)
@@ -240,11 +240,11 @@ def handle_ocean(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 添加海洋修改器
+        # Add ocean modifier
         mod = obj.modifiers.new(name="Ocean", type='OCEAN')
         mod.resolution = resolution
         mod.spatial_size = spatial_size
@@ -253,7 +253,7 @@ def handle_ocean(params: Dict[str, Any]) -> Dict[str, Any]:
         mod.wind_velocity = wind_velocity
         mod.use_foam = use_foam
         
-        # 使用生成的几何
+        # Use generated geometry
         mod.geometry_mode = 'GENERATE'
         
         return {
@@ -272,7 +272,7 @@ def handle_ocean(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_dynamic_paint_canvas(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置动态绘制画布"""
+    """Set up dynamic paint canvas"""
     object_name = params.get("object_name")
     surface_type = params.get("surface_type", "PAINT")
     use_dissolve = params.get("use_dissolve", False)
@@ -282,15 +282,15 @@ def handle_dynamic_paint_canvas(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 添加动态绘制修改器
+        # Add dynamic paint modifier
         mod = obj.modifiers.new(name="DynamicPaint", type='DYNAMIC_PAINT')
         mod.ui_type = 'CANVAS'
         
-        # 添加画布表面
+        # Add canvas surface
         bpy.ops.object.select_all(action='DESELECT')
         obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
@@ -319,7 +319,7 @@ def handle_dynamic_paint_canvas(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_dynamic_paint_brush(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置动态绘制笔刷"""
+    """Set up dynamic paint brush"""
     object_name = params.get("object_name")
     paint_color = params.get("paint_color", [1, 0, 0])
     paint_alpha = params.get("paint_alpha", 1.0)
@@ -328,11 +328,11 @@ def handle_dynamic_paint_brush(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 添加动态绘制修改器
+        # Add dynamic paint modifier
         mod = obj.modifiers.new(name="DynamicPaint", type='DYNAMIC_PAINT')
         mod.ui_type = 'BRUSH'
         
@@ -355,7 +355,7 @@ def handle_dynamic_paint_brush(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_bake(params: Dict[str, Any]) -> Dict[str, Any]:
-    """烘焙模拟"""
+    """Bake simulation"""
     object_name = params.get("object_name")
     frame_start = params.get("frame_start", 1)
     frame_end = params.get("frame_end", 250)
@@ -364,24 +364,24 @@ def handle_bake(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 设置帧范围
+        # Set frame range
         bpy.context.scene.frame_start = frame_start
         bpy.context.scene.frame_end = frame_end
         
-        # 选择对象
+        # Select object
         bpy.ops.object.select_all(action='DESELECT')
         obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
         
-        # 查找流体修改器并烘焙
+        # Find fluid modifier and bake
         for mod in obj.modifiers:
             if mod.type == 'FLUID' and mod.fluid_type == 'DOMAIN':
-                # 注意：实际烘焙可能需要很长时间
-                # 这里只设置参数，用户需要手动烘焙或使用后台任务
+                # Note: Actual baking may take a long time
+                # Only setting parameters here, user needs to bake manually or use background task
                 mod.domain_settings.cache_frame_start = frame_start
                 mod.domain_settings.cache_frame_end = frame_end
                 
@@ -397,7 +397,7 @@ def handle_bake(params: Dict[str, Any]) -> Dict[str, Any]:
         
         return {
             "success": False,
-            "error": {"code": "NO_FLUID_DOMAIN", "message": "未找到流体域修改器"}
+            "error": {"code": "NO_FLUID_DOMAIN", "message": "No fluid domain modifier found"}
         }
     except Exception as e:
         return {

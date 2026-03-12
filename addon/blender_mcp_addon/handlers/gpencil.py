@@ -1,7 +1,7 @@
 """
-油笔处理器
+Grease Pencil Handler
 
-处理油笔（Grease Pencil）相关的命令。
+Handles Grease Pencil related commands.
 """
 
 from typing import Any, Dict
@@ -9,27 +9,27 @@ import bpy
 
 
 def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建油笔对象"""
+    """Create grease pencil object"""
     name = params.get("name", "GPencil")
     location = params.get("location", [0, 0, 0])
     stroke_depth_order = params.get("stroke_depth_order", "3D")
     
     try:
-        # 确保在对象模式
+        # Ensure in object mode
         if bpy.context.mode != 'OBJECT':
             try:
                 bpy.ops.object.mode_set(mode='OBJECT')
             except:
                 pass
         
-        # Blender 5.0+ 使用新的 Grease Pencil v3 API
-        # 首先尝试使用 bpy.ops
+        # Blender 5.0+ uses the new Grease Pencil v3 API
+        # First try using bpy.ops
         try:
             bpy.ops.object.gpencil_add(location=location, type='EMPTY')
             obj = bpy.context.active_object
             obj.name = name
             
-            # 获取图层名称（Blender 5.0+ 使用 name 而不是 info）
+            # Get layer name (Blender 5.0+ uses name instead of info)
             layer_name = "Layer"
             if hasattr(obj.data, 'layers') and len(obj.data.layers) > 0:
                 layer = obj.data.layers[0]
@@ -43,25 +43,25 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
                 }
             }
         except Exception as ops_error:
-            # 回退到旧 API
+            # Fall back to old API
             gpd = bpy.data.grease_pencils.new(name)
             obj = bpy.data.objects.new(name, gpd)
             obj.location = location
             
-            # 链接到场景
+            # Link to scene
             bpy.context.collection.objects.link(obj)
             
-            # 选择对象
+            # Select object
             for o in bpy.context.selected_objects:
                 o.select_set(False)
             obj.select_set(True)
             bpy.context.view_layer.objects.active = obj
             
-            # 添加默认图层
+            # Add default layer
             layer = gpd.layers.new("Layer", set_active=True)
             layer_name = getattr(layer, 'name', getattr(layer, 'info', 'Layer'))
             
-            # 添加默认材质
+            # Add default material
             mat = bpy.data.materials.new(name=f"{name}_Material")
             bpy.data.materials.create_gpencil_data(mat)
             obj.data.materials.append(mat)
@@ -81,7 +81,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_layer(params: Dict[str, Any]) -> Dict[str, Any]:
-    """图层操作"""
+    """Layer operations"""
     gpencil_name = params.get("gpencil_name")
     action = params.get("action", "ADD")
     layer_name = params.get("layer_name", "Layer")
@@ -89,11 +89,11 @@ def handle_layer(params: Dict[str, Any]) -> Dict[str, Any]:
     color = params.get("color")
     
     obj = bpy.data.objects.get(gpencil_name)
-    # Blender 5.0+ 可能使用 GREASEPENCIL 而不是 GPENCIL
+    # Blender 5.0+ may use GREASEPENCIL instead of GPENCIL
     if not obj or obj.type not in ('GPENCIL', 'GREASEPENCIL'):
         return {
             "success": False,
-            "error": {"code": "NOT_GPENCIL", "message": f"不是油笔对象: {gpencil_name}"}
+            "error": {"code": "NOT_GPENCIL", "message": f"Not a grease pencil object: {gpencil_name}"}
         }
     
     gpd = obj.data
@@ -104,7 +104,7 @@ def handle_layer(params: Dict[str, Any]) -> Dict[str, Any]:
             if color and hasattr(layer, 'channel_color'):
                 layer.channel_color = color[:3] if len(color) >= 3 else [0, 0, 0]
             
-            # Blender 5.0+ 使用 name 而不是 info
+            # Blender 5.0+ uses name instead of info
             result_name = getattr(layer, 'name', getattr(layer, 'info', layer_name))
             
             return {
@@ -125,13 +125,13 @@ def handle_layer(params: Dict[str, Any]) -> Dict[str, Any]:
                 }
             return {
                 "success": False,
-                "error": {"code": "LAYER_NOT_FOUND", "message": f"图层不存在: {layer_name}"}
+                "error": {"code": "LAYER_NOT_FOUND", "message": f"Layer not found: {layer_name}"}
             }
         
         elif action == "RENAME":
             layer = gpd.layers.get(layer_name)
             if layer and new_name:
-                # Blender 5.0+ 使用 name
+                # Blender 5.0+ uses name
                 if hasattr(layer, 'name'):
                     layer.name = new_name
                 elif hasattr(layer, 'info'):
@@ -145,16 +145,16 @@ def handle_layer(params: Dict[str, Any]) -> Dict[str, Any]:
                 }
             return {
                 "success": False,
-                "error": {"code": "RENAME_FAILED", "message": "重命名失败"}
+                "error": {"code": "RENAME_FAILED", "message": "Rename failed"}
             }
         
         elif action == "MOVE":
-            # 移动图层顺序
+            # Move layer order
             pass
         
         return {
             "success": False,
-            "error": {"code": "INVALID_ACTION", "message": f"未知操作: {action}"}
+            "error": {"code": "INVALID_ACTION", "message": f"Unknown action: {action}"}
         }
     except Exception as e:
         return {
@@ -164,7 +164,7 @@ def handle_layer(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_frame(params: Dict[str, Any]) -> Dict[str, Any]:
-    """帧操作"""
+    """Frame operations"""
     gpencil_name = params.get("gpencil_name")
     layer_name = params.get("layer_name", "Layer")
     action = params.get("action", "ADD")
@@ -175,7 +175,7 @@ def handle_frame(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type not in ('GPENCIL', 'GREASEPENCIL'):
         return {
             "success": False,
-            "error": {"code": "NOT_GPENCIL", "message": f"不是油笔对象: {gpencil_name}"}
+            "error": {"code": "NOT_GPENCIL", "message": f"Not a grease pencil object: {gpencil_name}"}
         }
     
     gpd = obj.data
@@ -184,7 +184,7 @@ def handle_frame(params: Dict[str, Any]) -> Dict[str, Any]:
     if not layer:
         return {
             "success": False,
-            "error": {"code": "LAYER_NOT_FOUND", "message": f"图层不存在: {layer_name}"}
+            "error": {"code": "LAYER_NOT_FOUND", "message": f"Layer not found: {layer_name}"}
         }
     
     if action == "ADD":
@@ -207,7 +207,7 @@ def handle_frame(params: Dict[str, Any]) -> Dict[str, Any]:
             }
         return {
             "success": False,
-            "error": {"code": "FRAME_NOT_FOUND", "message": f"帧不存在: {frame_number}"}
+            "error": {"code": "FRAME_NOT_FOUND", "message": f"Frame not found: {frame_number}"}
         }
     
     elif action == "COPY":
@@ -229,17 +229,17 @@ def handle_frame(params: Dict[str, Any]) -> Dict[str, Any]:
             }
     
     elif action == "DUPLICATE":
-        # 复制帧
+        # Duplicate frame
         pass
     
     return {
         "success": False,
-        "error": {"code": "INVALID_ACTION", "message": f"未知操作: {action}"}
+        "error": {"code": "INVALID_ACTION", "message": f"Unknown action: {action}"}
     }
 
 
 def handle_draw(params: Dict[str, Any]) -> Dict[str, Any]:
-    """绘制笔触"""
+    """Draw stroke"""
     gpencil_name = params.get("gpencil_name")
     layer_name = params.get("layer_name", "Layer")
     points = params.get("points", [])
@@ -250,17 +250,17 @@ def handle_draw(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type not in ('GPENCIL', 'GREASEPENCIL'):
         return {
             "success": False,
-            "error": {"code": "NOT_GPENCIL", "message": f"不是油笔对象: {gpencil_name}"}
+            "error": {"code": "NOT_GPENCIL", "message": f"Not a grease pencil object: {gpencil_name}"}
         }
     
     gpd = obj.data
     layer = gpd.layers.get(layer_name)
     
     if not layer:
-        # 创建图层
+        # Create layer
         layer = gpd.layers.new(layer_name, set_active=True)
     
-    # 获取或创建当前帧
+    # Get or create current frame
     current_frame = bpy.context.scene.frame_current
     frame = None
     for f in layer.frames:
@@ -273,29 +273,29 @@ def handle_draw(params: Dict[str, Any]) -> Dict[str, Any]:
     
     try:
         # Blender 5.0+ Grease Pencil v3 API
-        # 新版本使用 drawings 和 curves
+        # New version uses drawings and curves
         if hasattr(frame, 'drawing') or obj.type == 'GREASEPENCIL':
-            # 使用 bpy.ops 来绘制笔触（更可靠的方法）
+            # Use bpy.ops to draw strokes (more reliable method)
             bpy.ops.object.select_all(action='DESELECT')
             obj.select_set(True)
             bpy.context.view_layer.objects.active = obj
             
-            # 进入绘制模式
+            # Enter paint mode
             if bpy.context.mode != 'PAINT_GPENCIL':
                 try:
                     bpy.ops.object.mode_set(mode='PAINT_GPENCIL')
                 except:
                     pass
             
-            # 通过创建曲线对象然后转换来实现绘制
-            # 或者使用 Python API 直接创建
+            # Draw by creating curve objects and then converting
+            # Or use the Python API to create directly
             try:
-                # 尝试使用新的 drawing API
+                # Try using the new drawing API
                 if hasattr(gpd, 'stroke_add'):
-                    # 一些版本可能有这个方法
+                    # Some versions may have this method
                     gpd.stroke_add(layer_name)
                 
-                # 返回成功（即使我们不能直接绘制，也创建了帧）
+                # Return success (even if we can't draw directly, the frame was created)
                 if bpy.context.mode == 'PAINT_GPENCIL':
                     bpy.ops.object.mode_set(mode='OBJECT')
                 
@@ -319,12 +319,12 @@ def handle_draw(params: Dict[str, Any]) -> Dict[str, Any]:
                     }
                 }
         else:
-            # 旧版 Grease Pencil API (Blender < 5.0)
+            # Legacy Grease Pencil API (Blender < 5.0)
             stroke = frame.strokes.new()
             stroke.line_width = line_width
             stroke.material_index = material_index
             
-            # 添加点
+            # Add points
             stroke.points.add(len(points))
             
             for i, point in enumerate(points):
@@ -347,7 +347,7 @@ def handle_draw(params: Dict[str, Any]) -> Dict[str, Any]:
             }
     
     except Exception as e:
-        # 确保返回对象模式
+        # Ensure return to object mode
         try:
             if bpy.context.mode != 'OBJECT':
                 bpy.ops.object.mode_set(mode='OBJECT')
@@ -361,7 +361,7 @@ def handle_draw(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_material(params: Dict[str, Any]) -> Dict[str, Any]:
-    """油笔材质"""
+    """Grease pencil material"""
     gpencil_name = params.get("gpencil_name")
     name = params.get("name", "GPMaterial")
     mode = params.get("mode", "LINE")
@@ -372,16 +372,16 @@ def handle_material(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type not in ('GPENCIL', 'GREASEPENCIL'):
         return {
             "success": False,
-            "error": {"code": "NOT_GPENCIL", "message": f"不是油笔对象: {gpencil_name}"}
+            "error": {"code": "NOT_GPENCIL", "message": f"Not a grease pencil object: {gpencil_name}"}
         }
     
-    # 创建材质
+    # Create material
     mat = bpy.data.materials.new(name=name)
     bpy.data.materials.create_gpencil_data(mat)
-    
+
     gp_mat = mat.grease_pencil
-    
-    # 设置模式
+
+    # Set mode
     mode_map = {
         "LINE": 'LINE',
         "DOTS": 'DOTS',
@@ -390,14 +390,14 @@ def handle_material(params: Dict[str, Any]) -> Dict[str, Any]:
     }
     gp_mat.mode = mode_map.get(mode, 'LINE')
     
-    # 设置颜色
+    # Set color
     gp_mat.color = stroke_color[:4] if len(stroke_color) >= 4 else stroke_color + [1.0]
     
     if fill_color:
         gp_mat.show_fill = True
         gp_mat.fill_color = fill_color[:4] if len(fill_color) >= 4 else fill_color + [1.0]
     
-    # 添加到对象
+    # Add to object
     obj.data.materials.append(mat)
     
     return {
@@ -410,7 +410,7 @@ def handle_material(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_modifier(params: Dict[str, Any]) -> Dict[str, Any]:
-    """油笔修改器"""
+    """Grease pencil modifier"""
     gpencil_name = params.get("gpencil_name")
     modifier_type = params.get("modifier_type", "SMOOTH")
     modifier_name = params.get("modifier_name")
@@ -420,10 +420,10 @@ def handle_modifier(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type not in ('GPENCIL', 'GREASEPENCIL'):
         return {
             "success": False,
-            "error": {"code": "NOT_GPENCIL", "message": f"不是油笔对象: {gpencil_name}"}
+            "error": {"code": "NOT_GPENCIL", "message": f"Not a grease pencil object: {gpencil_name}"}
         }
     
-    # 修改器类型映射
+    # Modifier type mapping
     mod_map = {
         "SMOOTH": 'GP_SMOOTH',
         "NOISE": 'GP_NOISE',
@@ -446,13 +446,13 @@ def handle_modifier(params: Dict[str, Any]) -> Dict[str, Any]:
     
     mod_type = mod_map.get(modifier_type, 'GP_SMOOTH')
     
-    # 添加修改器
+    # Add modifier
     mod = obj.grease_pencil_modifiers.new(
         name=modifier_name or modifier_type,
         type=mod_type
     )
     
-    # 应用设置
+    # Apply settings
     for key, value in settings.items():
         if hasattr(mod, key):
             setattr(mod, key, value)
@@ -467,7 +467,7 @@ def handle_modifier(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_effect(params: Dict[str, Any]) -> Dict[str, Any]:
-    """油笔特效"""
+    """Grease pencil effect"""
     gpencil_name = params.get("gpencil_name")
     effect_type = params.get("effect_type", "BLUR")
     effect_name = params.get("effect_name")
@@ -476,10 +476,10 @@ def handle_effect(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type not in ('GPENCIL', 'GREASEPENCIL'):
         return {
             "success": False,
-            "error": {"code": "NOT_GPENCIL", "message": f"不是油笔对象: {gpencil_name}"}
+            "error": {"code": "NOT_GPENCIL", "message": f"Not a grease pencil object: {gpencil_name}"}
         }
     
-    # 特效类型映射
+    # Effect type mapping
     effect_map = {
         "BLUR": 'FX_BLUR',
         "COLORIZE": 'FX_COLORIZE',
@@ -495,7 +495,7 @@ def handle_effect(params: Dict[str, Any]) -> Dict[str, Any]:
     
     fx_type = effect_map.get(effect_type, 'FX_BLUR')
     
-    # 添加特效
+    # Add effect
     fx = obj.shader_effects.new(
         name=effect_name or effect_type,
         type=fx_type
@@ -511,7 +511,7 @@ def handle_effect(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_convert(params: Dict[str, Any]) -> Dict[str, Any]:
-    """转换"""
+    """Convert"""
     gpencil_name = params.get("gpencil_name")
     target_type = params.get("target_type", "CURVE")
     keep_original = params.get("keep_original", True)
@@ -520,24 +520,24 @@ def handle_convert(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type not in ('GPENCIL', 'GREASEPENCIL'):
         return {
             "success": False,
-            "error": {"code": "NOT_GPENCIL", "message": f"不是油笔对象: {gpencil_name}"}
+            "error": {"code": "NOT_GPENCIL", "message": f"Not a grease pencil object: {gpencil_name}"}
         }
     
-    # 选择对象
+    # Select object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
-    
+
     try:
         if target_type == "CURVE":
             bpy.ops.gpencil.convert(type='CURVE', use_timing_data=False)
         elif target_type == "MESH":
             bpy.ops.gpencil.convert(type='POLY', use_timing_data=False)
         
-        # 获取新创建的对象
+        # Get the newly created object
         new_obj = bpy.context.active_object
         
-        # 删除原对象（如果需要）
+        # Remove original object (if needed)
         if not keep_original:
             bpy.data.objects.remove(obj, do_unlink=True)
         

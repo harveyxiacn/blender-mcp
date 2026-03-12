@@ -33,9 +33,8 @@ ENV/
 .DS_Store
 Thumbs.db
 Desktop.ini
-%APPDATA%/
 
-# --- Books & Personal Study Notes ---
+# --- Personal Study Notes & Internal Docs ---
 books/
 docs/internal/
 docs/Blender建模风格与技巧学习笔记.md
@@ -58,7 +57,7 @@ docs/ROADMAP.md
 *.blend1
 *.blend2
 
-# --- 3D Assets & Media (project-specific) ---
+# --- 3D Assets & Media ---
 *.glb
 *.gltf
 *.fbx
@@ -66,13 +65,13 @@ docs/ROADMAP.md
 *.stl
 fanxing-models/
 fzd_*
-fanzhendong-01.jpeg
 
 # --- Training Data ---
 blender_training/
 
 # --- Test & Demo Scripts (root level, not in tests/) ---
 test_*.py
+!tests/test_*.py
 create_*.py
 build_scenes_by_spec.py
 demo_*.py
@@ -89,6 +88,11 @@ uv.lock
 *.bak
 *.tmp
 .blender_mcp.pid
+nul
+fanzhendong-01.jpeg
+
+# --- Leaked Windows Directories ---
+%APPDATA%/
 
 # --- Local Agent/Assistant State ---
 .claude/
@@ -96,17 +100,23 @@ uv.lock
 # --- Local Reports & Scratch ---
 COMPREHENSIVE_TEST_REPORT.md
 INSTALLATION_SUMMARY.md
-nul
 test_models.bin
 test_models.mtl
 
-# --- Example Media Outputs / Reference Images (keep scripts, ignore binaries) ---
+# --- Example Media Outputs (keep scripts, ignore binaries) ---
 examples/**/*.png
 examples/**/*.jpg
 examples/**/*.jpeg
+examples/**/*.webp
 
 # --- Local Modeling Notes (not part of released docs) ---
 docs/blender_5.0_official_manual_reference.md
 docs/blender_comprehensive_learning_notes.md
 docs/blender_style_modeling_workflows.md
 docs/MCP_SKILL_SYSTEM_GUIDE.md
+
+# --- Coverage Reports ---
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml

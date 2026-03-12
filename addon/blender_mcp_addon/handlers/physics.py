@@ -1,8 +1,8 @@
 """
-物理模拟处理器
+Physics Simulation Handler
 
-处理布料、刚体、粒子系统等物理模拟命令。
-增强版 - 支持更多预设和自动固定点功能。
+Handles cloth, rigid body, particle system and other physics simulation commands.
+Enhanced version - supports more presets and automatic pinning functionality.
 """
 
 from typing import Any, Dict, List, Optional
@@ -10,11 +10,11 @@ import bpy
 import math
 
 
-# 增强的布料预设配置
+# Enhanced cloth preset configuration
 CLOTH_PRESETS = {
-    # 基础面料
+    # Basic fabrics
     "cotton": {
-        "description": "棉布 - 日常服装",
+        "description": "Cotton - everyday clothing",
         "mass": 0.3,
         "air_damping": 1.0,
         "tension_stiffness": 15,
@@ -25,7 +25,7 @@ CLOTH_PRESETS = {
         "collision_distance": 0.015
     },
     "silk": {
-        "description": "丝绸 - 轻柔飘逸",
+        "description": "Silk - light and flowing",
         "mass": 0.15,
         "air_damping": 1.0,
         "tension_stiffness": 5,
@@ -36,7 +36,7 @@ CLOTH_PRESETS = {
         "collision_distance": 0.01
     },
     "leather": {
-        "description": "皮革 - 厚实坚硬",
+        "description": "Leather - thick and stiff",
         "mass": 0.4,
         "air_damping": 1.0,
         "tension_stiffness": 80,
@@ -47,7 +47,7 @@ CLOTH_PRESETS = {
         "collision_distance": 0.02
     },
     "denim": {
-        "description": "牛仔布 - 中等硬度",
+        "description": "Denim - medium stiffness",
         "mass": 0.4,
         "air_damping": 1.0,
         "tension_stiffness": 40,
@@ -58,7 +58,7 @@ CLOTH_PRESETS = {
         "collision_distance": 0.015
     },
     "rubber": {
-        "description": "橡胶 - 弹性材质",
+        "description": "Rubber - elastic material",
         "mass": 0.3,
         "air_damping": 1.0,
         "tension_stiffness": 15,
@@ -68,9 +68,9 @@ CLOTH_PRESETS = {
         "damping": 0.02,
         "collision_distance": 0.01
     },
-    # 新增预设
+    # Additional presets
     "linen": {
-        "description": "亚麻 - 自然纹理",
+        "description": "Linen - natural texture",
         "mass": 0.28,
         "air_damping": 1.0,
         "tension_stiffness": 18,
@@ -81,7 +81,7 @@ CLOTH_PRESETS = {
         "collision_distance": 0.015
     },
     "velvet": {
-        "description": "天鹅绒 - 厚重柔软",
+        "description": "Velvet - heavy and soft",
         "mass": 0.35,
         "air_damping": 1.2,
         "tension_stiffness": 12,
@@ -92,7 +92,7 @@ CLOTH_PRESETS = {
         "collision_distance": 0.018
     },
     "chiffon": {
-        "description": "雪纺 - 超轻透明",
+        "description": "Chiffon - ultra-light and sheer",
         "mass": 0.08,
         "air_damping": 0.8,
         "tension_stiffness": 3,
@@ -103,7 +103,7 @@ CLOTH_PRESETS = {
         "collision_distance": 0.008
     },
     "wool": {
-        "description": "羊毛 - 温暖厚实",
+        "description": "Wool - warm and thick",
         "mass": 0.38,
         "air_damping": 1.3,
         "tension_stiffness": 25,
@@ -114,7 +114,7 @@ CLOTH_PRESETS = {
         "collision_distance": 0.02
     },
     "satin": {
-        "description": "缎面 - 光滑闪亮",
+        "description": "Satin - smooth and shiny",
         "mass": 0.2,
         "air_damping": 0.9,
         "tension_stiffness": 8,
@@ -124,9 +124,9 @@ CLOTH_PRESETS = {
         "damping": 0.008,
         "collision_distance": 0.012
     },
-    # 特殊材质
+    # Special materials
     "chainmail": {
-        "description": "锁子甲 - 金属编织",
+        "description": "Chainmail - metal weave",
         "mass": 1.5,
         "air_damping": 0.5,
         "tension_stiffness": 200,
@@ -137,7 +137,7 @@ CLOTH_PRESETS = {
         "collision_distance": 0.025
     },
     "cape_heavy": {
-        "description": "厚披风 - 英雄披风",
+        "description": "Heavy cape - hero cape",
         "mass": 0.5,
         "air_damping": 1.5,
         "tension_stiffness": 30,
@@ -148,7 +148,7 @@ CLOTH_PRESETS = {
         "collision_distance": 0.02
     },
     "cape_light": {
-        "description": "轻披风 - 飘逸披风",
+        "description": "Light cape - flowing cape",
         "mass": 0.18,
         "air_damping": 0.7,
         "tension_stiffness": 8,
@@ -159,7 +159,7 @@ CLOTH_PRESETS = {
         "collision_distance": 0.012
     },
     "flag": {
-        "description": "旗帜 - 风中飘扬",
+        "description": "Flag - fluttering in the wind",
         "mass": 0.12,
         "air_damping": 0.5,
         "tension_stiffness": 20,
@@ -170,7 +170,7 @@ CLOTH_PRESETS = {
         "collision_distance": 0.01
     },
     "paper": {
-        "description": "纸张 - 轻薄",
+        "description": "Paper - thin and light",
         "mass": 0.05,
         "air_damping": 0.6,
         "tension_stiffness": 50,
@@ -180,9 +180,9 @@ CLOTH_PRESETS = {
         "damping": 0.002,
         "collision_distance": 0.005
     },
-    # 古风/仙侠专用
+    # Chinese traditional / Xianxia style
     "hanfu_outer": {
-        "description": "汉服外衣 - 飘逸典雅",
+        "description": "Hanfu outer robe - flowing and elegant",
         "mass": 0.22,
         "air_damping": 0.9,
         "tension_stiffness": 10,
@@ -193,7 +193,7 @@ CLOTH_PRESETS = {
         "collision_distance": 0.012
     },
     "hanfu_inner": {
-        "description": "汉服内衣 - 贴身柔软",
+        "description": "Hanfu inner garment - close-fitting and soft",
         "mass": 0.18,
         "air_damping": 1.0,
         "tension_stiffness": 8,
@@ -204,7 +204,7 @@ CLOTH_PRESETS = {
         "collision_distance": 0.01
     },
     "ribbon": {
-        "description": "绸带/飘带 - 轻盈飘逸",
+        "description": "Ribbon/sash - light and flowing",
         "mass": 0.06,
         "air_damping": 0.5,
         "tension_stiffness": 5,
@@ -217,25 +217,25 @@ CLOTH_PRESETS = {
 }
 
 
-# 固定点模式配置
+# Pin point mode configuration
 PIN_MODES = {
-    "top": {"description": "顶部固定", "threshold_ratio": 0.9},
-    "top_edge": {"description": "顶部边缘固定", "threshold_ratio": 0.95},
-    "shoulder": {"description": "肩部固定（服装）", "z_range": (0.85, 0.95)},
-    "waist": {"description": "腰部固定", "z_range": (0.45, 0.55)},
-    "collar": {"description": "领口固定", "z_range": (0.90, 1.0), "y_threshold": 0.3},
-    "armhole": {"description": "袖口固定", "x_threshold": 0.8},
-    "hem": {"description": "下摆固定", "threshold_ratio": 0.1},
-    "custom": {"description": "自定义固定"}
+    "top": {"description": "Pin at top", "threshold_ratio": 0.9},
+    "top_edge": {"description": "Pin at top edge", "threshold_ratio": 0.95},
+    "shoulder": {"description": "Pin at shoulders (clothing)", "z_range": (0.85, 0.95)},
+    "waist": {"description": "Pin at waist", "z_range": (0.45, 0.55)},
+    "collar": {"description": "Pin at collar", "z_range": (0.90, 1.0), "y_threshold": 0.3},
+    "armhole": {"description": "Pin at armhole", "x_threshold": 0.8},
+    "hem": {"description": "Pin at hem", "threshold_ratio": 0.1},
+    "custom": {"description": "Custom pinning"}
 }
 
 
 def handle_cloth_add(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加布料模拟（增强版）"""
+    """Add cloth simulation (enhanced version)"""
     object_name = params.get("object_name")
     preset = params.get("preset", "cotton")
     pin_group = params.get("pin_group")
-    pin_mode = params.get("pin_mode")  # 自动固定模式
+    pin_mode = params.get("pin_mode")  # Automatic pin mode
     collision_quality = params.get("collision_quality", 2)
     self_collision = params.get("self_collision", False)
     
@@ -243,19 +243,19 @@ def handle_cloth_add(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "MESH_NOT_FOUND", "message": f"网格不存在: {object_name}"}
+            "error": {"code": "MESH_NOT_FOUND", "message": f"Mesh not found: {object_name}"}
         }
     
-    # 选择对象
+    # Select object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     
-    # 添加布料修改器
+    # Add cloth modifier
     cloth_mod = obj.modifiers.new(name="Cloth", type='CLOTH')
     cloth = cloth_mod.settings
     
-    # 应用预设
+    # Apply preset
     preset_config = CLOTH_PRESETS.get(preset, CLOTH_PRESETS["cotton"])
     cloth.mass = preset_config["mass"]
     cloth.air_damping = preset_config["air_damping"]
@@ -264,21 +264,21 @@ def handle_cloth_add(params: Dict[str, Any]) -> Dict[str, Any]:
     cloth.shear_stiffness = preset_config["shear_stiffness"]
     cloth.bending_stiffness = preset_config["bending_stiffness"]
     
-    # 额外设置
+    # Extra settings
     if "damping" in preset_config:
         cloth.bending_damping = preset_config["damping"]
     
-    # 碰撞设置
+    # Collision settings
     cloth.collision_settings.collision_quality = collision_quality
     if "collision_distance" in preset_config:
         cloth.collision_settings.distance_min = preset_config["collision_distance"]
     
-    # 自碰撞
+    # Self collision
     if self_collision:
         cloth.collision_settings.use_self_collision = True
         cloth.collision_settings.self_distance_min = preset_config.get("collision_distance", 0.015)
     
-    # 自动固定点
+    # Automatic pin points
     created_pin_group = None
     if pin_mode and pin_mode != "custom":
         created_pin_group = _create_auto_pin_group(obj, pin_mode)
@@ -299,12 +299,12 @@ def handle_cloth_add(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _create_auto_pin_group(obj: bpy.types.Object, pin_mode: str) -> Optional[str]:
-    """创建自动固定顶点组"""
+    """Create automatic pin vertex group"""
     mode_config = PIN_MODES.get(pin_mode)
     if not mode_config:
         return None
     
-    # 计算网格边界
+    # Calculate mesh bounds
     verts = obj.data.vertices
     if len(verts) == 0:
         return None
@@ -321,13 +321,13 @@ def _create_auto_pin_group(obj: bpy.types.Object, pin_mode: str) -> Optional[str
     max_y = max(v.co.y for v in verts)
     depth = max_y - min_y
     
-    # 创建顶点组
+    # Create vertex group
     group_name = f"Pin_{pin_mode}"
     if group_name in obj.vertex_groups:
         obj.vertex_groups.remove(obj.vertex_groups[group_name])
     pin_group = obj.vertex_groups.new(name=group_name)
     
-    # 根据模式选择顶点
+    # Select vertices by mode
     for v in verts:
         weight = 0.0
         normalized_z = (v.co.z - min_z) / height if height > 0 else 0
@@ -347,7 +347,7 @@ def _create_auto_pin_group(obj: bpy.types.Object, pin_mode: str) -> Optional[str
         elif pin_mode == "shoulder":
             z_range = mode_config.get("z_range", (0.85, 0.95))
             if z_range[0] <= normalized_z <= z_range[1]:
-                # 肩部位置，两侧
+                # Shoulder position, both sides
                 if abs(normalized_x - 0.5) > 0.3:
                     weight = 1.0 - abs(normalized_z - (z_range[0] + z_range[1]) / 2) / 0.1
         
@@ -360,7 +360,7 @@ def _create_auto_pin_group(obj: bpy.types.Object, pin_mode: str) -> Optional[str
             z_range = mode_config.get("z_range", (0.90, 1.0))
             y_threshold = mode_config.get("y_threshold", 0.3)
             if z_range[0] <= normalized_z <= z_range[1]:
-                # 领口位置，前面
+                # Collar position, front
                 if normalized_y < y_threshold:
                     weight = 1.0
         
@@ -376,7 +376,7 @@ def _create_auto_pin_group(obj: bpy.types.Object, pin_mode: str) -> Optional[str
 
 
 def handle_cloth_list_presets(params: Dict[str, Any]) -> Dict[str, Any]:
-    """列出所有布料预设"""
+    """List all cloth presets"""
     presets_info = {}
     for name, config in CLOTH_PRESETS.items():
         presets_info[name] = {
@@ -395,10 +395,10 @@ def handle_cloth_list_presets(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_cloth_configure(params: Dict[str, Any]) -> Dict[str, Any]:
-    """配置布料模拟参数"""
+    """Configure cloth simulation parameters"""
     object_name = params.get("object_name")
     
-    # 可配置的参数
+    # Configurable parameters
     mass = params.get("mass")
     air_damping = params.get("air_damping")
     tension_stiffness = params.get("tension_stiffness")
@@ -411,10 +411,10 @@ def handle_cloth_configure(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
-    # 查找布料修改器
+    # Find cloth modifier
     cloth_mod = None
     for mod in obj.modifiers:
         if mod.type == 'CLOTH':
@@ -424,12 +424,12 @@ def handle_cloth_configure(params: Dict[str, Any]) -> Dict[str, Any]:
     if not cloth_mod:
         return {
             "success": False,
-            "error": {"code": "NO_CLOTH_MOD", "message": "对象没有布料修改器"}
+            "error": {"code": "NO_CLOTH_MOD", "message": "Object has no cloth modifier"}
         }
     
     cloth = cloth_mod.settings
     
-    # 应用参数
+    # Apply parameters
     if mass is not None:
         cloth.mass = mass
     if air_damping is not None:
@@ -454,7 +454,7 @@ def handle_cloth_configure(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_rigid_body_add(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加刚体"""
+    """Add rigid body"""
     object_name = params.get("object_name")
     body_type = params.get("body_type", "ACTIVE")
     shape = params.get("shape", "CONVEX_HULL")
@@ -466,22 +466,22 @@ def handle_rigid_body_add(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
-    # 确保有刚体世界
+    # Ensure rigid body world exists
     if not bpy.context.scene.rigidbody_world:
         bpy.ops.rigidbody.world_add()
     
-    # 选择对象
+    # Select object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     
-    # 添加刚体
+    # Add rigid body
     bpy.ops.rigidbody.object_add()
     
-    # 设置属性
+    # Set properties
     obj.rigid_body.type = body_type
     obj.rigid_body.collision_shape = shape
     obj.rigid_body.mass = mass
@@ -498,7 +498,7 @@ def handle_rigid_body_add(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_collision_add(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加碰撞体"""
+    """Add collision body"""
     object_name = params.get("object_name")
     damping = params.get("damping", 0.0)
     thickness = params.get("thickness", 0.02)
@@ -508,10 +508,10 @@ def handle_collision_add(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "MESH_NOT_FOUND", "message": f"网格不存在: {object_name}"}
+            "error": {"code": "MESH_NOT_FOUND", "message": f"Mesh not found: {object_name}"}
         }
     
-    # 添加碰撞修改器
+    # Add collision modifier
     collision_mod = obj.modifiers.new(name="Collision", type='COLLISION')
     collision = collision_mod.settings
     
@@ -526,7 +526,7 @@ def handle_collision_add(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_particles_create(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建粒子系统"""
+    """Create particle system"""
     object_name = params.get("object_name")
     particle_type = params.get("particle_type", "EMITTER")
     count = params.get("count", 1000)
@@ -538,15 +538,15 @@ def handle_particles_create(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "MESH_NOT_FOUND", "message": f"网格不存在: {object_name}"}
+            "error": {"code": "MESH_NOT_FOUND", "message": f"Mesh not found: {object_name}"}
         }
     
-    # 添加粒子系统
+    # Add particle system
     obj.modifiers.new(name="ParticleSystem", type='PARTICLE_SYSTEM')
     particle_system = obj.particle_systems[-1]
     settings = particle_system.settings
     
-    # 设置属性
+    # Set properties
     settings.type = particle_type
     settings.count = count
     settings.lifetime = lifetime
@@ -563,18 +563,18 @@ def handle_particles_create(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_force_field_add(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加力场"""
+    """Add force field"""
     force_type = params.get("force_type", "WIND")
     location = params.get("location", [0, 0, 0])
     strength = params.get("strength", 1.0)
     flow = params.get("flow", 0.0)
     
-    # 创建空对象作为力场
+    # Create empty object as force field
     bpy.ops.object.empty_add(type='PLAIN_AXES', location=location)
     force_obj = bpy.context.active_object
     force_obj.name = f"ForceField_{force_type}"
     
-    # 添加力场
+    # Add force field
     bpy.ops.object.forcefield_toggle()
     force_obj.field.type = force_type
     force_obj.field.strength = strength
@@ -590,7 +590,7 @@ def handle_force_field_add(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_soft_body_add(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加软体"""
+    """Add soft body"""
     object_name = params.get("object_name")
     mass = params.get("mass", 1.0)
     friction = params.get("friction", 0.5)
@@ -600,10 +600,10 @@ def handle_soft_body_add(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "MESH_NOT_FOUND", "message": f"网格不存在: {object_name}"}
+            "error": {"code": "MESH_NOT_FOUND", "message": f"Mesh not found: {object_name}"}
         }
     
-    # 添加软体修改器
+    # Add soft body modifier
     soft_body_mod = obj.modifiers.new(name="Softbody", type='SOFT_BODY')
     soft_body = soft_body_mod.settings
     

@@ -1,7 +1,7 @@
 """
-风格预设处理器
+Style Presets Handler
 
-处理风格环境设置、描边效果、烘焙工作流等操作。
+Handles style environment setup, outline effects, baking workflows and other operations.
 """
 
 from typing import Any, Dict
@@ -10,7 +10,7 @@ import os
 import math
 
 
-# ==================== 风格配置数据 ====================
+# ==================== Style Configuration Data ====================
 
 STYLE_CONFIGS = {
     "PIXEL": {
@@ -21,20 +21,20 @@ STYLE_CONFIGS = {
         "film_transparent": False,
         "samples": 16,
         "tips": (
-            "像素/体素风格建模建议:\n"
-            "1. 使用Cube作为基本单元，通过Array修改器排列\n"
-            "2. 图元参数: segments=4~8 (低段数)\n"
-            "3. 材质: 纯色Flat材质，关闭Smooth Shading\n"
-            "4. 纹理: 使用Closest(最近邻)插值，保持像素锐边\n"
-            "5. 相机: 使用正交投影(Orthographic)\n"
-            "6. 灯光: 简单方向光，关闭阴影或使用硬阴影"
+            "Pixel/Voxel style modeling tips:\n"
+            "1. Use Cube as the basic unit, arrange via Array modifier\n"
+            "2. Primitive params: segments=4~8 (low segment count)\n"
+            "3. Materials: Solid color Flat material, disable Smooth Shading\n"
+            "4. Textures: Use Closest (nearest neighbor) interpolation, keep pixel-sharp edges\n"
+            "5. Camera: Use Orthographic projection\n"
+            "6. Lighting: Simple directional light, disable shadows or use hard shadows"
         ),
         "settings_applied": {
-            "渲染引擎": "EEVEE",
-            "着色方式": "Flat Shading",
-            "纹理过滤": "Closest (最近邻)",
-            "推荐面数": "50-500面",
-            "纹理分辨率": "16×16 ~ 64×64",
+            "Render Engine": "EEVEE",
+            "Shading": "Flat Shading",
+            "Texture Filtering": "Closest (Nearest Neighbor)",
+            "Recommended Poly Count": "50-500 faces",
+            "Texture Resolution": "16×16 ~ 64×64",
         }
     },
     "LOW_POLY": {
@@ -45,20 +45,20 @@ STYLE_CONFIGS = {
         "film_transparent": False,
         "samples": 32,
         "tips": (
-            "Low Poly风格建模建议:\n"
-            "1. 图元参数: segments=6~12, subdivisions=1\n"
-            "2. 使用Flat Shading，不使用细分曲面\n"
-            "3. 着色: 使用顶点色(Vertex Color)或简单纯色材质\n"
-            "4. 三角面可接受，保持几何简洁\n"
-            "5. 场景: 大量使用Array和Mirror修改器\n"
-            "6. 推荐使用blender_vertex_color工具为面着色"
+            "Low Poly style modeling tips:\n"
+            "1. Primitive params: segments=6~12, subdivisions=1\n"
+            "2. Use Flat Shading, do not use Subdivision Surface\n"
+            "3. Coloring: Use Vertex Color or simple solid-color materials\n"
+            "4. Triangles are acceptable, keep geometry clean\n"
+            "5. Scene: Make heavy use of Array and Mirror modifiers\n"
+            "6. Recommended: Use blender_vertex_color tool to color faces"
         ),
         "settings_applied": {
-            "渲染引擎": "EEVEE",
-            "着色方式": "Flat Shading",
-            "纹理过滤": "Linear",
-            "推荐面数": "200-2000面",
-            "纹理分辨率": "无纹理/纯色",
+            "Render Engine": "EEVEE",
+            "Shading": "Flat Shading",
+            "Texture Filtering": "Linear",
+            "Recommended Poly Count": "200-2000 faces",
+            "Texture Resolution": "No textures / Solid colors",
         }
     },
     "STYLIZED": {
@@ -69,20 +69,20 @@ STYLE_CONFIGS = {
         "film_transparent": False,
         "samples": 64,
         "tips": (
-            "风格化建模建议:\n"
-            "1. 使用细分曲面(SubSurf) level=1~2\n"
-            "2. 用倒角(Bevel)加支撑环保持轮廓\n"
-            "3. 材质: 使用ColorRamp渐变色+Shader to RGB\n"
-            "4. 场景: Geometry Nodes散布植被/装饰\n"
-            "5. 适度夸张比例，圆润化转角\n"
-            "6. 可加描边(blender_outline_effect)"
+            "Stylized modeling tips:\n"
+            "1. Use Subdivision Surface (SubSurf) level=1~2\n"
+            "2. Use Bevel with support loops to maintain silhouette\n"
+            "3. Materials: Use ColorRamp gradients + Shader to RGB\n"
+            "4. Scene: Scatter vegetation/decorations via Geometry Nodes\n"
+            "5. Moderately exaggerate proportions, round off corners\n"
+            "6. Consider adding outlines (blender_outline_effect)"
         ),
         "settings_applied": {
-            "渲染引擎": "EEVEE",
-            "着色方式": "Smooth Shading",
-            "纹理过滤": "Linear",
-            "推荐面数": "2K-10K面",
-            "纹理分辨率": "128-512",
+            "Render Engine": "EEVEE",
+            "Shading": "Smooth Shading",
+            "Texture Filtering": "Linear",
+            "Recommended Poly Count": "2K-10K faces",
+            "Texture Resolution": "128-512",
         }
     },
     "TOON": {
@@ -93,20 +93,20 @@ STYLE_CONFIGS = {
         "film_transparent": False,
         "samples": 64,
         "tips": (
-            "卡通/赛璐璐风格建模建议:\n"
-            "1. 使用Shader to RGB + ColorRamp(Constant)实现Cel Shading\n"
-            "2. 必须加描边: blender_outline_effect(method=SOLIDIFY)\n"
-            "3. 阴影分2-3层: 亮色/暗色/最暗色\n"
-            "4. 高光用锐利的ColorRamp带\n"
-            "5. 边缘光(Fresnel)增加轮廓感\n"
-            "6. 材质: 使用blender_create_toon_material或blender_procedural_material"
+            "Toon/Cel-shading style modeling tips:\n"
+            "1. Use Shader to RGB + ColorRamp(Constant) for Cel Shading\n"
+            "2. Must add outlines: blender_outline_effect(method=SOLIDIFY)\n"
+            "3. Split shadows into 2-3 layers: light/dark/darkest\n"
+            "4. Use sharp ColorRamp bands for highlights\n"
+            "5. Rim light (Fresnel) to enhance silhouette\n"
+            "6. Materials: Use blender_create_toon_material or blender_procedural_material"
         ),
         "settings_applied": {
-            "渲染引擎": "EEVEE",
-            "着色方式": "Smooth Shading + Cel Shading",
-            "描边": "推荐Solidify翻转法线",
-            "推荐面数": "3K-15K面",
-            "纹理分辨率": "512-1K",
+            "Render Engine": "EEVEE",
+            "Shading": "Smooth Shading + Cel Shading",
+            "Outline": "Recommended: Solidify with flipped normals",
+            "Recommended Poly Count": "3K-15K faces",
+            "Texture Resolution": "512-1K",
         }
     },
     "HAND_PAINTED": {
@@ -117,20 +117,20 @@ STYLE_CONFIGS = {
         "film_transparent": False,
         "samples": 64,
         "tips": (
-            "手绘风格建模建议:\n"
-            "1. UV展开质量极重要！使用Smart UV Project + 手动调整\n"
-            "2. 材质: 仅Diffuse(Base Color)，无PBR数据通道\n"
-            "3. 纹理绘制: 先烘焙AO到纹理作为暗化基础\n"
-            "4. 手绘阴影/高光直接画在Diffuse贴图上\n"
-            "5. 低饱和度阴影 + 高饱和度高光\n"
-            "6. 使用blender_texture_paint系列工具"
+            "Hand-painted style modeling tips:\n"
+            "1. UV unwrap quality is critical! Use Smart UV Project + manual adjustments\n"
+            "2. Materials: Diffuse (Base Color) only, no PBR data channels\n"
+            "3. Texture painting: First bake AO to texture as a darkening base\n"
+            "4. Paint shadows/highlights directly onto the Diffuse texture\n"
+            "5. Low-saturation shadows + high-saturation highlights\n"
+            "6. Use the blender_texture_paint tool suite"
         ),
         "settings_applied": {
-            "渲染引擎": "EEVEE",
-            "着色方式": "Smooth Shading",
-            "材质模式": "Diffuse Only (无PBR)",
-            "推荐面数": "5K-30K面",
-            "纹理分辨率": "1K-2K",
+            "Render Engine": "EEVEE",
+            "Shading": "Smooth Shading",
+            "Material Mode": "Diffuse Only (No PBR)",
+            "Recommended Poly Count": "5K-30K faces",
+            "Texture Resolution": "1K-2K",
         }
     },
     "SEMI_REALISTIC": {
@@ -141,20 +141,20 @@ STYLE_CONFIGS = {
         "film_transparent": False,
         "samples": 128,
         "tips": (
-            "半写实风格建模建议:\n"
-            "1. 使用细分曲面level=2 + 支撑环/折痕边\n"
-            "2. 良好的四边形拓扑(Quad-dominant)\n"
-            "3. 材质: 简化PBR(Base Color + Normal + Roughness)\n"
-            "4. 法线贴图: 从高模烘焙或使用程序化凹凸\n"
-            "5. 自动平滑角度30°~45°\n"
-            "6. 可用blender_bake_maps烘焙法线/AO"
+            "Semi-realistic style modeling tips:\n"
+            "1. Use Subdivision Surface level=2 + support loops/crease edges\n"
+            "2. Good quad-dominant topology\n"
+            "3. Materials: Simplified PBR (Base Color + Normal + Roughness)\n"
+            "4. Normal maps: Bake from high poly or use procedural bump\n"
+            "5. Auto Smooth angle 30°~45°\n"
+            "6. Use blender_bake_maps to bake normals/AO"
         ),
         "settings_applied": {
-            "渲染引擎": "EEVEE",
-            "着色方式": "Smooth + Auto Smooth",
-            "色彩管理": "Filmic",
-            "推荐面数": "10K-50K面",
-            "纹理分辨率": "1K-2K",
+            "Render Engine": "EEVEE",
+            "Shading": "Smooth + Auto Smooth",
+            "Color Management": "Filmic",
+            "Recommended Poly Count": "10K-50K faces",
+            "Texture Resolution": "1K-2K",
         }
     },
     "PBR_REALISTIC": {
@@ -165,20 +165,20 @@ STYLE_CONFIGS = {
         "film_transparent": False,
         "samples": 256,
         "tips": (
-            "PBR写实风格建模建议:\n"
-            "1. 高模雕刻 → 低模重拓扑 → 法线烘焙\n"
-            "2. 完整PBR: BaseColor/Normal/Roughness/Metallic/AO/Displacement\n"
-            "3. 使用blender_procedural_material获取程序化PBR预设\n"
-            "4. 添加磨损效果: edge_wear通过Pointiness/曲率\n"
-            "5. 使用blender_bake_maps烘焙全套贴图\n"
-            "6. LOD: 使用blender_lod_generate创建多级细节"
+            "PBR Realistic style modeling tips:\n"
+            "1. Sculpt high poly → Retopologize low poly → Bake normals\n"
+            "2. Full PBR: BaseColor/Normal/Roughness/Metallic/AO/Displacement\n"
+            "3. Use blender_procedural_material for procedural PBR presets\n"
+            "4. Add wear effects: edge_wear via Pointiness/Curvature\n"
+            "5. Use blender_bake_maps to bake a full texture set\n"
+            "6. LOD: Use blender_lod_generate to create multi-level detail"
         ),
         "settings_applied": {
-            "渲染引擎": "Cycles",
-            "着色方式": "Smooth + Auto Smooth",
-            "色彩管理": "Filmic",
-            "推荐面数": "30K-100K面",
-            "纹理分辨率": "2K-4K",
+            "Render Engine": "Cycles",
+            "Shading": "Smooth + Auto Smooth",
+            "Color Management": "Filmic",
+            "Recommended Poly Count": "30K-100K faces",
+            "Texture Resolution": "2K-4K",
         }
     },
     "AAA": {
@@ -189,29 +189,29 @@ STYLE_CONFIGS = {
         "film_transparent": False,
         "samples": 512,
         "tips": (
-            "3A/影视级建模建议:\n"
-            "1. 高精度雕刻(多分辨率Multires) → QuadriFlow重拓扑\n"
-            "2. UDIM多瓦片UV(如需超高分辨率)\n"
-            "3. 全套PBR贴图 + Displacement置换\n"
-            "4. 皮肤: SSS次表面散射 + 毛孔细节\n"
-            "5. 毛发: Hair Curves系统\n"
-            "6. 眼球/牙齿: 专项材质\n"
-            "7. 布料: 物理模拟烘焙\n"
-            "8. 使用blender_bake_maps烘焙高→低全套贴图"
+            "AAA/Cinematic modeling tips:\n"
+            "1. High-precision sculpting (Multires) → QuadriFlow retopology\n"
+            "2. UDIM multi-tile UV (for ultra-high resolution)\n"
+            "3. Full PBR texture set + Displacement\n"
+            "4. Skin: SSS subsurface scattering + pore details\n"
+            "5. Hair: Hair Curves system\n"
+            "6. Eyes/Teeth: Specialized materials\n"
+            "7. Cloth: Physics simulation baking\n"
+            "8. Use blender_bake_maps to bake full high→low texture set"
         ),
         "settings_applied": {
-            "渲染引擎": "Cycles",
-            "着色方式": "Smooth + Adaptive Subdivision",
-            "色彩管理": "Filmic",
-            "推荐面数": "100K-10M面(雕刻)",
-            "纹理分辨率": "4K-8K + UDIM",
+            "Render Engine": "Cycles",
+            "Shading": "Smooth + Adaptive Subdivision",
+            "Color Management": "Filmic",
+            "Recommended Poly Count": "100K-10M faces (sculpting)",
+            "Texture Resolution": "4K-8K + UDIM",
         }
     },
 }
 
 
 def handle_setup(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置风格环境"""
+    """Set up style environment"""
     style = params.get("style", "LOW_POLY")
     apply_to_scene = params.get("apply_to_scene", True)
     apply_to_objects = params.get("apply_to_objects", [])
@@ -220,14 +220,14 @@ def handle_setup(params: Dict[str, Any]) -> Dict[str, Any]:
     if not config:
         return {
             "success": False,
-            "error": {"code": "UNKNOWN_STYLE", "message": f"未知风格: {style}"}
+            "error": {"code": "UNKNOWN_STYLE", "message": f"Unknown style: {style}"}
         }
 
     scene = bpy.context.scene
     extra_applied = []
 
     if apply_to_scene:
-        # 设置渲染引擎
+        # Set render engine
         try:
             scene.render.engine = config["render_engine"]
         except Exception:
@@ -237,43 +237,43 @@ def handle_setup(params: Dict[str, Any]) -> Dict[str, Any]:
                 except Exception:
                     pass
 
-        # 设置采样
+        # Set samples
         if hasattr(scene, 'eevee') and "EEVEE" in scene.render.engine:
             scene.eevee.taa_render_samples = config["samples"]
         elif scene.render.engine == "CYCLES":
             scene.cycles.samples = config["samples"]
-            # Cycles去噪
+            # Cycles denoising
             if style in ("PBR_REALISTIC", "AAA", "SEMI_REALISTIC"):
                 scene.cycles.use_denoising = True
                 try:
                     scene.cycles.denoiser = 'OPENIMAGEDENOISE'
                 except Exception:
                     pass
-                extra_applied.append("去噪: OpenImageDenoise")
+                extra_applied.append("Denoising: OpenImageDenoise")
 
-        # 色彩管理
+        # Color management
         scene.view_settings.view_transform = config.get("color_management", "Standard")
 
-        # EEVEE特性 (Bloom/AO/SSR)
+        # EEVEE features (Bloom/AO/SSR)
         if hasattr(scene, 'eevee') and "EEVEE" in scene.render.engine:
             eevee = scene.eevee
             if style in ("STYLIZED", "TOON"):
-                # 风格化/卡通: 可选Bloom，关AO
+                # Stylized/Toon: Optional Bloom, disable AO
                 if hasattr(eevee, 'use_bloom'):
                     eevee.use_bloom = True
                     eevee.bloom_threshold = 0.8
                     eevee.bloom_intensity = 0.1
-                    extra_applied.append("辉光(Bloom): 开启(低强度)")
+                    extra_applied.append("Bloom: Enabled (low intensity)")
                 if hasattr(eevee, 'use_gtao'):
                     eevee.use_gtao = False
-                    extra_applied.append("AO: 关闭(保持Cel风格)")
+                    extra_applied.append("AO: Disabled (preserve Cel style)")
             elif style in ("SEMI_REALISTIC",):
                 if hasattr(eevee, 'use_gtao'):
                     eevee.use_gtao = True
-                    extra_applied.append("AO: 开启")
+                    extra_applied.append("AO: Enabled")
                 if hasattr(eevee, 'use_ssr'):
                     eevee.use_ssr = True
-                    extra_applied.append("屏幕空间反射: 开启")
+                    extra_applied.append("Screen Space Reflections: Enabled")
             elif style in ("PIXEL", "LOW_POLY"):
                 if hasattr(eevee, 'use_bloom'):
                     eevee.use_bloom = False
@@ -282,22 +282,22 @@ def handle_setup(params: Dict[str, Any]) -> Dict[str, Any]:
                 if hasattr(eevee, 'use_ssr'):
                     eevee.use_ssr = False
 
-        # 像素风格: 设置活动摄像机为正交
+        # Pixel style: Set active camera to orthographic
         if style == "PIXEL":
             cam = scene.camera
             if cam and cam.type == 'CAMERA':
                 cam.data.type = 'ORTHO'
                 cam.data.ortho_scale = 10.0
-                extra_applied.append("摄像机: 正交投影(Orthographic)")
+                extra_applied.append("Camera: Orthographic projection")
 
-        # 透明胶片
+        # Transparent film
         scene.render.film_transparent = config.get("film_transparent", False)
 
-    # 对指定对象应用着色和纹理设置
+    # Apply shading and texture settings to specified objects
     for obj_name in apply_to_objects:
         obj = bpy.data.objects.get(obj_name)
         if obj and obj.type == 'MESH':
-            # 着色方式
+            # Shading mode
             if config["shading"] == "FLAT":
                 for poly in obj.data.polygons:
                     poly.use_smooth = False
@@ -305,14 +305,14 @@ def handle_setup(params: Dict[str, Any]) -> Dict[str, Any]:
                 for poly in obj.data.polygons:
                     poly.use_smooth = True
 
-            # 像素风格: 设置已有材质的纹理插值为Closest
+            # Pixel style: Set existing material texture interpolation to Closest
             if style == "PIXEL" and obj.data.materials:
                 for mat in obj.data.materials:
                     if mat and mat.use_nodes:
                         for node in mat.node_tree.nodes:
                             if node.type == 'TEX_IMAGE':
                                 node.interpolation = 'Closest'
-                extra_applied.append(f"{obj_name}: 纹理插值→Closest")
+                extra_applied.append(f"{obj_name}: Texture interpolation -> Closest")
 
     return {
         "success": True,
@@ -326,7 +326,7 @@ def handle_setup(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_outline(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加描边效果"""
+    """Add outline effect"""
     object_name = params.get("object_name")
     method = params.get("method", "SOLIDIFY")
     thickness = params.get("thickness", 0.02)
@@ -336,19 +336,19 @@ def handle_outline(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "INVALID_OBJECT", "message": f"对象不存在或不是网格: {object_name}"}
+            "error": {"code": "INVALID_OBJECT", "message": f"Object does not exist or is not a mesh: {object_name}"}
         }
 
     try:
         if method == "SOLIDIFY":
-            # 创建描边材质
+            # Create outline material
             outline_mat_name = f"{object_name}_Outline"
             outline_mat = bpy.data.materials.get(outline_mat_name)
             if not outline_mat:
                 outline_mat = bpy.data.materials.new(name=outline_mat_name)
                 outline_mat.use_nodes = True
                 outline_mat.use_backface_culling = True
-                # 设置为纯色
+                # Set to solid color
                 nodes = outline_mat.node_tree.nodes
                 bsdf = None
                 for node in nodes:
@@ -362,25 +362,25 @@ def handle_outline(params: Dict[str, Any]) -> Dict[str, Any]:
                     elif 'Emission' in bsdf.inputs:
                         bsdf.inputs['Emission'].default_value = (*color[:3], 1.0)
 
-            # 添加到材质槽
+            # Add to material slot
             if outline_mat_name not in [ms.material.name for ms in obj.material_slots if ms.material]:
                 obj.data.materials.append(outline_mat)
 
             outline_slot = len(obj.material_slots) - 1
 
-            # 添加Solidify修改器
+            # Add Solidify modifier
             mod = obj.modifiers.new(name="Outline", type='SOLIDIFY')
-            mod.thickness = -thickness  # 负值=向外
+            mod.thickness = -thickness  # Negative value = outward
             mod.use_flip_normals = True
             mod.use_rim = False
             mod.material_offset = outline_slot
-            mod.offset = 1.0  # 仅向外
+            mod.offset = 1.0  # Outward only
 
         elif method == "FREESTYLE":
             scene = bpy.context.scene
-            # 启用Freestyle
+            # Enable Freestyle
             scene.render.use_freestyle = True
-            # 设置Freestyle线条
+            # Configure Freestyle lines
             view_layer = bpy.context.view_layer
             if hasattr(view_layer, 'freestyle_settings'):
                 fs = view_layer.freestyle_settings
@@ -392,12 +392,12 @@ def handle_outline(params: Dict[str, Any]) -> Dict[str, Any]:
                 ls.linestyle.color = color[:3] if len(color) >= 3 else (0, 0, 0)
 
         elif method == "GREASE_PENCIL":
-            # 使用Line Art修改器(Blender 3.0+)
+            # Use Line Art modifier (Blender 3.0+)
             bpy.ops.object.gpencil_add(type='LRT_COLLECTION')
             gp_obj = bpy.context.active_object
             if gp_obj and gp_obj.type == 'GPENCIL':
                 gp_obj.name = f"{object_name}_LineArt"
-                # 设置Line Art修改器
+                # Configure Line Art modifier
                 for mod in gp_obj.grease_pencil_modifiers:
                     if mod.type == 'GP_LINEART':
                         mod.source_type = 'OBJECT'
@@ -408,7 +408,7 @@ def handle_outline(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             return {
                 "success": False,
-                "error": {"code": "UNKNOWN_METHOD", "message": f"未知描边方法: {method}"}
+                "error": {"code": "UNKNOWN_METHOD", "message": f"Unknown outline method: {method}"}
             }
 
     except Exception as e:
@@ -421,7 +421,7 @@ def handle_outline(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_bake_maps(params: Dict[str, Any]) -> Dict[str, Any]:
-    """烘焙贴图（高模→低模）"""
+    """Bake maps (high poly → low poly)"""
     high_poly_name = params.get("high_poly")
     low_poly_name = params.get("low_poly")
     maps = params.get("maps", ["NORMAL", "AO"])
@@ -436,21 +436,21 @@ def handle_bake_maps(params: Dict[str, Any]) -> Dict[str, Any]:
     if not high_obj or high_obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "INVALID_OBJECT", "message": f"高模不存在或不是网格: {high_poly_name}"}
+            "error": {"code": "INVALID_OBJECT", "message": f"High poly does not exist or is not a mesh: {high_poly_name}"}
         }
     if not low_obj or low_obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "INVALID_OBJECT", "message": f"低模不存在或不是网格: {low_poly_name}"}
+            "error": {"code": "INVALID_OBJECT", "message": f"Low poly does not exist or is not a mesh: {low_poly_name}"}
         }
 
-    # 切换到Cycles（烘焙需要）
+    # Switch to Cycles (required for baking)
     scene = bpy.context.scene
     original_engine = scene.render.engine
     scene.render.engine = 'CYCLES'
     scene.cycles.samples = 64
 
-    # 确定输出目录
+    # Determine output directory
     if not output_dir:
         blend_path = bpy.data.filepath
         if blend_path:
@@ -461,7 +461,7 @@ def handle_bake_maps(params: Dict[str, Any]) -> Dict[str, Any]:
     baked_maps = []
 
     try:
-        # 确保低模有材质
+        # Ensure low poly has a material
         if len(low_obj.data.materials) == 0:
             mat = bpy.data.materials.new(name=f"{low_poly_name}_BakeMat")
             mat.use_nodes = True
@@ -474,7 +474,7 @@ def handle_bake_maps(params: Dict[str, Any]) -> Dict[str, Any]:
         nodes = mat.node_tree.nodes
 
         for map_type in maps:
-            # 创建烘焙用图像
+            # Create image for baking
             img_name = f"{low_poly_name}_{map_type}"
             img = bpy.data.images.get(img_name)
             if img:
@@ -491,37 +491,37 @@ def handle_bake_maps(params: Dict[str, Any]) -> Dict[str, Any]:
             if is_data:
                 img.colorspace_settings.name = 'Non-Color'
 
-            # 创建图像纹理节点
+            # Create image texture node
             tex_node = nodes.new(type='ShaderNodeTexImage')
             tex_node.image = img
             tex_node.name = f"Bake_{map_type}"
             tex_node.label = f"Bake {map_type}"
 
-            # 选择该节点为active
+            # Set this node as active
             for n in nodes:
                 n.select = False
             tex_node.select = True
             nodes.active = tex_node
 
-            # 设置烘焙参数
+            # Set bake parameters
             scene.render.bake.use_selected_to_active = True
             scene.render.bake.cage_extrusion = cage_extrusion
             scene.render.bake.margin = margin
 
-            # 选择对象
+            # Select objects
             bpy.ops.object.select_all(action='DESELECT')
             high_obj.select_set(True)
             low_obj.select_set(True)
             bpy.context.view_layer.objects.active = low_obj
 
-            # 执行烘焙
+            # Execute bake
             bake_type_map = {
                 "NORMAL": "NORMAL",
                 "AO": "AO",
                 "DIFFUSE": "DIFFUSE",
                 "ROUGHNESS": "ROUGHNESS",
                 "COMBINED": "COMBINED",
-                "CURVATURE": "NORMAL",  # 曲率通过后处理
+                "CURVATURE": "NORMAL",  # Curvature via post-processing
             }
             blender_bake_type = bake_type_map.get(map_type, "NORMAL")
 
@@ -532,7 +532,7 @@ def handle_bake_maps(params: Dict[str, Any]) -> Dict[str, Any]:
 
             bpy.ops.object.bake(type=blender_bake_type)
 
-            # 保存图像
+            # Save image
             output_path = os.path.join(output_dir, f"{img_name}.png")
             img.filepath_raw = output_path
             img.file_format = 'PNG'
@@ -540,7 +540,7 @@ def handle_bake_maps(params: Dict[str, Any]) -> Dict[str, Any]:
 
             baked_maps.append({"type": map_type, "path": output_path, "resolution": resolution})
 
-            # 清理节点
+            # Clean up nodes
             nodes.remove(tex_node)
 
     except Exception as e:
@@ -550,7 +550,7 @@ def handle_bake_maps(params: Dict[str, Any]) -> Dict[str, Any]:
             "error": {"code": "BAKE_FAILED", "message": str(e)}
         }
 
-    # 恢复渲染引擎
+    # Restore render engine
     scene.render.engine = original_engine
 
     return {"success": True, "data": {"baked_maps": baked_maps}}

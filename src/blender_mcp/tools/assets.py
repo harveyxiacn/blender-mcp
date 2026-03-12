@@ -1,7 +1,7 @@
 """
-资产管理工具
+Asset Management Tools
 
-提供Blender资产库管理的MCP工具。
+MCP tools for managing Blender asset libraries.
 """
 
 from typing import Any, Dict, List, Optional
@@ -9,51 +9,51 @@ from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
 
 
-# ============ Pydantic 模型 ============
+# ============ Pydantic Models ============
 
 class AssetMarkInput(BaseModel):
-    """标记为资产"""
-    object_name: str = Field(..., description="对象名称")
-    asset_type: str = Field("OBJECT", description="资产类型: OBJECT, MATERIAL, WORLD, etc.")
-    description: str = Field("", description="资产描述")
-    tags: List[str] = Field([], description="标签列表")
+    """Mark as asset"""
+    object_name: str = Field(..., description="Object name")
+    asset_type: str = Field("OBJECT", description="Asset type: OBJECT, MATERIAL, WORLD, etc.")
+    description: str = Field("", description="Asset description")
+    tags: List[str] = Field([], description="Tag list")
 
 
 class AssetCatalogInput(BaseModel):
-    """目录操作"""
-    action: str = Field("LIST", description="操作: LIST, CREATE, DELETE")
-    catalog_name: Optional[str] = Field(None, description="目录名称")
-    parent_catalog: Optional[str] = Field(None, description="父目录")
+    """Catalog operation"""
+    action: str = Field("LIST", description="Operation: LIST, CREATE, DELETE")
+    catalog_name: Optional[str] = Field(None, description="Catalog name")
+    parent_catalog: Optional[str] = Field(None, description="Parent catalog")
 
 
 class AssetImportInput(BaseModel):
-    """导入资产"""
-    filepath: str = Field(..., description="资产文件路径")
-    asset_name: str = Field(..., description="资产名称")
-    link: bool = Field(False, description="链接而非追加")
+    """Import asset"""
+    filepath: str = Field(..., description="Asset file path")
+    asset_name: str = Field(..., description="Asset name")
+    link: bool = Field(False, description="Link instead of append")
 
 
 class AssetSearchInput(BaseModel):
-    """搜索资产"""
-    query: str = Field(..., description="搜索关键词")
-    asset_type: Optional[str] = Field(None, description="资产类型过滤")
+    """Search assets"""
+    query: str = Field(..., description="Search keyword")
+    asset_type: Optional[str] = Field(None, description="Asset type filter")
 
 
 class AssetPreviewInput(BaseModel):
-    """生成预览"""
-    object_name: str = Field(..., description="对象名称")
+    """Generate preview"""
+    object_name: str = Field(..., description="Object name")
 
 
 class AssetClearInput(BaseModel):
-    """清除资产标记"""
-    object_name: str = Field(..., description="对象名称")
+    """Clear asset mark"""
+    object_name: str = Field(..., description="Object name")
 
 
-# ============ 工具注册 ============
+# ============ Tool Registration ============
 
 def register_asset_tools(mcp: FastMCP, server):
-    """注册资产管理工具"""
-    
+    """Register asset management tools"""
+
     @mcp.tool()
     async def blender_asset_mark(
         object_name: str,
@@ -62,13 +62,13 @@ def register_asset_tools(mcp: FastMCP, server):
         tags: List[str] = []
     ) -> Dict[str, Any]:
         """
-        将对象标记为资产
-        
+        Mark an object as an asset
+
         Args:
-            object_name: 对象名称
-            asset_type: 资产类型 (OBJECT, MATERIAL, WORLD等)
-            description: 资产描述
-            tags: 标签列表
+            object_name: Object name
+            asset_type: Asset type (OBJECT, MATERIAL, WORLD, etc.)
+            description: Asset description
+            tags: Tag list
         """
         params = AssetMarkInput(
             object_name=object_name,
@@ -77,7 +77,7 @@ def register_asset_tools(mcp: FastMCP, server):
             tags=tags
         )
         return await server.send_command("assets", "mark", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_asset_catalog(
         action: str = "LIST",
@@ -85,12 +85,12 @@ def register_asset_tools(mcp: FastMCP, server):
         parent_catalog: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        资产目录操作
-        
+        Asset catalog operations
+
         Args:
-            action: 操作类型 (LIST, CREATE, DELETE)
-            catalog_name: 目录名称
-            parent_catalog: 父目录名称
+            action: Operation type (LIST, CREATE, DELETE)
+            catalog_name: Catalog name
+            parent_catalog: Parent catalog name
         """
         params = AssetCatalogInput(
             action=action,
@@ -98,7 +98,7 @@ def register_asset_tools(mcp: FastMCP, server):
             parent_catalog=parent_catalog
         )
         return await server.send_command("assets", "catalog", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_asset_import(
         filepath: str,
@@ -106,12 +106,12 @@ def register_asset_tools(mcp: FastMCP, server):
         link: bool = False
     ) -> Dict[str, Any]:
         """
-        从文件导入资产
-        
+        Import asset from file
+
         Args:
-            filepath: 资产文件路径 (.blend)
-            asset_name: 要导入的资产名称
-            link: True链接，False追加
+            filepath: Asset file path (.blend)
+            asset_name: Name of the asset to import
+            link: True to link, False to append
         """
         params = AssetImportInput(
             filepath=filepath,
@@ -119,49 +119,49 @@ def register_asset_tools(mcp: FastMCP, server):
             link=link
         )
         return await server.send_command("assets", "import", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_asset_search(
         query: str,
         asset_type: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        搜索资产
-        
+        Search assets
+
         Args:
-            query: 搜索关键词
-            asset_type: 资产类型过滤
+            query: Search keyword
+            asset_type: Asset type filter
         """
         params = AssetSearchInput(
             query=query,
             asset_type=asset_type
         )
         return await server.send_command("assets", "search", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_asset_preview(
         object_name: str
     ) -> Dict[str, Any]:
         """
-        生成资产预览图
-        
+        Generate asset preview image
+
         Args:
-            object_name: 对象名称
+            object_name: Object name
         """
         params = AssetPreviewInput(
             object_name=object_name
         )
         return await server.send_command("assets", "preview", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_asset_clear(
         object_name: str
     ) -> Dict[str, Any]:
         """
-        清除资产标记
-        
+        Clear asset mark
+
         Args:
-            object_name: 对象名称
+            object_name: Object name
         """
         params = AssetClearInput(
             object_name=object_name

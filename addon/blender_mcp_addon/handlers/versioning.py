@@ -1,7 +1,7 @@
 """
-版本控制处理器
+Version Control Handler
 
-处理Blender场景版本管理命令。
+Handles Blender scene version management commands.
 """
 
 from typing import Any, Dict, List
@@ -12,16 +12,16 @@ import shutil
 from datetime import datetime
 
 
-# 版本存储目录名
+# Version storage directory name
 VERSION_DIR = ".blender_versions"
 MANIFEST_FILE = "manifest.json"
 
 
 def _get_version_dir() -> str:
-    """获取版本控制目录"""
+    """Get version control directory"""
     blend_path = bpy.data.filepath
     if not blend_path:
-        # 使用临时目录
+        # Use temporary directory
         import tempfile
         return os.path.join(tempfile.gettempdir(), "blender_versions")
     
@@ -30,12 +30,12 @@ def _get_version_dir() -> str:
 
 
 def _get_manifest_path() -> str:
-    """获取清单文件路径"""
+    """Get manifest file path"""
     return os.path.join(_get_version_dir(), MANIFEST_FILE)
 
 
 def _load_manifest() -> Dict:
-    """加载版本清单"""
+    """Load version manifest"""
     manifest_path = _get_manifest_path()
     if os.path.exists(manifest_path):
         with open(manifest_path, 'r', encoding='utf-8') as f:
@@ -54,7 +54,7 @@ def _load_manifest() -> Dict:
 
 
 def _save_manifest(manifest: Dict):
-    """保存版本清单"""
+    """Save version manifest"""
     manifest_path = _get_manifest_path()
     os.makedirs(os.path.dirname(manifest_path), exist_ok=True)
     with open(manifest_path, 'w', encoding='utf-8') as f:
@@ -62,16 +62,16 @@ def _save_manifest(manifest: Dict):
 
 
 def _generate_version_id() -> str:
-    """生成版本ID"""
+    """Generate version ID"""
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 def handle_init(params: Dict[str, Any]) -> Dict[str, Any]:
-    """初始化版本控制"""
+    """Initialize version control"""
     project_path = params.get("project_path")
     
     try:
-        # 如果指定了项目路径，先保存文件
+        # If project path is specified, save file first
         if project_path:
             if not bpy.data.filepath:
                 blend_path = os.path.join(project_path, "scene.blend")
@@ -100,40 +100,40 @@ def handle_init(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_save(params: Dict[str, Any]) -> Dict[str, Any]:
-    """保存版本"""
+    """Save version"""
     name = params.get("name")
     description = params.get("description", "")
     create_thumbnail = params.get("create_thumbnail", True)
     
     try:
-        # 确保当前文件已保存
+        # Ensure current file is saved
         if bpy.data.is_dirty:
             bpy.ops.wm.save_mainfile()
         
         version_dir = _get_version_dir()
         manifest = _load_manifest()
         
-        # 生成版本ID
+        # Generate version ID
         version_id = _generate_version_id()
         if not name:
             name = f"v{len(manifest['branches'][manifest['current_branch']]['versions']) + 1:03d}"
         
-        # 创建版本目录
+        # Create version directory
         version_path = os.path.join(version_dir, manifest["current_branch"], version_id)
         os.makedirs(version_path, exist_ok=True)
         
-        # 复制当前文件
+        # Copy current file
         blend_path = bpy.data.filepath
         if blend_path:
             dest_blend = os.path.join(version_path, "scene.blend")
             shutil.copy2(blend_path, dest_blend)
         
-        # 创建缩略图
+        # Create thumbnail
         thumbnail_path = None
         if create_thumbnail:
             try:
                 thumbnail_path = os.path.join(version_path, "thumbnail.png")
-                # 使用 OpenGL 渲染预览
+                # Use OpenGL render preview
                 bpy.context.scene.render.filepath = thumbnail_path
                 bpy.context.scene.render.resolution_x = 256
                 bpy.context.scene.render.resolution_y = 256
@@ -141,7 +141,7 @@ def handle_save(params: Dict[str, Any]) -> Dict[str, Any]:
             except:
                 thumbnail_path = None
         
-        # 更新清单
+        # Update manifest
         version_info = {
             "id": version_id,
             "name": name,
@@ -176,7 +176,7 @@ def handle_save(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_list(params: Dict[str, Any]) -> Dict[str, Any]:
-    """列出版本"""
+    """List versions"""
     branch = params.get("branch", "main")
     limit = params.get("limit", 20)
     
@@ -186,12 +186,12 @@ def handle_list(params: Dict[str, Any]) -> Dict[str, Any]:
         if branch not in manifest["branches"]:
             return {
                 "success": False,
-                "error": {"code": "BRANCH_NOT_FOUND", "message": f"分支不存在: {branch}"}
+                "error": {"code": "BRANCH_NOT_FOUND", "message": f"Branch not found: {branch}"}
             }
         
         versions = manifest["branches"][branch]["versions"]
-        versions = versions[-limit:]  # 返回最近的版本
-        versions.reverse()  # 最新的在前
+        versions = versions[-limit:]  # Return most recent versions
+        versions.reverse()  # Newest first
         
         return {
             "success": True,
@@ -211,7 +211,7 @@ def handle_list(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_restore(params: Dict[str, Any]) -> Dict[str, Any]:
-    """恢复版本"""
+    """Restore version"""
     version_id = params.get("version_id")
     create_backup = params.get("create_backup", True)
     
@@ -220,7 +220,7 @@ def handle_restore(params: Dict[str, Any]) -> Dict[str, Any]:
         version_dir = _get_version_dir()
         branch = manifest["current_branch"]
         
-        # 查找版本
+        # Find version
         version_info = None
         for v in manifest["branches"][branch]["versions"]:
             if v["id"] == version_id:
@@ -230,21 +230,21 @@ def handle_restore(params: Dict[str, Any]) -> Dict[str, Any]:
         if not version_info:
             return {
                 "success": False,
-                "error": {"code": "VERSION_NOT_FOUND", "message": f"版本不存在: {version_id}"}
+                "error": {"code": "VERSION_NOT_FOUND", "message": f"Version not found: {version_id}"}
             }
         
-        # 创建备份
+        # Create backup
         backup_id = None
         if create_backup and bpy.data.filepath:
             backup_result = handle_save({
                 "name": f"backup_before_{version_id}",
-                "description": f"恢复到 {version_id} 前的自动备份",
+                "description": f"Auto backup before restoring to {version_id}",
                 "create_thumbnail": False
             })
             if backup_result["success"]:
                 backup_id = backup_result["data"]["version_id"]
         
-        # 恢复文件
+        # Restore file
         version_path = os.path.join(version_dir, branch, version_id)
         blend_file = os.path.join(version_path, version_info["blend_file"])
         
@@ -268,7 +268,7 @@ def handle_restore(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_compare(params: Dict[str, Any]) -> Dict[str, Any]:
-    """比较版本"""
+    """Compare versions"""
     version_id_1 = params.get("version_id_1")
     version_id_2 = params.get("version_id_2")
     
@@ -277,7 +277,7 @@ def handle_compare(params: Dict[str, Any]) -> Dict[str, Any]:
         version_dir = _get_version_dir()
         branch = manifest["current_branch"]
         
-        # 查找两个版本
+        # Find both versions
         v1_info = None
         v2_info = None
         for v in manifest["branches"][branch]["versions"]:
@@ -289,10 +289,10 @@ def handle_compare(params: Dict[str, Any]) -> Dict[str, Any]:
         if not v1_info or not v2_info:
             return {
                 "success": False,
-                "error": {"code": "VERSION_NOT_FOUND", "message": "版本不存在"}
+                "error": {"code": "VERSION_NOT_FOUND", "message": "Version not found"}
             }
         
-        # 简单的元数据比较
+        # Simple metadata comparison
         diff = {
             "version_1": {
                 "id": v1_info["id"],
@@ -327,7 +327,7 @@ def handle_compare(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_branch(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建分支"""
+    """Create branch"""
     branch_name = params.get("branch_name")
     from_version = params.get("from_version")
     
@@ -337,20 +337,20 @@ def handle_branch(params: Dict[str, Any]) -> Dict[str, Any]:
         if branch_name in manifest["branches"]:
             return {
                 "success": False,
-                "error": {"code": "BRANCH_EXISTS", "message": f"分支已存在: {branch_name}"}
+                "error": {"code": "BRANCH_EXISTS", "message": f"Branch already exists: {branch_name}"}
             }
         
-        # 创建新分支
+        # Create new branch
         current_branch = manifest["current_branch"]
         if from_version:
-            # 从指定版本创建
+            # Create from specified version
             source_versions = []
             for v in manifest["branches"][current_branch]["versions"]:
                 source_versions.append(v)
                 if v["id"] == from_version:
                     break
         else:
-            # 从当前版本创建
+            # Create from current version
             source_versions = manifest["branches"][current_branch]["versions"].copy()
         
         manifest["branches"][branch_name] = {
@@ -362,12 +362,12 @@ def handle_branch(params: Dict[str, Any]) -> Dict[str, Any]:
         
         _save_manifest(manifest)
         
-        # 创建分支目录
+        # Create branch directory
         version_dir = _get_version_dir()
         branch_path = os.path.join(version_dir, branch_name)
         os.makedirs(branch_path, exist_ok=True)
         
-        # 复制版本文件
+        # Copy version files
         if source_versions:
             for v in source_versions:
                 src = os.path.join(version_dir, current_branch, v["id"])
@@ -392,7 +392,7 @@ def handle_branch(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_branches(params: Dict[str, Any]) -> Dict[str, Any]:
-    """列出分支"""
+    """List branches"""
     try:
         manifest = _load_manifest()
         
@@ -422,7 +422,7 @@ def handle_branches(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_switch_branch(params: Dict[str, Any]) -> Dict[str, Any]:
-    """切换分支"""
+    """Switch branch"""
     branch_name = params.get("branch_name")
     
     try:
@@ -431,13 +431,13 @@ def handle_switch_branch(params: Dict[str, Any]) -> Dict[str, Any]:
         if branch_name not in manifest["branches"]:
             return {
                 "success": False,
-                "error": {"code": "BRANCH_NOT_FOUND", "message": f"分支不存在: {branch_name}"}
+                "error": {"code": "BRANCH_NOT_FOUND", "message": f"Branch not found: {branch_name}"}
             }
         
         manifest["current_branch"] = branch_name
         _save_manifest(manifest)
         
-        # 恢复到分支的 head 版本
+        # Restore to branch head version
         head = manifest["branches"][branch_name]["head"]
         if head:
             handle_restore({"version_id": head, "create_backup": False})
@@ -458,7 +458,7 @@ def handle_switch_branch(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
-    """删除版本"""
+    """Delete version"""
     version_id = params.get("version_id")
     force = params.get("force", False)
     
@@ -467,7 +467,7 @@ def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
         version_dir = _get_version_dir()
         branch = manifest["current_branch"]
         
-        # 查找版本
+        # Find version
         version_index = None
         for i, v in enumerate(manifest["branches"][branch]["versions"]):
             if v["id"] == version_id:
@@ -477,25 +477,25 @@ def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
         if version_index is None:
             return {
                 "success": False,
-                "error": {"code": "VERSION_NOT_FOUND", "message": f"版本不存在: {version_id}"}
+                "error": {"code": "VERSION_NOT_FOUND", "message": f"Version not found: {version_id}"}
             }
         
-        # 检查是否是 head
+        # Check if it is the head
         if manifest["branches"][branch]["head"] == version_id and not force:
             return {
                 "success": False,
-                "error": {"code": "CANNOT_DELETE_HEAD", "message": "不能删除当前 head 版本，使用 force=True 强制删除"}
+                "error": {"code": "CANNOT_DELETE_HEAD", "message": "Cannot delete current head version, use force=True to force delete"}
             }
         
-        # 删除文件
+        # Delete files
         version_path = os.path.join(version_dir, branch, version_id)
         if os.path.exists(version_path):
             shutil.rmtree(version_path)
         
-        # 更新清单
+        # Update manifest
         del manifest["branches"][branch]["versions"][version_index]
         
-        # 更新 head
+        # Update head
         if manifest["branches"][branch]["head"] == version_id:
             if manifest["branches"][branch]["versions"]:
                 manifest["branches"][branch]["head"] = manifest["branches"][branch]["versions"][-1]["id"]
@@ -519,7 +519,7 @@ def handle_delete(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_info(params: Dict[str, Any]) -> Dict[str, Any]:
-    """获取版本信息"""
+    """Get version info"""
     version_id = params.get("version_id")
     
     try:
@@ -538,7 +538,7 @@ def handle_info(params: Dict[str, Any]) -> Dict[str, Any]:
         
         return {
             "success": False,
-            "error": {"code": "VERSION_NOT_FOUND", "message": f"版本不存在: {version_id}"}
+            "error": {"code": "VERSION_NOT_FOUND", "message": f"Version not found: {version_id}"}
         }
     
     except Exception as e:

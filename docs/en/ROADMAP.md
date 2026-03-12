@@ -1,99 +1,40 @@
 # Blender MCP Roadmap
 
-## Overview
+## Status Date
 
-This roadmap outlines planned features and improvements for Blender MCP. The project aims to enable AI assistants to perform professional-grade 3D modeling, animation, and rendering through natural language.
+This roadmap reflects the repository state on 2026-03-10.
 
----
+## What Is Already In Place
 
-## Current Status (v0.2.0)
+- 51 server-side tool modules
+- 359 total tools in source
+- skill-based loading with 12 skill groups
+- addon hot reload support
+- training, sport-character, style preset, and procedural material modules
 
-### Completed Features
+## Priority 1: Stability And Execution Parity
 
-| Category | Tools | Status |
-|----------|-------|--------|
-| Scene Management | 6 | ✅ Complete |
-| Object Operations | 12 | ✅ Complete |
-| Mesh Modeling | 15+ | ✅ Complete |
-| Modifiers | 45 types | ✅ Complete |
-| Material System | 6 + 67 presets | ✅ Complete |
-| Lighting | 4 | ✅ Complete |
-| Camera | 4 | ✅ Complete |
-| Animation | 6 + presets | ✅ Complete |
-| Character Templates | 4 | ✅ Complete |
-| Rigging | 6 | ✅ Complete |
-| UV Mapping | 10 | ✅ Complete |
-| Style Presets | 8 styles | ✅ Complete |
-| Export (glTF/FBX/OBJ) | 3 | ✅ Complete |
-| Skill System | 3 meta-tools | ✅ Complete |
-| Procedural Materials | 67 presets | ✅ Complete |
-| Wear Effects | 7 types | ✅ Complete |
-| Mesh Baking | 6 map types | ✅ Complete |
+- finish Blender addon handlers for `pipeline` and `quality_audit`
+- add automated parity tests between MCP categories and addon handler categories
+- separate stable vs experimental modules in profile defaults
+- generate tool/profile inventory docs from source instead of hand-maintained counts
 
-### Test Results
-- Total tests: 134
-- Passed: 133 (99.3%)
+## Priority 2: Production Workflow Hardening
 
----
+- add queued long-running jobs for bake, render, and export operations
+- add progress reporting and cancellation for expensive tasks
+- formalize reusable asset build recipes for characters, props, and scenes
+- add preset bundles for web, mobile, desktop, and hero-quality outputs
 
-## Phase 1: Core Enhancement (Next)
+## Priority 3: Audit To Auto-Fix Loop
 
-### 1.1 Improved Character System
-- Enhanced face modeling tools
-- Hair particle system integration
-- Clothing simulation presets
-- More character templates (anime, realistic, mascot)
+- turn quality audits into guided repair workflows
+- add optional auto-fixes for UV overlap, naming, export settings, and topology hygiene
+- add release checks before GLB/FBX export
 
-### 1.2 Scene Composition
-- HDR environment maps
-- Fog and atmospheric effects
-- Camera animation presets (orbit, dolly, crane)
+## Priority 4: Asset And Collaboration Layer
 
-### 1.3 Render Pipeline
-- Render presets (product shot, portrait, landscape)
-- Multi-pass compositing
-- Batch rendering
-
----
-
-## Phase 2: Advanced Features
-
-### 2.1 Geometry Nodes Integration
-- Parametric modeling through node graphs
-- Procedural scatter/distribution
-- Geometry-based animation
-
-### 2.2 Grease Pencil / 2D Animation
-- 2D drawing tools
-- Frame-by-frame animation
-- 2D/3D hybrid workflows
-
-### 2.3 Video Editing (VSE)
-- Timeline management
-- Clip assembly
-- Transitions and effects
-
----
-
-## Phase 3: Production Pipeline
-
-### 3.1 Asset Management
-- Asset browser integration
-- Library linking
-- Asset tagging and search
-
-### 3.2 Collaboration
-- Multi-user scene editing
-- Version control integration
-- Review and annotation tools
-
-### 3.3 Plugin Ecosystem
-- Custom skill creation API
-- Community skill marketplace
-- Plugin hot-loading
-
----
-
-## Contributing
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for how to help build these features.
+- scene/package diff summaries for review
+- richer asset metadata and search flows
+- handoff bundles for review, export, and downstream engine ingest
+- cloud render / collaboration modules backed by real job orchestration

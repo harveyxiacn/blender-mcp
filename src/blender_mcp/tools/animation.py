@@ -1,7 +1,7 @@
 """
-动画工具
+Animation Tools
 
-提供关键帧动画和时间线控制功能。
+Provides keyframe animation and timeline control features.
 """
 
 from typing import TYPE_CHECKING, Optional, Any
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class InterpolationType(str, Enum):
-    """插值类型"""
+    """Interpolation type"""
     CONSTANT = "CONSTANT"
     LINEAR = "LINEAR"
     BEZIER = "BEZIER"
@@ -31,105 +31,105 @@ class InterpolationType(str, Enum):
     ELASTIC = "ELASTIC"
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class KeyframeInsertInput(BaseModel):
-    """插入关键帧输入"""
-    object_name: str = Field(..., description="对象名称")
-    data_path: str = Field(..., description="数据路径（如 location, rotation_euler, scale）")
-    frame: Optional[int] = Field(default=None, description="帧编号，为空则使用当前帧")
-    value: Optional[Any] = Field(default=None, description="属性值")
+    """Insert keyframe input"""
+    object_name: str = Field(..., description="Object name")
+    data_path: str = Field(..., description="Data path (e.g. location, rotation_euler, scale)")
+    frame: Optional[int] = Field(default=None, description="Frame number, uses current frame if empty")
+    value: Optional[Any] = Field(default=None, description="Property value")
 
 
 class KeyframeDeleteInput(BaseModel):
-    """删除关键帧输入"""
-    object_name: str = Field(..., description="对象名称")
-    data_path: str = Field(..., description="数据路径")
-    frame: Optional[int] = Field(default=None, description="帧编号")
+    """Delete keyframe input"""
+    object_name: str = Field(..., description="Object name")
+    data_path: str = Field(..., description="Data path")
+    frame: Optional[int] = Field(default=None, description="Frame number")
 
 
 class AnimationSetInterpolationInput(BaseModel):
-    """设置插值类型输入"""
-    object_name: str = Field(..., description="对象名称")
-    interpolation: InterpolationType = Field(..., description="插值类型")
+    """Set interpolation type input"""
+    object_name: str = Field(..., description="Object name")
+    interpolation: InterpolationType = Field(..., description="Interpolation type")
 
 
 class TimelineSetRangeInput(BaseModel):
-    """设置时间线范围输入"""
-    frame_start: Optional[int] = Field(default=None, description="起始帧", ge=0)
-    frame_end: Optional[int] = Field(default=None, description="结束帧", ge=1)
-    frame_current: Optional[int] = Field(default=None, description="当前帧", ge=0)
+    """Set timeline range input"""
+    frame_start: Optional[int] = Field(default=None, description="Start frame", ge=0)
+    frame_end: Optional[int] = Field(default=None, description="End frame", ge=1)
+    frame_current: Optional[int] = Field(default=None, description="Current frame", ge=0)
 
 
 class TimelineGotoFrameInput(BaseModel):
-    """跳转到帧输入"""
-    frame: int = Field(..., description="目标帧", ge=0)
+    """Go to frame input"""
+    frame: int = Field(..., description="Target frame", ge=0)
 
 
 class AnimationBakeInput(BaseModel):
-    """烘焙动画输入"""
-    object_name: str = Field(..., description="对象名称")
-    frame_start: Optional[int] = Field(default=None, description="起始帧")
-    frame_end: Optional[int] = Field(default=None, description="结束帧")
-    step: int = Field(default=1, description="帧步长", ge=1)
-    bake_location: bool = Field(default=True, description="烘焙位置")
-    bake_rotation: bool = Field(default=True, description="烘焙旋转")
-    bake_scale: bool = Field(default=True, description="烘焙缩放")
+    """Bake animation input"""
+    object_name: str = Field(..., description="Object name")
+    frame_start: Optional[int] = Field(default=None, description="Start frame")
+    frame_end: Optional[int] = Field(default=None, description="End frame")
+    step: int = Field(default=1, description="Frame step", ge=1)
+    bake_location: bool = Field(default=True, description="Bake location")
+    bake_rotation: bool = Field(default=True, description="Bake rotation")
+    bake_scale: bool = Field(default=True, description="Bake scale")
 
 
 class ActionCreateInput(BaseModel):
-    """创建动作输入"""
-    armature_name: str = Field(..., description="骨架名称")
-    action_name: str = Field(default="Action", description="动作名称")
-    fake_user: bool = Field(default=True, description="设置假用户（防止被清理）")
+    """Create action input"""
+    armature_name: str = Field(..., description="Armature name")
+    action_name: str = Field(default="Action", description="Action name")
+    fake_user: bool = Field(default=True, description="Set fake user (prevent cleanup)")
 
 
 class BoneKeyframe(BaseModel):
-    """骨骼关键帧数据"""
-    frame: int = Field(..., description="帧号")
-    bone: str = Field(..., description="骨骼名称")
-    location: Optional[list] = Field(default=None, description="位置 [x, y, z]")
-    rotation: Optional[list] = Field(default=None, description="旋转欧拉角 [x, y, z]")
-    rotation_quaternion: Optional[list] = Field(default=None, description="四元数旋转 [w, x, y, z]")
-    scale: Optional[list] = Field(default=None, description="缩放 [x, y, z]")
+    """Bone keyframe data"""
+    frame: int = Field(..., description="Frame number")
+    bone: str = Field(..., description="Bone name")
+    location: Optional[list] = Field(default=None, description="Location [x, y, z]")
+    rotation: Optional[list] = Field(default=None, description="Euler rotation [x, y, z]")
+    rotation_quaternion: Optional[list] = Field(default=None, description="Quaternion rotation [w, x, y, z]")
+    scale: Optional[list] = Field(default=None, description="Scale [x, y, z]")
 
 
 class ActionCreateFromPosesInput(BaseModel):
-    """从姿势创建动作输入"""
-    armature_name: str = Field(..., description="骨架名称")
-    action_name: str = Field(default="Action", description="动作名称")
-    keyframes: list = Field(..., description="关键帧数据列表 [{frame, bone, location, rotation, scale}, ...]")
-    fake_user: bool = Field(default=True, description="设置假用户")
+    """Create action from poses input"""
+    armature_name: str = Field(..., description="Armature name")
+    action_name: str = Field(default="Action", description="Action name")
+    keyframes: list = Field(..., description="Keyframe data list [{frame, bone, location, rotation, scale}, ...]")
+    fake_user: bool = Field(default=True, description="Set fake user")
 
 
 class ActionListInput(BaseModel):
-    """列出动作输入"""
-    armature_name: Optional[str] = Field(default=None, description="骨架名称（可选）")
+    """List actions input"""
+    armature_name: Optional[str] = Field(default=None, description="Armature name (optional)")
 
 
 class ActionAssignInput(BaseModel):
-    """分配动作输入"""
-    armature_name: str = Field(..., description="骨架名称")
-    action_name: str = Field(..., description="动作名称")
+    """Assign action input"""
+    armature_name: str = Field(..., description="Armature name")
+    action_name: str = Field(..., description="Action name")
 
 
 class NLAPushActionInput(BaseModel):
-    """推送动作到 NLA 输入"""
-    armature_name: str = Field(..., description="骨架名称")
-    action_name: Optional[str] = Field(default=None, description="动作名称（为空使用当前动作）")
-    track_name: str = Field(default="NLATrack", description="NLA 轨道名称")
-    start_frame: int = Field(default=1, description="开始帧")
+    """Push action to NLA input"""
+    armature_name: str = Field(..., description="Armature name")
+    action_name: Optional[str] = Field(default=None, description="Action name (uses current action if empty)")
+    track_name: str = Field(default="NLATrack", description="NLA track name")
+    start_frame: int = Field(default=1, description="Start frame")
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册动画工具"""
-    
+    """Register animation tools"""
+
     @mcp.tool(
         name="blender_keyframe_insert",
         annotations={
-            "title": "插入关键帧",
+            "title": "Insert Keyframe",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -137,21 +137,21 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_keyframe_insert(params: KeyframeInsertInput) -> str:
-        """插入关键帧。
-        
-        为对象的指定属性插入关键帧。
-        
-        常用数据路径：
-        - location: 位置
-        - rotation_euler: 欧拉旋转
-        - scale: 缩放
-        - location[0]: X 位置
-        
+        """Insert a keyframe.
+
+        Insert a keyframe for the specified property of an object.
+
+        Common data paths:
+        - location: Position
+        - rotation_euler: Euler rotation
+        - scale: Scale
+        - location[0]: X position
+
         Args:
-            params: 对象名称、数据路径、帧号、值
-            
+            params: Object name, data path, frame number, value
+
         Returns:
-            插入结果
+            Insertion result
         """
         result = await server.execute_command(
             "animation", "keyframe_insert",
@@ -162,17 +162,17 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "value": params.value
             }
         )
-        
+
         if result.get("success"):
-            frame = params.frame or result.get("data", {}).get("frame", "当前")
-            return f"已在第 {frame} 帧为 '{params.object_name}' 的 {params.data_path} 插入关键帧"
+            frame = params.frame or result.get("data", {}).get("frame", "current")
+            return f"Inserted keyframe for '{params.object_name}' {params.data_path} at frame {frame}"
         else:
-            return f"插入关键帧失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to insert keyframe: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_keyframe_delete",
         annotations={
-            "title": "删除关键帧",
+            "title": "Delete Keyframe",
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
@@ -180,13 +180,13 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_keyframe_delete(params: KeyframeDeleteInput) -> str:
-        """删除关键帧。
-        
+        """Delete a keyframe.
+
         Args:
-            params: 对象名称、数据路径、帧号
-            
+            params: Object name, data path, frame number
+
         Returns:
-            删除结果
+            Deletion result
         """
         result = await server.execute_command(
             "animation", "keyframe_delete",
@@ -196,16 +196,16 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "frame": params.frame
             }
         )
-        
+
         if result.get("success"):
-            return f"已删除关键帧"
+            return f"Keyframe deleted"
         else:
-            return f"删除关键帧失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to delete keyframe: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_animation_set_interpolation",
         annotations={
-            "title": "设置插值类型",
+            "title": "Set Interpolation Type",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -213,15 +213,15 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_animation_set_interpolation(params: AnimationSetInterpolationInput) -> str:
-        """设置关键帧的插值类型。
-        
-        支持的插值类型包括：常量、线性、贝塞尔、缓动等。
-        
+        """Set the interpolation type for keyframes.
+
+        Supported interpolation types include: constant, linear, bezier, easing, etc.
+
         Args:
-            params: 对象名称和插值类型
-            
+            params: Object name and interpolation type
+
         Returns:
-            设置结果
+            Setting result
         """
         result = await server.execute_command(
             "animation", "set_interpolation",
@@ -230,16 +230,16 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "interpolation": params.interpolation.value
             }
         )
-        
+
         if result.get("success"):
-            return f"已将 '{params.object_name}' 的插值类型设为 {params.interpolation.value}"
+            return f"Set interpolation type for '{params.object_name}' to {params.interpolation.value}"
         else:
-            return f"设置插值失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to set interpolation: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_timeline_set_range",
         annotations={
-            "title": "设置时间线范围",
+            "title": "Set Timeline Range",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -247,15 +247,15 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_timeline_set_range(params: TimelineSetRangeInput) -> str:
-        """设置时间线范围。
-        
-        可以设置起始帧、结束帧和当前帧。
-        
+        """Set the timeline range.
+
+        Can set start frame, end frame, and current frame.
+
         Args:
-            params: 帧范围设置
-            
+            params: Frame range settings
+
         Returns:
-            设置结果
+            Setting result
         """
         settings = {}
         if params.frame_start is not None:
@@ -264,24 +264,24 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             settings["frame_end"] = params.frame_end
         if params.frame_current is not None:
             settings["frame_current"] = params.frame_current
-        
+
         if not settings:
-            return "没有指定任何设置"
-        
+            return "No settings specified"
+
         result = await server.execute_command(
             "animation", "timeline_set_range",
             settings
         )
-        
+
         if result.get("success"):
-            return f"时间线范围已更新"
+            return f"Timeline range updated"
         else:
-            return f"设置时间线失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to set timeline: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_timeline_goto_frame",
         annotations={
-            "title": "跳转到帧",
+            "title": "Go to Frame",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -289,28 +289,28 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_timeline_goto_frame(params: TimelineGotoFrameInput) -> str:
-        """跳转到指定帧。
-        
+        """Go to the specified frame.
+
         Args:
-            params: 目标帧号
-            
+            params: Target frame number
+
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "animation", "goto_frame",
             {"frame": params.frame}
         )
-        
+
         if result.get("success"):
-            return f"已跳转到第 {params.frame} 帧"
+            return f"Jumped to frame {params.frame}"
         else:
-            return f"跳转失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to jump: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_animation_bake",
         annotations={
-            "title": "烘焙动画",
+            "title": "Bake Animation",
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
@@ -318,15 +318,15 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_animation_bake(params: AnimationBakeInput) -> str:
-        """烘焙动画。
-        
-        将约束、驱动器等转换为关键帧动画。
-        
+        """Bake animation.
+
+        Convert constraints, drivers, etc. into keyframe animation.
+
         Args:
-            params: 烘焙参数
-            
+            params: Bake parameters
+
         Returns:
-            烘焙结果
+            Bake result
         """
         result = await server.execute_command(
             "animation", "bake",
@@ -340,18 +340,18 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "bake_scale": params.bake_scale
             }
         )
-        
+
         if result.get("success"):
-            return f"已为 '{params.object_name}' 烘焙动画"
+            return f"Baked animation for '{params.object_name}'"
         else:
-            return f"烘焙动画失败: {result.get('error', {}).get('message', '未知错误')}"
-    
-    # ==================== 动画动作工具 ====================
-    
+            return f"Failed to bake animation: {result.get('error', {}).get('message', 'unknown error')}"
+
+    # ==================== Animation Action Tools ====================
+
     @mcp.tool(
         name="blender_action_create",
         annotations={
-            "title": "创建动画动作",
+            "title": "Create Animation Action",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -359,15 +359,15 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_action_create(params: ActionCreateInput) -> str:
-        """创建新的动画动作。
-        
-        动作是一组关键帧数据，可以在不同骨架之间复用。
-        
+        """Create a new animation action.
+
+        An action is a set of keyframe data that can be reused across different armatures.
+
         Args:
-            params: 骨架名称、动作名称
-            
+            params: Armature name, action name
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "animation", "action_create",
@@ -377,17 +377,17 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "fake_user": params.fake_user
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            return f"已创建动作 '{data.get('action_name', params.action_name)}' 并分配给 '{params.armature_name}'"
+            return f"Created action '{data.get('action_name', params.action_name)}' and assigned to '{params.armature_name}'"
         else:
-            return f"创建动作失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to create action: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_action_create_from_poses",
         annotations={
-            "title": "从姿势创建动作",
+            "title": "Create Action from Poses",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -395,25 +395,25 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_action_create_from_poses(params: ActionCreateFromPosesInput) -> str:
-        """从姿势列表批量创建动画关键帧。
-        
-        用于快速创建动画序列，如待机、击球、跳跃等动作。
-        
-        关键帧格式：
+        """Batch create animation keyframes from a list of poses.
+
+        Used to quickly create animation sequences such as idle, attack, jump actions.
+
+        Keyframe format:
         [{
-            "frame": 帧号,
-            "bone": "骨骼名称",
-            "location": [x, y, z],      # 可选
-            "rotation": [x, y, z],       # 欧拉角，可选
-            "rotation_quaternion": [w, x, y, z],  # 四元数，可选
-            "scale": [x, y, z]           # 可选
+            "frame": frame number,
+            "bone": "bone name",
+            "location": [x, y, z],      # optional
+            "rotation": [x, y, z],       # Euler angles, optional
+            "rotation_quaternion": [w, x, y, z],  # quaternion, optional
+            "scale": [x, y, z]           # optional
         }, ...]
-        
+
         Args:
-            params: 骨架名称、动作名称、关键帧列表
-            
+            params: Armature name, action name, keyframe list
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "animation", "action_create_from_poses",
@@ -424,18 +424,18 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "fake_user": params.fake_user
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
             bones = data.get("bones_animated", [])
-            return f"已创建动作 '{data.get('action_name', params.action_name)}'，包含 {data.get('keyframe_count', 0)} 个关键帧，涉及骨骼: {', '.join(bones) if bones else 'N/A'}"
+            return f"Created action '{data.get('action_name', params.action_name)}' with {data.get('keyframe_count', 0)} keyframes, bones: {', '.join(bones) if bones else 'N/A'}"
         else:
-            return f"创建动作失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to create action: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_action_list",
         annotations={
-            "title": "列出动画动作",
+            "title": "List Animation Actions",
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -443,39 +443,39 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_action_list(params: ActionListInput) -> str:
-        """列出所有动画动作。
-        
+        """List all animation actions.
+
         Args:
-            params: 可选的骨架名称过滤
-            
+            params: Optional armature name filter
+
         Returns:
-            动作列表
+            Action list
         """
         result = await server.execute_command(
             "animation", "action_list",
             {"armature_name": params.armature_name}
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
             actions = data.get("actions", [])
-            
+
             if not actions:
-                return "没有找到任何动作"
-            
-            lines = ["# 动画动作列表", ""]
+                return "No actions found"
+
+            lines = ["# Animation Action List", ""]
             for action in actions:
                 status = "📌" if action.get("fake_user") else "  "
-                lines.append(f"{status} **{action['name']}** (帧: {action['frame_start']:.0f}-{action['frame_end']:.0f})")
-            
+                lines.append(f"{status} **{action['name']}** (frames: {action['frame_start']:.0f}-{action['frame_end']:.0f})")
+
             return "\n".join(lines)
         else:
-            return f"获取动作列表失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to get action list: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_action_assign",
         annotations={
-            "title": "分配动画动作",
+            "title": "Assign Animation Action",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -483,13 +483,13 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_action_assign(params: ActionAssignInput) -> str:
-        """将动画动作分配给骨架。
-        
+        """Assign an animation action to an armature.
+
         Args:
-            params: 骨架名称、动作名称
-            
+            params: Armature name, action name
+
         Returns:
-            分配结果
+            Assignment result
         """
         result = await server.execute_command(
             "animation", "action_assign",
@@ -498,16 +498,16 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "action_name": params.action_name
             }
         )
-        
+
         if result.get("success"):
-            return f"已将动作 '{params.action_name}' 分配给 '{params.armature_name}'"
+            return f"Assigned action '{params.action_name}' to '{params.armature_name}'"
         else:
-            return f"分配动作失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to assign action: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_nla_push_action",
         annotations={
-            "title": "推送动作到 NLA",
+            "title": "Push Action to NLA",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -515,15 +515,15 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_nla_push_action(params: NLAPushActionInput) -> str:
-        """将动作推送到 NLA 轨道。
-        
-        NLA（非线性动画）允许混合和排列多个动作。
-        
+        """Push an action to an NLA track.
+
+        NLA (Non-Linear Animation) allows blending and sequencing multiple actions.
+
         Args:
-            params: 骨架名称、动作名称、轨道名称、开始帧
-            
+            params: Armature name, action name, track name, start frame
+
         Returns:
-            推送结果
+            Push result
         """
         result = await server.execute_command(
             "animation", "nla_push_action",
@@ -534,9 +534,9 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "start_frame": params.start_frame
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            return f"已将动作 '{data.get('action_name', 'N/A')}' 推送到 NLA 轨道 '{data.get('track_name', params.track_name)}'"
+            return f"Pushed action '{data.get('action_name', 'N/A')}' to NLA track '{data.get('track_name', params.track_name)}'"
         else:
-            return f"推送动作失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Failed to push action: {result.get('error', {}).get('message', 'unknown error')}"

@@ -1,7 +1,7 @@
 """
-Blender MCP 工具模块
+Blender MCP Tools Module
 
-提供所有 MCP 工具的注册函数。
+Provides registration functions for all MCP tools.
 """
 
 from blender_mcp.tools.scene import register_scene_tools

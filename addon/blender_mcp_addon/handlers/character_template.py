@@ -1,7 +1,7 @@
 """
-角色模板处理器
+Character template handler
 
-处理角色模板创建、面部表情、服装、发型等命令。
+Handles character template creation, facial expressions, clothing, hairstyle and related commands.
 """
 
 from typing import Any, Dict, List
@@ -11,7 +11,7 @@ from .node_utils import find_principled_bsdf as get_principled_bsdf
 import math
 
 
-# ==================== 模板配置 ====================
+# ==================== Template Configuration ====================
 
 TEMPLATE_CONFIG = {
     "chibi": {
@@ -70,7 +70,7 @@ EXPRESSION_CONFIG = {
 
 
 def _create_material(name: str, color: List[float], metallic: float = 0.0, roughness: float = 0.5):
-    """创建材质"""
+    """Create material"""
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     
@@ -84,7 +84,7 @@ def _create_material(name: str, color: List[float], metallic: float = 0.0, rough
 
 
 def _assign_material(obj, material):
-    """为对象分配材质"""
+    """Assign material to object"""
     if obj.data.materials:
         obj.data.materials[0] = material
     else:
@@ -92,7 +92,7 @@ def _assign_material(obj, material):
 
 
 def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
-    """从模板创建角色"""
+    """Create character from template"""
     template = params.get("template", "chibi")
     name = params.get("name", "Character")
     height = params.get("height", 1.7)
@@ -102,15 +102,15 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
     
     config = TEMPLATE_CONFIG.get(template, TEMPLATE_CONFIG["chibi"])
     
-    # 计算缩放系数
+    # Calculate scale factor
     scale_factor = height / 1.7
     
     created_parts = []
     
-    # 创建皮肤材质
+    # Create skin material
     skin_mat = _create_material(f"{name}_Skin", skin_color, roughness=0.8)
     
-    # ========== 头部 ==========
+    # ========== Head ==========
     head_z = location[2] + height * (1 - 1/config["head_body_ratio"])
     bpy.ops.mesh.primitive_uv_sphere_add(
         radius=0.25 * scale_factor * config["head_scale"][0],
@@ -126,7 +126,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
     _assign_material(head, skin_mat)
     created_parts.append(head.name)
     
-    # ========== 身体 ==========
+    # ========== Body ==========
     body_z = location[2] + height * 0.4
     bpy.ops.mesh.primitive_cube_add(location=[location[0], location[1], body_z])
     body = bpy.context.active_object
@@ -139,7 +139,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
     _assign_material(body, skin_mat)
     created_parts.append(body.name)
     
-    # ========== 眼睛 ==========
+    # ========== Eyes ==========
     eye_mat = _create_material(f"{name}_Eye", [0.05, 0.02, 0.0, 1.0], roughness=0.3)
     eye_highlight_mat = _create_material(f"{name}_EyeHighlight", [1.0, 1.0, 1.0, 1.0], roughness=0.2)
     
@@ -149,7 +149,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
     eye_z = head_z + 0.02 * scale_factor
     
     for side, x_offset in [("L", -eye_spacing), ("R", eye_spacing)]:
-        # 眼球
+        # Eyeball
         bpy.ops.mesh.primitive_uv_sphere_add(
             radius=eye_size,
             location=[location[0] + x_offset, location[1] + eye_y, eye_z]
@@ -160,7 +160,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
         _assign_material(eye, eye_mat)
         created_parts.append(eye.name)
         
-        # 高光
+        # Highlight
         bpy.ops.mesh.primitive_uv_sphere_add(
             radius=eye_size * 0.25,
             location=[location[0] + x_offset + eye_size * 0.3, location[1] + eye_y - eye_size * 0.3, eye_z + eye_size * 0.3]
@@ -170,7 +170,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
         _assign_material(highlight, eye_highlight_mat)
         created_parts.append(highlight.name)
     
-    # ========== 手臂 ==========
+    # ========== Arms ==========
     arm_mat = skin_mat
     arm_length = height * 0.25
     arm_y = body_z
@@ -187,7 +187,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
         _assign_material(arm, arm_mat)
         created_parts.append(arm.name)
         
-        # 手
+        # Hand
         hand_x = location[0] + x_offset + (0.15 if side == "R" else -0.15) * scale_factor
         bpy.ops.mesh.primitive_uv_sphere_add(
             radius=config["limb_thickness"] * scale_factor * 0.6,
@@ -198,7 +198,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
         _assign_material(hand, skin_mat)
         created_parts.append(hand.name)
     
-    # ========== 腿部 ==========
+    # ========== Legs ==========
     leg_length = height * 0.3
     leg_z = location[2] + leg_length * 0.5
     
@@ -213,7 +213,7 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
         _assign_material(leg, skin_mat)
         created_parts.append(leg.name)
         
-        # 脚
+        # Foot
         bpy.ops.mesh.primitive_cube_add(
             location=[location[0] + x_offset, location[1] - 0.03 * scale_factor, location[2] + 0.03 * scale_factor]
         )
@@ -235,21 +235,21 @@ def handle_create(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_face_expression(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置面部表情"""
+    """Set facial expression"""
     character_name = params.get("character_name")
     expression = params.get("expression", "neutral")
     intensity = params.get("intensity", 1.0)
     
     config = EXPRESSION_CONFIG.get(expression, EXPRESSION_CONFIG["neutral"])
     
-    # 调整眼睛
+    # Adjust eyes
     for side in ["L", "R"]:
         eye = bpy.data.objects.get(f"{character_name}_Eye_{side}")
         if eye:
             base_scale = eye.scale.copy()
             eye.scale[2] = base_scale[2] * (1.0 + (config["eye_scale"] - 1.0) * intensity)
     
-    # 如果有嘴巴对象，可以调整
+    # If mouth object exists, adjust it
     mouth = bpy.data.objects.get(f"{character_name}_Mouth")
     if mouth:
         mouth.scale[0] = 1.0 + config["mouth_curve"] * intensity
@@ -264,12 +264,12 @@ def handle_face_expression(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_face_setup(params: Dict[str, Any]) -> Dict[str, Any]:
-    """调整面部特征"""
+    """Adjust facial features"""
     character_name = params.get("character_name")
     eye_size = params.get("eye_size", 1.0)
     eye_spacing = params.get("eye_spacing", 1.0)
     
-    # 调整眼睛大小
+    # Adjust eye size
     for side in ["L", "R"]:
         eye = bpy.data.objects.get(f"{character_name}_Eye_{side}")
         if eye:
@@ -279,7 +279,7 @@ def handle_face_setup(params: Dict[str, Any]) -> Dict[str, Any]:
         if highlight:
             highlight.scale *= eye_size
     
-    # 调整眼睛间距
+    # Adjust eye spacing
     eye_l = bpy.data.objects.get(f"{character_name}_Eye_L")
     eye_r = bpy.data.objects.get(f"{character_name}_Eye_R")
     if eye_l and eye_r:
@@ -295,7 +295,7 @@ def handle_face_setup(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_clothing_add(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加服装"""
+    """Add clothing"""
     character_name = params.get("character_name")
     clothing_type = params.get("clothing_type", "shirt")
     color = params.get("color") or [0.2, 0.4, 0.8, 1.0]
@@ -305,13 +305,13 @@ def handle_clothing_add(params: Dict[str, Any]) -> Dict[str, Any]:
     if not body:
         return {
             "success": False,
-            "error": {"code": "BODY_NOT_FOUND", "message": f"找不到角色身体: {character_name}_Body"}
+            "error": {"code": "BODY_NOT_FOUND", "message": f"Character body not found: {character_name}_Body"}
         }
     
     clothing_mat = _create_material(f"{character_name}_{clothing_type}", color, roughness=0.6)
     
     if clothing_type in ["shirt", "jacket", "uniform", "sportswear"]:
-        # 上衣 - 包裹身体
+        # Top - wraps body
         bpy.ops.mesh.primitive_cube_add(location=body.location)
         clothing = bpy.context.active_object
         clothing.name = f"{character_name}_Clothing_{clothing_type}"
@@ -319,7 +319,7 @@ def handle_clothing_add(params: Dict[str, Any]) -> Dict[str, Any]:
         _assign_material(clothing, clothing_mat)
         
     elif clothing_type == "pants":
-        # 裤子 - 包裹腿部
+        # Pants - wraps legs
         for side in ["L", "R"]:
             leg = bpy.data.objects.get(f"{character_name}_Leg_{side}")
             if leg:
@@ -333,7 +333,7 @@ def handle_clothing_add(params: Dict[str, Any]) -> Dict[str, Any]:
                 _assign_material(pants, clothing_mat)
     
     elif clothing_type == "dress":
-        # 连衣裙
+        # Dress
         bpy.ops.mesh.primitive_cone_add(
             radius1=body.scale[0] * 2,
             radius2=body.scale[0] * 0.8,
@@ -353,7 +353,7 @@ def handle_clothing_add(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_hair_create(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建发型"""
+    """Create hairstyle"""
     character_name = params.get("character_name")
     hair_style = params.get("hair_style", "short")
     color = params.get("color") or [0.05, 0.03, 0.02, 1.0]
@@ -363,7 +363,7 @@ def handle_hair_create(params: Dict[str, Any]) -> Dict[str, Any]:
     if not head:
         return {
             "success": False,
-            "error": {"code": "HEAD_NOT_FOUND", "message": f"找不到角色头部: {character_name}_Head"}
+            "error": {"code": "HEAD_NOT_FOUND", "message": f"Character head not found: {character_name}_Head"}
         }
     
     hair_mat = _create_material(f"{character_name}_Hair", color, roughness=0.7)
@@ -391,7 +391,7 @@ def handle_hair_create(params: Dict[str, Any]) -> Dict[str, Any]:
         _assign_material(hair, hair_mat)
         
     elif hair_style == "long":
-        # 头顶
+        # Top of head
         bpy.ops.mesh.primitive_uv_sphere_add(
             radius=head.dimensions[0] * 0.55 * volume,
             location=[head.location[0], head.location[1], hair_z]
@@ -401,7 +401,7 @@ def handle_hair_create(params: Dict[str, Any]) -> Dict[str, Any]:
         hair_top.scale = [1.0, 1.0, 0.6]
         _assign_material(hair_top, hair_mat)
         
-        # 后面长发
+        # Long hair at the back
         bpy.ops.mesh.primitive_cylinder_add(
             radius=head.dimensions[0] * 0.4 * volume,
             depth=head.dimensions[2] * 1.5,
@@ -412,7 +412,7 @@ def handle_hair_create(params: Dict[str, Any]) -> Dict[str, Any]:
         _assign_material(hair_back, hair_mat)
         
     elif hair_style == "ponytail":
-        # 头顶
+        # Top of head
         bpy.ops.mesh.primitive_uv_sphere_add(
             radius=head.dimensions[0] * 0.55 * volume,
             location=[head.location[0], head.location[1], hair_z]
@@ -422,7 +422,7 @@ def handle_hair_create(params: Dict[str, Any]) -> Dict[str, Any]:
         hair_top.scale = [1.0, 1.0, 0.6]
         _assign_material(hair_top, hair_mat)
         
-        # 马尾
+        # Ponytail
         bpy.ops.mesh.primitive_cylinder_add(
             radius=head.dimensions[0] * 0.15 * volume,
             depth=head.dimensions[2] * 1.2,
@@ -434,7 +434,7 @@ def handle_hair_create(params: Dict[str, Any]) -> Dict[str, Any]:
         _assign_material(ponytail, hair_mat)
         
     elif hair_style == "spiky":
-        # 尖刺发型
+        # Spiky hairstyle
         for i in range(8):
             angle = i * (2 * math.pi / 8)
             x = head.location[0] + math.cos(angle) * head.dimensions[0] * 0.3
@@ -452,7 +452,7 @@ def handle_hair_create(params: Dict[str, Any]) -> Dict[str, Any]:
             _assign_material(spike, hair_mat)
     
     elif hair_style == "bald":
-        # 光头不需要创建头发
+        # Bald - no hair needed
         pass
     
     return {
@@ -464,7 +464,7 @@ def handle_hair_create(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_accessory_add(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加配饰"""
+    """Add accessory"""
     character_name = params.get("character_name")
     accessory_type = params.get("accessory_type", "glasses")
     color = params.get("color") or [0.1, 0.1, 0.1, 1.0]
@@ -476,7 +476,7 @@ def handle_accessory_add(params: Dict[str, Any]) -> Dict[str, Any]:
     accessory_mat = _create_material(f"{character_name}_{accessory_type}", color, metallic=0.5, roughness=0.3)
     
     if accessory_type == "glasses" and head:
-        # 眼镜框
+        # Glasses frame
         for side, x_offset in [("L", -0.08), ("R", 0.08)]:
             bpy.ops.mesh.primitive_torus_add(
                 major_radius=0.04,
@@ -488,7 +488,7 @@ def handle_accessory_add(params: Dict[str, Any]) -> Dict[str, Any]:
             frame.rotation_euler = [1.57, 0, 0]
             _assign_material(frame, accessory_mat)
         
-        # 镜腿
+        # Glasses bridge
         bpy.ops.mesh.primitive_cylinder_add(
             radius=0.003,
             depth=0.15,
@@ -500,7 +500,7 @@ def handle_accessory_add(params: Dict[str, Any]) -> Dict[str, Any]:
         _assign_material(bridge, accessory_mat)
         
     elif accessory_type == "hat" and head:
-        # 帽子
+        # Hat
         bpy.ops.mesh.primitive_cylinder_add(
             radius=head.dimensions[0] * 0.6,
             depth=head.dimensions[2] * 0.3,
@@ -510,7 +510,7 @@ def handle_accessory_add(params: Dict[str, Any]) -> Dict[str, Any]:
         hat.name = f"{character_name}_Hat"
         _assign_material(hat, accessory_mat)
         
-        # 帽檐
+        # Hat brim
         bpy.ops.mesh.primitive_cylinder_add(
             radius=head.dimensions[0] * 0.8,
             depth=0.02,
@@ -521,7 +521,7 @@ def handle_accessory_add(params: Dict[str, Any]) -> Dict[str, Any]:
         _assign_material(brim, accessory_mat)
         
     elif accessory_type == "medal" and body:
-        # 奖牌
+        # Medal
         gold_mat = _create_material(f"{character_name}_Medal_Gold", [1.0, 0.85, 0.0, 1.0], metallic=1.0, roughness=0.2)
         
         bpy.ops.mesh.primitive_cylinder_add(
@@ -534,7 +534,7 @@ def handle_accessory_add(params: Dict[str, Any]) -> Dict[str, Any]:
         medal.rotation_euler = [1.57, 0, 0]
         _assign_material(medal, gold_mat)
         
-        # 挂绳
+        # Ribbon
         ribbon_mat = _create_material(f"{character_name}_Medal_Ribbon", [0.8, 0.1, 0.1, 1.0], roughness=0.7)
         bpy.ops.mesh.primitive_cube_add(
             location=[body.location[0], body.location[1] - body.dimensions[1] * 0.5, body.location[2] + body.dimensions[2] * 0.5]

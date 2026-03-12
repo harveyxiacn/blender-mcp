@@ -19,18 +19,18 @@ class TargetPlatform(str, Enum):
 
 
 class TopologyAuditInput(BaseModel):
-    object_names: Optional[list[str]] = Field(default=None, description="对象列表，空则自动扫描全部网格")
-    include_hidden: bool = Field(default=False, description="是否包含隐藏对象")
+    object_names: Optional[list[str]] = Field(default=None, description="Object list, scans all meshes if empty")
+    include_hidden: bool = Field(default=False, description="Whether to include hidden objects")
 
 
 class UVAuditInput(BaseModel):
-    object_names: Optional[list[str]] = Field(default=None, description="对象列表，空则自动扫描全部网格")
-    texture_resolution: int = Field(default=2048, ge=256, le=8192, description="目标贴图分辨率")
+    object_names: Optional[list[str]] = Field(default=None, description="Object list, scans all meshes if empty")
+    texture_resolution: int = Field(default=2048, ge=256, le=8192, description="Target texture resolution")
 
 
 class PerformanceAuditInput(BaseModel):
-    target_platform: TargetPlatform = Field(default=TargetPlatform.DESKTOP, description="目标平台预算")
-    object_names: Optional[list[str]] = Field(default=None, description="对象列表，空则自动扫描全部网格")
+    target_platform: TargetPlatform = Field(default=TargetPlatform.DESKTOP, description="Target platform budget")
+    object_names: Optional[list[str]] = Field(default=None, description="Object list, scans all meshes if empty")
 
 
 class FullAuditInput(BaseModel):
@@ -78,7 +78,7 @@ def register_quality_audit_tools(mcp: FastMCP, server: "BlenderMCPServer") -> No
     @mcp.tool(
         name="blender_quality_audit_topology",
         annotations={
-            "title": "拓扑质量审计",
+            "title": "Topology Quality Audit",
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -86,10 +86,10 @@ def register_quality_audit_tools(mcp: FastMCP, server: "BlenderMCPServer") -> No
         },
     )
     async def blender_quality_audit_topology(params: TopologyAuditInput) -> dict[str, Any]:
-        """审计拓扑质量（N-gon、非流形、松散点、面型分布）。"""
+        """Audit topology quality (N-gons, non-manifold edges, loose vertices, face type distribution)."""
         object_names = await _list_mesh_objects(server, params.object_names)
         if not object_names:
-            return {"success": False, "error": "未找到可分析的网格对象"}
+            return {"success": False, "error": "No mesh objects found for analysis"}
 
         # Use utility.execute_python to compute metrics in Blender main context.
         code = f"""
@@ -159,7 +159,7 @@ print(json.dumps(report, ensure_ascii=False))
 
         result = await server.execute_command("utility", "execute_python", {"code": code})
         if not result.get("success"):
-            return {"success": False, "error": result.get("error", {}).get("message", "拓扑分析失败")}
+            return {"success": False, "error": result.get("error", {}).get("message", "Topology analysis failed")}
 
         output = result.get("data", {}).get("output", "")
         report = _parse_json_from_output(output)
@@ -170,7 +170,7 @@ print(json.dumps(report, ensure_ascii=False))
     @mcp.tool(
         name="blender_quality_audit_uv",
         annotations={
-            "title": "UV质量审计",
+            "title": "UV Quality Audit",
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -178,10 +178,10 @@ print(json.dumps(report, ensure_ascii=False))
         },
     )
     async def blender_quality_audit_uv(params: UVAuditInput) -> dict[str, Any]:
-        """审计 UV 质量（空间利用率、拉伸、像素密度一致性）。"""
+        """Audit UV quality (space utilization, stretch, texel density consistency)."""
         object_names = await _list_mesh_objects(server, params.object_names)
         if not object_names:
-            return {"success": False, "error": "未找到可分析的网格对象"}
+            return {"success": False, "error": "No mesh objects found for analysis"}
 
         object_reports: list[dict[str, Any]] = []
         totals = {
@@ -201,7 +201,7 @@ print(json.dumps(report, ensure_ascii=False))
             )
             if not result.get("success"):
                 object_reports.append(
-                    {"name": name, "ok": False, "error": result.get("error", {}).get("message", "UV分析失败")}
+                    {"name": name, "ok": False, "error": result.get("error", {}).get("message", "UV analysis failed")}
                 )
                 continue
             data = result.get("data", {})
@@ -230,7 +230,7 @@ print(json.dumps(report, ensure_ascii=False))
     @mcp.tool(
         name="blender_quality_audit_performance",
         annotations={
-            "title": "性能预算审计",
+            "title": "Performance Budget Audit",
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -238,10 +238,10 @@ print(json.dumps(report, ensure_ascii=False))
         },
     )
     async def blender_quality_audit_performance(params: PerformanceAuditInput) -> dict[str, Any]:
-        """审计性能预算（三角形、材质槽、估算 draw calls）。"""
+        """Audit performance budget (triangles, material slots, estimated draw calls)."""
         object_names = await _list_mesh_objects(server, params.object_names)
         if not object_names:
-            return {"success": False, "error": "未找到可分析的网格对象"}
+            return {"success": False, "error": "No mesh objects found for analysis"}
 
         budget = _budget_for_platform(params.target_platform)
         totals = {"triangles": 0, "vertices": 0, "faces": 0, "draw_calls_est": 0}
@@ -259,7 +259,7 @@ print(json.dumps(report, ensure_ascii=False))
                 },
             )
             if not info.get("success"):
-                object_reports.append({"name": name, "ok": False, "error": info.get("error", {}).get("message", "获取对象信息失败")})
+                object_reports.append({"name": name, "ok": False, "error": info.get("error", {}).get("message", "Failed to get object info")})
                 continue
 
             data = info.get("data", {})
@@ -318,7 +318,7 @@ print(json.dumps(report, ensure_ascii=False))
     @mcp.tool(
         name="blender_quality_audit_full",
         annotations={
-            "title": "全量质量审计",
+            "title": "Full Quality Audit",
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -326,7 +326,7 @@ print(json.dumps(report, ensure_ascii=False))
         },
     )
     async def blender_quality_audit_full(params: FullAuditInput) -> dict[str, Any]:
-        """执行拓扑 + UV + 性能三项审计并输出汇总评分。"""
+        """Run topology + UV + performance triple audit and output a combined score."""
         topo = await blender_quality_audit_topology(
             TopologyAuditInput(object_names=params.object_names, include_hidden=False)
         )

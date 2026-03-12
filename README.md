@@ -1,43 +1,80 @@
-# Blender MCP
+<p align="center">
+  <h1 align="center">Blender MCP</h1>
+  <p align="center">
+    Control Blender with AI through the Model Context Protocol
+  </p>
+</p>
 
-[English](#english) | [中文](#中文)
+<p align="center">
+  <a href="https://github.com/harveyxiacn/blender-mcp/actions"><img src="https://github.com/harveyxiacn/blender-mcp/workflows/CI/badge.svg" alt="CI"></a>
+  <a href="https://pypi.org/project/blender-mcp/"><img src="https://img.shields.io/pypi/v/blender-mcp.svg" alt="PyPI"></a>
+  <a href="https://pypi.org/project/blender-mcp/"><img src="https://img.shields.io/pypi/pyversions/blender-mcp.svg" alt="Python"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/harveyxiacn/blender-mcp.svg" alt="License: MIT"></a>
+</p>
+
+<p align="center">
+  <a href="#quick-start">Quick Start</a> •
+  <a href="docs/en/ARCHITECTURE.md">Architecture</a> •
+  <a href="docs/en/API_REFERENCE.md">API Reference</a> •
+  <a href="docs/en/CONTRIBUTING.md">Contributing</a> •
+  <a href="#中文">中文</a>
+</p>
 
 ---
 
-## English
+## Overview
 
-### Overview
+Blender MCP is an open-source [Model Context Protocol](https://modelcontextprotocol.io/) server that lets AI assistants control [Blender](https://www.blender.org/) through natural language. It works with MCP-compatible clients such as **Cursor**, **Windsurf**, and **Claude Desktop**.
 
-Blender MCP (Model Context Protocol) enables AI assistants to control Blender directly from IDEs like Cursor, Windsurf, and Claude Desktop. Create 3D models, characters, animations, and scenes through natural language conversations.
+The project consists of two components:
+- **MCP Server** (`src/blender_mcp/`) — a FastMCP server that exposes Blender operations as MCP tools
+- **Blender Addon** (`addon/blender_mcp_addon/`) — a Blender plugin that receives commands over TCP and executes them via Blender's Python API
 
-### Features
+### Key Features
 
-- **200+ Tools**: Comprehensive Blender control across 26 modules
-- **Skill System**: On-demand tool loading — only ~31 tools at startup, load more as needed (saves 70% context)
-- **Multi-IDE Support**: Works with Cursor, Windsurf, Claude Desktop, and any MCP-compatible IDE
-- **Complete 3D Pipeline**: Modeling, sculpting, UV mapping, texturing, materials, lighting, animation, rendering
-- **67 Procedural Material Presets**: Metal, wood, stone, fabric, nature, skin, effects, toon
-- **8 Style Presets**: Pixel art → AAA realistic, one-click configuration
-- **Character Creation**: Templates, auto-rigging, facial features, hair systems
-- **Animation System**: Keyframe animation, presets, physics simulation
-- **Game Engine Export**: Optimized export for Unity, Unreal Engine, and Godot (glTF/FBX/OBJ)
-- **45 Modifier Types**: Full parametric modeling support
-- **High-to-Low Poly Baking**: Normal, AO, curvature, and more
+- **359 MCP tools** across 51 modules — covering modeling, materials, animation, rendering, and more
+- **Smart tool loading** — default `skill` profile starts with 32 tools; 12 skill groups activate on demand
+- **6 profiles** — from `minimal` (29 tools) to `full` (356 tools)
+- **Style system** — 8 rendering style presets from Pixel Art to AAA
+- **67 procedural materials** — metals, woods, stones, fabrics, nature, skin, effects, toon
+- **Quality audit** — topology, UV, and performance validation
+- **Multi-IDE support** — Cursor, Windsurf, Claude Desktop, and any MCP client
 
-### Quick Start
+## Quick Start
+
+### Prerequisites
+
+- **Python 3.10+**
+- **Blender 4.0+**
+- **[uv](https://docs.astral.sh/uv/)** (recommended) or pip
+- An MCP-compatible client
+
+### Install & Run
 
 ```bash
-# Clone and install
 git clone https://github.com/harveyxiacn/blender-mcp.git
 cd blender-mcp
 uv sync
 
-# Install Blender addon
+# Build the Blender addon
 python build_addon.py
-# Then in Blender: Edit → Preferences → Add-ons → Install → select dist/blender_mcp_addon.zip
 
-# Configure your IDE (Cursor/Windsurf)
-# Create .cursor/mcp.json:
+# Start the MCP server
+uv run blender-mcp
+```
+
+### Set Up Blender
+
+1. Open Blender → `Edit` → `Preferences` → `Add-ons` → `Install...`
+2. Select `dist/blender_mcp_addon.zip`
+3. Enable **Blender MCP**
+4. Open the **MCP** panel in the 3D View sidebar
+
+### Configure Your IDE
+
+Add to your MCP client config:
+
+```json
 {
   "mcpServers": {
     "blender": {
@@ -48,33 +85,34 @@ python build_addon.py
 }
 ```
 
-### Manual Addon Installation
+## Architecture
 
-If you need to install the addon manually:
-
-```bash
-# Build the addon zip file
-python build_addon.py
-
-# Output: dist/blender_mcp_addon.zip
+```
+AI Client (Cursor / Windsurf / Claude Desktop)
+    ↓  MCP protocol (stdio or HTTP)
+Blender MCP Server (Python, FastMCP)
+    ↓  TCP JSON messages (localhost:9876)
+Blender Addon (runs inside Blender)
+    ↓  Blender Python API (bpy)
+Blender
 ```
 
-Then in Blender:
-1. Edit → Preferences → Add-ons
-2. Click "Install..."
-3. Select `dist/blender_mcp_addon.zip`
-4. Enable "Blender MCP" addon
+See [ARCHITECTURE.md](docs/en/ARCHITECTURE.md) for the full design document.
 
-### Hot Reload (For Developers)
+## Tool Profiles
 
-The addon supports hot reload for development:
+| Profile | Tools | Use Case |
+|---------|-------|----------|
+| `minimal` | 29 | Core scene/object/utility/export only |
+| `skill` | 32 | **Default** — core + on-demand skill loading |
+| `focused` | 108 | Curated workflow set |
+| `standard` | 165 | Broader daily-use coverage |
+| `extended` | 194 | Adds physics & batch operations |
+| `full` | 356 | Everything |
 
-1. Open Blender → Edit → Preferences → Add-ons → Blender MCP
-2. Set "Dev Source Path" to your local addon source directory (e.g., `E:\Projects\blender-mcp\addon\blender_mcp_addon`)
-3. Use the "Hot Reload" button in the MCP panel (View3D → Sidebar → MCP → Developer Tools) or in Preferences
-4. Changes are applied immediately without restarting Blender
+## Documentation
 
-### Documentation
+All documentation is available in **English** and **中文 (Chinese)**.
 
 | Document | English | 中文 |
 |----------|---------|------|
@@ -82,21 +120,36 @@ The addon supports hot reload for development:
 | Installation | [INSTALLATION](docs/en/INSTALLATION.md) | [安装指南](docs/zh/INSTALLATION.md) |
 | Architecture | [ARCHITECTURE](docs/en/ARCHITECTURE.md) | [架构设计](docs/zh/ARCHITECTURE.md) |
 | API Reference | [API_REFERENCE](docs/en/API_REFERENCE.md) | [API 参考](docs/zh/API_REFERENCE.md) |
+| Skill System | [MCP_SKILL_SYSTEM_GUIDE](docs/en/MCP_SKILL_SYSTEM_GUIDE.md) | [Skill 系统指南](docs/zh/MCP_SKILL_SYSTEM_GUIDE.md) |
 | Tutorials | [TUTORIALS](docs/en/TUTORIALS.md) | [教程](docs/zh/TUTORIALS.md) |
-| Skill System Guide | [MCP_SKILL_SYSTEM_GUIDE](docs/en/MCP_SKILL_SYSTEM_GUIDE.md) | [Skill 系统指南](docs/zh/MCP_SKILL_SYSTEM_GUIDE.md) |
 | Contributing | [CONTRIBUTING](docs/en/CONTRIBUTING.md) | [贡献指南](docs/zh/CONTRIBUTING.md) |
 | Changelog | [CHANGELOG](docs/en/CHANGELOG.md) | [更新日志](docs/zh/CHANGELOG.md) |
 | Roadmap | [ROADMAP](docs/en/ROADMAP.md) | [路线图](docs/zh/ROADMAP.md) |
+| Security | [SECURITY](SECURITY.md) | [安全策略](docs/zh/SECURITY.md) |
+| Code of Conduct | [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md) | [行为准则](docs/zh/CODE_OF_CONDUCT.md) |
 
-### Requirements
+## Contributing
 
-- Python 3.10+
-- Blender 4.0+ (5.0+ recommended)
-- MCP-compatible IDE (Cursor, Windsurf, Claude Desktop)
+We welcome contributions! Please see [CONTRIBUTING.md](docs/en/CONTRIBUTING.md) for guidelines.
 
-### License
+1. Fork the repo & create a feature branch
+2. Install dev dependencies: `uv sync --all-extras`
+3. Make changes and add tests
+4. Run checks: `pytest && ruff check src/ && black --check src/`
+5. Submit a pull request
 
-MIT License
+## Security
+
+For security concerns, please see [SECURITY.md](SECURITY.md). Do **not** open a public issue for security vulnerabilities.
+
+## Known Caveats
+
+- `pipeline` and `quality_audit` tools are **experimental** — addon handlers are still in progress
+- If `.venv` breaks after copying the repo to another machine, delete `.venv` and re-run `uv sync`
+
+## License
+
+[MIT](LICENSE) — Copyright (c) 2024-2026 Blender MCP Contributors
 
 ---
 
@@ -104,36 +157,41 @@ MIT License
 
 ### 概述
 
-Blender MCP（模型上下文协议）使 AI 助手能够从 Cursor、Windsurf、Claude Desktop 等 IDE 中直接控制 Blender。通过自然语言对话创建 3D 模型、角色、动画和场景。
+Blender MCP 是一个开源的 [Model Context Protocol](https://modelcontextprotocol.io/) 服务器，让 AI 助手可以通过自然语言控制 [Blender](https://www.blender.org/)。支持 **Cursor**、**Windsurf**、**Claude Desktop** 等 MCP 兼容客户端。
 
-### 功能特性
+### 核心特性
 
-- **200+ 工具**：26 个模块全面覆盖 Blender 功能
-- **Skill 系统**：按需加载工具——启动仅 ~31 个工具，按需加载更多（节省 70% 上下文）
-- **多 IDE 支持**：支持 Cursor、Windsurf、Claude Desktop 及任何兼容 MCP 的 IDE
-- **完整 3D 流程**：建模、雕刻、UV展开、纹理绘制、材质、灯光、动画、渲染
-- **67 种程序化材质预设**：金属、木纹、石材、织物、自然、皮肤、特效、卡通
-- **8 种风格预设**：像素风→3A写实，一键配置
-- **角色创建**：模板、自动绑定、面部特征、毛发系统
-- **动画系统**：关键帧动画、预设、物理模拟
-- **游戏引擎导出**：优化导出到 Unity、Unreal Engine、Godot（glTF/FBX/OBJ）
-- **45 种修改器类型**：完整参数化建模支持
-- **高低模烘焙**：法线、AO、曲率等贴图烘焙
+- **359 个 MCP 工具**，覆盖建模、材质、动画、渲染等全流程
+- **智能工具加载** — 默认 `skill` 配置仅加载 32 个工具，12 个技能组按需激活
+- **6 种配置方案** — 从 `minimal`（29 个工具）到 `full`（356 个工具）
+- **风格系统** — 8 种渲染风格预设（像素风到 3A 级）
+- **67 种程序化材质** — 金属、木材、石材、布料、自然、皮肤、特效、卡通
+- **质量审计** — 拓扑、UV、性能验证
 
 ### 快速开始
 
 ```bash
-# 克隆并安装
 git clone https://github.com/harveyxiacn/blender-mcp.git
 cd blender-mcp
 uv sync
 
-# 安装 Blender 插件
+# 打包 Blender 插件
 python build_addon.py
-# 然后在 Blender 中：编辑 → 偏好设置 → 插件 → 安装 → 选择 dist/blender_mcp_addon.zip
 
-# 配置 IDE（Cursor/Windsurf）
-# 创建 .cursor/mcp.json：
+# 启动 MCP 服务器
+uv run blender-mcp
+```
+
+然后在 Blender 中：
+
+1. `编辑` → `偏好设置` → `插件` → `安装...`
+2. 选择 `dist/blender_mcp_addon.zip`
+3. 启用 **Blender MCP**
+4. 在 3D 视图侧边栏打开 **MCP** 面板
+
+IDE 配置：
+
+```json
 {
   "mcpServers": {
     "blender": {
@@ -144,96 +202,16 @@ python build_addon.py
 }
 ```
 
-### 手动安装插件
-
-如需手动安装插件：
-
-```bash
-# 打包插件 zip 文件
-python build_addon.py
-
-# 输出: dist/blender_mcp_addon.zip
-```
-
-然后在 Blender 中：
-1. 编辑 → 偏好设置 → 插件
-2. 点击「安装...」
-3. 选择 `dist/blender_mcp_addon.zip`
-4. 启用「Blender MCP」插件
-
-### 热更新（开发者功能）
-
-插件支持热更新，方便开发调试：
-
-1. 打开 Blender → 编辑 → 偏好设置 → 插件 → Blender MCP
-2. 设置「开发源代码目录」为本地源码目录（如 `E:\Projects\blender-mcp\addon\blender_mcp_addon`）
-3. 在 MCP 面板中使用「热更新」按钮（视图3D → 侧边栏 → MCP → 开发者工具）或在偏好设置中使用
-4. 修改代码后无需重启 Blender 即可生效
-
-### 文档
-
-| 文档 | English | 中文 |
-|------|---------|------|
-| 快速开始 | [QUICKSTART](docs/en/QUICKSTART.md) | [快速开始](docs/zh/QUICKSTART.md) |
-| 安装指南 | [INSTALLATION](docs/en/INSTALLATION.md) | [安装指南](docs/zh/INSTALLATION.md) |
-| 架构设计 | [ARCHITECTURE](docs/en/ARCHITECTURE.md) | [架构设计](docs/zh/ARCHITECTURE.md) |
-| API 参考 | [API_REFERENCE](docs/en/API_REFERENCE.md) | [API 参考](docs/zh/API_REFERENCE.md) |
-| 教程 | [TUTORIALS](docs/en/TUTORIALS.md) | [教程](docs/zh/TUTORIALS.md) |
-| Skill 系统 | [MCP_SKILL_SYSTEM_GUIDE](docs/en/MCP_SKILL_SYSTEM_GUIDE.md) | [Skill 系统指南](docs/zh/MCP_SKILL_SYSTEM_GUIDE.md) |
-| 贡献指南 | [CONTRIBUTING](docs/en/CONTRIBUTING.md) | [贡献指南](docs/zh/CONTRIBUTING.md) |
-| 更新日志 | [CHANGELOG](docs/en/CHANGELOG.md) | [更新日志](docs/zh/CHANGELOG.md) |
-| 路线图 | [ROADMAP](docs/en/ROADMAP.md) | [路线图](docs/zh/ROADMAP.md) |
-
 ### 系统要求
 
 - Python 3.10+
-- Blender 4.0+（推荐 5.0+）
-- 支持 MCP 的 IDE（Cursor、Windsurf、Claude Desktop）
+- Blender 4.0+
+- 任意兼容 MCP 的客户端
+
+### 文档
+
+所有文档均提供 **English** 和 **中文** 版本，详见上方[文档表格](#documentation)。
 
 ### 许可证
 
-MIT 许可证
-
----
-
-## Project Structure / 项目结构
-
-```
-blender-mcp/
-├── README.md                 # Project README
-├── pyproject.toml            # Python project config
-├── build_addon.py            # Addon build script
-├── LICENSE                   # MIT License
-├── docs/
-│   ├── en/                   # English documentation
-│   └── zh/                   # 中文文档
-├── src/blender_mcp/          # MCP Server
-│   ├── server.py             # Main server class
-│   ├── connection.py         # Blender TCP connection
-│   ├── skill_manager.py      # Dynamic skill system
-│   ├── tools_config.py       # Tool profile config
-│   └── tools/                # MCP tool modules (26+)
-│       ├── skills.py         # Skill meta-tools
-│       ├── scene.py          # Scene management
-│       ├── object.py         # Object operations
-│       ├── modeling.py       # Mesh editing
-│       └── ...               # More modules
-├── addon/blender_mcp_addon/  # Blender Addon
-│   ├── server.py             # TCP server
-│   ├── executor.py           # Command dispatcher
-│   ├── handlers/             # Blender API handlers
-│   ├── operators/            # Blender operators
-│   └── panels/               # UI panels
-```
-
-## Contributing / 贡献
-
-Contributions are welcome! Please read our [Contributing Guide](docs/en/CONTRIBUTING.md).
-
-欢迎贡献代码！请阅读[贡献指南](docs/zh/CONTRIBUTING.md)。
-
-## Support / 支持
-
-- **GitHub Issues**: Report bugs or request features / 报告 Bug 或提交功能需求
-- **Discussions**: Ask questions and share ideas / 提问和分享想法
-
+[MIT](LICENSE) — Copyright (c) 2024-2026 Blender MCP Contributors

@@ -1,7 +1,7 @@
 """
-角色系统工具
+Character System Tools
 
-提供角色创建和编辑功能，包括高级面部系统、服装系统、发型系统等。
+Provides character creation and editing features, including advanced face system, clothing system, hair system, and more.
 """
 
 from typing import TYPE_CHECKING, Optional, List
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class BodyType(str, Enum):
-    """体型"""
+    """Body type"""
     SLIM = "SLIM"
     AVERAGE = "AVERAGE"
     MUSCULAR = "MUSCULAR"
@@ -23,14 +23,14 @@ class BodyType(str, Enum):
 
 
 class Gender(str, Enum):
-    """性别"""
+    """Gender"""
     MALE = "MALE"
     FEMALE = "FEMALE"
     NEUTRAL = "NEUTRAL"
 
 
 class HairStyle(str, Enum):
-    """发型"""
+    """Hair style"""
     BALD = "BALD"
     BUZZ = "BUZZ"
     SHORT = "SHORT"
@@ -50,7 +50,7 @@ class HairStyle(str, Enum):
 
 
 class ClothingType(str, Enum):
-    """服装类型"""
+    """Clothing type"""
     SHIRT = "SHIRT"
     T_SHIRT = "T_SHIRT"
     PANTS = "PANTS"
@@ -73,7 +73,7 @@ class ClothingType(str, Enum):
 
 
 class OutfitStyle(str, Enum):
-    """套装风格"""
+    """Outfit style"""
     CASUAL = "CASUAL"
     FORMAL = "FORMAL"
     WARRIOR = "WARRIOR"
@@ -85,7 +85,7 @@ class OutfitStyle(str, Enum):
 
 
 class Expression(str, Enum):
-    """面部表情"""
+    """Facial expression"""
     NEUTRAL = "neutral"
     SMILE = "smile"
     SAD = "sad"
@@ -96,98 +96,98 @@ class Expression(str, Enum):
     CONTEMPT = "contempt"
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class CharacterCreateHumanoidInput(BaseModel):
-    """创建人形角色输入"""
-    name: Optional[str] = Field(default="Character", description="角色名称")
-    height: float = Field(default=1.8, description="身高（米）", ge=0.5, le=3.0)
-    body_type: BodyType = Field(default=BodyType.AVERAGE, description="体型")
-    gender: Gender = Field(default=Gender.NEUTRAL, description="性别")
-    subdivisions: int = Field(default=2, description="细分级别", ge=0, le=4)
-    create_face_rig: bool = Field(default=True, description="是否创建面部形态键")
+    """Create humanoid character input"""
+    name: Optional[str] = Field(default="Character", description="Character name")
+    height: float = Field(default=1.8, description="Height (meters)", ge=0.5, le=3.0)
+    body_type: BodyType = Field(default=BodyType.AVERAGE, description="Body type")
+    gender: Gender = Field(default=Gender.NEUTRAL, description="Gender")
+    subdivisions: int = Field(default=2, description="Subdivision level", ge=0, le=4)
+    create_face_rig: bool = Field(default=True, description="Whether to create face shape keys")
 
 
 class CharacterAddFaceFeaturesInput(BaseModel):
-    """添加面部特征输入（增强版）"""
-    character_name: str = Field(..., description="角色名称")
-    # 眼睛参数
-    eye_size: float = Field(default=1.0, description="眼睛大小", ge=0.5, le=1.5)
-    eye_distance: float = Field(default=1.0, description="眼睛间距", ge=0.8, le=1.2)
-    eye_height: float = Field(default=1.0, description="眼睛高度", ge=0.8, le=1.2)
-    eye_tilt: float = Field(default=0.0, description="眼睛倾斜", ge=-0.3, le=0.3)
-    eye_depth: float = Field(default=1.0, description="眼睛深度", ge=0.8, le=1.2)
-    # 鼻子参数
-    nose_length: float = Field(default=1.0, description="鼻子长度", ge=0.5, le=1.5)
-    nose_width: float = Field(default=1.0, description="鼻子宽度", ge=0.7, le=1.3)
-    nose_height: float = Field(default=1.0, description="鼻梁高度", ge=0.8, le=1.2)
-    nose_tip: float = Field(default=1.0, description="鼻尖大小", ge=0.8, le=1.2)
-    # 嘴巴参数
-    mouth_width: float = Field(default=1.0, description="嘴宽度", ge=0.7, le=1.3)
-    mouth_height: float = Field(default=1.0, description="嘴高度", ge=0.8, le=1.2)
-    lip_thickness_upper: float = Field(default=1.0, description="上唇厚度", ge=0.5, le=1.5)
-    lip_thickness_lower: float = Field(default=1.0, description="下唇厚度", ge=0.5, le=1.5)
-    # 下巴和脸型参数
-    jaw_width: float = Field(default=1.0, description="下巴宽度", ge=0.7, le=1.3)
-    jaw_height: float = Field(default=1.0, description="下巴高度", ge=0.8, le=1.2)
-    chin_length: float = Field(default=1.0, description="下巴长度", ge=0.8, le=1.2)
-    cheekbone_height: float = Field(default=1.0, description="颧骨高度", ge=0.8, le=1.2)
-    cheekbone_width: float = Field(default=1.0, description="颧骨宽度", ge=0.8, le=1.2)
-    # 额头参数
-    forehead_height: float = Field(default=1.0, description="额头高度", ge=0.8, le=1.2)
-    forehead_width: float = Field(default=1.0, description="额头宽度", ge=0.8, le=1.2)
-    # 耳朵参数
-    ear_size: float = Field(default=1.0, description="耳朵大小", ge=0.7, le=1.3)
-    ear_position: float = Field(default=1.0, description="耳朵位置", ge=0.8, le=1.2)
+    """Add face features input (enhanced)"""
+    character_name: str = Field(..., description="Character name")
+    # Eye parameters
+    eye_size: float = Field(default=1.0, description="Eye size", ge=0.5, le=1.5)
+    eye_distance: float = Field(default=1.0, description="Eye spacing", ge=0.8, le=1.2)
+    eye_height: float = Field(default=1.0, description="Eye height", ge=0.8, le=1.2)
+    eye_tilt: float = Field(default=0.0, description="Eye tilt", ge=-0.3, le=0.3)
+    eye_depth: float = Field(default=1.0, description="Eye depth", ge=0.8, le=1.2)
+    # Nose parameters
+    nose_length: float = Field(default=1.0, description="Nose length", ge=0.5, le=1.5)
+    nose_width: float = Field(default=1.0, description="Nose width", ge=0.7, le=1.3)
+    nose_height: float = Field(default=1.0, description="Nose bridge height", ge=0.8, le=1.2)
+    nose_tip: float = Field(default=1.0, description="Nose tip size", ge=0.8, le=1.2)
+    # Mouth parameters
+    mouth_width: float = Field(default=1.0, description="Mouth width", ge=0.7, le=1.3)
+    mouth_height: float = Field(default=1.0, description="Mouth height", ge=0.8, le=1.2)
+    lip_thickness_upper: float = Field(default=1.0, description="Upper lip thickness", ge=0.5, le=1.5)
+    lip_thickness_lower: float = Field(default=1.0, description="Lower lip thickness", ge=0.5, le=1.5)
+    # Jaw and face shape parameters
+    jaw_width: float = Field(default=1.0, description="Jaw width", ge=0.7, le=1.3)
+    jaw_height: float = Field(default=1.0, description="Jaw height", ge=0.8, le=1.2)
+    chin_length: float = Field(default=1.0, description="Chin length", ge=0.8, le=1.2)
+    cheekbone_height: float = Field(default=1.0, description="Cheekbone height", ge=0.8, le=1.2)
+    cheekbone_width: float = Field(default=1.0, description="Cheekbone width", ge=0.8, le=1.2)
+    # Forehead parameters
+    forehead_height: float = Field(default=1.0, description="Forehead height", ge=0.8, le=1.2)
+    forehead_width: float = Field(default=1.0, description="Forehead width", ge=0.8, le=1.2)
+    # Ear parameters
+    ear_size: float = Field(default=1.0, description="Ear size", ge=0.7, le=1.3)
+    ear_position: float = Field(default=1.0, description="Ear position", ge=0.8, le=1.2)
 
 
 class CharacterSetExpressionInput(BaseModel):
-    """设置面部表情输入"""
-    character_name: str = Field(..., description="角色名称")
-    expression: Expression = Field(default=Expression.NEUTRAL, description="表情类型")
-    intensity: float = Field(default=1.0, description="表情强度", ge=0.0, le=1.0)
+    """Set facial expression input"""
+    character_name: str = Field(..., description="Character name")
+    expression: Expression = Field(default=Expression.NEUTRAL, description="Expression type")
+    intensity: float = Field(default=1.0, description="Expression intensity", ge=0.0, le=1.0)
 
 
 class CharacterAddHairInput(BaseModel):
-    """添加头发输入（增强版）"""
-    character_name: str = Field(..., description="角色名称")
-    hair_style: HairStyle = Field(default=HairStyle.SHORT, description="发型")
-    hair_color: Optional[List[float]] = Field(default=None, description="头发颜色 [r, g, b]")
-    use_particles: bool = Field(default=True, description="使用粒子头发")
-    hair_density: float = Field(default=1.0, description="头发密度倍率", ge=0.1, le=3.0)
-    hair_thickness: float = Field(default=1.0, description="头发粗细倍率", ge=0.5, le=2.0)
-    use_dynamics: bool = Field(default=False, description="启用头发动力学")
+    """Add hair input (enhanced)"""
+    character_name: str = Field(..., description="Character name")
+    hair_style: HairStyle = Field(default=HairStyle.SHORT, description="Hair style")
+    hair_color: Optional[List[float]] = Field(default=None, description="Hair color [r, g, b]")
+    use_particles: bool = Field(default=True, description="Use particle hair")
+    hair_density: float = Field(default=1.0, description="Hair density multiplier", ge=0.1, le=3.0)
+    hair_thickness: float = Field(default=1.0, description="Hair thickness multiplier", ge=0.5, le=2.0)
+    use_dynamics: bool = Field(default=False, description="Enable hair dynamics")
 
 
 class CharacterAddClothingInput(BaseModel):
-    """添加服装输入（增强版）"""
-    character_name: str = Field(..., description="角色名称")
-    clothing_type: ClothingType = Field(..., description="服装类型")
-    color: Optional[List[float]] = Field(default=None, description="服装主色 [r, g, b]")
-    secondary_color: Optional[List[float]] = Field(default=None, description="服装次色 [r, g, b]")
-    use_cloth_simulation: bool = Field(default=False, description="启用布料模拟")
-    metallic: float = Field(default=0.0, description="金属度", ge=0.0, le=1.0)
-    roughness: float = Field(default=0.8, description="粗糙度", ge=0.0, le=1.0)
-    pattern: Optional[str] = Field(default=None, description="图案: SOLID, STRIPES, PLAID, FLORAL")
+    """Add clothing input (enhanced)"""
+    character_name: str = Field(..., description="Character name")
+    clothing_type: ClothingType = Field(..., description="Clothing type")
+    color: Optional[List[float]] = Field(default=None, description="Primary clothing color [r, g, b]")
+    secondary_color: Optional[List[float]] = Field(default=None, description="Secondary clothing color [r, g, b]")
+    use_cloth_simulation: bool = Field(default=False, description="Enable cloth simulation")
+    metallic: float = Field(default=0.0, description="Metallic", ge=0.0, le=1.0)
+    roughness: float = Field(default=0.8, description="Roughness", ge=0.0, le=1.0)
+    pattern: Optional[str] = Field(default=None, description="Pattern: SOLID, STRIPES, PLAID, FLORAL")
 
 
 class CharacterCreateOutfitInput(BaseModel):
-    """创建完整套装输入"""
-    character_name: str = Field(..., description="角色名称")
-    outfit_style: OutfitStyle = Field(default=OutfitStyle.CASUAL, description="套装风格")
-    color_scheme: str = Field(default="DEFAULT", description="颜色方案: DEFAULT, RED, BLUE, GREEN, WHITE, BLACK, GOLD, PURPLE")
-    use_cloth_simulation: bool = Field(default=False, description="启用布料模拟")
+    """Create complete outfit input"""
+    character_name: str = Field(..., description="Character name")
+    outfit_style: OutfitStyle = Field(default=OutfitStyle.CASUAL, description="Outfit style")
+    color_scheme: str = Field(default="DEFAULT", description="Color scheme: DEFAULT, RED, BLUE, GREEN, WHITE, BLACK, GOLD, PURPLE")
+    use_cloth_simulation: bool = Field(default=False, description="Enable cloth simulation")
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册角色系统工具"""
-    
+    """Register character system tools"""
+
     @mcp.tool(
         name="blender_character_create_humanoid",
         annotations={
-            "title": "创建人形角色",
+            "title": "Create Humanoid Character",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -195,18 +195,18 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_character_create_humanoid(params: CharacterCreateHumanoidInput) -> str:
-        """创建人形基础网格（增强版）。
-        
-        创建一个详细的人形角色网格，包含：
-        - 可调节的身高、体型和性别
-        - 面部形态键系统
-        - 身体顶点组（用于服装绑定）
-        
+        """Create a humanoid base mesh (enhanced).
+
+        Creates a detailed humanoid character mesh including:
+        - Adjustable height, body type, and gender
+        - Face shape key system
+        - Body vertex groups (for clothing binding)
+
         Args:
-            params: 角色名称、体型设置、是否创建面部系统
-            
+            params: Character name, body type settings, whether to create face system
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "character", "create_humanoid",
@@ -219,19 +219,19 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "create_face_rig": params.create_face_rig
             }
         )
-        
+
         if result.get("success"):
-            body_types = {"SLIM": "纤细", "AVERAGE": "普通", "MUSCULAR": "健壮", "HEAVY": "魁梧"}
+            body_types = {"SLIM": "slim", "AVERAGE": "average", "MUSCULAR": "muscular", "HEAVY": "heavy"}
             data = result.get("data", {})
-            face_info = "（含面部系统）" if data.get("has_face_rig") else ""
-            return f"成功创建角色 '{params.name}'，身高: {params.height}m，体型: {body_types.get(params.body_type.value)}{face_info}"
+            face_info = " (with face system)" if data.get("has_face_rig") else ""
+            return f"Successfully created character '{params.name}', height: {params.height}m, body type: {body_types.get(params.body_type.value)}{face_info}"
         else:
-            return f"创建角色失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to create character: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_character_add_face_features",
         annotations={
-            "title": "添加面部特征",
+            "title": "Add Face Features",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -239,20 +239,20 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_character_add_face_features(params: CharacterAddFaceFeaturesInput) -> str:
-        """调整角色的面部特征（增强版 - 使用形态键）。
-        
-        支持22个面部参数的精细调节：
-        - 眼睛：大小、间距、高度、倾斜、深度
-        - 鼻子：长度、宽度、高度、鼻尖
-        - 嘴巴：宽度、高度、上下唇厚度
-        - 脸型：下巴宽高、颧骨、额头
-        - 耳朵：大小、位置
-        
+        """Adjust a character's face features (enhanced - using shape keys).
+
+        Supports fine-tuning of 22 face parameters:
+        - Eyes: size, spacing, height, tilt, depth
+        - Nose: length, width, height, tip
+        - Mouth: width, height, upper/lower lip thickness
+        - Face shape: jaw width/height, cheekbones, forehead
+        - Ears: size, position
+
         Args:
-            params: 角色名称和面部参数
-            
+            params: Character name and face parameters
+
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "character", "add_face_features",
@@ -282,18 +282,18 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "ear_position": params.ear_position
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
             count = len(data.get("applied_params", []))
-            return f"已为 '{params.character_name}' 调整 {count} 个面部参数"
+            return f"Adjusted {count} face parameters for '{params.character_name}'"
         else:
-            return f"添加面部特征失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to add face features: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_character_set_expression",
         annotations={
-            "title": "设置面部表情",
+            "title": "Set Facial Expression",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -301,23 +301,23 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_character_set_expression(params: CharacterSetExpressionInput) -> str:
-        """设置角色面部表情。
-        
-        支持的表情：
-        - neutral: 中性
-        - smile: 微笑
-        - sad: 悲伤
-        - angry: 愤怒
-        - surprised: 惊讶
-        - fear: 恐惧
-        - disgust: 厌恶
-        - contempt: 蔑视
-        
+        """Set a character's facial expression.
+
+        Supported expressions:
+        - neutral: Neutral
+        - smile: Smile
+        - sad: Sad
+        - angry: Angry
+        - surprised: Surprised
+        - fear: Fear
+        - disgust: Disgust
+        - contempt: Contempt
+
         Args:
-            params: 角色名称、表情类型、强度
-            
+            params: Character name, expression type, intensity
+
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "character", "set_face_expression",
@@ -327,22 +327,22 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "intensity": params.intensity
             }
         )
-        
+
         expr_names = {
-            "neutral": "中性", "smile": "微笑", "sad": "悲伤",
-            "angry": "愤怒", "surprised": "惊讶", "fear": "恐惧",
-            "disgust": "厌恶", "contempt": "蔑视"
+            "neutral": "neutral", "smile": "smile", "sad": "sad",
+            "angry": "angry", "surprised": "surprised", "fear": "fear",
+            "disgust": "disgust", "contempt": "contempt"
         }
-        
+
         if result.get("success"):
-            return f"已为 '{params.character_name}' 设置{expr_names.get(params.expression.value, params.expression.value)}表情（强度: {params.intensity:.0%}）"
+            return f"Set {expr_names.get(params.expression.value, params.expression.value)} expression for '{params.character_name}' (intensity: {params.intensity:.0%})"
         else:
-            return f"设置表情失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to set expression: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_character_add_hair",
         annotations={
-            "title": "添加头发",
+            "title": "Add Hair",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -350,19 +350,19 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_character_add_hair(params: CharacterAddHairInput) -> str:
-        """为角色添加头发系统（增强版）。
-        
-        支持16种发型预设，包括：
-        - 基础发型：BALD, BUZZ, SHORT, MEDIUM, LONG, VERY_LONG
-        - 特殊发型：PONYTAIL, BUN, BRAIDS, MOHAWK, AFRO
-        - 卷发类型：CURLY, WAVY
-        - 古风发型：ANCIENT_MALE, ANCIENT_FEMALE, TOPKNOT
-        
+        """Add a hair system to a character (enhanced).
+
+        Supports 16 hair style presets including:
+        - Basic styles: BALD, BUZZ, SHORT, MEDIUM, LONG, VERY_LONG
+        - Special styles: PONYTAIL, BUN, BRAIDS, MOHAWK, AFRO
+        - Curly types: CURLY, WAVY
+        - Ancient styles: ANCIENT_MALE, ANCIENT_FEMALE, TOPKNOT
+
         Args:
-            params: 角色名称、发型、颜色、密度、动力学等
-            
+            params: Character name, hair style, color, density, dynamics, etc.
+
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "character", "add_hair",
@@ -376,18 +376,18 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "use_dynamics": params.use_dynamics
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            dyn_info = "（启用动力学）" if data.get("dynamics_enabled") else ""
-            return f"已为 '{params.character_name}' 添加 {params.hair_style.value} 发型{dyn_info}"
+            dyn_info = " (dynamics enabled)" if data.get("dynamics_enabled") else ""
+            return f"Added {params.hair_style.value} hair style to '{params.character_name}'{dyn_info}"
         else:
-            return f"添加头发失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to add hair: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_character_add_clothing",
         annotations={
-            "title": "添加服装",
+            "title": "Add Clothing",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -395,21 +395,21 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_character_add_clothing(params: CharacterAddClothingInput) -> str:
-        """为角色添加服装（增强版）。
-        
-        支持19种服装类型：
-        - 上装：SHIRT, T_SHIRT, JACKET, COAT
-        - 下装：PANTS, SHORTS, SKIRT
-        - 连体：DRESS, ROBE
-        - 古风：HANFU_TOP, HANFU_BOTTOM
-        - 盔甲：ARMOR_CHEST, ARMOR_FULL, HELMET
-        - 配件：CAPE, SHOES, BOOTS, GLOVES, HAT
-        
+        """Add clothing to a character (enhanced).
+
+        Supports 19 clothing types:
+        - Tops: SHIRT, T_SHIRT, JACKET, COAT
+        - Bottoms: PANTS, SHORTS, SKIRT
+        - Full body: DRESS, ROBE
+        - Traditional: HANFU_TOP, HANFU_BOTTOM
+        - Armor: ARMOR_CHEST, ARMOR_FULL, HELMET
+        - Accessories: CAPE, SHOES, BOOTS, GLOVES, HAT
+
         Args:
-            params: 角色名称、服装类型、颜色、布料模拟等
-            
+            params: Character name, clothing type, color, cloth simulation, etc.
+
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "character", "add_clothing",
@@ -424,29 +424,29 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "pattern": params.pattern
             }
         )
-        
+
         clothing_names = {
-            "SHIRT": "衬衫", "T_SHIRT": "T恤", "PANTS": "长裤",
-            "SHORTS": "短裤", "JACKET": "夹克", "COAT": "大衣",
-            "DRESS": "连衣裙", "SKIRT": "裙子", "ROBE": "长袍",
-            "HANFU_TOP": "汉服上衣", "HANFU_BOTTOM": "汉服下裳",
-            "ARMOR_CHEST": "胸甲", "ARMOR_FULL": "全身盔甲",
-            "CAPE": "披风", "SHOES": "鞋子", "BOOTS": "靴子",
-            "GLOVES": "手套", "HAT": "帽子", "HELMET": "头盔"
+            "SHIRT": "shirt", "T_SHIRT": "T-shirt", "PANTS": "pants",
+            "SHORTS": "shorts", "JACKET": "jacket", "COAT": "coat",
+            "DRESS": "dress", "SKIRT": "skirt", "ROBE": "robe",
+            "HANFU_TOP": "hanfu top", "HANFU_BOTTOM": "hanfu bottom",
+            "ARMOR_CHEST": "chest armor", "ARMOR_FULL": "full armor",
+            "CAPE": "cape", "SHOES": "shoes", "BOOTS": "boots",
+            "GLOVES": "gloves", "HAT": "hat", "HELMET": "helmet"
         }
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            cloth_info = "（启用布料模拟）" if data.get("cloth_simulation") else ""
+            cloth_info = " (cloth simulation enabled)" if data.get("cloth_simulation") else ""
             name = clothing_names.get(params.clothing_type.value, params.clothing_type.value)
-            return f"已为 '{params.character_name}' 添加{name}{cloth_info}"
+            return f"Added {name} to '{params.character_name}'{cloth_info}"
         else:
-            return f"添加服装失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to add clothing: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_character_create_outfit",
         annotations={
-            "title": "创建完整套装",
+            "title": "Create Complete Outfit",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -454,25 +454,25 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_character_create_outfit(params: CharacterCreateOutfitInput) -> str:
-        """为角色创建完整套装。
-        
-        支持8种套装风格：
-        - CASUAL: 休闲装（T恤+长裤+鞋子）
-        - FORMAL: 正装（衬衫+长裤+鞋子）
-        - WARRIOR: 战士装（胸甲+长裤+靴子+手套）
-        - MAGE: 法师装（长袍+靴子+手套+帽子）
-        - HANFU: 汉服（上衣+下裳+鞋子）
-        - ANCIENT_WARRIOR: 古代战士（全身盔甲+靴子+头盔）
-        - NOBLE: 贵族装（夹克+长裤+靴子+披风）
-        - DANCER: 舞者装（连衣裙+鞋子）
-        
-        颜色方案：DEFAULT, RED, BLUE, GREEN, WHITE, BLACK, GOLD, PURPLE
-        
+        """Create a complete outfit for a character.
+
+        Supports 8 outfit styles:
+        - CASUAL: Casual wear (T-shirt + pants + shoes)
+        - FORMAL: Formal wear (shirt + pants + shoes)
+        - WARRIOR: Warrior outfit (chest armor + pants + boots + gloves)
+        - MAGE: Mage outfit (robe + boots + gloves + hat)
+        - HANFU: Hanfu (top + bottom + shoes)
+        - ANCIENT_WARRIOR: Ancient warrior (full armor + boots + helmet)
+        - NOBLE: Noble outfit (jacket + pants + boots + cape)
+        - DANCER: Dancer outfit (dress + shoes)
+
+        Color schemes: DEFAULT, RED, BLUE, GREEN, WHITE, BLACK, GOLD, PURPLE
+
         Args:
-            params: 角色名称、套装风格、颜色方案、布料模拟
-            
+            params: Character name, outfit style, color scheme, cloth simulation
+
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "character", "create_outfit",
@@ -483,17 +483,17 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "use_cloth_simulation": params.use_cloth_simulation
             }
         )
-        
+
         style_names = {
-            "CASUAL": "休闲装", "FORMAL": "正装", "WARRIOR": "战士装",
-            "MAGE": "法师装", "HANFU": "汉服", "ANCIENT_WARRIOR": "古代战士装",
-            "NOBLE": "贵族装", "DANCER": "舞者装"
+            "CASUAL": "casual", "FORMAL": "formal", "WARRIOR": "warrior",
+            "MAGE": "mage", "HANFU": "hanfu", "ANCIENT_WARRIOR": "ancient warrior",
+            "NOBLE": "noble", "DANCER": "dancer"
         }
-        
+
         if result.get("success"):
             data = result.get("data", {})
             items = data.get("items_created", [])
             name = style_names.get(params.outfit_style.value, params.outfit_style.value)
-            return f"已为 '{params.character_name}' 创建{name}套装，包含 {len(items)} 件服装"
+            return f"Created {name} outfit for '{params.character_name}' with {len(items)} clothing items"
         else:
-            return f"创建套装失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Failed to create outfit: {result.get('error', {}).get('message', 'unknown error')}"

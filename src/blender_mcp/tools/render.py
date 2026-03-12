@@ -1,7 +1,7 @@
 """
-渲染工具
+Render tools
 
-提供渲染设置和渲染功能。
+Provides render settings and rendering functionality.
 """
 
 from typing import TYPE_CHECKING, Optional
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class RenderEngine(str, Enum):
-    """渲染引擎"""
+    """Render engine"""
     CYCLES = "CYCLES"
     EEVEE = "BLENDER_EEVEE"
     EEVEE_NEXT = "BLENDER_EEVEE_NEXT"
@@ -23,7 +23,7 @@ class RenderEngine(str, Enum):
 
 
 class FileFormat(str, Enum):
-    """文件格式"""
+    """File format"""
     PNG = "PNG"
     JPEG = "JPEG"
     TIFF = "TIFF"
@@ -31,71 +31,71 @@ class FileFormat(str, Enum):
     BMP = "BMP"
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class RenderSettingsInput(BaseModel):
-    """渲染设置输入"""
-    engine: Optional[RenderEngine] = Field(default=None, description="渲染引擎")
-    resolution_x: Optional[int] = Field(default=None, description="水平分辨率", ge=1, le=16384)
-    resolution_y: Optional[int] = Field(default=None, description="垂直分辨率", ge=1, le=16384)
-    resolution_percentage: Optional[int] = Field(default=None, description="分辨率百分比", ge=1, le=100)
-    samples: Optional[int] = Field(default=None, description="采样数", ge=1, le=16384)
-    use_denoising: Optional[bool] = Field(default=None, description="使用降噪")
-    file_format: Optional[FileFormat] = Field(default=None, description="输出格式")
-    output_path: Optional[str] = Field(default=None, description="输出路径")
+    """Render settings input"""
+    engine: Optional[RenderEngine] = Field(default=None, description="Render engine")
+    resolution_x: Optional[int] = Field(default=None, description="Horizontal resolution", ge=1, le=16384)
+    resolution_y: Optional[int] = Field(default=None, description="Vertical resolution", ge=1, le=16384)
+    resolution_percentage: Optional[int] = Field(default=None, description="Resolution percentage", ge=1, le=100)
+    samples: Optional[int] = Field(default=None, description="Sample count", ge=1, le=16384)
+    use_denoising: Optional[bool] = Field(default=None, description="Use denoising")
+    file_format: Optional[FileFormat] = Field(default=None, description="Output format")
+    output_path: Optional[str] = Field(default=None, description="Output path")
 
 
 class RenderImageInput(BaseModel):
-    """渲染图像输入"""
-    output_path: Optional[str] = Field(default=None, description="输出路径")
-    frame: Optional[int] = Field(default=None, description="渲染帧")
-    camera: Optional[str] = Field(default=None, description="相机名称")
-    write_still: bool = Field(default=True, description="保存图像")
+    """Render image input"""
+    output_path: Optional[str] = Field(default=None, description="Output path")
+    frame: Optional[int] = Field(default=None, description="Render frame")
+    camera: Optional[str] = Field(default=None, description="Camera name")
+    write_still: bool = Field(default=True, description="Save image")
 
 
 class RenderAnimationInput(BaseModel):
-    """渲染动画输入"""
-    output_path: str = Field(..., description="输出目录")
-    frame_start: Optional[int] = Field(default=None, description="起始帧")
-    frame_end: Optional[int] = Field(default=None, description="结束帧")
-    frame_step: int = Field(default=1, description="帧步长", ge=1)
+    """Render animation input"""
+    output_path: str = Field(..., description="Output directory")
+    frame_start: Optional[int] = Field(default=None, description="Start frame")
+    frame_end: Optional[int] = Field(default=None, description="End frame")
+    frame_step: int = Field(default=1, description="Frame step", ge=1)
 
 
 class RenderPreviewInput(BaseModel):
-    """渲染预览输入"""
-    resolution_percentage: int = Field(default=50, description="分辨率百分比", ge=1, le=100)
-    samples: int = Field(default=32, description="采样数", ge=1, le=256)
+    """Render preview input"""
+    resolution_percentage: int = Field(default=50, description="Resolution percentage", ge=1, le=100)
+    samples: int = Field(default=32, description="Sample count", ge=1, le=256)
 
 
 class ViewType(str, Enum):
-    """视图类型"""
-    PERSP = "PERSP"     # 透视
-    FRONT = "FRONT"     # 前视图
-    BACK = "BACK"       # 后视图
-    LEFT = "LEFT"       # 左视图
-    RIGHT = "RIGHT"     # 右视图
-    TOP = "TOP"         # 顶视图
-    BOTTOM = "BOTTOM"   # 底视图
+    """View type"""
+    PERSP = "PERSP"     # Perspective
+    FRONT = "FRONT"     # Front view
+    BACK = "BACK"       # Back view
+    LEFT = "LEFT"       # Left view
+    RIGHT = "RIGHT"     # Right view
+    TOP = "TOP"         # Top view
+    BOTTOM = "BOTTOM"   # Bottom view
 
 
 class GetViewportScreenshotInput(BaseModel):
-    """获取视口截图输入"""
-    output_path: Optional[str] = Field(default=None, description="输出路径（不提供则使用临时目录）")
-    width: int = Field(default=800, description="截图宽度", ge=64, le=4096)
-    height: int = Field(default=600, description="截图高度", ge=64, le=4096)
-    view_type: Optional[ViewType] = Field(default=None, description="视图类型")
-    return_base64: bool = Field(default=False, description="是否返回base64编码的图片数据")
+    """Get viewport screenshot input"""
+    output_path: Optional[str] = Field(default=None, description="Output path (uses temp directory if not provided)")
+    width: int = Field(default=800, description="Screenshot width", ge=64, le=4096)
+    height: int = Field(default=600, description="Screenshot height", ge=64, le=4096)
+    view_type: Optional[ViewType] = Field(default=None, description="View type")
+    return_base64: bool = Field(default=False, description="Whether to return base64-encoded image data")
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_render_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册渲染工具"""
-    
+    """Register render tools"""
+
     @mcp.tool(
         name="blender_render_settings",
         annotations={
-            "title": "设置渲染参数",
+            "title": "Set Render Parameters",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -103,15 +103,15 @@ def register_render_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_render_settings(params: RenderSettingsInput) -> str:
-        """设置渲染参数。
-        
-        可以设置渲染引擎、分辨率、采样数等。
-        
+        """Set render parameters.
+
+        Can set render engine, resolution, sample count, etc.
+
         Args:
-            params: 渲染设置
-            
+            params: Render settings
+
         Returns:
-            设置结果
+            Settings result
         """
         settings = {}
         if params.engine is not None:
@@ -130,24 +130,24 @@ def register_render_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             settings["file_format"] = params.file_format.value
         if params.output_path is not None:
             settings["output_path"] = params.output_path
-        
+
         if not settings:
-            return "没有指定任何设置"
-        
+            return "No settings specified"
+
         result = await server.execute_command(
             "render", "settings",
             settings
         )
-        
+
         if result.get("success"):
-            return f"渲染设置已更新"
+            return f"Render settings updated"
         else:
-            return f"设置渲染参数失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to set render parameters: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_render_image",
         annotations={
-            "title": "渲染静态图像",
+            "title": "Render Still Image",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -155,13 +155,13 @@ def register_render_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_render_image(params: RenderImageInput) -> str:
-        """渲染静态图像。
-        
+        """Render a still image.
+
         Args:
-            params: 输出路径、帧号、相机
-            
+            params: Output path, frame number, camera
+
         Returns:
-            渲染结果
+            Render result
         """
         result = await server.execute_command(
             "render", "image",
@@ -172,19 +172,19 @@ def register_render_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "write_still": params.write_still
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            output = data.get("output_path", params.output_path or "默认路径")
-            time = data.get("render_time", "未知")
-            return f"渲染完成，输出: {output}，耗时: {time}秒"
+            output = data.get("output_path", params.output_path or "default path")
+            time = data.get("render_time", "unknown")
+            return f"Render complete, output: {output}, time: {time}s"
         else:
-            return f"渲染失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Render failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_render_animation",
         annotations={
-            "title": "渲染动画",
+            "title": "Render Animation",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -192,13 +192,13 @@ def register_render_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_render_animation(params: RenderAnimationInput) -> str:
-        """渲染动画序列。
-        
+        """Render an animation sequence.
+
         Args:
-            params: 输出目录、帧范围
-            
+            params: Output directory, frame range
+
         Returns:
-            渲染结果
+            Render result
         """
         result = await server.execute_command(
             "render", "animation",
@@ -209,18 +209,18 @@ def register_render_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "frame_step": params.frame_step
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            frames = data.get("frames_rendered", "未知")
-            return f"动画渲染完成，共 {frames} 帧，输出到: {params.output_path}"
+            frames = data.get("frames_rendered", "unknown")
+            return f"Animation render complete, {frames} frames total, output to: {params.output_path}"
         else:
-            return f"渲染动画失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Animation render failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_render_preview",
         annotations={
-            "title": "渲染预览",
+            "title": "Render Preview",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -228,15 +228,15 @@ def register_render_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_render_preview(params: RenderPreviewInput) -> str:
-        """快速渲染预览图。
-        
-        使用较低的分辨率和采样数进行快速预览。
-        
+        """Quick render preview.
+
+        Uses lower resolution and sample count for a fast preview.
+
         Args:
-            params: 分辨率百分比和采样数
-            
+            params: Resolution percentage and sample count
+
         Returns:
-            预览结果
+            Preview result
         """
         result = await server.execute_command(
             "render", "preview",
@@ -245,16 +245,16 @@ def register_render_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "samples": params.samples
             }
         )
-        
+
         if result.get("success"):
-            return f"预览渲染完成"
+            return f"Preview render complete"
         else:
-            return f"预览渲染失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Preview render failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_get_viewport_screenshot",
         annotations={
-            "title": "获取视口截图",
+            "title": "Get Viewport Screenshot",
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -262,15 +262,15 @@ def register_render_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_get_viewport_screenshot(params: GetViewportScreenshotInput) -> str:
-        """获取当前3D视口的截图。
-        
-        使用OpenGL渲染捕获视口画面，用于调试和预览。
-        
+        """Get a screenshot of the current 3D viewport.
+
+        Uses OpenGL rendering to capture the viewport for debugging and preview.
+
         Args:
-            params: 输出路径、尺寸、视图类型
-            
+            params: Output path, dimensions, view type
+
         Returns:
-            截图文件路径信息
+            Screenshot file path information
         """
         result = await server.execute_command(
             "render", "get_viewport_screenshot",
@@ -282,17 +282,17 @@ def register_render_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "return_base64": params.return_base64
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            lines = ["视口截图已保存"]
-            lines.append(f"- 路径: {data.get('output_path', 'N/A')}")
-            lines.append(f"- 尺寸: {data.get('width', 0)}x{data.get('height', 0)}")
-            lines.append(f"- 文件大小: {data.get('file_size', 0)} 字节")
-            
+            lines = ["Viewport screenshot saved"]
+            lines.append(f"- Path: {data.get('output_path', 'N/A')}")
+            lines.append(f"- Dimensions: {data.get('width', 0)}x{data.get('height', 0)}")
+            lines.append(f"- File size: {data.get('file_size', 0)} bytes")
+
             if params.return_base64 and data.get('base64'):
-                lines.append(f"- Base64 数据已包含在响应中")
-            
+                lines.append(f"- Base64 data included in response")
+
             return "\n".join(lines)
         else:
-            return f"截图失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Screenshot failed: {result.get('error', {}).get('message', 'Unknown error')}"

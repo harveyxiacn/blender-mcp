@@ -1,7 +1,7 @@
 """
-世界/环境工具
+World/Environment Tools
 
-提供Blender世界和环境设置的MCP工具。
+Provides MCP tools for Blender world and environment settings.
 """
 
 from typing import Any, Dict, List, Optional
@@ -9,73 +9,73 @@ from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
 
 
-# ============ Pydantic 模型 ============
+# ============ Pydantic Models ============
 
 class WorldCreateInput(BaseModel):
-    """创建世界"""
-    name: str = Field("World", description="世界名称")
-    use_nodes: bool = Field(True, description="使用节点")
+    """Create world"""
+    name: str = Field("World", description="World name")
+    use_nodes: bool = Field(True, description="Use nodes")
 
 
 class WorldBackgroundInput(BaseModel):
-    """设置背景"""
-    color: Optional[List[float]] = Field(None, description="背景颜色 [R, G, B]")
-    strength: float = Field(1.0, description="强度")
-    use_sky_texture: bool = Field(False, description="使用天空纹理")
+    """Set background"""
+    color: Optional[List[float]] = Field(None, description="Background color [R, G, B]")
+    strength: float = Field(1.0, description="Strength")
+    use_sky_texture: bool = Field(False, description="Use sky texture")
 
 
 class WorldHDRIInput(BaseModel):
-    """设置HDRI环境"""
-    hdri_path: str = Field(..., description="HDRI文件路径")
-    strength: float = Field(1.0, description="强度")
-    rotation: float = Field(0.0, description="旋转角度（弧度）")
+    """Set HDRI environment"""
+    hdri_path: str = Field(..., description="HDRI file path")
+    strength: float = Field(1.0, description="Strength")
+    rotation: float = Field(0.0, description="Rotation angle (radians)")
 
 
 class WorldSkyInput(BaseModel):
-    """设置程序化天空"""
-    sky_type: str = Field("NISHITA", description="天空类型: PREETHAM, HOSEK_WILKIE, NISHITA")
-    sun_elevation: float = Field(0.785, description="太阳高度（弧度）")
-    sun_rotation: float = Field(0.0, description="太阳旋转（弧度）")
-    air_density: float = Field(1.0, description="空气密度")
-    dust_density: float = Field(0.0, description="尘埃密度")
-    ozone_density: float = Field(1.0, description="臭氧密度")
+    """Set procedural sky"""
+    sky_type: str = Field("NISHITA", description="Sky type: PREETHAM, HOSEK_WILKIE, NISHITA")
+    sun_elevation: float = Field(0.785, description="Sun elevation (radians)")
+    sun_rotation: float = Field(0.0, description="Sun rotation (radians)")
+    air_density: float = Field(1.0, description="Air density")
+    dust_density: float = Field(0.0, description="Dust density")
+    ozone_density: float = Field(1.0, description="Ozone density")
 
 
 class WorldFogInput(BaseModel):
-    """设置体积雾"""
-    use_fog: bool = Field(True, description="启用雾")
-    density: float = Field(0.01, description="密度")
-    color: List[float] = Field([0.5, 0.6, 0.7], description="颜色")
-    anisotropy: float = Field(0.0, description="各向异性")
+    """Set volumetric fog"""
+    use_fog: bool = Field(True, description="Enable fog")
+    density: float = Field(0.01, description="Density")
+    color: List[float] = Field([0.5, 0.6, 0.7], description="Color")
+    anisotropy: float = Field(0.0, description="Anisotropy")
 
 
 class WorldAmbientOcclusionInput(BaseModel):
-    """设置环境光遮蔽"""
-    use_ao: bool = Field(True, description="启用AO")
-    distance: float = Field(1.0, description="距离")
-    factor: float = Field(1.0, description="因子")
+    """Set ambient occlusion"""
+    use_ao: bool = Field(True, description="Enable AO")
+    distance: float = Field(1.0, description="Distance")
+    factor: float = Field(1.0, description="Factor")
 
 
-# ============ 工具注册 ============
+# ============ Tool Registration ============
 
 def register_world_tools(mcp: FastMCP, server):
-    """注册世界/环境工具"""
-    
+    """Register world/environment tools"""
+
     @mcp.tool()
     async def blender_world_create(
         name: str = "World",
         use_nodes: bool = True
     ) -> Dict[str, Any]:
         """
-        创建新世界
-        
+        Create a new world
+
         Args:
-            name: 世界名称
-            use_nodes: 是否使用节点
+            name: World name
+            use_nodes: Whether to use nodes
         """
         params = WorldCreateInput(name=name, use_nodes=use_nodes)
         return await server.send_command("world", "create", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_world_background(
         color: Optional[List[float]] = None,
@@ -83,12 +83,12 @@ def register_world_tools(mcp: FastMCP, server):
         use_sky_texture: bool = False
     ) -> Dict[str, Any]:
         """
-        设置世界背景
-        
+        Set world background
+
         Args:
-            color: 背景颜色 [R, G, B]
-            strength: 强度
-            use_sky_texture: 使用天空纹理
+            color: Background color [R, G, B]
+            strength: Strength
+            use_sky_texture: Use sky texture
         """
         params = WorldBackgroundInput(
             color=color,
@@ -96,7 +96,7 @@ def register_world_tools(mcp: FastMCP, server):
             use_sky_texture=use_sky_texture
         )
         return await server.send_command("world", "background", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_world_hdri(
         hdri_path: str,
@@ -104,12 +104,12 @@ def register_world_tools(mcp: FastMCP, server):
         rotation: float = 0.0
     ) -> Dict[str, Any]:
         """
-        设置HDRI环境贴图
-        
+        Set HDRI environment map
+
         Args:
-            hdri_path: HDRI文件路径
-            strength: 环境光强度
-            rotation: 旋转角度（弧度）
+            hdri_path: HDRI file path
+            strength: Environment light strength
+            rotation: Rotation angle (radians)
         """
         params = WorldHDRIInput(
             hdri_path=hdri_path,
@@ -117,7 +117,7 @@ def register_world_tools(mcp: FastMCP, server):
             rotation=rotation
         )
         return await server.send_command("world", "hdri", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_world_sky(
         sky_type: str = "NISHITA",
@@ -128,15 +128,15 @@ def register_world_tools(mcp: FastMCP, server):
         ozone_density: float = 1.0
     ) -> Dict[str, Any]:
         """
-        设置程序化天空
-        
+        Set procedural sky
+
         Args:
-            sky_type: 天空类型 (PREETHAM, HOSEK_WILKIE, NISHITA)
-            sun_elevation: 太阳高度（弧度）
-            sun_rotation: 太阳旋转（弧度）
-            air_density: 空气密度
-            dust_density: 尘埃密度
-            ozone_density: 臭氧密度
+            sky_type: Sky type (PREETHAM, HOSEK_WILKIE, NISHITA)
+            sun_elevation: Sun elevation (radians)
+            sun_rotation: Sun rotation (radians)
+            air_density: Air density
+            dust_density: Dust density
+            ozone_density: Ozone density
         """
         params = WorldSkyInput(
             sky_type=sky_type,
@@ -147,7 +147,7 @@ def register_world_tools(mcp: FastMCP, server):
             ozone_density=ozone_density
         )
         return await server.send_command("world", "sky", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_world_fog(
         use_fog: bool = True,
@@ -156,13 +156,13 @@ def register_world_tools(mcp: FastMCP, server):
         anisotropy: float = 0.0
     ) -> Dict[str, Any]:
         """
-        设置体积雾
-        
+        Set volumetric fog
+
         Args:
-            use_fog: 启用雾
-            density: 雾密度
-            color: 雾颜色 [R, G, B]
-            anisotropy: 各向异性
+            use_fog: Enable fog
+            density: Fog density
+            color: Fog color [R, G, B]
+            anisotropy: Anisotropy
         """
         params = WorldFogInput(
             use_fog=use_fog,
@@ -171,7 +171,7 @@ def register_world_tools(mcp: FastMCP, server):
             anisotropy=anisotropy
         )
         return await server.send_command("world", "fog", params.model_dump())
-    
+
     @mcp.tool()
     async def blender_world_ambient_occlusion(
         use_ao: bool = True,
@@ -179,12 +179,12 @@ def register_world_tools(mcp: FastMCP, server):
         factor: float = 1.0
     ) -> Dict[str, Any]:
         """
-        设置环境光遮蔽
-        
+        Set ambient occlusion
+
         Args:
-            use_ao: 启用环境光遮蔽
-            distance: AO距离
-            factor: AO因子
+            use_ao: Enable ambient occlusion
+            distance: AO distance
+            factor: AO factor
         """
         params = WorldAmbientOcclusionInput(
             use_ao=use_ao,

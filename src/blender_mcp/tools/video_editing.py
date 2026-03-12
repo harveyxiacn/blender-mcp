@@ -1,7 +1,7 @@
 """
-视频编辑工具
+Video Editing Tools
 
-提供视频剪辑、效果、渲染等功能。
+Provides video clipping, effects, rendering, and related functionality.
 """
 
 from typing import TYPE_CHECKING, Optional, List
@@ -13,80 +13,80 @@ if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class VSEAddStripInput(BaseModel):
-    """添加条带输入"""
+    """Add strip input"""
     strip_type: str = Field(
         default="MOVIE",
-        description="条带类型: MOVIE, IMAGE, SOUND, SCENE, COLOR, TEXT"
+        description="Strip type: MOVIE, IMAGE, SOUND, SCENE, COLOR, TEXT"
     )
-    filepath: Optional[str] = Field(default=None, description="文件路径 (视频/图像/音频)")
-    channel: int = Field(default=1, description="通道", ge=1, le=128)
-    start_frame: int = Field(default=1, description="起始帧")
-    # 特定类型参数
-    text: Optional[str] = Field(default=None, description="文本内容 (TEXT类型)")
-    color: Optional[List[float]] = Field(default=None, description="颜色 RGBA (COLOR类型)")
-    scene_name: Optional[str] = Field(default=None, description="场景名称 (SCENE类型)")
+    filepath: Optional[str] = Field(default=None, description="File path (video/image/audio)")
+    channel: int = Field(default=1, description="Channel", ge=1, le=128)
+    start_frame: int = Field(default=1, description="Start frame")
+    # Type-specific parameters
+    text: Optional[str] = Field(default=None, description="Text content (TEXT type)")
+    color: Optional[List[float]] = Field(default=None, description="Color RGBA (COLOR type)")
+    scene_name: Optional[str] = Field(default=None, description="Scene name (SCENE type)")
 
 
 class VSECutInput(BaseModel):
-    """剪切条带输入"""
-    channel: int = Field(..., description="通道")
-    frame: int = Field(..., description="剪切帧")
-    cut_type: str = Field(default="SOFT", description="剪切类型: SOFT, HARD")
+    """Cut strip input"""
+    channel: int = Field(..., description="Channel")
+    frame: int = Field(..., description="Cut frame")
+    cut_type: str = Field(default="SOFT", description="Cut type: SOFT, HARD")
 
 
 class VSETransformInput(BaseModel):
-    """变换条带输入"""
-    strip_name: str = Field(..., description="条带名称")
-    position: Optional[List[float]] = Field(default=None, description="位置 [x, y]")
-    scale: Optional[List[float]] = Field(default=None, description="缩放 [x, y]")
-    rotation: Optional[float] = Field(default=None, description="旋转角度")
-    opacity: Optional[float] = Field(default=None, description="不透明度", ge=0, le=1)
+    """Transform strip input"""
+    strip_name: str = Field(..., description="Strip name")
+    position: Optional[List[float]] = Field(default=None, description="Position [x, y]")
+    scale: Optional[List[float]] = Field(default=None, description="Scale [x, y]")
+    rotation: Optional[float] = Field(default=None, description="Rotation angle")
+    opacity: Optional[float] = Field(default=None, description="Opacity", ge=0, le=1)
 
 
 class VSEEffectInput(BaseModel):
-    """添加效果输入"""
+    """Add effect input"""
     effect_type: str = Field(
         default="CROSS",
-        description="效果类型: CROSS, ADD, SUBTRACT, MULTIPLY, GAMMA_CROSS, WIPE, TRANSFORM, SPEED, GLOW"
+        description="Effect type: CROSS, ADD, SUBTRACT, MULTIPLY, GAMMA_CROSS, WIPE, TRANSFORM, SPEED, GLOW"
     )
-    channel: int = Field(default=1, description="通道")
-    start_frame: int = Field(default=1, description="起始帧")
-    end_frame: int = Field(default=30, description="结束帧")
-    seq1_name: Optional[str] = Field(default=None, description="第一个序列名称")
-    seq2_name: Optional[str] = Field(default=None, description="第二个序列名称")
+    channel: int = Field(default=1, description="Channel")
+    start_frame: int = Field(default=1, description="Start frame")
+    end_frame: int = Field(default=30, description="End frame")
+    seq1_name: Optional[str] = Field(default=None, description="First sequence name")
+    seq2_name: Optional[str] = Field(default=None, description="Second sequence name")
 
 
 class VSETextInput(BaseModel):
-    """文本条带输入"""
-    text: str = Field(..., description="文本内容")
-    channel: int = Field(default=1, description="通道")
-    start_frame: int = Field(default=1, description="起始帧")
-    duration: int = Field(default=100, description="持续帧数")
-    font_size: float = Field(default=60.0, description="字体大小")
-    color: Optional[List[float]] = Field(default=None, description="颜色 RGBA")
-    location: Optional[List[float]] = Field(default=None, description="位置 [x, y]")
+    """Text strip input"""
+    text: str = Field(..., description="Text content")
+    channel: int = Field(default=1, description="Channel")
+    start_frame: int = Field(default=1, description="Start frame")
+    duration: int = Field(default=100, description="Duration in frames")
+    font_size: float = Field(default=60.0, description="Font size")
+    color: Optional[List[float]] = Field(default=None, description="Color RGBA")
+    location: Optional[List[float]] = Field(default=None, description="Location [x, y]")
 
 
 class VSERenderInput(BaseModel):
-    """渲染视频输入"""
-    output_path: str = Field(..., description="输出路径")
-    format: str = Field(default="MPEG4", description="格式: MPEG4, AVI, QUICKTIME")
-    codec: str = Field(default="H264", description="编解码器: H264, MPEG4, PNG")
-    quality: int = Field(default=90, description="质量", ge=1, le=100)
+    """Render video input"""
+    output_path: str = Field(..., description="Output path")
+    format: str = Field(default="MPEG4", description="Format: MPEG4, AVI, QUICKTIME")
+    codec: str = Field(default="H264", description="Codec: H264, MPEG4, PNG")
+    quality: int = Field(default=90, description="Quality", ge=1, le=100)
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_video_editing_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册视频编辑工具"""
-    
+    """Register video editing tools"""
+
     @mcp.tool(
         name="blender_vse_add_strip",
         annotations={
-            "title": "添加视频条带",
+            "title": "Add Video Strip",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -94,21 +94,21 @@ def register_video_editing_tools(mcp: FastMCP, server: "BlenderMCPServer") -> No
         }
     )
     async def blender_vse_add_strip(params: VSEAddStripInput) -> str:
-        """在视频序列编辑器中添加条带。
-        
-        支持类型:
-        - MOVIE: 视频文件
-        - IMAGE: 图像序列
-        - SOUND: 音频文件
-        - SCENE: Blender场景
-        - COLOR: 纯色条带
-        - TEXT: 文本条带
-        
+        """Add a strip in the Video Sequence Editor.
+
+        Supported types:
+        - MOVIE: Video file
+        - IMAGE: Image sequence
+        - SOUND: Audio file
+        - SCENE: Blender scene
+        - COLOR: Solid color strip
+        - TEXT: Text strip
+
         Args:
-            params: 条带类型、文件路径、通道等
-            
+            params: Strip type, file path, channel, etc.
+
         Returns:
-            添加结果
+            Add result
         """
         result = await server.execute_command(
             "vse", "add_strip",
@@ -122,17 +122,17 @@ def register_video_editing_tools(mcp: FastMCP, server: "BlenderMCPServer") -> No
                 "scene_name": params.scene_name
             }
         )
-        
+
         if result.get("success"):
             name = result.get("data", {}).get("strip_name", "")
-            return f"成功添加条带 '{name}'"
+            return f"Successfully added strip '{name}'"
         else:
-            return f"添加失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Add failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_vse_cut",
         annotations={
-            "title": "剪切条带",
+            "title": "Cut Strip",
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
@@ -140,13 +140,13 @@ def register_video_editing_tools(mcp: FastMCP, server: "BlenderMCPServer") -> No
         }
     )
     async def blender_vse_cut(params: VSECutInput) -> str:
-        """在指定帧剪切条带。
-        
+        """Cut a strip at a specified frame.
+
         Args:
-            params: 通道、帧位置、剪切类型
-            
+            params: Channel, frame position, cut type
+
         Returns:
-            剪切结果
+            Cut result
         """
         result = await server.execute_command(
             "vse", "cut",
@@ -156,16 +156,16 @@ def register_video_editing_tools(mcp: FastMCP, server: "BlenderMCPServer") -> No
                 "cut_type": params.cut_type
             }
         )
-        
+
         if result.get("success"):
-            return f"成功在帧 {params.frame} 剪切"
+            return f"Successfully cut at frame {params.frame}"
         else:
-            return f"剪切失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Cut failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_vse_transform",
         annotations={
-            "title": "变换条带",
+            "title": "Transform Strip",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -173,13 +173,13 @@ def register_video_editing_tools(mcp: FastMCP, server: "BlenderMCPServer") -> No
         }
     )
     async def blender_vse_transform(params: VSETransformInput) -> str:
-        """变换视频条带（位置、缩放、旋转、透明度）。
-        
+        """Transform a video strip (position, scale, rotation, opacity).
+
         Args:
-            params: 条带名称、位置、缩放等
-            
+            params: Strip name, position, scale, etc.
+
         Returns:
-            变换结果
+            Transform result
         """
         result = await server.execute_command(
             "vse", "transform",
@@ -191,16 +191,16 @@ def register_video_editing_tools(mcp: FastMCP, server: "BlenderMCPServer") -> No
                 "opacity": params.opacity
             }
         )
-        
+
         if result.get("success"):
-            return f"成功变换条带 '{params.strip_name}'"
+            return f"Successfully transformed strip '{params.strip_name}'"
         else:
-            return f"变换失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Transform failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_vse_add_effect",
         annotations={
-            "title": "添加视频效果",
+            "title": "Add Video Effect",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -208,13 +208,13 @@ def register_video_editing_tools(mcp: FastMCP, server: "BlenderMCPServer") -> No
         }
     )
     async def blender_vse_add_effect(params: VSEEffectInput) -> str:
-        """添加视频效果（转场、叠加等）。
-        
+        """Add a video effect (transition, overlay, etc.).
+
         Args:
-            params: 效果类型、通道、帧范围
-            
+            params: Effect type, channel, frame range
+
         Returns:
-            添加结果
+            Add result
         """
         result = await server.execute_command(
             "vse", "add_effect",
@@ -227,16 +227,16 @@ def register_video_editing_tools(mcp: FastMCP, server: "BlenderMCPServer") -> No
                 "seq2_name": params.seq2_name
             }
         )
-        
+
         if result.get("success"):
-            return f"成功添加 {params.effect_type} 效果"
+            return f"Successfully added {params.effect_type} effect"
         else:
-            return f"添加失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Add failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_vse_add_text",
         annotations={
-            "title": "添加文本",
+            "title": "Add Text",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -244,13 +244,13 @@ def register_video_editing_tools(mcp: FastMCP, server: "BlenderMCPServer") -> No
         }
     )
     async def blender_vse_add_text(params: VSETextInput) -> str:
-        """添加文本条带。
-        
+        """Add a text strip.
+
         Args:
-            params: 文本内容、字体大小、颜色等
-            
+            params: Text content, font size, color, etc.
+
         Returns:
-            添加结果
+            Add result
         """
         result = await server.execute_command(
             "vse", "add_text",
@@ -264,16 +264,16 @@ def register_video_editing_tools(mcp: FastMCP, server: "BlenderMCPServer") -> No
                 "location": params.location
             }
         )
-        
+
         if result.get("success"):
-            return f"成功添加文本 '{params.text}'"
+            return f"Successfully added text '{params.text}'"
         else:
-            return f"添加失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Add failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_vse_render",
         annotations={
-            "title": "渲染视频",
+            "title": "Render Video",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -281,13 +281,13 @@ def register_video_editing_tools(mcp: FastMCP, server: "BlenderMCPServer") -> No
         }
     )
     async def blender_vse_render(params: VSERenderInput) -> str:
-        """渲染视频序列。
-        
+        """Render the video sequence.
+
         Args:
-            params: 输出路径、格式、编码等
-            
+            params: Output path, format, codec, etc.
+
         Returns:
-            渲染结果
+            Render result
         """
         result = await server.execute_command(
             "vse", "render",
@@ -298,8 +298,8 @@ def register_video_editing_tools(mcp: FastMCP, server: "BlenderMCPServer") -> No
                 "quality": params.quality
             }
         )
-        
+
         if result.get("success"):
-            return f"视频渲染完成: {params.output_path}"
+            return f"Video rendering complete: {params.output_path}"
         else:
-            return f"渲染失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Render failed: {result.get('error', {}).get('message', 'Unknown error')}"

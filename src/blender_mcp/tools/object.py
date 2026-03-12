@@ -1,7 +1,7 @@
 """
-对象操作工具
+Object Operation Tools
 
-提供对象创建、删除、变换、选择等功能。
+Provides object creation, deletion, transformation, selection, and other features.
 """
 
 from typing import TYPE_CHECKING, Optional, List, Union
@@ -16,8 +16,8 @@ if TYPE_CHECKING:
 
 
 class ObjectType(str, Enum):
-    """对象类型"""
-    # 网格
+    """Object type"""
+    # Mesh
     CUBE = "CUBE"
     SPHERE = "SPHERE"
     UV_SPHERE = "UV_SPHERE"
@@ -29,12 +29,12 @@ class ObjectType(str, Enum):
     CIRCLE = "CIRCLE"
     GRID = "GRID"
     MONKEY = "MONKEY"
-    # 曲线
+    # Curve
     BEZIER = "BEZIER"
     NURBS_CURVE = "NURBS_CURVE"
     NURBS_CIRCLE = "NURBS_CIRCLE"
     PATH = "PATH"
-    # 其他
+    # Other
     TEXT = "TEXT"
     EMPTY = "EMPTY"
     ARMATURE = "ARMATURE"
@@ -44,168 +44,168 @@ class ObjectType(str, Enum):
 
 
 class ResponseFormat(str, Enum):
-    """响应格式"""
+    """Response format"""
     MARKDOWN = "markdown"
     JSON = "json"
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class Vector3(BaseModel):
-    """3D 向量"""
+    """3D vector"""
     x: float = Field(default=0.0)
     y: float = Field(default=0.0)
     z: float = Field(default=0.0)
-    
+
     def to_list(self) -> List[float]:
         return [self.x, self.y, self.z]
 
 
 class ObjectCreateInput(BaseModel):
-    """创建对象输入"""
+    """Create object input"""
     model_config = ConfigDict(str_strip_whitespace=True)
-    
-    type: ObjectType = Field(..., description="对象类型")
-    name: Optional[str] = Field(default=None, description="对象名称", max_length=100)
+
+    type: ObjectType = Field(..., description="Object type")
+    name: Optional[str] = Field(default=None, description="Object name", max_length=100)
     location: Optional[List[float]] = Field(
         default=None,
-        description="位置坐标 [x, y, z]"
+        description="Position coordinates [x, y, z]"
     )
     rotation: Optional[List[float]] = Field(
         default=None,
-        description="旋转角度（弧度）[x, y, z]"
+        description="Rotation angles (radians) [x, y, z]"
     )
     scale: Optional[List[float]] = Field(
         default=None,
-        description="缩放 [x, y, z]"
+        description="Scale [x, y, z]"
     )
     mesh_params: Optional[dict] = Field(
         default=None,
-        description="网格创建参数(可选)。可用参数取决于类型: "
-                    "SPHERE/UV_SPHERE: segments(int,默认32), ring_count(int,默认16), radius(float,默认1); "
-                    "ICO_SPHERE: subdivisions(int,默认2), radius(float,默认1); "
-                    "CYLINDER: vertices(int,默认32), radius(float,默认1), depth(float,默认2), fill_type(str: NGON/TRIS/NOTHING); "
-                    "CONE: vertices(int,默认32), radius1(float,默认1), radius2(float,默认0), depth(float,默认2), fill_type(str); "
-                    "TORUS: major_segments(int,默认48), minor_segments(int,默认12), major_radius(float,默认1), minor_radius(float,默认0.25); "
-                    "CIRCLE: vertices(int,默认32), radius(float,默认1), fill_type(str: NGON/TRIS/NOTHING); "
-                    "GRID: x_subdivisions(int,默认10), y_subdivisions(int,默认10), size(float,默认2); "
-                    "CUBE: size(float,默认2); "
-                    "PLANE: size(float,默认2). "
-                    "Low Poly风格建议: segments=6~12, subdivisions=1~2"
+        description="Mesh creation parameters (optional). Available parameters depend on type: "
+                    "SPHERE/UV_SPHERE: segments(int,default 32), ring_count(int,default 16), radius(float,default 1); "
+                    "ICO_SPHERE: subdivisions(int,default 2), radius(float,default 1); "
+                    "CYLINDER: vertices(int,default 32), radius(float,default 1), depth(float,default 2), fill_type(str: NGON/TRIS/NOTHING); "
+                    "CONE: vertices(int,default 32), radius1(float,default 1), radius2(float,default 0), depth(float,default 2), fill_type(str); "
+                    "TORUS: major_segments(int,default 48), minor_segments(int,default 12), major_radius(float,default 1), minor_radius(float,default 0.25); "
+                    "CIRCLE: vertices(int,default 32), radius(float,default 1), fill_type(str: NGON/TRIS/NOTHING); "
+                    "GRID: x_subdivisions(int,default 10), y_subdivisions(int,default 10), size(float,default 2); "
+                    "CUBE: size(float,default 2); "
+                    "PLANE: size(float,default 2). "
+                    "Low Poly style suggestion: segments=6~12, subdivisions=1~2"
     )
-    
+
     @field_validator("location", "rotation", "scale")
     @classmethod
     def validate_vector(cls, v):
         if v is not None and len(v) != 3:
-            raise ValueError("向量必须包含 3 个元素")
+            raise ValueError("Vector must contain 3 elements")
         return v
 
 
 class ObjectDeleteInput(BaseModel):
-    """删除对象输入"""
-    name: str = Field(..., description="对象名称")
-    delete_data: bool = Field(default=True, description="是否同时删除对象数据")
+    """Delete object input"""
+    name: str = Field(..., description="Object name")
+    delete_data: bool = Field(default=True, description="Whether to also delete object data")
 
 
 class ObjectDuplicateInput(BaseModel):
-    """复制对象输入"""
-    name: str = Field(..., description="源对象名称")
-    new_name: Optional[str] = Field(default=None, description="新对象名称")
-    linked: bool = Field(default=False, description="是否关联复制")
-    offset: Optional[List[float]] = Field(default=None, description="位置偏移 [x, y, z]")
+    """Duplicate object input"""
+    name: str = Field(..., description="Source object name")
+    new_name: Optional[str] = Field(default=None, description="New object name")
+    linked: bool = Field(default=False, description="Whether to create a linked duplicate")
+    offset: Optional[List[float]] = Field(default=None, description="Position offset [x, y, z]")
 
 
 class ObjectTransformInput(BaseModel):
-    """变换对象输入"""
-    name: str = Field(..., description="对象名称")
-    location: Optional[List[float]] = Field(default=None, description="新位置（绝对值）")
-    rotation: Optional[List[float]] = Field(default=None, description="新旋转（弧度）")
-    scale: Optional[List[float]] = Field(default=None, description="新缩放")
-    delta_location: Optional[List[float]] = Field(default=None, description="位置增量")
-    delta_rotation: Optional[List[float]] = Field(default=None, description="旋转增量")
-    delta_scale: Optional[List[float]] = Field(default=None, description="缩放增量")
+    """Transform object input"""
+    name: str = Field(..., description="Object name")
+    location: Optional[List[float]] = Field(default=None, description="New location (absolute)")
+    rotation: Optional[List[float]] = Field(default=None, description="New rotation (radians)")
+    scale: Optional[List[float]] = Field(default=None, description="New scale")
+    delta_location: Optional[List[float]] = Field(default=None, description="Location delta")
+    delta_rotation: Optional[List[float]] = Field(default=None, description="Rotation delta")
+    delta_scale: Optional[List[float]] = Field(default=None, description="Scale delta")
 
 
 class ObjectSelectInput(BaseModel):
-    """选择对象输入"""
-    names: Optional[List[str]] = Field(default=None, description="要选择的对象名称列表")
-    pattern: Optional[str] = Field(default=None, description="选择匹配模式（支持通配符）")
-    deselect_all: bool = Field(default=True, description="是否先取消所有选择")
-    set_active: Optional[str] = Field(default=None, description="设置活动对象")
+    """Select object input"""
+    names: Optional[List[str]] = Field(default=None, description="List of object names to select")
+    pattern: Optional[str] = Field(default=None, description="Selection pattern (supports wildcards)")
+    deselect_all: bool = Field(default=True, description="Whether to deselect all first")
+    set_active: Optional[str] = Field(default=None, description="Set active object")
 
 
 class ObjectListInput(BaseModel):
-    """列出对象输入"""
-    type_filter: Optional[str] = Field(default=None, description="过滤对象类型")
-    name_pattern: Optional[str] = Field(default=None, description="名称匹配模式")
-    limit: int = Field(default=50, description="返回数量限制", ge=1, le=500)
+    """List objects input"""
+    type_filter: Optional[str] = Field(default=None, description="Filter by object type")
+    name_pattern: Optional[str] = Field(default=None, description="Name matching pattern")
+    limit: int = Field(default=50, description="Return count limit", ge=1, le=500)
     response_format: ResponseFormat = Field(default=ResponseFormat.MARKDOWN)
 
 
 class ObjectGetInfoInput(BaseModel):
-    """获取对象信息输入"""
-    name: str = Field(..., description="对象名称")
-    include_mesh_stats: bool = Field(default=True, description="包含网格统计")
-    include_modifiers: bool = Field(default=True, description="包含修改器信息")
-    include_materials: bool = Field(default=True, description="包含材质信息")
+    """Get object info input"""
+    name: str = Field(..., description="Object name")
+    include_mesh_stats: bool = Field(default=True, description="Include mesh statistics")
+    include_modifiers: bool = Field(default=True, description="Include modifier info")
+    include_materials: bool = Field(default=True, description="Include material info")
 
 
 class ObjectRenameInput(BaseModel):
-    """重命名对象输入"""
-    name: str = Field(..., description="当前对象名称")
-    new_name: str = Field(..., description="新名称", min_length=1, max_length=100)
+    """Rename object input"""
+    name: str = Field(..., description="Current object name")
+    new_name: str = Field(..., description="New name", min_length=1, max_length=100)
 
 
 class ObjectParentInput(BaseModel):
-    """设置父子关系输入"""
-    child_name: str = Field(..., description="子对象名称")
-    parent_name: Optional[str] = Field(default=None, description="父对象名称（为空则清除父级）")
-    keep_transform: bool = Field(default=True, description="保持世界变换")
+    """Set parent-child relationship input"""
+    child_name: str = Field(..., description="Child object name")
+    parent_name: Optional[str] = Field(default=None, description="Parent object name (empty to clear parent)")
+    keep_transform: bool = Field(default=True, description="Keep world transform")
 
 
 class ObjectJoinInput(BaseModel):
-    """合并对象输入"""
-    objects: List[str] = Field(..., description="要合并的对象名称列表", min_length=2)
-    target: Optional[str] = Field(default=None, description="目标对象（合并到此对象）")
+    """Join objects input"""
+    objects: List[str] = Field(..., description="List of object names to join", min_length=2)
+    target: Optional[str] = Field(default=None, description="Target object (join into this object)")
 
 
 class OriginType(str, Enum):
-    """原点类型"""
-    GEOMETRY = "GEOMETRY"           # 原点到几何中心
-    CURSOR = "CURSOR"               # 原点到 3D 游标
-    BOTTOM = "BOTTOM"               # 原点到底部中心（脚底）
-    CENTER_OF_MASS = "CENTER_OF_MASS"       # 原点到质心
-    CENTER_OF_VOLUME = "CENTER_OF_VOLUME"   # 原点到体积中心
+    """Origin type"""
+    GEOMETRY = "GEOMETRY"           # Origin to geometry center
+    CURSOR = "CURSOR"               # Origin to 3D cursor
+    BOTTOM = "BOTTOM"               # Origin to bottom center (feet)
+    CENTER_OF_MASS = "CENTER_OF_MASS"       # Origin to center of mass
+    CENTER_OF_VOLUME = "CENTER_OF_VOLUME"   # Origin to center of volume
 
 
 class ObjectSetOriginInput(BaseModel):
-    """设置原点输入"""
-    name: str = Field(..., description="对象名称")
+    """Set origin input"""
+    name: str = Field(..., description="Object name")
     origin_type: OriginType = Field(
         default=OriginType.GEOMETRY,
-        description="原点类型: GEOMETRY(几何中心), CURSOR(3D游标), BOTTOM(底部中心/脚底), CENTER_OF_MASS(质心), CENTER_OF_VOLUME(体积中心)"
+        description="Origin type: GEOMETRY(geometry center), CURSOR(3D cursor), BOTTOM(bottom center/feet), CENTER_OF_MASS(center of mass), CENTER_OF_VOLUME(center of volume)"
     )
-    center: str = Field(default="MEDIAN", description="几何中心计算方式: MEDIAN 或 BOUNDS")
+    center: str = Field(default="MEDIAN", description="Geometry center calculation method: MEDIAN or BOUNDS")
 
 
 class ObjectApplyTransformInput(BaseModel):
-    """应用变换输入"""
-    name: str = Field(..., description="对象名称")
-    location: bool = Field(default=False, description="应用位置")
-    rotation: bool = Field(default=False, description="应用旋转")
-    scale: bool = Field(default=True, description="应用缩放")
+    """Apply transform input"""
+    name: str = Field(..., description="Object name")
+    location: bool = Field(default=False, description="Apply location")
+    rotation: bool = Field(default=False, description="Apply rotation")
+    scale: bool = Field(default=True, description="Apply scale")
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册对象操作工具"""
-    
+    """Register object operation tools"""
+
     @mcp.tool(
         name="blender_object_create",
         annotations={
-            "title": "创建对象",
+            "title": "Create Object",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -213,15 +213,15 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_object_create(params: ObjectCreateInput) -> str:
-        """在 Blender 中创建新对象。
-        
-        支持创建各种类型的对象，包括网格（立方体、球体等）、曲线、文本等。
-        
+        """Create a new object in Blender.
+
+        Supports creating various types of objects including meshes (cube, sphere, etc.), curves, text, etc.
+
         Args:
-            params: 对象类型、名称、位置、旋转、缩放
-            
+            params: Object type, name, location, rotation, scale
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "object", "create",
@@ -234,18 +234,18 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "mesh_params": params.mesh_params or {}
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
             name = data.get("object_name", params.name or params.type.value)
-            return f"成功创建 {params.type.value} 对象 '{name}'，位置: {data.get('location', params.location)}"
+            return f"Successfully created {params.type.value} object '{name}', location: {data.get('location', params.location)}"
         else:
-            return f"创建对象失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to create object: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_object_delete",
         annotations={
-            "title": "删除对象",
+            "title": "Delete Object",
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
@@ -253,28 +253,28 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_object_delete(params: ObjectDeleteInput) -> str:
-        """删除指定对象。
-        
+        """Delete the specified object.
+
         Args:
-            params: 对象名称和删除选项
-            
+            params: Object name and deletion options
+
         Returns:
-            删除结果
+            Deletion result
         """
         result = await server.execute_command(
             "object", "delete",
             {"name": params.name, "delete_data": params.delete_data}
         )
-        
+
         if result.get("success"):
-            return f"已删除对象 '{params.name}'"
+            return f"Deleted object '{params.name}'"
         else:
-            return f"删除对象失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to delete object: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_object_duplicate",
         annotations={
-            "title": "复制对象",
+            "title": "Duplicate Object",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -282,15 +282,15 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_object_duplicate(params: ObjectDuplicateInput) -> str:
-        """复制对象。
-        
-        可以创建独立副本或关联副本（共享网格数据）。
-        
+        """Duplicate an object.
+
+        Can create an independent copy or a linked copy (sharing mesh data).
+
         Args:
-            params: 源对象名称、新名称、是否关联复制、位置偏移
-            
+            params: Source object name, new name, whether to link, position offset
+
         Returns:
-            复制结果
+            Duplication result
         """
         result = await server.execute_command(
             "object", "duplicate",
@@ -301,17 +301,17 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "offset": params.offset or [0, 0, 0]
             }
         )
-        
+
         if result.get("success"):
             new_name = result.get("data", {}).get("new_object_name", params.new_name)
-            return f"已复制对象 '{params.name}' 为 '{new_name}'"
+            return f"Duplicated object '{params.name}' as '{new_name}'"
         else:
-            return f"复制对象失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to duplicate object: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_object_transform",
         annotations={
-            "title": "变换对象",
+            "title": "Transform Object",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -319,15 +319,15 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_object_transform(params: ObjectTransformInput) -> str:
-        """变换对象（位置、旋转、缩放）。
-        
-        可以设置绝对值或增量变换。
-        
+        """Transform an object (location, rotation, scale).
+
+        Can set absolute values or delta transforms.
+
         Args:
-            params: 对象名称和变换参数
-            
+            params: Object name and transform parameters
+
         Returns:
-            变换结果
+            Transform result
         """
         transform = {}
         if params.location is not None:
@@ -342,24 +342,24 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             transform["delta_rotation"] = params.delta_rotation
         if params.delta_scale is not None:
             transform["delta_scale"] = params.delta_scale
-        
+
         if not transform:
-            return "没有指定任何变换参数"
-        
+            return "No transform parameters specified"
+
         result = await server.execute_command(
             "object", "transform",
             {"name": params.name, **transform}
         )
-        
+
         if result.get("success"):
-            return f"已变换对象 '{params.name}'"
+            return f"Transformed object '{params.name}'"
         else:
-            return f"变换失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Transform failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_object_select",
         annotations={
-            "title": "选择对象",
+            "title": "Select Objects",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -367,15 +367,15 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_object_select(params: ObjectSelectInput) -> str:
-        """选择对象。
-        
-        可以通过名称列表或通配符模式选择对象。
-        
+        """Select objects.
+
+        Can select objects by name list or wildcard pattern.
+
         Args:
-            params: 选择参数
-            
+            params: Selection parameters
+
         Returns:
-            选择结果
+            Selection result
         """
         result = await server.execute_command(
             "object", "select",
@@ -386,17 +386,17 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "set_active": params.set_active
             }
         )
-        
+
         if result.get("success"):
             count = result.get("data", {}).get("selected_count", 0)
-            return f"已选择 {count} 个对象"
+            return f"Selected {count} object(s)"
         else:
-            return f"选择失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Selection failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_object_list",
         annotations={
-            "title": "列出对象",
+            "title": "List Objects",
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -404,15 +404,15 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_object_list(params: ObjectListInput) -> str:
-        """列出场景中的对象。
-        
-        可以按类型或名称模式过滤。
-        
+        """List objects in the scene.
+
+        Can filter by type or name pattern.
+
         Args:
-            params: 过滤和格式选项
-            
+            params: Filter and format options
+
         Returns:
-            对象列表
+            Object list
         """
         result = await server.execute_command(
             "object", "list",
@@ -422,34 +422,34 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "limit": params.limit
             }
         )
-        
+
         if not result.get("success"):
-            return f"获取对象列表失败: {result.get('error', {}).get('message', '未知错误')}"
-        
+            return f"Failed to get object list: {result.get('error', {}).get('message', 'Unknown error')}"
+
         objects = result.get("data", {}).get("objects", [])
         total = result.get("data", {}).get("total", len(objects))
-        
+
         if params.response_format == ResponseFormat.JSON:
             return json.dumps({"objects": objects, "total": total}, indent=2)
-        
-        # Markdown 格式
-        lines = ["# 对象列表", ""]
-        lines.append(f"共 {total} 个对象" + (f"（显示 {len(objects)} 个）" if len(objects) < total else ""))
+
+        # Markdown format
+        lines = ["# Object List", ""]
+        lines.append(f"Total: {total} object(s)" + (f" (showing {len(objects)})" if len(objects) < total else ""))
         lines.append("")
-        
+
         for obj in objects:
             lines.append(f"## {obj['name']}")
-            lines.append(f"- **类型**: {obj.get('type', '未知')}")
-            lines.append(f"- **位置**: {obj.get('location', [0, 0, 0])}")
-            lines.append(f"- **可见**: {'是' if obj.get('visible', True) else '否'}")
+            lines.append(f"- **Type**: {obj.get('type', 'Unknown')}")
+            lines.append(f"- **Location**: {obj.get('location', [0, 0, 0])}")
+            lines.append(f"- **Visible**: {'Yes' if obj.get('visible', True) else 'No'}")
             lines.append("")
-        
+
         return "\n".join(lines)
-    
+
     @mcp.tool(
         name="blender_object_get_info",
         annotations={
-            "title": "获取对象信息",
+            "title": "Get Object Info",
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -457,15 +457,15 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_object_get_info(params: ObjectGetInfoInput) -> str:
-        """获取对象的详细信息。
-        
-        包括变换、网格统计、修改器、材质等信息。
-        
+        """Get detailed information about an object.
+
+        Includes transform, mesh statistics, modifiers, materials, and other info.
+
         Args:
-            params: 对象名称和包含选项
-            
+            params: Object name and inclusion options
+
         Returns:
-            对象详细信息
+            Detailed object information
         """
         result = await server.execute_command(
             "object", "get_info",
@@ -476,50 +476,50 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "include_materials": params.include_materials
             }
         )
-        
+
         if not result.get("success"):
-            return f"获取对象信息失败: {result.get('error', {}).get('message', '未知错误')}"
-        
+            return f"Failed to get object info: {result.get('error', {}).get('message', 'Unknown error')}"
+
         data = result.get("data", {})
-        
-        lines = [f"# 对象: {data.get('name', params.name)}", ""]
-        lines.append(f"- **类型**: {data.get('type', '未知')}")
-        lines.append(f"- **位置**: {data.get('location', [0, 0, 0])}")
-        lines.append(f"- **旋转**: {data.get('rotation_euler', [0, 0, 0])}")
-        lines.append(f"- **缩放**: {data.get('scale', [1, 1, 1])}")
-        lines.append(f"- **尺寸**: {data.get('dimensions', [0, 0, 0])}")
-        
+
+        lines = [f"# Object: {data.get('name', params.name)}", ""]
+        lines.append(f"- **Type**: {data.get('type', 'Unknown')}")
+        lines.append(f"- **Location**: {data.get('location', [0, 0, 0])}")
+        lines.append(f"- **Rotation**: {data.get('rotation_euler', [0, 0, 0])}")
+        lines.append(f"- **Scale**: {data.get('scale', [1, 1, 1])}")
+        lines.append(f"- **Dimensions**: {data.get('dimensions', [0, 0, 0])}")
+
         if params.include_mesh_stats and "mesh_stats" in data:
             stats = data["mesh_stats"]
             lines.append("")
-            lines.append("## 网格统计")
-            lines.append(f"- 顶点: {stats.get('vertices', 0)}")
-            lines.append(f"- 边: {stats.get('edges', 0)}")
-            lines.append(f"- 面: {stats.get('faces', 0)}")
-            lines.append(f"- 三角形: {stats.get('triangles', 0)}")
-        
+            lines.append("## Mesh Statistics")
+            lines.append(f"- Vertices: {stats.get('vertices', 0)}")
+            lines.append(f"- Edges: {stats.get('edges', 0)}")
+            lines.append(f"- Faces: {stats.get('faces', 0)}")
+            lines.append(f"- Triangles: {stats.get('triangles', 0)}")
+
         if params.include_modifiers:
             mods = data.get("modifiers", [])
             if mods:
                 lines.append("")
-                lines.append("## 修改器")
+                lines.append("## Modifiers")
                 for mod in mods:
                     lines.append(f"- {mod}")
-        
+
         if params.include_materials:
             mats = data.get("materials", [])
             if mats:
                 lines.append("")
-                lines.append("## 材质")
+                lines.append("## Materials")
                 for mat in mats:
                     lines.append(f"- {mat}")
-        
+
         return "\n".join(lines)
-    
+
     @mcp.tool(
         name="blender_object_rename",
         annotations={
-            "title": "重命名对象",
+            "title": "Rename Object",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -527,28 +527,28 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_object_rename(params: ObjectRenameInput) -> str:
-        """重命名对象。
-        
+        """Rename an object.
+
         Args:
-            params: 当前名称和新名称
-            
+            params: Current name and new name
+
         Returns:
-            重命名结果
+            Rename result
         """
         result = await server.execute_command(
             "object", "rename",
             {"name": params.name, "new_name": params.new_name}
         )
-        
+
         if result.get("success"):
-            return f"已将对象 '{params.name}' 重命名为 '{params.new_name}'"
+            return f"Renamed object '{params.name}' to '{params.new_name}'"
         else:
-            return f"重命名失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Rename failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_object_parent",
         annotations={
-            "title": "设置父子关系",
+            "title": "Set Parent-Child Relationship",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -556,13 +556,13 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_object_parent(params: ObjectParentInput) -> str:
-        """设置对象的父子关系。
-        
+        """Set the parent-child relationship for objects.
+
         Args:
-            params: 子对象、父对象名称
-            
+            params: Child object and parent object names
+
         Returns:
-            设置结果
+            Setting result
         """
         result = await server.execute_command(
             "object", "set_parent",
@@ -572,19 +572,19 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "keep_transform": params.keep_transform
             }
         )
-        
+
         if result.get("success"):
             if params.parent_name:
-                return f"已将 '{params.child_name}' 设为 '{params.parent_name}' 的子对象"
+                return f"Set '{params.child_name}' as child of '{params.parent_name}'"
             else:
-                return f"已清除 '{params.child_name}' 的父级关系"
+                return f"Cleared parent relationship for '{params.child_name}'"
         else:
-            return f"设置父子关系失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to set parent-child relationship: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_object_join",
         annotations={
-            "title": "合并对象",
+            "title": "Join Objects",
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
@@ -592,29 +592,29 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_object_join(params: ObjectJoinInput) -> str:
-        """合并多个对象为一个。
-        
+        """Join multiple objects into one.
+
         Args:
-            params: 要合并的对象列表和目标对象
-            
+            params: List of objects to join and target object
+
         Returns:
-            合并结果
+            Join result
         """
         result = await server.execute_command(
             "object", "join",
             {"objects": params.objects, "target": params.target}
         )
-        
+
         if result.get("success"):
             target = result.get("data", {}).get("result_object", params.target or params.objects[0])
-            return f"已将 {len(params.objects)} 个对象合并为 '{target}'"
+            return f"Joined {len(params.objects)} objects into '{target}'"
         else:
-            return f"合并失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Join failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_object_set_origin",
         annotations={
-            "title": "设置原点",
+            "title": "Set Origin",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -622,15 +622,15 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_object_set_origin(params: ObjectSetOriginInput) -> str:
-        """设置对象的原点位置。
-        
-        支持多种原点设置方式，包括几何中心、3D游标、底部中心（适用于角色脚底）等。
-        
+        """Set the origin point of an object.
+
+        Supports multiple origin setting methods including geometry center, 3D cursor, bottom center (suitable for character feet), etc.
+
         Args:
-            params: 对象名称和原点类型
-            
+            params: Object name and origin type
+
         Returns:
-            设置结果
+            Setting result
         """
         result = await server.execute_command(
             "object", "set_origin",
@@ -640,17 +640,17 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "center": params.center
             }
         )
-        
+
         if result.get("success"):
             data = result.get("data", {})
-            return f"已将 '{params.name}' 的原点设置为 {params.origin_type.value}，新原点位置: {data.get('new_origin', 'N/A')}"
+            return f"Set origin of '{params.name}' to {params.origin_type.value}, new origin location: {data.get('new_origin', 'N/A')}"
         else:
-            return f"设置原点失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to set origin: {result.get('error', {}).get('message', 'Unknown error')}"
+
     @mcp.tool(
         name="blender_object_apply_transform",
         annotations={
-            "title": "应用变换",
+            "title": "Apply Transform",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -658,15 +658,15 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_object_apply_transform(params: ObjectApplyTransformInput) -> str:
-        """应用对象的变换（位置、旋转、缩放）。
-        
-        将变换数据应用到网格数据中，重置对象变换为默认值。
-        
+        """Apply object transforms (location, rotation, scale).
+
+        Applies transform data to the mesh data and resets object transforms to default values.
+
         Args:
-            params: 对象名称和要应用的变换类型
-            
+            params: Object name and transform types to apply
+
         Returns:
-            应用结果
+            Apply result
         """
         result = await server.execute_command(
             "object", "apply_transform",
@@ -677,15 +677,15 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "scale": params.scale
             }
         )
-        
+
         if result.get("success"):
             applied = []
             if params.location:
-                applied.append("位置")
+                applied.append("location")
             if params.rotation:
-                applied.append("旋转")
+                applied.append("rotation")
             if params.scale:
-                applied.append("缩放")
-            return f"已应用 '{params.name}' 的变换: {', '.join(applied) if applied else '无'}"
+                applied.append("scale")
+            return f"Applied transforms for '{params.name}': {', '.join(applied) if applied else 'none'}"
         else:
-            return f"应用变换失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Failed to apply transform: {result.get('error', {}).get('message', 'Unknown error')}"

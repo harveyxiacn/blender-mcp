@@ -1,13 +1,13 @@
 """
-运动角色工具
+Sport character tools
 
-提供运动员角色建模功能，支持Q版/写实运动角色创建，
-包含乒乓球等运动专用装备、运动服、运动姿势、参考图加载、Web优化导出等。
+Provides athlete character modeling features, supporting chibi/realistic sport character creation,
+including table tennis-specific equipment, sportswear, athletic poses, reference image loading, web-optimized export, etc.
 
-专门用于：
-- 樊振东球迷网3D模型制作
-- 乒乓球/体育类游戏角色建模
-- Q版运动员（泡泡玛特风格）
+Designed for:
+- Fan Zhendong fan site 3D model creation
+- Table tennis/sports game character modeling
+- Chibi athletes (Pop Mart style)
 """
 
 from typing import TYPE_CHECKING, Optional, List
@@ -20,10 +20,10 @@ if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
 
 
-# ==================== 枚举定义 ====================
+# ==================== Enum Definitions ====================
 
 class SportType(str, Enum):
-    """运动类型"""
+    """Sport type"""
     TABLE_TENNIS = "TABLE_TENNIS"
     BASKETBALL = "BASKETBALL"
     SOCCER = "SOCCER"
@@ -33,72 +33,72 @@ class SportType(str, Enum):
 
 
 class CharacterStyle(str, Enum):
-    """角色风格"""
-    CHIBI = "CHIBI"           # Q版/泡泡玛特 (头身比 2:1~2.5:1)
-    ANIME = "ANIME"           # 动漫风 (头身比 5:1~6:1)
-    STYLIZED = "STYLIZED"     # 风格化 (头身比 4:1)
-    REALISTIC = "REALISTIC"   # 写实 (头身比 7:1~8:1)
+    """Character style"""
+    CHIBI = "CHIBI"           # Chibi/Pop Mart (head-body ratio 2:1~2.5:1)
+    ANIME = "ANIME"           # Anime (head-body ratio 5:1~6:1)
+    STYLIZED = "STYLIZED"     # Stylized (head-body ratio 4:1)
+    REALISTIC = "REALISTIC"   # Realistic (head-body ratio 7:1~8:1)
 
 
 class AthletePreset(str, Enum):
-    """运动员预设"""
-    FAN_ZHENDONG = "FAN_ZHENDONG"     # 樊振东
-    CUSTOM = "CUSTOM"                  # 自定义
+    """Athlete preset"""
+    FAN_ZHENDONG = "FAN_ZHENDONG"     # Fan Zhendong
+    CUSTOM = "CUSTOM"                  # Custom
 
 
 class EquipmentType(str, Enum):
-    """运动装备类型"""
-    # 乒乓球
-    PADDLE = "PADDLE"               # 乒乓球拍
-    BALL = "BALL"                   # 乒乓球
-    TABLE = "TABLE"                 # 乒乓球台
-    NET = "NET"                     # 球网
-    # 通用配件
-    WRISTBAND = "WRISTBAND"         # 护腕
-    HEADBAND = "HEADBAND"           # 头带
-    MEDAL_GOLD = "MEDAL_GOLD"       # 金牌
-    MEDAL_SILVER = "MEDAL_SILVER"   # 银牌
-    MEDAL_BRONZE = "MEDAL_BRONZE"   # 铜牌
-    TROPHY = "TROPHY"              # 奖杯
-    TOWEL = "TOWEL"                # 毛巾
+    """Sport equipment type"""
+    # Table tennis
+    PADDLE = "PADDLE"               # Table tennis paddle
+    BALL = "BALL"                   # Table tennis ball
+    TABLE = "TABLE"                 # Table tennis table
+    NET = "NET"                     # Net
+    # General accessories
+    WRISTBAND = "WRISTBAND"         # Wristband
+    HEADBAND = "HEADBAND"           # Headband
+    MEDAL_GOLD = "MEDAL_GOLD"       # Gold medal
+    MEDAL_SILVER = "MEDAL_SILVER"   # Silver medal
+    MEDAL_BRONZE = "MEDAL_BRONZE"   # Bronze medal
+    TROPHY = "TROPHY"              # Trophy
+    TOWEL = "TOWEL"                # Towel
 
 
 class UniformTeam(str, Enum):
-    """运动队伍"""
-    CHINA_NATIONAL = "CHINA_NATIONAL"       # 中国国家队（红色）
-    CHINA_NATIONAL_BLUE = "CHINA_NATIONAL_BLUE"  # 中国队（蓝色客场）
-    CHINA_NATIONAL_WHITE = "CHINA_NATIONAL_WHITE"  # 中国队（白色领奖服）
-    CLUB_SHENZHEN = "CLUB_SHENZHEN"         # 深圳俱乐部
-    CLUB_CUSTOM = "CLUB_CUSTOM"             # 自定义俱乐部
-    TRAINING = "TRAINING"                    # 训练服
+    """Sport team"""
+    CHINA_NATIONAL = "CHINA_NATIONAL"       # China National Team (red)
+    CHINA_NATIONAL_BLUE = "CHINA_NATIONAL_BLUE"  # China Team (blue away)
+    CHINA_NATIONAL_WHITE = "CHINA_NATIONAL_WHITE"  # China Team (white ceremony)
+    CLUB_SHENZHEN = "CLUB_SHENZHEN"         # Shenzhen Club
+    CLUB_CUSTOM = "CLUB_CUSTOM"             # Custom club
+    TRAINING = "TRAINING"                    # Training uniform
 
 
 class UniformStyle(str, Enum):
-    """运动服类型"""
-    MATCH_JERSEY = "MATCH_JERSEY"            # 比赛球衣
-    TRAINING_WEAR = "TRAINING_WEAR"          # 训练服
-    AWARD_CEREMONY = "AWARD_CEREMONY"        # 领奖服
-    WARMUP_JACKET = "WARMUP_JACKET"          # 热身外套
+    """Sportswear type"""
+    MATCH_JERSEY = "MATCH_JERSEY"            # Match jersey
+    TRAINING_WEAR = "TRAINING_WEAR"          # Training wear
+    AWARD_CEREMONY = "AWARD_CEREMONY"        # Award ceremony outfit
+    WARMUP_JACKET = "WARMUP_JACKET"          # Warmup jacket
 
 
 class SportPose(str, Enum):
-    """运动姿势"""
-    READY_STANCE = "READY_STANCE"            # 准备姿势
-    FOREHAND_ATTACK = "FOREHAND_ATTACK"      # 正手进攻
-    BACKHAND_ATTACK = "BACKHAND_ATTACK"      # 反手拉球
-    SERVE_TOSS = "SERVE_TOSS"               # 发球抛球
-    SERVE_HIT = "SERVE_HIT"                 # 发球击球
-    FOREHAND_LOOP = "FOREHAND_LOOP"          # 正手弧圈球
-    CELEBRATE = "CELEBRATE"                  # 庆祝
-    FIST_PUMP = "FIST_PUMP"                 # 握拳庆祝
-    HOLD_MEDAL = "HOLD_MEDAL"               # 展示奖牌
-    RECEIVING_AWARD = "RECEIVING_AWARD"       # 领奖
-    T_POSE = "T_POSE"                       # T-Pose (建模/绑定用)
-    A_POSE = "A_POSE"                       # A-Pose (建模/绑定用)
+    """Sport pose"""
+    READY_STANCE = "READY_STANCE"            # Ready stance
+    FOREHAND_ATTACK = "FOREHAND_ATTACK"      # Forehand attack
+    BACKHAND_ATTACK = "BACKHAND_ATTACK"      # Backhand loop
+    SERVE_TOSS = "SERVE_TOSS"               # Serve toss
+    SERVE_HIT = "SERVE_HIT"                 # Serve hit
+    FOREHAND_LOOP = "FOREHAND_LOOP"          # Forehand loop drive
+    CELEBRATE = "CELEBRATE"                  # Celebration
+    FIST_PUMP = "FIST_PUMP"                 # Fist pump celebration
+    HOLD_MEDAL = "HOLD_MEDAL"               # Holding medal
+    RECEIVING_AWARD = "RECEIVING_AWARD"       # Receiving award
+    T_POSE = "T_POSE"                       # T-Pose (for modeling/rigging)
+    A_POSE = "A_POSE"                       # A-Pose (for modeling/rigging)
 
 
 class ReferenceView(str, Enum):
-    """参考图视角"""
+    """Reference image view"""
     FRONT = "FRONT"
     SIDE = "SIDE"
     BACK = "BACK"
@@ -106,111 +106,111 @@ class ReferenceView(str, Enum):
 
 
 class SceneType(str, Enum):
-    """场景类型"""
-    MATCH = "MATCH"                   # 比赛场景
-    TRAINING = "TRAINING"             # 训练场景
-    AWARD_CEREMONY = "AWARD_CEREMONY" # 颁奖场景
-    PORTRAIT = "PORTRAIT"             # 肖像/展示场景
-    PRODUCT = "PRODUCT"               # 产品展示（手办风）
+    """Scene type"""
+    MATCH = "MATCH"                   # Match scene
+    TRAINING = "TRAINING"             # Training scene
+    AWARD_CEREMONY = "AWARD_CEREMONY" # Award ceremony scene
+    PORTRAIT = "PORTRAIT"             # Portrait/display scene
+    PRODUCT = "PRODUCT"               # Product display (figurine style)
 
 
 class OptimizeTarget(str, Enum):
-    """优化目标平台"""
-    WEB = "WEB"             # Web端 (3000-4500 tris)
-    MOBILE = "MOBILE"       # 移动端 (5000-8000 tris)
-    PC_CONSOLE = "PC_CONSOLE"  # PC/主机 (10000-20000 tris)
-    PRINT_3D = "PRINT_3D"   # 3D打印 (高精度)
+    """Optimization target platform"""
+    WEB = "WEB"             # Web (3000-4500 tris)
+    MOBILE = "MOBILE"       # Mobile (5000-8000 tris)
+    PC_CONSOLE = "PC_CONSOLE"  # PC/Console (10000-20000 tris)
+    PRINT_3D = "PRINT_3D"   # 3D printing (high detail)
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class SportCharacterCreateInput(BaseModel):
-    """创建运动角色输入"""
-    name: str = Field(default="Athlete", description="角色名称")
-    sport: SportType = Field(default=SportType.TABLE_TENNIS, description="运动类型")
-    style: CharacterStyle = Field(default=CharacterStyle.CHIBI, description="角色风格: CHIBI(Q版2.5:1), ANIME(动漫5:1), STYLIZED(风格化4:1), REALISTIC(写实7:1)")
-    preset: AthletePreset = Field(default=AthletePreset.FAN_ZHENDONG, description="运动员预设: FAN_ZHENDONG(樊振东), CUSTOM(自定义)")
-    height: float = Field(default=1.0, description="角色整体高度（米），Q版建议0.8-1.2", ge=0.3, le=3.0)
-    head_body_ratio: Optional[float] = Field(default=None, description="头身比覆盖值，不填则使用风格默认值。Q版2.0-2.5，动漫5-6，写实7-8")
-    skin_color: Optional[List[float]] = Field(default=None, description="皮肤颜色 [r, g, b, a]，不填则使用预设默认")
-    build: str = Field(default="athletic", description="体格: slim(纤细), athletic(运动型), muscular(肌肉型), stocky(敦实)")
-    create_armature: bool = Field(default=True, description="是否创建骨骼系统")
-    face_count_budget: int = Field(default=4500, description="面数预算（三角面），Web: 3000-4500, PC: 5000-20000", ge=1000, le=50000)
+    """Create sport character input"""
+    name: str = Field(default="Athlete", description="Character name")
+    sport: SportType = Field(default=SportType.TABLE_TENNIS, description="Sport type")
+    style: CharacterStyle = Field(default=CharacterStyle.CHIBI, description="Character style: CHIBI (chibi 2.5:1), ANIME (anime 5:1), STYLIZED (stylized 4:1), REALISTIC (realistic 7:1)")
+    preset: AthletePreset = Field(default=AthletePreset.FAN_ZHENDONG, description="Athlete preset: FAN_ZHENDONG, CUSTOM")
+    height: float = Field(default=1.0, description="Character overall height (meters), chibi recommended 0.8-1.2", ge=0.3, le=3.0)
+    head_body_ratio: Optional[float] = Field(default=None, description="Head-body ratio override, uses style default if empty. Chibi 2.0-2.5, anime 5-6, realistic 7-8")
+    skin_color: Optional[List[float]] = Field(default=None, description="Skin color [r, g, b, a], uses preset default if empty")
+    build: str = Field(default="athletic", description="Build: slim, athletic, muscular, stocky")
+    create_armature: bool = Field(default=True, description="Whether to create skeleton system")
+    face_count_budget: int = Field(default=4500, description="Face count budget (triangles), Web: 3000-4500, PC: 5000-20000", ge=1000, le=50000)
 
 
 class SportEquipmentAddInput(BaseModel):
-    """添加运动装备输入"""
-    character_name: str = Field(..., description="角色名称")
-    equipment_type: EquipmentType = Field(..., description="装备类型")
-    attach_to: str = Field(default="auto", description="附着位置: auto(自动), right_hand(右手), left_hand(左手), neck(颈部), head(头部), waist(腰部)")
-    color: Optional[List[float]] = Field(default=None, description="装备主色 [r, g, b]")
-    secondary_color: Optional[List[float]] = Field(default=None, description="装备次色 [r, g, b]")
-    scale: float = Field(default=1.0, description="装备缩放", ge=0.1, le=3.0)
+    """Add sport equipment input"""
+    character_name: str = Field(..., description="Character name")
+    equipment_type: EquipmentType = Field(..., description="Equipment type")
+    attach_to: str = Field(default="auto", description="Attach position: auto, right_hand, left_hand, neck, head, waist")
+    color: Optional[List[float]] = Field(default=None, description="Equipment primary color [r, g, b]")
+    secondary_color: Optional[List[float]] = Field(default=None, description="Equipment secondary color [r, g, b]")
+    scale: float = Field(default=1.0, description="Equipment scale", ge=0.1, le=3.0)
 
 
 class SportUniformCreateInput(BaseModel):
-    """创建运动服输入"""
-    character_name: str = Field(..., description="角色名称")
-    team: UniformTeam = Field(default=UniformTeam.CHINA_NATIONAL, description="队伍")
-    uniform_style: UniformStyle = Field(default=UniformStyle.MATCH_JERSEY, description="运动服类型")
-    jersey_number: int = Field(default=20, description="球衣号码（樊振东为20号）", ge=0, le=99)
-    player_name: str = Field(default="FAN ZHENDONG", description="球衣背面名字")
-    brand: str = Field(default="Li-Ning", description="品牌: Li-Ning, Nike, Adidas, Butterfly, Custom")
-    custom_primary_color: Optional[List[float]] = Field(default=None, description="自定义主色 [r, g, b]，仅CLUB_CUSTOM时有效")
-    custom_secondary_color: Optional[List[float]] = Field(default=None, description="自定义次色 [r, g, b]，仅CLUB_CUSTOM时有效")
+    """Create sportswear input"""
+    character_name: str = Field(..., description="Character name")
+    team: UniformTeam = Field(default=UniformTeam.CHINA_NATIONAL, description="Team")
+    uniform_style: UniformStyle = Field(default=UniformStyle.MATCH_JERSEY, description="Sportswear type")
+    jersey_number: int = Field(default=20, description="Jersey number (Fan Zhendong is #20)", ge=0, le=99)
+    player_name: str = Field(default="FAN ZHENDONG", description="Name on jersey back")
+    brand: str = Field(default="Li-Ning", description="Brand: Li-Ning, Nike, Adidas, Butterfly, Custom")
+    custom_primary_color: Optional[List[float]] = Field(default=None, description="Custom primary color [r, g, b], only for CLUB_CUSTOM")
+    custom_secondary_color: Optional[List[float]] = Field(default=None, description="Custom secondary color [r, g, b], only for CLUB_CUSTOM")
 
 
 class SportPoseSetInput(BaseModel):
-    """设置运动姿势输入"""
-    character_name: str = Field(..., description="角色名称")
-    pose: SportPose = Field(default=SportPose.READY_STANCE, description="运动姿势")
-    intensity: float = Field(default=1.0, description="姿势强度/夸张程度，Q版建议1.2-1.5", ge=0.1, le=2.0)
-    mirror: bool = Field(default=False, description="是否镜像（左手持拍）")
-    add_motion_trail: bool = Field(default=False, description="是否添加运动轨迹效果")
+    """Set sport pose input"""
+    character_name: str = Field(..., description="Character name")
+    pose: SportPose = Field(default=SportPose.READY_STANCE, description="Sport pose")
+    intensity: float = Field(default=1.0, description="Pose intensity/exaggeration, chibi recommended 1.2-1.5", ge=0.1, le=2.0)
+    mirror: bool = Field(default=False, description="Whether to mirror (left-hand paddle)")
+    add_motion_trail: bool = Field(default=False, description="Whether to add motion trail effect")
 
 
 class SportReferenceLoadInput(BaseModel):
-    """加载参考图输入"""
-    image_path: str = Field(..., description="参考图文件路径")
-    view: ReferenceView = Field(default=ReferenceView.FRONT, description="视角: FRONT(正面), SIDE(侧面), BACK(背面), THREE_QUARTER(3/4视角)")
-    opacity: float = Field(default=0.5, description="透明度", ge=0.1, le=1.0)
-    offset_x: float = Field(default=0.0, description="X轴偏移")
-    offset_y: float = Field(default=0.0, description="Y轴偏移")
-    scale: float = Field(default=1.0, description="参考图缩放", ge=0.1, le=10.0)
+    """Load reference image input"""
+    image_path: str = Field(..., description="Reference image file path")
+    view: ReferenceView = Field(default=ReferenceView.FRONT, description="View: FRONT, SIDE, BACK, THREE_QUARTER")
+    opacity: float = Field(default=0.5, description="Opacity", ge=0.1, le=1.0)
+    offset_x: float = Field(default=0.0, description="X offset")
+    offset_y: float = Field(default=0.0, description="Y offset")
+    scale: float = Field(default=1.0, description="Reference image scale", ge=0.1, le=10.0)
 
 
 class SportModelOptimizeInput(BaseModel):
-    """运动模型优化输入"""
-    character_name: str = Field(..., description="角色名称")
-    target: OptimizeTarget = Field(default=OptimizeTarget.WEB, description="优化目标平台")
-    target_tris: Optional[int] = Field(default=None, description="目标三角面数，不填则使用平台默认值")
-    texture_size: int = Field(default=1024, description="贴图尺寸", ge=256, le=4096)
-    generate_lod: bool = Field(default=False, description="是否生成LOD层级")
-    lod_levels: int = Field(default=3, description="LOD层级数", ge=2, le=5)
-    export_glb: bool = Field(default=True, description="是否同时导出GLB文件")
-    export_path: Optional[str] = Field(default=None, description="导出路径，不填则使用当前blend文件同目录")
-    apply_draco_compression: bool = Field(default=True, description="是否应用Draco压缩（GLB）")
+    """Sport model optimization input"""
+    character_name: str = Field(..., description="Character name")
+    target: OptimizeTarget = Field(default=OptimizeTarget.WEB, description="Optimization target platform")
+    target_tris: Optional[int] = Field(default=None, description="Target triangle count, uses platform default if empty")
+    texture_size: int = Field(default=1024, description="Texture size", ge=256, le=4096)
+    generate_lod: bool = Field(default=False, description="Whether to generate LOD levels")
+    lod_levels: int = Field(default=3, description="LOD level count", ge=2, le=5)
+    export_glb: bool = Field(default=True, description="Whether to also export GLB file")
+    export_path: Optional[str] = Field(default=None, description="Export path, uses current blend file directory if empty")
+    apply_draco_compression: bool = Field(default=True, description="Whether to apply Draco compression (GLB)")
 
 
 class SportSceneSetupInput(BaseModel):
-    """运动场景设置输入"""
-    scene_type: SceneType = Field(default=SceneType.PORTRAIT, description="场景类型")
-    character_name: Optional[str] = Field(default=None, description="要放入场景的角色名称")
-    background_color: Optional[List[float]] = Field(default=None, description="背景颜色 [r, g, b]")
-    use_hdri: bool = Field(default=False, description="是否使用HDRI环境光")
-    camera_distance: float = Field(default=3.0, description="相机距离", ge=1.0, le=20.0)
-    render_engine: str = Field(default="EEVEE", description="渲染引擎: EEVEE, CYCLES")
+    """Sport scene setup input"""
+    scene_type: SceneType = Field(default=SceneType.PORTRAIT, description="Scene type")
+    character_name: Optional[str] = Field(default=None, description="Character name to place in scene")
+    background_color: Optional[List[float]] = Field(default=None, description="Background color [r, g, b]")
+    use_hdri: bool = Field(default=False, description="Whether to use HDRI environment lighting")
+    camera_distance: float = Field(default=3.0, description="Camera distance", ge=1.0, le=20.0)
+    render_engine: str = Field(default="EEVEE", description="Render engine: EEVEE, CYCLES")
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册运动角色工具"""
+    """Register sport character tools"""
 
     @mcp.tool(
         name="blender_sport_character_create",
         annotations={
-            "title": "创建运动角色",
+            "title": "Create Sport Character",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -218,28 +218,28 @@ def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> 
         }
     )
     async def blender_sport_character_create(params: SportCharacterCreateInput) -> str:
-        """创建运动员角色（支持Q版/写实/动漫风格）。
+        """Create an athlete character (supports chibi/realistic/anime styles).
 
-        根据运动类型和风格创建完整的运动员角色模型：
-        - Q版(CHIBI): 泡泡玛特风格，头身比2:1~2.5:1，圆脸大眼，适合Web展示
-        - 动漫(ANIME): 日漫风格，头身比5:1~6:1
-        - 风格化(STYLIZED): 游戏风格化，头身比4:1
-        - 写实(REALISTIC): 写实比例，头身比7:1~8:1
+        Creates a complete athlete character model based on sport type and style:
+        - Chibi (CHIBI): Pop Mart style, head-body ratio 2:1~2.5:1, round face with big eyes, suitable for web display
+        - Anime (ANIME): Japanese anime style, head-body ratio 5:1~6:1
+        - Stylized (STYLIZED): Game stylized, head-body ratio 4:1
+        - Realistic (REALISTIC): Realistic proportions, head-body ratio 7:1~8:1
 
-        内置运动员预设:
-        - FAN_ZHENDONG: 樊振东 - 国乒主力，身高172cm，运动型体格，
-          圆脸、短黑发、浓眉大眼、自信表情
+        Built-in athlete presets:
+        - FAN_ZHENDONG: Fan Zhendong - China national team star, 172cm tall, athletic build,
+          round face, short black hair, thick eyebrows, big eyes, confident expression
 
-        建模工作流遵循学习笔记最佳实践：
-        - 基础球体→雕刻→减面→UV→色块材质→Rigify绑定
-        - 面数预算控制：Web 3000-4500, PC 5000-20000
-        - 自动创建顶点组用于服装绑定
+        Modeling workflow follows best practices:
+        - Base sphere -> sculpt -> decimate -> UV -> color block materials -> Rigify rig
+        - Face count budget control: Web 3000-4500, PC 5000-20000
+        - Auto-create vertex groups for clothing binding
 
         Args:
-            params: 角色名称、运动类型、风格、体格、面数预算等
+            params: Character name, sport type, style, build, face count budget, etc.
 
         Returns:
-            创建结果，包含创建的部件列表
+            Creation result with list of created parts
         """
         result = await server.execute_command(
             "sport_character", "create_character",
@@ -258,14 +258,14 @@ def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> 
         )
 
         style_names = {
-            "CHIBI": "Q版", "ANIME": "动漫", "STYLIZED": "风格化", "REALISTIC": "写实"
+            "CHIBI": "chibi", "ANIME": "anime", "STYLIZED": "stylized", "REALISTIC": "realistic"
         }
         sport_names = {
-            "TABLE_TENNIS": "乒乓球", "BASKETBALL": "篮球", "SOCCER": "足球",
-            "BADMINTON": "羽毛球", "TENNIS": "网球", "VOLLEYBALL": "排球"
+            "TABLE_TENNIS": "table tennis", "BASKETBALL": "basketball", "SOCCER": "soccer",
+            "BADMINTON": "badminton", "TENNIS": "tennis", "VOLLEYBALL": "volleyball"
         }
         preset_names = {
-            "FAN_ZHENDONG": "樊振东", "CUSTOM": "自定义"
+            "FAN_ZHENDONG": "Fan Zhendong", "CUSTOM": "custom"
         }
 
         if result.get("success"):
@@ -274,22 +274,22 @@ def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> 
             style_name = style_names.get(params.style.value, params.style.value)
             sport_name = sport_names.get(params.sport.value, params.sport.value)
             preset_name = preset_names.get(params.preset.value, "")
-            preset_info = f"（{preset_name}预设）" if params.preset != AthletePreset.CUSTOM else ""
-            armature_info = "含骨骼" if data.get("has_armature") else "无骨骼"
+            preset_info = f" ({preset_name} preset)" if params.preset != AthletePreset.CUSTOM else ""
+            armature_info = "with skeleton" if data.get("has_armature") else "no skeleton"
             return (
-                f"成功创建{style_name}{sport_name}运动员 '{params.name}'{preset_info}\n"
-                f"高度: {params.height}m, 头身比: {data.get('head_body_ratio', 'N/A')}:1, "
-                f"体格: {params.build}, {armature_info}\n"
-                f"创建部件: {', '.join(parts)}\n"
-                f"面数预算: {params.face_count_budget} tris"
+                f"Successfully created {style_name} {sport_name} athlete '{params.name}'{preset_info}\n"
+                f"Height: {params.height}m, head-body ratio: {data.get('head_body_ratio', 'N/A')}:1, "
+                f"build: {params.build}, {armature_info}\n"
+                f"Created parts: {', '.join(parts)}\n"
+                f"Face count budget: {params.face_count_budget} tris"
             )
         else:
-            return f"创建运动角色失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Failed to create sport character: {result.get('error', {}).get('message', 'Unknown error')}"
 
     @mcp.tool(
         name="blender_sport_equipment_add",
         annotations={
-            "title": "添加运动装备",
+            "title": "Add Sport Equipment",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -297,21 +297,21 @@ def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> 
         }
     )
     async def blender_sport_equipment_add(params: SportEquipmentAddInput) -> str:
-        """为运动角色添加运动装备。
+        """Add sport equipment to a sport character.
 
-        支持的装备类型：
-        - 乒乓球: PADDLE(球拍), BALL(球), TABLE(球台), NET(球网)
-        - 奖牌: MEDAL_GOLD(金牌), MEDAL_SILVER(银牌), MEDAL_BRONZE(铜牌)
-        - 配件: WRISTBAND(护腕), HEADBAND(头带), TROPHY(奖杯), TOWEL(毛巾)
+        Supported equipment types:
+        - Table tennis: PADDLE (paddle), BALL (ball), TABLE (table), NET (net)
+        - Medals: MEDAL_GOLD (gold medal), MEDAL_SILVER (silver medal), MEDAL_BRONZE (bronze medal)
+        - Accessories: WRISTBAND (wristband), HEADBAND (headband), TROPHY (trophy), TOWEL (towel)
 
-        球拍自动适配Q版/写实比例，默认附着到角色右手。
-        奖牌默认挂在颈部。
+        Paddle auto-adapts to chibi/realistic proportions, defaults to character's right hand.
+        Medals default to neck position.
 
         Args:
-            params: 角色名称、装备类型、附着位置、颜色等
+            params: Character name, equipment type, attach position, color, etc.
 
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "sport_character", "add_equipment",
@@ -326,24 +326,24 @@ def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> 
         )
 
         equip_names = {
-            "PADDLE": "乒乓球拍", "BALL": "乒乓球", "TABLE": "乒乓球台", "NET": "球网",
-            "WRISTBAND": "护腕", "HEADBAND": "头带",
-            "MEDAL_GOLD": "金牌", "MEDAL_SILVER": "银牌", "MEDAL_BRONZE": "铜牌",
-            "TROPHY": "奖杯", "TOWEL": "毛巾"
+            "PADDLE": "paddle", "BALL": "ball", "TABLE": "table", "NET": "net",
+            "WRISTBAND": "wristband", "HEADBAND": "headband",
+            "MEDAL_GOLD": "gold medal", "MEDAL_SILVER": "silver medal", "MEDAL_BRONZE": "bronze medal",
+            "TROPHY": "trophy", "TOWEL": "towel"
         }
 
         if result.get("success"):
             data = result.get("data", {})
             equip_name = equip_names.get(params.equipment_type.value, params.equipment_type.value)
             attach_info = data.get("attached_to", params.attach_to)
-            return f"已为 '{params.character_name}' 添加{equip_name}（位置: {attach_info}）"
+            return f"Added {equip_name} to '{params.character_name}' (position: {attach_info})"
         else:
-            return f"添加装备失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Failed to add equipment: {result.get('error', {}).get('message', 'Unknown error')}"
 
     @mcp.tool(
         name="blender_sport_uniform_create",
         annotations={
-            "title": "创建运动服",
+            "title": "Create Sportswear",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -351,29 +351,29 @@ def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> 
         }
     )
     async def blender_sport_uniform_create(params: SportUniformCreateInput) -> str:
-        """为运动角色创建运动服。
+        """Create sportswear for a sport character.
 
-        内置队伍配色:
-        - CHINA_NATIONAL: 中国国家队红色（比赛主场）
-        - CHINA_NATIONAL_BLUE: 中国队蓝色（比赛客场）
-        - CHINA_NATIONAL_WHITE: 中国队白色（领奖服/外套）
-        - CLUB_SHENZHEN: 深圳俱乐部
-        - TRAINING: 训练服
+        Built-in team color schemes:
+        - CHINA_NATIONAL: China National Team red (match home)
+        - CHINA_NATIONAL_BLUE: China Team blue (match away)
+        - CHINA_NATIONAL_WHITE: China Team white (ceremony outfit/jacket)
+        - CLUB_SHENZHEN: Shenzhen Club
+        - TRAINING: Training uniform
 
-        运动服类型:
-        - MATCH_JERSEY: 比赛球衣（含号码和姓名）
-        - TRAINING_WEAR: 训练服
-        - AWARD_CEREMONY: 领奖服（白底红条纹）
-        - WARMUP_JACKET: 热身外套
+        Sportswear types:
+        - MATCH_JERSEY: Match jersey (with number and name)
+        - TRAINING_WEAR: Training wear
+        - AWARD_CEREMONY: Award ceremony outfit (white base with red stripes)
+        - WARMUP_JACKET: Warmup jacket
 
-        樊振东默认球衣号码: 20
-        品牌: Li-Ning (李宁)
+        Fan Zhendong default jersey number: 20
+        Brand: Li-Ning
 
         Args:
-            params: 角色名称、队伍、球衣类型、号码、姓名等
+            params: Character name, team, jersey type, number, name, etc.
 
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "sport_character", "create_uniform",
@@ -390,16 +390,16 @@ def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> 
         )
 
         team_names = {
-            "CHINA_NATIONAL": "中国国家队(红)",
-            "CHINA_NATIONAL_BLUE": "中国队(蓝)",
-            "CHINA_NATIONAL_WHITE": "中国队(白)",
-            "CLUB_SHENZHEN": "深圳俱乐部",
-            "CLUB_CUSTOM": "自定义俱乐部",
-            "TRAINING": "训练队",
+            "CHINA_NATIONAL": "China National Team (red)",
+            "CHINA_NATIONAL_BLUE": "China Team (blue)",
+            "CHINA_NATIONAL_WHITE": "China Team (white)",
+            "CLUB_SHENZHEN": "Shenzhen Club",
+            "CLUB_CUSTOM": "Custom Club",
+            "TRAINING": "Training",
         }
         style_names = {
-            "MATCH_JERSEY": "比赛球衣", "TRAINING_WEAR": "训练服",
-            "AWARD_CEREMONY": "领奖服", "WARMUP_JACKET": "热身外套",
+            "MATCH_JERSEY": "match jersey", "TRAINING_WEAR": "training wear",
+            "AWARD_CEREMONY": "ceremony outfit", "WARMUP_JACKET": "warmup jacket",
         }
 
         if result.get("success"):
@@ -407,16 +407,16 @@ def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> 
             team_name = team_names.get(params.team.value, params.team.value)
             style_name = style_names.get(params.uniform_style.value, params.uniform_style.value)
             return (
-                f"已为 '{params.character_name}' 创建{team_name}{style_name}\n"
-                f"号码: {params.jersey_number}, 姓名: {params.player_name}, 品牌: {params.brand}"
+                f"Created {team_name} {style_name} for '{params.character_name}'\n"
+                f"Number: {params.jersey_number}, Name: {params.player_name}, Brand: {params.brand}"
             )
         else:
-            return f"创建运动服失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Failed to create sportswear: {result.get('error', {}).get('message', 'Unknown error')}"
 
     @mcp.tool(
         name="blender_sport_pose_set",
         annotations={
-            "title": "设置运动姿势",
+            "title": "Set Sport Pose",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -424,33 +424,33 @@ def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> 
         }
     )
     async def blender_sport_pose_set(params: SportPoseSetInput) -> str:
-        """设置运动角色的运动姿势。
+        """Set a sport pose for the sport character.
 
-        乒乓球专用姿势:
-        - READY_STANCE: 准备接球姿势（微蹲，持拍在前）
-        - FOREHAND_ATTACK: 正手进攻（侧身蓄力挥拍）
-        - BACKHAND_ATTACK: 反手拉球（快速反手弧圈）
-        - SERVE_TOSS: 发球抛球（手掌托球向上抛）
-        - SERVE_HIT: 发球击球（接触球瞬间）
-        - FOREHAND_LOOP: 正手弧圈球（全力弧圈拉球）
+        Table tennis-specific poses:
+        - READY_STANCE: Ready to receive stance (slight crouch, paddle forward)
+        - FOREHAND_ATTACK: Forehand attack (side stance, loaded swing)
+        - BACKHAND_ATTACK: Backhand loop (fast backhand arc)
+        - SERVE_TOSS: Serve toss (palm up, ball tossed upward)
+        - SERVE_HIT: Serve hit (moment of ball contact)
+        - FOREHAND_LOOP: Forehand loop drive (full power arc)
 
-        通用庆祝姿势:
-        - CELEBRATE: 双臂举起庆祝
-        - FIST_PUMP: 握拳吼叫（樊振东标志性动作）
-        - HOLD_MEDAL: 双手展示奖牌
-        - RECEIVING_AWARD: 领奖台站姿
+        General celebration poses:
+        - CELEBRATE: Arms raised celebration
+        - FIST_PUMP: Fist pump with shout (Fan Zhendong's signature move)
+        - HOLD_MEDAL: Holding up medal with both hands
+        - RECEIVING_AWARD: Standing on podium
 
-        建模辅助姿势:
-        - T_POSE: 标准T-Pose
-        - A_POSE: 标准A-Pose
+        Modeling helper poses:
+        - T_POSE: Standard T-Pose
+        - A_POSE: Standard A-Pose
 
-        Q版角色建议强度1.2-1.5以增加可爱感。
+        Chibi characters recommended intensity 1.2-1.5 for added cuteness.
 
         Args:
-            params: 角色名称、姿势类型、强度、是否镜像
+            params: Character name, pose type, intensity, whether to mirror
 
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "sport_character", "set_pose",
@@ -464,27 +464,27 @@ def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> 
         )
 
         pose_names = {
-            "READY_STANCE": "准备姿势", "FOREHAND_ATTACK": "正手进攻",
-            "BACKHAND_ATTACK": "反手拉球", "SERVE_TOSS": "发球抛球",
-            "SERVE_HIT": "发球击球", "FOREHAND_LOOP": "正手弧圈球",
-            "CELEBRATE": "庆祝", "FIST_PUMP": "握拳庆祝",
-            "HOLD_MEDAL": "展示奖牌", "RECEIVING_AWARD": "领奖",
+            "READY_STANCE": "ready stance", "FOREHAND_ATTACK": "forehand attack",
+            "BACKHAND_ATTACK": "backhand loop", "SERVE_TOSS": "serve toss",
+            "SERVE_HIT": "serve hit", "FOREHAND_LOOP": "forehand loop drive",
+            "CELEBRATE": "celebration", "FIST_PUMP": "fist pump",
+            "HOLD_MEDAL": "holding medal", "RECEIVING_AWARD": "receiving award",
             "T_POSE": "T-Pose", "A_POSE": "A-Pose",
         }
 
         if result.get("success"):
             data = result.get("data", {})
             pose_name = pose_names.get(params.pose.value, params.pose.value)
-            mirror_info = "（左手镜像）" if params.mirror else ""
-            trail_info = " + 运动轨迹" if data.get("has_motion_trail") else ""
-            return f"已为 '{params.character_name}' 设置{pose_name}{mirror_info}（强度: {params.intensity:.0%}）{trail_info}"
+            mirror_info = " (left-hand mirror)" if params.mirror else ""
+            trail_info = " + motion trail" if data.get("has_motion_trail") else ""
+            return f"Set {pose_name}{mirror_info} for '{params.character_name}' (intensity: {params.intensity:.0%}){trail_info}"
         else:
-            return f"设置姿势失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Failed to set pose: {result.get('error', {}).get('message', 'Unknown error')}"
 
     @mcp.tool(
         name="blender_sport_reference_load",
         annotations={
-            "title": "加载运动参考图",
+            "title": "Load Sport Reference Image",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -492,24 +492,24 @@ def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> 
         }
     )
     async def blender_sport_reference_load(params: SportReferenceLoadInput) -> str:
-        """在视口中加载参考图像用于建模参考。
+        """Load a reference image in the viewport for modeling reference.
 
-        支持加载正面、侧面、背面、3/4视角参考图。
-        参考图会以空物体（Empty Image）形式添加到场景中，
-        可以调整透明度、位置和缩放。
+        Supports loading front, side, back, and 3/4 view reference images.
+        Reference images are added to the scene as Empty Image objects,
+        with adjustable opacity, position, and scale.
 
-        用途：
-        - 加载樊振东真实照片作为建模参考
-        - 加载Q版插画作为风格参考
-        - 加载比赛动作截图作为姿势参考
+        Use cases:
+        - Load real photos of Fan Zhendong as modeling reference
+        - Load chibi illustrations as style reference
+        - Load match action screenshots as pose reference
 
-        支持格式: PNG, JPG, JPEG, WEBP, BMP, AVIF
+        Supported formats: PNG, JPG, JPEG, WEBP, BMP, AVIF
 
         Args:
-            params: 图片路径、视角、透明度等
+            params: Image path, view, opacity, etc.
 
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "sport_character", "load_reference",
@@ -524,20 +524,20 @@ def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> 
         )
 
         view_names = {
-            "FRONT": "正面", "SIDE": "侧面", "BACK": "背面", "THREE_QUARTER": "3/4视角"
+            "FRONT": "front", "SIDE": "side", "BACK": "back", "THREE_QUARTER": "3/4 view"
         }
 
         if result.get("success"):
             data = result.get("data", {})
             view_name = view_names.get(params.view.value, params.view.value)
-            return f"已加载{view_name}参考图: {data.get('image_name', params.image_path)}（透明度: {params.opacity:.0%}）"
+            return f"Loaded {view_name} reference image: {data.get('image_name', params.image_path)} (opacity: {params.opacity:.0%})"
         else:
-            return f"加载参考图失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Failed to load reference image: {result.get('error', {}).get('message', 'Unknown error')}"
 
     @mcp.tool(
         name="blender_sport_model_optimize",
         annotations={
-            "title": "运动模型Web优化",
+            "title": "Sport Model Web Optimization",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -545,29 +545,29 @@ def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> 
         }
     )
     async def blender_sport_model_optimize(params: SportModelOptimizeInput) -> str:
-        """优化运动角色模型用于不同平台。
+        """Optimize sport character model for different platforms.
 
-        平台预设面数:
-        - WEB: 3000-4500 tris（Three.js/WebGL）
+        Platform preset triangle counts:
+        - WEB: 3000-4500 tris (Three.js/WebGL)
         - MOBILE: 5000-8000 tris
         - PC_CONSOLE: 10000-20000 tris
-        - PRINT_3D: 高精度，不限面数
+        - PRINT_3D: High detail, unlimited triangles
 
-        优化流程:
-        1. 应用 Decimate 修改器减面至目标面数
-        2. 清理孤立顶点和重叠面
-        3. 优化UV布局
-        4. 烘焙材质到贴图（可选）
-        5. 生成LOD层级（可选）
-        6. 导出GLB格式（可选，含Draco压缩）
+        Optimization workflow:
+        1. Apply Decimate modifier to reduce to target face count
+        2. Clean up isolated vertices and overlapping faces
+        3. Optimize UV layout
+        4. Bake materials to textures (optional)
+        5. Generate LOD levels (optional)
+        6. Export GLB format (optional, with Draco compression)
 
-        遵循学习笔记中的游戏资产优化最佳实践。
+        Follows game asset optimization best practices.
 
         Args:
-            params: 角色名称、目标平台、面数、贴图尺寸等
+            params: Character name, target platform, face count, texture size, etc.
 
         Returns:
-            优化结果，包含最终面数和导出路径
+            Optimization result with final face count and export path
         """
         result = await server.execute_command(
             "sport_character", "optimize_model",
@@ -585,8 +585,8 @@ def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> 
         )
 
         target_names = {
-            "WEB": "Web端", "MOBILE": "移动端",
-            "PC_CONSOLE": "PC/主机", "PRINT_3D": "3D打印"
+            "WEB": "Web", "MOBILE": "Mobile",
+            "PC_CONSOLE": "PC/Console", "PRINT_3D": "3D Print"
         }
 
         if result.get("success"):
@@ -594,20 +594,20 @@ def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> 
             target_name = target_names.get(params.target.value, params.target.value)
             original_tris = data.get("original_tris", "N/A")
             final_tris = data.get("final_tris", "N/A")
-            export_info = f"\n导出路径: {data.get('export_path')}" if data.get("export_path") else ""
-            lod_info = f"\nLOD层级: {data.get('lod_count', 0)}" if data.get("lod_count") else ""
+            export_info = f"\nExport path: {data.get('export_path')}" if data.get("export_path") else ""
+            lod_info = f"\nLOD levels: {data.get('lod_count', 0)}" if data.get("lod_count") else ""
             return (
-                f"已优化 '{params.character_name}' 至{target_name}标准\n"
-                f"面数: {original_tris} → {final_tris} tris\n"
-                f"贴图尺寸: {params.texture_size}px{lod_info}{export_info}"
+                f"Optimized '{params.character_name}' to {target_name} standard\n"
+                f"Triangles: {original_tris} -> {final_tris} tris\n"
+                f"Texture size: {params.texture_size}px{lod_info}{export_info}"
             )
         else:
-            return f"优化模型失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Failed to optimize model: {result.get('error', {}).get('message', 'Unknown error')}"
 
     @mcp.tool(
         name="blender_sport_scene_setup",
         annotations={
-            "title": "设置运动场景",
+            "title": "Setup Sport Scene",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -615,25 +615,25 @@ def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> 
         }
     )
     async def blender_sport_scene_setup(params: SportSceneSetupInput) -> str:
-        """设置运动主题场景。
+        """Set up a sport-themed scene.
 
-        场景类型:
-        - MATCH: 比赛场景（球台、灯光、观众席暗示）
-        - TRAINING: 训练场景（简洁室内、训练设备）
-        - AWARD_CEREMONY: 颁奖场景（领奖台、背景板）
-        - PORTRAIT: 肖像展示（简洁背景、三点布光）
-        - PRODUCT: 产品展示/手办风（底座、展示灯光）
+        Scene types:
+        - MATCH: Match scene (table, lights, audience hint)
+        - TRAINING: Training scene (simple indoor, training equipment)
+        - AWARD_CEREMONY: Award ceremony scene (podium, backdrop)
+        - PORTRAIT: Portrait display (simple background, three-point lighting)
+        - PRODUCT: Product display/figurine style (base, display lighting)
 
-        灯光遵循学习笔记最佳实践:
-        - 低调环境光 + 强方向光 + 对比背光
-        - EEVEE: Filmic色彩管理、柔和阴影、Bloom
-        - 三点布光: 主光(暖)+辅光(冷)+轮廓光
+        Lighting follows best practices:
+        - Low ambient + strong directional light + contrasting backlight
+        - EEVEE: Filmic color management, soft shadows, Bloom
+        - Three-point lighting: key (warm) + fill (cool) + rim
 
         Args:
-            params: 场景类型、角色名称、背景色、相机设置等
+            params: Scene type, character name, background color, camera settings, etc.
 
         Returns:
-            场景设置结果
+            Scene setup result
         """
         result = await server.execute_command(
             "sport_character", "setup_scene",
@@ -648,19 +648,19 @@ def register_sport_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> 
         )
 
         scene_names = {
-            "MATCH": "比赛场景", "TRAINING": "训练场景",
-            "AWARD_CEREMONY": "颁奖场景", "PORTRAIT": "肖像展示",
-            "PRODUCT": "产品展示"
+            "MATCH": "match scene", "TRAINING": "training scene",
+            "AWARD_CEREMONY": "award ceremony scene", "PORTRAIT": "portrait display",
+            "PRODUCT": "product display"
         }
 
         if result.get("success"):
             data = result.get("data", {})
             scene_name = scene_names.get(params.scene_type.value, params.scene_type.value)
-            lights_info = f"灯光: {data.get('lights_count', 0)}盏"
+            lights_info = f"Lights: {data.get('lights_count', 0)}"
             return (
-                f"已设置{scene_name}\n"
-                f"渲染引擎: {params.render_engine}, {lights_info}\n"
-                f"相机距离: {params.camera_distance}m"
+                f"Set up {scene_name}\n"
+                f"Render engine: {params.render_engine}, {lights_info}\n"
+                f"Camera distance: {params.camera_distance}m"
             )
         else:
-            return f"设置场景失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Failed to set up scene: {result.get('error', {}).get('message', 'Unknown error')}"

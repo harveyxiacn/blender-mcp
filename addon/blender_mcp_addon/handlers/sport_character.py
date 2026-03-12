@@ -1,8 +1,9 @@
 """
-运动角色处理器
+Sport Character Handler
 
-处理运动员角色创建、装备添加、运动服、运动姿势、参考图加载、模型优化等命令。
-专为乒乓球运动员（特别是樊振东）3D模型制作优化。
+Handles athlete character creation, equipment addition, sportswear, sport poses,
+reference image loading, model optimization and other commands.
+Optimized for table tennis player (especially Fan Zhendong) 3D model creation.
 """
 
 from typing import Any, Dict, List, Optional
@@ -12,9 +13,9 @@ import os
 import bpy
 
 
-# ==================== 配置数据 ====================
+# ==================== Configuration Data ====================
 
-# 运动角色风格配置
+# Sport character style configuration
 STYLE_CONFIG = {
     "CHIBI": {
         "head_body_ratio": 2.5,
@@ -58,63 +59,63 @@ STYLE_CONFIG = {
     },
 }
 
-# 运动员预设配置
+# Athlete preset configuration
 ATHLETE_PRESETS = {
     "FAN_ZHENDONG": {
         "name": "FanZhendong",
-        "height_real": 1.72,      # 真实身高172cm
+        "height_real": 1.72,      # Real height 172cm
         "build": "athletic",
-        "skin_color": [0.95, 0.82, 0.72, 1.0],  # 亚洲皮肤色
-        "hair_color": [0.05, 0.03, 0.02, 1.0],   # 黑色短发
+        "skin_color": [0.95, 0.82, 0.72, 1.0],  # Asian skin tone
+        "hair_color": [0.05, 0.03, 0.02, 1.0],   # Black short hair
         "hair_style": "short",
-        "eye_color": [0.15, 0.08, 0.05, 1.0],    # 深棕色眼
+        "eye_color": [0.15, 0.08, 0.05, 1.0],    # Dark brown eyes
         "face_features": {
-            "face_shape": "round",       # 圆脸
-            "eyebrow_thickness": 1.2,    # 浓眉
-            "eye_size": 1.1,             # 大眼
-            "nose_size": 1.0,            # 标准鼻
-            "mouth_width": 1.0,          # 标准嘴
-            "jaw_width": 1.1,            # 微宽下巴
-            "ear_size": 1.1,             # 略大耳朵（Q版特征）
+            "face_shape": "round",       # Round face
+            "eyebrow_thickness": 1.2,    # Thick eyebrows
+            "eye_size": 1.1,             # Large eyes
+            "nose_size": 1.0,            # Standard nose
+            "mouth_width": 1.0,          # Standard mouth
+            "jaw_width": 1.1,            # Slightly wide jaw
+            "ear_size": 1.1,             # Slightly large ears (chibi feature)
         },
         "jersey_number": 20,
         "brand": "Li-Ning",
     },
 }
 
-# 队伍颜色配置
+# Team color configuration
 TEAM_COLORS = {
     "CHINA_NATIONAL": {
-        "primary": [0.85, 0.1, 0.1, 1.0],     # 中国红
-        "secondary": [1.0, 0.85, 0.0, 1.0],     # 金黄
-        "accent": [1.0, 1.0, 1.0, 1.0],         # 白色
+        "primary": [0.85, 0.1, 0.1, 1.0],     # China red
+        "secondary": [1.0, 0.85, 0.0, 1.0],     # Gold
+        "accent": [1.0, 1.0, 1.0, 1.0],         # White
     },
     "CHINA_NATIONAL_BLUE": {
-        "primary": [0.1, 0.2, 0.7, 1.0],       # 深蓝
-        "secondary": [0.3, 0.5, 0.9, 1.0],      # 浅蓝
-        "accent": [1.0, 1.0, 1.0, 1.0],         # 白色
+        "primary": [0.1, 0.2, 0.7, 1.0],       # Dark blue
+        "secondary": [0.3, 0.5, 0.9, 1.0],      # Light blue
+        "accent": [1.0, 1.0, 1.0, 1.0],         # White
     },
     "CHINA_NATIONAL_WHITE": {
-        "primary": [1.0, 1.0, 1.0, 1.0],       # 白色
-        "secondary": [0.85, 0.1, 0.1, 1.0],     # 红色条纹
-        "accent": [0.1, 0.1, 0.1, 1.0],         # 黑色
+        "primary": [1.0, 1.0, 1.0, 1.0],       # White
+        "secondary": [0.85, 0.1, 0.1, 1.0],     # Red stripes
+        "accent": [0.1, 0.1, 0.1, 1.0],         # Black
     },
     "CLUB_SHENZHEN": {
-        "primary": [0.0, 0.5, 0.8, 1.0],       # 天蓝
-        "secondary": [1.0, 1.0, 1.0, 1.0],      # 白色
-        "accent": [0.1, 0.1, 0.1, 1.0],         # 黑色
+        "primary": [0.0, 0.5, 0.8, 1.0],       # Sky blue
+        "secondary": [1.0, 1.0, 1.0, 1.0],      # White
+        "accent": [0.1, 0.1, 0.1, 1.0],         # Black
     },
     "TRAINING": {
-        "primary": [0.2, 0.2, 0.2, 1.0],       # 深灰
-        "secondary": [0.85, 0.1, 0.1, 1.0],     # 红色
-        "accent": [1.0, 1.0, 1.0, 1.0],         # 白色
+        "primary": [0.2, 0.2, 0.2, 1.0],       # Dark gray
+        "secondary": [0.85, 0.1, 0.1, 1.0],     # Red
+        "accent": [1.0, 1.0, 1.0, 1.0],         # White
     },
 }
 
-# 乒乓球运动姿势骨骼旋转数据 (Euler XYZ in degrees)
+# Table tennis sport pose bone rotation data (Euler XYZ in degrees)
 SPORT_POSES = {
     "READY_STANCE": {
-        "description": "准备接球姿势",
+        "description": "Ready stance",
         "spine": (10, 0, 0),
         "spine.001": (5, 0, 0),
         "upper_arm.R": (-30, -20, 0),
@@ -129,7 +130,7 @@ SPORT_POSES = {
         "shin.L": (25, 0, 0),
     },
     "FOREHAND_ATTACK": {
-        "description": "正手进攻",
+        "description": "Forehand attack",
         "spine": (15, 0, -30),
         "spine.001": (5, 0, -15),
         "upper_arm.R": (-45, -60, -30),
@@ -143,7 +144,7 @@ SPORT_POSES = {
         "shin.L": (20, 0, 0),
     },
     "BACKHAND_ATTACK": {
-        "description": "反手拉球",
+        "description": "Backhand topspin",
         "spine": (15, 0, 20),
         "spine.001": (5, 0, 10),
         "upper_arm.R": (-40, 30, 20),
@@ -157,7 +158,7 @@ SPORT_POSES = {
         "shin.L": (30, 0, 0),
     },
     "SERVE_TOSS": {
-        "description": "发球抛球",
+        "description": "Serve toss",
         "spine": (5, 0, 0),
         "spine.001": (-5, 0, 0),
         "upper_arm.R": (-30, -20, 0),
@@ -172,7 +173,7 @@ SPORT_POSES = {
         "shin.L": (15, 0, 0),
     },
     "SERVE_HIT": {
-        "description": "发球击球",
+        "description": "Serve hit",
         "spine": (20, 0, -15),
         "spine.001": (10, 0, -10),
         "upper_arm.R": (-60, -40, -20),
@@ -186,7 +187,7 @@ SPORT_POSES = {
         "shin.L": (20, 0, 0),
     },
     "FOREHAND_LOOP": {
-        "description": "正手弧圈球",
+        "description": "Forehand loop",
         "spine": (20, 0, -40),
         "spine.001": (10, 0, -20),
         "upper_arm.R": (-50, -70, -40),
@@ -200,7 +201,7 @@ SPORT_POSES = {
         "shin.L": (15, 0, 0),
     },
     "CELEBRATE": {
-        "description": "双臂举起庆祝",
+        "description": "Arms raised celebration",
         "spine": (-5, 0, 0),
         "spine.001": (-10, 0, 0),
         "upper_arm.R": (-150, -20, 0),
@@ -215,7 +216,7 @@ SPORT_POSES = {
         "shin.L": (10, 0, 0),
     },
     "FIST_PUMP": {
-        "description": "握拳吼叫（樊振东标志性动作）",
+        "description": "Fist pump yell (Fan Zhendong signature move)",
         "spine": (-5, 0, -10),
         "spine.001": (-10, 0, -5),
         "upper_arm.R": (-100, -30, -20),
@@ -230,7 +231,7 @@ SPORT_POSES = {
         "shin.L": (10, 0, 0),
     },
     "HOLD_MEDAL": {
-        "description": "双手展示奖牌",
+        "description": "Holding up medal with both hands",
         "spine": (0, 0, 0),
         "spine.001": (-5, 0, 0),
         "upper_arm.R": (-60, -20, 0),
@@ -245,7 +246,7 @@ SPORT_POSES = {
         "shin.L": (8, 0, 0),
     },
     "RECEIVING_AWARD": {
-        "description": "领奖台站姿",
+        "description": "Podium stance",
         "spine": (-5, 0, 0),
         "spine.001": (-5, 0, 0),
         "upper_arm.R": (-10, -10, 0),
@@ -291,7 +292,7 @@ SPORT_POSES = {
     },
 }
 
-# 平台默认面数
+# Platform default face counts
 PLATFORM_TRI_DEFAULTS = {
     "WEB": 4000,
     "MOBILE": 6000,
@@ -300,10 +301,10 @@ PLATFORM_TRI_DEFAULTS = {
 }
 
 
-# ==================== 工具函数 ====================
+# ==================== Utility Functions ====================
 
 def _get_principled_bsdf(nodes):
-    """获取Principled BSDF节点（兼容中英文Blender）"""
+    """Get Principled BSDF node (compatible with all Blender locales)"""
     for node in nodes:
         if node.type == 'BSDF_PRINCIPLED':
             return node
@@ -313,7 +314,7 @@ def _get_principled_bsdf(nodes):
 def _create_material(name: str, color: List[float],
                      metallic: float = 0.0, roughness: float = 0.5,
                      specular: float = 0.5) -> bpy.types.Material:
-    """创建PBR材质"""
+    """Create PBR material"""
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
 
@@ -322,7 +323,7 @@ def _create_material(name: str, color: List[float],
         bsdf.inputs["Base Color"].default_value = color if len(color) == 4 else color + [1.0]
         bsdf.inputs["Metallic"].default_value = metallic
         bsdf.inputs["Roughness"].default_value = roughness
-        # Specular 在新版本中可能名称不同
+        # Specular may have a different name in newer versions
         try:
             bsdf.inputs["Specular IOR Level"].default_value = specular
         except (KeyError, IndexError):
@@ -335,7 +336,7 @@ def _create_material(name: str, color: List[float],
 
 
 def _assign_material(obj, material):
-    """为对象分配材质"""
+    """Assign material to object"""
     if obj.data.materials:
         obj.data.materials[0] = material
     else:
@@ -343,18 +344,18 @@ def _assign_material(obj, material):
 
 
 def _ensure_object_mode():
-    """确保在Object模式"""
+    """Ensure in Object mode"""
     if bpy.context.active_object and bpy.context.active_object.mode != 'OBJECT':
         bpy.ops.object.mode_set(mode='OBJECT')
 
 
 def _deselect_all():
-    """取消选择所有对象"""
+    """Deselect all objects"""
     bpy.ops.object.select_all(action='DESELECT')
 
 
 def _set_smooth_shading(obj):
-    """设置平滑着色（兼容不同版本）"""
+    """Set smooth shading (compatible across versions)"""
     try:
         for poly in obj.data.polygons:
             poly.use_smooth = True
@@ -363,16 +364,16 @@ def _set_smooth_shading(obj):
 
 
 def _parent_to(child_obj, parent_obj, keep_transform=True):
-    """设置父子关系"""
+    """Set parent-child relationship"""
     child_obj.parent = parent_obj
     if keep_transform:
         child_obj.matrix_parent_inverse = parent_obj.matrix_world.inverted()
 
 
-# ==================== 角色创建 ====================
+# ==================== Character Creation ====================
 
 def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建运动角色"""
+    """Create sport character"""
     _ensure_object_mode()
 
     name = params.get("name", "Athlete")
@@ -386,12 +387,12 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
     create_armature = params.get("create_armature", True)
     face_count_budget = params.get("face_count_budget", 4500)
 
-    # 获取风格配置
+    # Get style configuration
     config = STYLE_CONFIG.get(style, STYLE_CONFIG["CHIBI"]).copy()
     if head_body_ratio_override:
         config["head_body_ratio"] = head_body_ratio_override
 
-    # 获取运动员预设
+    # Get athlete preset
     athlete = None
     if preset != "CUSTOM" and preset in ATHLETE_PRESETS:
         athlete = ATHLETE_PRESETS[preset]
@@ -399,9 +400,9 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
             skin_color = athlete["skin_color"]
 
     if not skin_color:
-        skin_color = [0.95, 0.82, 0.72, 1.0]  # 默认亚洲肤色
+        skin_color = [0.95, 0.82, 0.72, 1.0]  # Default Asian skin tone
 
-    # 体格修正
+    # Build modifier
     build_modifiers = {
         "slim": {"body_width": 0.85, "limb_thick": 0.9},
         "athletic": {"body_width": 1.0, "limb_thick": 1.0},
@@ -410,21 +411,21 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
     }
     build_mod = build_modifiers.get(build, build_modifiers["athletic"])
 
-    # 计算缩放
+    # Calculate scale
     ratio = config["head_body_ratio"]
     scale_factor = height / 1.7
 
     created_parts = []
 
-    # 创建根空物体
+    # Create root empty
     root_empty = bpy.data.objects.new(f"{name}_Root", None)
     bpy.context.collection.objects.link(root_empty)
     root_empty.empty_display_type = 'ARROWS'
     root_empty.empty_display_size = 0.1
 
-    # 创建皮肤材质（SSS适合皮肤表现）
+    # Create skin material (SSS suitable for skin rendering)
     skin_mat = _create_material(f"{name}_Skin", skin_color, roughness=0.75)
-    # 为皮肤添加SSS
+    # Add SSS to skin
     bsdf = _get_principled_bsdf(skin_mat.node_tree.nodes)
     if bsdf:
         try:
@@ -435,7 +436,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
             except (KeyError, IndexError):
                 pass
 
-    # 根据面数预算决定细分级别
+    # Determine subdivision level based on face count budget
     if face_count_budget <= 3000:
         sphere_segments = 16
         sphere_rings = 12
@@ -449,7 +450,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
         sphere_rings = 24
         subdivisions = 2
 
-    # ========== 头部 ==========
+    # ========== Head ==========
     head_z = height * (1 - 1 / ratio)
     head_radius = 0.25 * scale_factor * config["head_scale"][0] * config["face_roundness"]
 
@@ -467,7 +468,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
     _parent_to(head, root_empty)
     created_parts.append(head.name)
 
-    # ========== 眼睛（Q版和动漫需要大眼睛）==========
+    # ========== Eyes (chibi and anime need large eyes) ==========
     eye_size = 0.06 * scale_factor * config["eye_size"]
     eye_y = -head_radius * 0.85
     eye_z = head_z + head_radius * 0.15
@@ -480,7 +481,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
     eye_white_mat = _create_material(f"{name}_EyeWhite", [1.0, 1.0, 1.0, 1.0], roughness=0.3)
 
     for side, x_offset in [("R", eye_spacing), ("L", -eye_spacing)]:
-        # 眼白
+        # Eye white
         bpy.ops.mesh.primitive_uv_sphere_add(
             segments=max(12, sphere_segments // 2),
             ring_count=max(8, sphere_rings // 2),
@@ -493,7 +494,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
         _assign_material(eye_white, eye_white_mat)
         _parent_to(eye_white, head)
 
-        # 瞳孔
+        # Pupil
         bpy.ops.mesh.primitive_uv_sphere_add(
             segments=max(12, sphere_segments // 2),
             ring_count=max(8, sphere_rings // 2),
@@ -508,10 +509,10 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
 
     created_parts.append(f"{name}_Eyes")
 
-    # ========== 鼻子 ==========
+    # ========== Nose ==========
     nose_size = 0.03 * scale_factor
     if style == "CHIBI":
-        nose_size *= 0.6  # Q版鼻子更小
+        nose_size *= 0.6  # Chibi nose is smaller
     bpy.ops.mesh.primitive_uv_sphere_add(
         segments=max(8, sphere_segments // 3),
         ring_count=max(6, sphere_rings // 3),
@@ -522,7 +523,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
     nose.name = f"{name}_Nose"
     nose.scale = [1.0, 0.6, 0.8]
     _set_smooth_shading(nose)
-    # 鼻子略红（Q版特征）
+    # Slightly red nose (chibi feature)
     nose_color = list(skin_color[:3])
     nose_color[0] = min(1.0, nose_color[0] * 1.15)
     nose_mat = _create_material(f"{name}_Nose", nose_color + [1.0], roughness=0.7)
@@ -530,7 +531,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
     _parent_to(nose, head)
     created_parts.append(f"{name}_Nose")
 
-    # ========== 嘴巴 ==========
+    # ========== Mouth ==========
     mouth_width = 0.06 * scale_factor
     mouth_z = eye_z - head_radius * 0.55
     bpy.ops.mesh.primitive_cube_add(
@@ -545,7 +546,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
     _parent_to(mouth, head)
     created_parts.append(f"{name}_Mouth")
 
-    # ========== 耳朵 ==========
+    # ========== Ears ==========
     ear_size = 0.06 * scale_factor
     if athlete and "face_features" in athlete:
         ear_size *= athlete["face_features"].get("ear_size", 1.0)
@@ -566,13 +567,13 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
 
     created_parts.append(f"{name}_Ears")
 
-    # ========== 头发 ==========
-    hair_color = [0.05, 0.03, 0.02, 1.0]  # 默认黑色
+    # ========== Hair ==========
+    hair_color = [0.05, 0.03, 0.02, 1.0]  # Default black
     if athlete and "hair_color" in athlete:
         hair_color = athlete["hair_color"]
     hair_mat = _create_material(f"{name}_Hair", hair_color, roughness=0.8)
 
-    # 头发用多个球体组合（Q版风格）
+    # Hair composed of multiple spheres (chibi style)
     hair_base_z = head_z + head_radius * 0.3
     bpy.ops.mesh.primitive_uv_sphere_add(
         segments=sphere_segments,
@@ -587,7 +588,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
     _assign_material(hair_base, hair_mat)
     _parent_to(hair_base, head)
 
-    # 刘海（短发前额碎发）
+    # Bangs (short fringe hair)
     for i, (x, y_off) in enumerate([(-0.3, -0.2), (0, -0.3), (0.3, -0.2), (-0.15, -0.25), (0.15, -0.25)]):
         bpy.ops.mesh.primitive_uv_sphere_add(
             segments=max(8, sphere_segments // 3),
@@ -604,7 +605,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
 
     created_parts.append(f"{name}_Hair")
 
-    # ========== 身体 ==========
+    # ========== Body ==========
     body_z = height * 0.38
     body_width = config["body_scale"][0] * scale_factor * 0.3 * build_mod["body_width"]
     body_depth = config["body_scale"][1] * scale_factor * 0.2
@@ -614,7 +615,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
     body = bpy.context.active_object
     body.name = f"{name}_Body"
     body.scale = [body_width, body_depth, body_height]
-    # 添加细分修改器使身体更圆润
+    # Add subdivision modifier for rounder body
     if subdivisions > 0:
         subsurf = body.modifiers.new("Subdivide", 'SUBSURF')
         subsurf.levels = subdivisions
@@ -624,7 +625,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
     _parent_to(body, root_empty)
     created_parts.append(f"{name}_Body")
 
-    # ========== 手臂 ==========
+    # ========== Arms ==========
     arm_thickness = config["limb_thickness"] * scale_factor * build_mod["limb_thick"]
     arm_length = height * 0.2
     shoulder_z = body_z + body_height * 0.8
@@ -632,7 +633,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
     for side, x_mult in [("R", 1), ("L", -1)]:
         shoulder_x = x_mult * (body_width + arm_thickness * 0.5)
 
-        # 上臂
+        # Upper arm
         bpy.ops.mesh.primitive_cylinder_add(
             radius=arm_thickness,
             depth=arm_length,
@@ -644,7 +645,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
         _assign_material(upper_arm, skin_mat)
         _parent_to(upper_arm, body)
 
-        # 前臂
+        # Forearm
         bpy.ops.mesh.primitive_cylinder_add(
             radius=arm_thickness * 0.85,
             depth=arm_length * 0.9,
@@ -656,7 +657,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
         _assign_material(forearm, skin_mat)
         _parent_to(forearm, body)
 
-        # 手
+        # Hand
         hand_scale = config["hand_scale"]
         bpy.ops.mesh.primitive_uv_sphere_add(
             segments=max(8, sphere_segments // 3),
@@ -673,7 +674,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
 
     created_parts.append(f"{name}_Arms")
 
-    # ========== 腿部 ==========
+    # ========== Legs ==========
     leg_thickness = config["limb_thickness"] * scale_factor * 1.1 * build_mod["limb_thick"]
     leg_length = height * 0.22
     hip_z = body_z - body_height * 0.8
@@ -681,7 +682,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
     for side, x_mult in [("R", 1), ("L", -1)]:
         leg_x = x_mult * body_width * 0.5
 
-        # 大腿
+        # Thigh
         bpy.ops.mesh.primitive_cylinder_add(
             radius=leg_thickness,
             depth=leg_length,
@@ -693,7 +694,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
         _assign_material(thigh, skin_mat)
         _parent_to(thigh, body)
 
-        # 小腿
+        # Shin
         bpy.ops.mesh.primitive_cylinder_add(
             radius=leg_thickness * 0.85,
             depth=leg_length,
@@ -705,7 +706,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
         _assign_material(shin, skin_mat)
         _parent_to(shin, body)
 
-        # 脚
+        # Foot
         foot_scale = config["foot_scale"]
         bpy.ops.mesh.primitive_cube_add(
             size=0.01,
@@ -719,34 +720,34 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
             subsurf.levels = 1
             subsurf.render_levels = 1
         _set_smooth_shading(foot)
-        # 鞋子材质
+        # Shoe material
         shoe_mat = _create_material(f"{name}_Shoe", [0.1, 0.1, 0.9, 1.0], roughness=0.6)
         _assign_material(foot, shoe_mat)
         _parent_to(foot, body)
 
     created_parts.append(f"{name}_Legs")
 
-    # ========== 骨骼系统（可选）==========
+    # ========== Armature (optional) ==========
     has_armature = False
     if create_armature:
         try:
-            # 创建骨骼
+            # Create armature
             bpy.ops.object.armature_add(location=[0, 0, 0])
             armature_obj = bpy.context.active_object
             armature_obj.name = f"{name}_Armature"
             armature = armature_obj.data
             armature.name = f"{name}_Armature"
 
-            # 进入编辑模式添加骨骼
+            # Enter edit mode to add bones
             bpy.ops.object.mode_set(mode='EDIT')
 
-            # 根骨骼
+            # Root bone
             root_bone = armature.edit_bones[0]
             root_bone.name = "root"
             root_bone.head = (0, 0, 0)
             root_bone.tail = (0, 0, hip_z)
 
-            # 脊柱
+            # Spine
             spine = armature.edit_bones.new("spine")
             spine.head = (0, 0, hip_z)
             spine.tail = (0, 0, body_z)
@@ -757,13 +758,13 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
             spine_001.tail = (0, 0, shoulder_z)
             spine_001.parent = spine
 
-            # 头部
+            # Head
             head_bone = armature.edit_bones.new("head")
             head_bone.head = (0, 0, shoulder_z)
             head_bone.tail = (0, 0, head_z + head_radius)
             head_bone.parent = spine_001
 
-            # 手臂骨骼
+            # Arm bones
             for side, x_mult in [("R", 1), ("L", -1)]:
                 s_x = x_mult * (body_width + arm_thickness * 0.5)
 
@@ -782,7 +783,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
                 hand_bone.tail = (s_x, 0, shoulder_z - arm_length * 1.7)
                 hand_bone.parent = fore
 
-            # 腿部骨骼
+            # Leg bones
             for side, x_mult in [("R", 1), ("L", -1)]:
                 l_x = x_mult * body_width * 0.5
 
@@ -809,7 +810,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
 
         except Exception as e:
             _ensure_object_mode()
-            # 骨骼创建失败不影响整体
+            # Armature creation failure does not affect the rest
             pass
 
     return {
@@ -826,10 +827,10 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-# ==================== 装备添加 ====================
+# ==================== Equipment Addition ====================
 
 def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加运动装备"""
+    """Add sport equipment"""
     _ensure_object_mode()
 
     character_name = params.get("character_name", "")
@@ -839,11 +840,11 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
     secondary_color = params.get("secondary_color")
     scale = params.get("scale", 1.0)
 
-    # 查找角色根对象
+    # Find character root object
     root_obj = bpy.data.objects.get(f"{character_name}_Root")
     hand_obj = bpy.data.objects.get(f"{character_name}_Hand_R")
 
-    # 自动确定附着位置
+    # Auto-determine attachment position
     if attach_to == "auto":
         if equipment_type in ("PADDLE", "TROPHY"):
             attach_to = "right_hand"
@@ -858,7 +859,7 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             attach_to = "scene"
 
-    # 获取附着点位置
+    # Get attachment point location
     attach_location = [0, 0, 0]
     parent_obj = root_obj
 
@@ -887,11 +888,11 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
     equip_obj = None
 
     if equipment_type == "PADDLE":
-        # 乒乓球拍
+        # Table tennis paddle
         paddle_color = color or [0.8, 0.1, 0.1]
         handle_color = secondary_color or [0.5, 0.3, 0.1]
 
-        # 拍面
+        # Blade face
         bpy.ops.mesh.primitive_cylinder_add(
             vertices=32,
             radius=0.08 * scale,
@@ -900,12 +901,12 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
         )
         blade = bpy.context.active_object
         blade.name = f"{character_name}_Paddle_Blade"
-        blade.scale[2] = 0.3  # 扁平
+        blade.scale[2] = 0.3  # Flat
         blade_mat = _create_material(f"{character_name}_PaddleRubber",
                                      paddle_color + [1.0], roughness=0.9)
         _assign_material(blade, blade_mat)
 
-        # 拍柄
+        # Handle
         handle_loc = list(attach_location)
         handle_loc[2] -= 0.1 * scale
         bpy.ops.mesh.primitive_cylinder_add(
@@ -920,15 +921,15 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
                                       handle_color + [1.0], roughness=0.6)
         _assign_material(handle, handle_mat)
 
-        # 组合
+        # Combine
         _parent_to(handle, blade)
         equip_obj = blade
         if parent_obj:
             _parent_to(blade, parent_obj)
 
     elif equipment_type == "BALL":
-        # 乒乓球
-        ball_color = color or [1.0, 0.6, 0.0]  # 橙色乒乓球
+        # Table tennis ball
+        ball_color = color or [1.0, 0.6, 0.0]  # Orange table tennis ball
         bpy.ops.mesh.primitive_uv_sphere_add(
             segments=16,
             ring_count=12,
@@ -945,9 +946,9 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
             _parent_to(equip_obj, parent_obj)
 
     elif equipment_type == "TABLE":
-        # 乒乓球台
-        table_color = color or [0.0, 0.3, 0.5]  # 深蓝绿色
-        # 台面
+        # Table tennis table
+        table_color = color or [0.0, 0.3, 0.5]  # Dark blue-green
+        # Table surface
         bpy.ops.mesh.primitive_cube_add(
             size=0.01,
             location=[0, 0, 0.76 * scale]
@@ -959,7 +960,7 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
                                      table_color + [1.0], roughness=0.4)
         _assign_material(table_top, table_mat)
 
-        # 白色中线
+        # White center line
         bpy.ops.mesh.primitive_cube_add(
             size=0.01,
             location=[0, 0, 0.761 * scale]
@@ -975,7 +976,7 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
         equip_obj = table_top
 
     elif equipment_type == "NET":
-        # 球网
+        # Net
         net_color = color or [1.0, 1.0, 1.0]
         bpy.ops.mesh.primitive_cube_add(
             size=0.01,
@@ -991,7 +992,7 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
         equip_obj = net
 
     elif equipment_type.startswith("MEDAL_"):
-        # 奖牌
+        # Medal
         medal_colors = {
             "MEDAL_GOLD": [1.0, 0.85, 0.0],
             "MEDAL_SILVER": [0.8, 0.8, 0.85],
@@ -999,7 +1000,7 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
         }
         medal_color = color or medal_colors.get(equipment_type, [1.0, 0.85, 0.0])
 
-        # 奖牌主体
+        # Medal body
         bpy.ops.mesh.primitive_cylinder_add(
             vertices=32,
             radius=0.04 * scale,
@@ -1012,8 +1013,8 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
                                      medal_color + [1.0], metallic=0.9, roughness=0.2)
         _assign_material(equip_obj, medal_mat)
 
-        # 绶带
-        ribbon_color = [0.0, 0.2, 0.8]  # 蓝色绶带（巴黎奥运会风格）
+        # Ribbon
+        ribbon_color = [0.0, 0.2, 0.8]  # Blue ribbon (Paris Olympics style)
         ribbon_loc = list(attach_location)
         ribbon_loc[2] += 0.06 * scale
         bpy.ops.mesh.primitive_cube_add(
@@ -1032,7 +1033,7 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
             _parent_to(equip_obj, parent_obj)
 
     elif equipment_type == "WRISTBAND":
-        # 护腕
+        # Wristband
         wb_color = color or [1.0, 1.0, 1.0]
         bpy.ops.mesh.primitive_torus_add(
             major_radius=0.025 * scale,
@@ -1048,10 +1049,10 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
             _parent_to(equip_obj, parent_obj)
 
     elif equipment_type == "HEADBAND":
-        # 头带
+        # Headband
         hb_color = color or [1.0, 0.1, 0.1]
         head_obj = bpy.data.objects.get(f"{character_name}_Head")
-        head_radius = 0.25  # 默认头部半径
+        head_radius = 0.25  # Default head radius
         if head_obj:
             head_radius = max(head_obj.dimensions) / 2
             attach_location = list(head_obj.location)
@@ -1071,9 +1072,9 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
             _parent_to(equip_obj, head_obj)
 
     elif equipment_type == "TROPHY":
-        # 奖杯
+        # Trophy
         trophy_color = color or [1.0, 0.85, 0.0]
-        # 杯身
+        # Cup body
         bpy.ops.mesh.primitive_cylinder_add(
             vertices=24,
             radius=0.04 * scale,
@@ -1086,7 +1087,7 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
                                       trophy_color + [1.0], metallic=0.95, roughness=0.15)
         _assign_material(equip_obj, trophy_mat)
 
-        # 底座
+        # Base
         base_loc = list(attach_location)
         base_loc[2] -= 0.07 * scale
         bpy.ops.mesh.primitive_cylinder_add(
@@ -1106,7 +1107,7 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
             _parent_to(equip_obj, parent_obj)
 
     elif equipment_type == "TOWEL":
-        # 毛巾
+        # Towel
         towel_color = color or [1.0, 1.0, 1.0]
         bpy.ops.mesh.primitive_cube_add(
             size=0.01,
@@ -1124,7 +1125,7 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
     if equip_obj is None:
         return {
             "success": False,
-            "error": {"code": "UNKNOWN_EQUIPMENT", "message": f"未知装备类型: {equipment_type}"}
+            "error": {"code": "UNKNOWN_EQUIPMENT", "message": f"Unknown equipment type: {equipment_type}"}
         }
 
     return {
@@ -1137,10 +1138,10 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-# ==================== 运动服 ====================
+# ==================== Sportswear ====================
 
 def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建运动服"""
+    """Create sportswear"""
     _ensure_object_mode()
 
     character_name = params.get("character_name", "")
@@ -1152,7 +1153,7 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
     custom_primary = params.get("custom_primary_color")
     custom_secondary = params.get("custom_secondary_color")
 
-    # 获取队伍颜色
+    # Get team colors
     if team == "CLUB_CUSTOM" and custom_primary:
         colors = {
             "primary": custom_primary + [1.0] if len(custom_primary) == 3 else custom_primary,
@@ -1162,12 +1163,12 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
     else:
         colors = TEAM_COLORS.get(team, TEAM_COLORS["CHINA_NATIONAL"])
 
-    # 查找角色身体
+    # Find character body
     body_obj = bpy.data.objects.get(f"{character_name}_Body")
     if not body_obj:
         return {
             "success": False,
-            "error": {"code": "CHARACTER_NOT_FOUND", "message": f"找不到角色: {character_name}"}
+            "error": {"code": "CHARACTER_NOT_FOUND", "message": f"Character not found: {character_name}"}
         }
 
     body_loc = list(body_obj.location)
@@ -1175,7 +1176,7 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
     created_items = []
 
     if uniform_style in ("MATCH_JERSEY", "TRAINING_WEAR"):
-        # 球衣上衣
+        # Jersey top
         jersey_color = colors["primary"]
         jersey_mat = _create_material(f"{character_name}_Jersey",
                                       jersey_color, roughness=0.7)
@@ -1191,7 +1192,7 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
             body_scale[1] * 1.08,
             body_scale[2] * 1.02
         ]
-        # 添加细分使衣服更自然
+        # Add subdivision for more natural clothing
         subsurf = jersey.modifiers.new("Smooth", 'SUBSURF')
         subsurf.levels = 1
         subsurf.render_levels = 1
@@ -1200,12 +1201,12 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
         _parent_to(jersey, body_obj)
         created_items.append(jersey.name)
 
-        # 球裤
+        # Shorts
         shorts_color = colors.get("accent", [0.1, 0.1, 0.1, 1.0])
         shorts_mat = _create_material(f"{character_name}_Shorts",
                                       shorts_color, roughness=0.7)
 
-        # 查找大腿位置
+        # Find thigh position
         thigh_r = bpy.data.objects.get(f"{character_name}_Thigh_R")
         thigh_l = bpy.data.objects.get(f"{character_name}_Thigh_L")
         if thigh_r:
@@ -1233,7 +1234,7 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
         created_items.append(shorts.name)
 
     elif uniform_style == "AWARD_CEREMONY":
-        # 领奖服（白底红条纹夹克）
+        # Award ceremony outfit (white with red stripes jacket)
         jacket_mat = _create_material(f"{character_name}_AwardJacket",
                                       colors["primary"], roughness=0.6)
 
@@ -1255,7 +1256,7 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
         _parent_to(jacket, body_obj)
         created_items.append(jacket.name)
 
-        # 运动裤（白色）
+        # Sweatpants (white)
         pants_mat = _create_material(f"{character_name}_AwardPants",
                                      colors["primary"], roughness=0.6)
         thigh_r = bpy.data.objects.get(f"{character_name}_Thigh_R")
@@ -1280,7 +1281,7 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
         created_items.append(pants.name)
 
     elif uniform_style == "WARMUP_JACKET":
-        # 热身外套
+        # Warmup jacket
         jacket_mat = _create_material(f"{character_name}_WarmupJacket",
                                       colors["primary"], roughness=0.55)
 
@@ -1314,10 +1315,10 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-# ==================== 运动姿势 ====================
+# ==================== Sport Poses ====================
 
 def handle_set_pose(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置运动姿势"""
+    """Set sport pose"""
     _ensure_object_mode()
 
     character_name = params.get("character_name", "")
@@ -1326,23 +1327,23 @@ def handle_set_pose(params: Dict[str, Any]) -> Dict[str, Any]:
     mirror = params.get("mirror", False)
     add_motion_trail = params.get("add_motion_trail", False)
 
-    # 获取姿势数据
+    # Get pose data
     pose_data = SPORT_POSES.get(pose)
     if not pose_data:
         return {
             "success": False,
-            "error": {"code": "UNKNOWN_POSE", "message": f"未知姿势: {pose}"}
+            "error": {"code": "UNKNOWN_POSE", "message": f"Unknown pose: {pose}"}
         }
 
-    # 查找骨骼
+    # Find armature
     armature_obj = bpy.data.objects.get(f"{character_name}_Armature")
     if not armature_obj:
         return {
             "success": False,
-            "error": {"code": "NO_ARMATURE", "message": f"找不到角色骨骼: {character_name}_Armature"}
+            "error": {"code": "NO_ARMATURE", "message": f"Character armature not found: {character_name}_Armature"}
         }
 
-    # 进入Pose模式
+    # Enter Pose mode
     bpy.context.view_layer.objects.active = armature_obj
     bpy.ops.object.mode_set(mode='POSE')
 
@@ -1354,7 +1355,7 @@ def handle_set_pose(params: Dict[str, Any]) -> Dict[str, Any]:
         if not isinstance(rotation, tuple):
             continue
 
-        # 镜像处理：交换L和R
+        # Mirror processing: swap L and R
         actual_bone_name = bone_name
         if mirror:
             if ".R" in bone_name:
@@ -1364,7 +1365,7 @@ def handle_set_pose(params: Dict[str, Any]) -> Dict[str, Any]:
 
         pose_bone = armature_obj.pose.bones.get(actual_bone_name)
         if pose_bone:
-            # 应用旋转（带强度）
+            # Apply rotation (with intensity)
             rx = math.radians(rotation[0] * intensity)
             ry = math.radians(rotation[1] * intensity)
             rz = math.radians(rotation[2] * intensity)
@@ -1375,11 +1376,11 @@ def handle_set_pose(params: Dict[str, Any]) -> Dict[str, Any]:
 
     bpy.ops.object.mode_set(mode='OBJECT')
 
-    # 运动轨迹效果（可选）
+    # Motion trail effect (optional)
     has_motion_trail = False
     if add_motion_trail and pose in ("FOREHAND_ATTACK", "BACKHAND_ATTACK",
                                       "FOREHAND_LOOP", "SERVE_HIT"):
-        # 创建弧形轨迹
+        # Create arc trail
         try:
             hand_obj = bpy.data.objects.get(f"{character_name}_Hand_R")
             if hand_obj:
@@ -1423,10 +1424,10 @@ def handle_set_pose(params: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-# ==================== 参考图加载 ====================
+# ==================== Reference Image Loading ====================
 
 def handle_load_reference(params: Dict[str, Any]) -> Dict[str, Any]:
-    """加载参考图"""
+    """Load reference image"""
     _ensure_object_mode()
 
     image_path = params.get("image_path", "")
@@ -1436,25 +1437,25 @@ def handle_load_reference(params: Dict[str, Any]) -> Dict[str, Any]:
     offset_y = params.get("offset_y", 0.0)
     scale = params.get("scale", 1.0)
 
-    # 检查文件是否存在
+    # Check if file exists
     if not os.path.exists(image_path):
         return {
             "success": False,
-            "error": {"code": "FILE_NOT_FOUND", "message": f"文件不存在: {image_path}"}
+            "error": {"code": "FILE_NOT_FOUND", "message": f"File not found: {image_path}"}
         }
 
-    # 加载图像
+    # Load image
     try:
         image = bpy.data.images.load(image_path)
     except Exception as e:
         return {
             "success": False,
-            "error": {"code": "LOAD_ERROR", "message": f"加载图像失败: {str(e)}"}
+            "error": {"code": "LOAD_ERROR", "message": f"Failed to load image: {str(e)}"}
         }
 
     image_name = os.path.basename(image_path)
 
-    # 创建空物体作为参考图载体
+    # Create empty object as reference image carrier
     bpy.ops.object.empty_add(type='IMAGE', location=[offset_x, offset_y, 0])
     ref_obj = bpy.context.active_object
     ref_obj.name = f"Ref_{view}_{image_name}"
@@ -1463,7 +1464,7 @@ def handle_load_reference(params: Dict[str, Any]) -> Dict[str, Any]:
     ref_obj.empty_image_depth = 'BACK'
     ref_obj.color[3] = opacity
 
-    # 根据视角旋转
+    # Rotate based on view angle
     if view == "FRONT":
         ref_obj.rotation_euler = (math.pi / 2, 0, 0)
         ref_obj.location = (offset_x, -2, offset_y)
@@ -1477,7 +1478,7 @@ def handle_load_reference(params: Dict[str, Any]) -> Dict[str, Any]:
         ref_obj.rotation_euler = (math.pi / 2, 0, math.pi / 4)
         ref_obj.location = (offset_x + 1.4, offset_y - 1.4, 0)
 
-    # 设置为不可选择（避免干扰建模）
+    # Set as non-selectable (to avoid interfering with modeling)
     ref_obj.hide_select = True
 
     return {
@@ -1491,10 +1492,10 @@ def handle_load_reference(params: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-# ==================== 模型优化 ====================
+# ==================== Model Optimization ====================
 
 def handle_optimize_model(params: Dict[str, Any]) -> Dict[str, Any]:
-    """优化运动角色模型"""
+    """Optimize sport character model"""
     _ensure_object_mode()
 
     character_name = params.get("character_name", "")
@@ -1507,28 +1508,28 @@ def handle_optimize_model(params: Dict[str, Any]) -> Dict[str, Any]:
     export_path = params.get("export_path")
     apply_draco = params.get("apply_draco_compression", True)
 
-    # 查找角色所有网格对象
+    # Find all mesh objects of the character
     root_obj = bpy.data.objects.get(f"{character_name}_Root")
     if not root_obj:
-        # 尝试直接查找名称匹配的对象
+        # Try to find objects with matching names
         matching_objs = [obj for obj in bpy.data.objects if obj.name.startswith(character_name) and obj.type == 'MESH']
         if not matching_objs:
             return {
                 "success": False,
-                "error": {"code": "CHARACTER_NOT_FOUND", "message": f"找不到角色: {character_name}"}
+                "error": {"code": "CHARACTER_NOT_FOUND", "message": f"Character not found: {character_name}"}
             }
     else:
         matching_objs = [obj for obj in bpy.data.objects
                          if obj.name.startswith(character_name) and obj.type == 'MESH']
 
-    # 统计原始面数
+    # Count original faces
     original_tris = 0
     for obj in matching_objs:
         if obj.type == 'MESH':
-            # 每个quad大约2个三角面
+            # Each quad is approximately 2 triangles
             original_tris += len(obj.data.polygons) * 2
 
-    # 应用减面修改器
+    # Apply decimate modifier
     if original_tris > target_tris and target != "PRINT_3D":
         ratio = target_tris / max(original_tris, 1)
         for obj in matching_objs:
@@ -1536,7 +1537,7 @@ def handle_optimize_model(params: Dict[str, Any]) -> Dict[str, Any]:
                 decimate = obj.modifiers.new("Decimate", 'DECIMATE')
                 decimate.ratio = max(0.1, ratio)
 
-    # 清理: 移除孤立顶点
+    # Cleanup: remove loose vertices
     for obj in matching_objs:
         if obj.type == 'MESH':
             bpy.context.view_layer.objects.active = obj
@@ -1548,38 +1549,38 @@ def handle_optimize_model(params: Dict[str, Any]) -> Dict[str, Any]:
             except Exception:
                 _ensure_object_mode()
 
-    # 统计最终面数
+    # Count final faces
     final_tris = 0
     for obj in matching_objs:
         if obj.type == 'MESH':
-            # 评估修改器后的面数
+            # Evaluate face count after modifiers
             depsgraph = bpy.context.evaluated_depsgraph_get()
             eval_obj = obj.evaluated_get(depsgraph)
             final_tris += len(eval_obj.data.polygons) * 2
 
-    # LOD生成（可选）
+    # LOD generation (optional)
     lod_count = 0
     if generate_lod:
         for level in range(1, lod_levels + 1):
             lod_ratio = 1.0 / (2 ** level)
             for obj in matching_objs:
                 if obj.type == 'MESH' and len(obj.data.polygons) > 20:
-                    # 复制对象
+                    # Copy object
                     lod_obj = obj.copy()
                     lod_obj.data = obj.data.copy()
                     lod_obj.name = f"{obj.name}_LOD{level}"
                     bpy.context.collection.objects.link(lod_obj)
 
-                    # 添加减面
+                    # Add decimate
                     decimate = lod_obj.modifiers.new(f"LOD{level}", 'DECIMATE')
                     decimate.ratio = max(0.05, lod_ratio)
 
-                    # 隐藏LOD对象
+                    # Hide LOD objects
                     lod_obj.hide_viewport = True
                     lod_obj.hide_render = True
                     lod_count += 1
 
-    # GLB导出（可选）
+    # GLB export (optional)
     exported_path = None
     if export_glb:
         if not export_path:
@@ -1596,16 +1597,16 @@ def handle_optimize_model(params: Dict[str, Any]) -> Dict[str, Any]:
                 )
 
         try:
-            # 选择角色对象
+            # Select character objects
             bpy.ops.object.select_all(action='DESELECT')
             for obj in matching_objs:
                 obj.select_set(True)
-            # 也选择骨骼
+            # Also select armature
             armature = bpy.data.objects.get(f"{character_name}_Armature")
             if armature:
                 armature.select_set(True)
 
-            # 导出GLB
+            # Export GLB
             export_settings = {
                 'filepath': export_path,
                 'use_selection': True,
@@ -1613,7 +1614,7 @@ def handle_optimize_model(params: Dict[str, Any]) -> Dict[str, Any]:
                 'export_apply': True,
             }
 
-            # Draco压缩
+            # Draco compression
             if apply_draco:
                 export_settings['export_draco_mesh_compression_enable'] = True
                 export_settings['export_draco_mesh_compression_level'] = 6
@@ -1622,7 +1623,7 @@ def handle_optimize_model(params: Dict[str, Any]) -> Dict[str, Any]:
             exported_path = export_path
 
         except Exception as e:
-            # 导出失败不影响其他结果
+            # Export failure does not affect other results
             pass
 
     return {
@@ -1639,10 +1640,10 @@ def handle_optimize_model(params: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-# ==================== 场景设置 ====================
+# ==================== Scene Setup ====================
 
 def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置运动场景"""
+    """Set up sport scene"""
     _ensure_object_mode()
 
     scene_type = params.get("scene_type", "PORTRAIT")
@@ -1655,25 +1656,25 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
     scene = bpy.context.scene
     lights_count = 0
 
-    # 设置渲染引擎
+    # Set render engine
     if render_engine == "CYCLES":
         scene.render.engine = 'CYCLES'
     else:
         scene.render.engine = 'BLENDER_EEVEE_NEXT' if hasattr(bpy.types, 'ShaderNodeBsdfPrincipled') else 'BLENDER_EEVEE'
 
-    # 设置色彩管理
+    # Set color management
     try:
         scene.view_settings.view_transform = 'Filmic'
         scene.view_settings.look = 'Medium Contrast'
     except Exception:
         pass
 
-    # 删除默认灯光
+    # Delete default lights
     for obj in list(bpy.data.objects):
         if obj.type == 'LIGHT' and obj.name in ('Light', 'Lamp'):
             bpy.data.objects.remove(obj, do_unlink=True)
 
-    # 背景颜色
+    # Background color
     if background_color:
         world = scene.world
         if not world:
@@ -1684,30 +1685,30 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         if bg_node:
             bg_node.inputs["Color"].default_value = background_color + [1.0] if len(background_color) == 3 else background_color
 
-    # 根据场景类型设置灯光
+    # Set up lights based on scene type
     if scene_type == "PORTRAIT":
-        # 三点布光：肖像展示
-        # 主光（暖色，45度侧前方）
+        # Three-point lighting: portrait display
+        # Key light (warm, 45 degrees front-side)
         bpy.ops.object.light_add(type='AREA', location=(2, -2, 3))
         key_light = bpy.context.active_object
         key_light.name = "KeyLight"
         key_light.data.energy = 200
-        key_light.data.color = (1.0, 0.95, 0.9)  # 暖色
+        key_light.data.color = (1.0, 0.95, 0.9)  # Warm tone
         key_light.data.size = 2
         key_light.rotation_euler = (math.radians(45), 0, math.radians(45))
         lights_count += 1
 
-        # 辅光（冷色，对侧）
+        # Fill light (cool, opposite side)
         bpy.ops.object.light_add(type='AREA', location=(-2, -1.5, 2))
         fill_light = bpy.context.active_object
         fill_light.name = "FillLight"
         fill_light.data.energy = 80
-        fill_light.data.color = (0.9, 0.95, 1.0)  # 冷色
+        fill_light.data.color = (0.9, 0.95, 1.0)  # Cool tone
         fill_light.data.size = 3
         fill_light.rotation_euler = (math.radians(30), 0, math.radians(-30))
         lights_count += 1
 
-        # 轮廓光（背面）
+        # Rim light (back)
         bpy.ops.object.light_add(type='AREA', location=(0, 2, 2.5))
         rim_light = bpy.context.active_object
         rim_light.name = "RimLight"
@@ -1718,8 +1719,8 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         lights_count += 1
 
     elif scene_type == "PRODUCT":
-        # 产品/手办展示灯光
-        # 顶部环境光
+        # Product/figurine display lighting
+        # Top ambient light
         bpy.ops.object.light_add(type='AREA', location=(0, 0, 4))
         top_light = bpy.context.active_object
         top_light.name = "TopLight"
@@ -1728,7 +1729,7 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         top_light.rotation_euler = (0, 0, 0)
         lights_count += 1
 
-        # 前侧光
+        # Front-side light
         bpy.ops.object.light_add(type='AREA', location=(1.5, -2, 1.5))
         front_light = bpy.context.active_object
         front_light.name = "FrontLight"
@@ -1738,7 +1739,7 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         front_light.rotation_euler = (math.radians(30), 0, math.radians(30))
         lights_count += 1
 
-        # 底部补光（产品展示特有）
+        # Bottom fill light (product display specific)
         bpy.ops.object.light_add(type='AREA', location=(0, -1, -0.5))
         bottom_light = bpy.context.active_object
         bottom_light.name = "BottomFill"
@@ -1747,7 +1748,7 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         bottom_light.rotation_euler = (math.radians(-60), 0, 0)
         lights_count += 1
 
-        # 展示底座
+        # Display base
         bpy.ops.mesh.primitive_cylinder_add(
             radius=0.5,
             depth=0.05,
@@ -1760,7 +1761,7 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         _assign_material(base, base_mat)
 
     elif scene_type == "MATCH":
-        # 比赛场景灯光（体育馆顶部灯光）
+        # Match scene lighting (stadium overhead lights)
         for i, x_offset in enumerate([-2, 0, 2]):
             bpy.ops.object.light_add(type='AREA', location=(x_offset, 0, 5))
             light = bpy.context.active_object
@@ -1770,7 +1771,7 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
             light.data.size = 3
             lights_count += 1
 
-        # 侧面补光
+        # Side fill light
         bpy.ops.object.light_add(type='AREA', location=(4, -3, 2))
         side_light = bpy.context.active_object
         side_light.name = "SideLight"
@@ -1779,8 +1780,8 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         lights_count += 1
 
     elif scene_type == "AWARD_CEREMONY":
-        # 颁奖场景
-        # 聚光灯（颁奖特效）
+        # Award ceremony scene
+        # Spotlight (award ceremony effect)
         bpy.ops.object.light_add(type='SPOT', location=(0, -3, 5))
         spot = bpy.context.active_object
         spot.name = "AwardSpotlight"
@@ -1790,7 +1791,7 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         spot.rotation_euler = (math.radians(30), 0, 0)
         lights_count += 1
 
-        # 环境补光
+        # Ambient fill light
         bpy.ops.object.light_add(type='AREA', location=(2, -1, 3))
         fill = bpy.context.active_object
         fill.name = "AwardFill"
@@ -1798,11 +1799,11 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         fill.data.size = 3
         lights_count += 1
 
-        # 领奖台
+        # Podium
         for pos, h, color in [
-            ((0, 0, 0), 0.3, [1.0, 0.85, 0.0, 1.0]),    # 金牌位（中间，最高）
-            ((-0.6, 0, 0), 0.2, [0.75, 0.75, 0.8, 1.0]),  # 银牌位
-            ((0.6, 0, 0), 0.15, [0.7, 0.45, 0.2, 1.0]),   # 铜牌位
+            ((0, 0, 0), 0.3, [1.0, 0.85, 0.0, 1.0]),    # Gold medal position (center, highest)
+            ((-0.6, 0, 0), 0.2, [0.75, 0.75, 0.8, 1.0]),  # Silver medal position
+            ((0.6, 0, 0), 0.15, [0.7, 0.45, 0.2, 1.0]),   # Bronze medal position
         ]:
             bpy.ops.mesh.primitive_cube_add(
                 size=0.01,
@@ -1815,7 +1816,7 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
             _assign_material(podium, podium_mat)
 
     elif scene_type == "TRAINING":
-        # 训练场景
+        # Training scene
         bpy.ops.object.light_add(type='AREA', location=(0, 0, 4))
         overhead = bpy.context.active_object
         overhead.name = "TrainingLight"
@@ -1830,8 +1831,8 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         side.data.size = 3
         lights_count += 1
 
-    # 设置相机
-    # 删除默认相机
+    # Set up camera
+    # Delete default camera
     for obj in list(bpy.data.objects):
         if obj.type == 'CAMERA' and obj.name == 'Camera':
             bpy.data.objects.remove(obj, do_unlink=True)
@@ -1845,7 +1846,7 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
     camera.name = "SportCamera"
     scene.camera = camera
 
-    # 如果有角色，相机追踪角色
+    # If character exists, camera tracks character
     if character_name:
         target_obj = bpy.data.objects.get(f"{character_name}_Root") or \
                      bpy.data.objects.get(f"{character_name}_Body")

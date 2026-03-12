@@ -1,7 +1,7 @@
 """
-自动骨骼绑定工具
+Auto Rigging Tools
 
-提供自动骨骼创建、权重绑定、IK/FK设置等功能。
+Provides automatic bone creation, weight painting, IK/FK setup, and more.
 """
 
 from typing import TYPE_CHECKING, Optional, List
@@ -13,78 +13,78 @@ if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class AutoRigSetupInput(BaseModel):
-    """自动骨骼设置输入"""
-    character_name: str = Field(..., description="角色名称前缀")
+    """Auto rig setup input"""
+    character_name: str = Field(..., description="Character name prefix")
     rig_type: str = Field(
         default="humanoid",
-        description="骨骼类型: humanoid(人形), quadruped(四足), bird(鸟类), simple(简单)"
+        description="Rig type: humanoid, quadruped, bird, simple"
     )
-    auto_weight: bool = Field(default=True, description="自动权重绑定")
-    symmetric: bool = Field(default=True, description="对称骨骼")
+    auto_weight: bool = Field(default=True, description="Automatic weight painting")
+    symmetric: bool = Field(default=True, description="Symmetric bones")
 
 
 class BoneAddInput(BaseModel):
-    """添加骨骼输入"""
-    armature_name: str = Field(..., description="骨架名称")
-    bone_name: str = Field(..., description="骨骼名称")
-    head: List[float] = Field(..., description="骨骼头部位置")
-    tail: List[float] = Field(..., description="骨骼尾部位置")
-    parent_bone: Optional[str] = Field(default=None, description="父骨骼名称")
-    connect: bool = Field(default=False, description="连接到父骨骼")
+    """Add bone input"""
+    armature_name: str = Field(..., description="Armature name")
+    bone_name: str = Field(..., description="Bone name")
+    head: List[float] = Field(..., description="Bone head position")
+    tail: List[float] = Field(..., description="Bone tail position")
+    parent_bone: Optional[str] = Field(default=None, description="Parent bone name")
+    connect: bool = Field(default=False, description="Connect to parent bone")
 
 
 class IKSetupInput(BaseModel):
-    """IK设置输入"""
-    armature_name: str = Field(..., description="骨架名称")
-    bone_name: str = Field(..., description="要添加IK的骨骼")
-    chain_length: int = Field(default=2, description="IK链长度")
-    target_name: Optional[str] = Field(default=None, description="IK目标对象")
-    pole_target: Optional[str] = Field(default=None, description="极向量目标")
+    """IK setup input"""
+    armature_name: str = Field(..., description="Armature name")
+    bone_name: str = Field(..., description="Bone to add IK to")
+    chain_length: int = Field(default=2, description="IK chain length")
+    target_name: Optional[str] = Field(default=None, description="IK target object")
+    pole_target: Optional[str] = Field(default=None, description="Pole target")
 
 
 class WeightPaintInput(BaseModel):
-    """权重绘制输入"""
-    object_name: str = Field(..., description="网格对象名称")
-    armature_name: str = Field(..., description="骨架名称")
+    """Weight paint input"""
+    object_name: str = Field(..., description="Mesh object name")
+    armature_name: str = Field(..., description="Armature name")
     method: str = Field(
         default="automatic",
-        description="方法: automatic(自动), envelope(包络), nearest(最近)"
+        description="Method: automatic, envelope, nearest"
     )
 
 
 class PoseApplyInput(BaseModel):
-    """应用姿势输入"""
-    armature_name: str = Field(..., description="骨架名称")
+    """Apply pose input"""
+    armature_name: str = Field(..., description="Armature name")
     pose_name: str = Field(
         default="t_pose",
-        description="姿势: t_pose, a_pose, rest, action_pose"
+        description="Pose: t_pose, a_pose, rest, action_pose"
     )
 
 
 class RigConstraintInput(BaseModel):
-    """骨骼约束输入"""
-    armature_name: str = Field(..., description="骨架名称")
-    bone_name: str = Field(..., description="骨骼名称")
+    """Bone constraint input"""
+    armature_name: str = Field(..., description="Armature name")
+    bone_name: str = Field(..., description="Bone name")
     constraint_type: str = Field(
         default="COPY_ROTATION",
-        description="约束类型: COPY_ROTATION, COPY_LOCATION, LIMIT_ROTATION, DAMPED_TRACK"
+        description="Constraint type: COPY_ROTATION, COPY_LOCATION, LIMIT_ROTATION, DAMPED_TRACK"
     )
-    target_armature: Optional[str] = Field(default=None, description="目标骨架")
-    target_bone: Optional[str] = Field(default=None, description="目标骨骼")
+    target_armature: Optional[str] = Field(default=None, description="Target armature")
+    target_bone: Optional[str] = Field(default=None, description="Target bone")
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册自动骨骼绑定工具"""
-    
+    """Register auto rigging tools"""
+
     @mcp.tool(
         name="blender_rig_auto_setup",
         annotations={
-            "title": "自动创建骨骼",
+            "title": "Auto Create Rig",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -92,15 +92,15 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_rig_auto_setup(params: AutoRigSetupInput) -> str:
-        """为角色自动创建骨骼系统。
-        
-        根据角色网格自动创建适合的骨骼结构。
-        
+        """Automatically create a bone system for a character.
+
+        Automatically creates an appropriate bone structure based on the character mesh.
+
         Args:
-            params: 角色名称、骨骼类型等
-            
+            params: Character name, rig type, etc.
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "auto_rig", "setup",
@@ -111,17 +111,17 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "symmetric": params.symmetric
             }
         )
-        
+
         if result.get("success"):
             bones = result.get("data", {}).get("bones_created", 0)
-            return f"成功为 '{params.character_name}' 创建 {params.rig_type} 骨骼系统，共 {bones} 根骨骼"
+            return f"Successfully created {params.rig_type} rig for '{params.character_name}' with {bones} bones"
         else:
-            return f"创建失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Creation failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_rig_bone_add",
         annotations={
-            "title": "添加骨骼",
+            "title": "Add Bone",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -129,13 +129,13 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_rig_bone_add(params: BoneAddInput) -> str:
-        """手动添加骨骼。
-        
+        """Manually add a bone.
+
         Args:
-            params: 骨架、骨骼名称、位置等
-            
+            params: Armature, bone name, position, etc.
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "auto_rig", "bone_add",
@@ -148,16 +148,16 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "connect": params.connect
             }
         )
-        
+
         if result.get("success"):
-            return f"成功添加骨骼 '{params.bone_name}'"
+            return f"Successfully added bone '{params.bone_name}'"
         else:
-            return f"添加失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Addition failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_rig_ik_setup",
         annotations={
-            "title": "设置IK",
+            "title": "Setup IK",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -165,13 +165,13 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_rig_ik_setup(params: IKSetupInput) -> str:
-        """为骨骼设置反向动力学（IK）。
-        
+        """Set up Inverse Kinematics (IK) for a bone.
+
         Args:
-            params: 骨架、骨骼、链长度等
-            
+            params: Armature, bone, chain length, etc.
+
         Returns:
-            设置结果
+            Setup result
         """
         result = await server.execute_command(
             "auto_rig", "ik_setup",
@@ -183,16 +183,16 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "pole_target": params.pole_target
             }
         )
-        
+
         if result.get("success"):
-            return f"成功为 '{params.bone_name}' 设置 IK（链长度: {params.chain_length}）"
+            return f"Successfully set up IK for '{params.bone_name}' (chain length: {params.chain_length})"
         else:
-            return f"设置失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Setup failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_rig_weight_paint",
         annotations={
-            "title": "自动权重绑定",
+            "title": "Auto Weight Paint",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -200,13 +200,13 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_rig_weight_paint(params: WeightPaintInput) -> str:
-        """为网格对象进行自动权重绑定。
-        
+        """Perform automatic weight painting for a mesh object.
+
         Args:
-            params: 网格对象、骨架、方法
-            
+            params: Mesh object, armature, method
+
         Returns:
-            绑定结果
+            Painting result
         """
         result = await server.execute_command(
             "auto_rig", "weight_paint",
@@ -216,16 +216,16 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "method": params.method
             }
         )
-        
+
         if result.get("success"):
-            return f"成功为 '{params.object_name}' 进行 {params.method} 权重绑定"
+            return f"Successfully performed {params.method} weight painting for '{params.object_name}'"
         else:
-            return f"绑定失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Weight painting failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_rig_pose_apply",
         annotations={
-            "title": "应用预设姿势",
+            "title": "Apply Preset Pose",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -233,13 +233,13 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_rig_pose_apply(params: PoseApplyInput) -> str:
-        """应用预设姿势到骨架。
-        
+        """Apply a preset pose to an armature.
+
         Args:
-            params: 骨架名称、姿势类型
-            
+            params: Armature name, pose type
+
         Returns:
-            应用结果
+            Application result
         """
         result = await server.execute_command(
             "auto_rig", "pose_apply",
@@ -248,16 +248,16 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "pose_name": params.pose_name
             }
         )
-        
+
         if result.get("success"):
-            return f"成功应用 {params.pose_name} 姿势"
+            return f"Successfully applied {params.pose_name} pose"
         else:
-            return f"应用失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Application failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_rig_constraint_add",
         annotations={
-            "title": "添加骨骼约束",
+            "title": "Add Bone Constraint",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -265,13 +265,13 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_rig_constraint_add(params: RigConstraintInput) -> str:
-        """为骨骼添加约束。
-        
+        """Add a constraint to a bone.
+
         Args:
-            params: 骨架、骨骼、约束类型等
-            
+            params: Armature, bone, constraint type, etc.
+
         Returns:
-            添加结果
+            Addition result
         """
         result = await server.execute_command(
             "auto_rig", "constraint_add",
@@ -283,8 +283,8 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "target_bone": params.target_bone
             }
         )
-        
+
         if result.get("success"):
-            return f"成功为 '{params.bone_name}' 添加 {params.constraint_type} 约束"
+            return f"Successfully added {params.constraint_type} constraint to '{params.bone_name}'"
         else:
-            return f"添加失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Addition failed: {result.get('error', {}).get('message', 'unknown error')}"

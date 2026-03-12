@@ -1,5 +1,5 @@
 """
-面板模块
+Panels module
 """
 
 import bpy
@@ -8,7 +8,7 @@ from .. import server
 
 
 class MCP_PT_MainPanel(bpy.types.Panel):
-    """MCP 主面板"""
+    """MCP Main Panel"""
     bl_label = "Blender MCP"
     bl_idname = "MCP_PT_main_panel"
     bl_space_type = 'VIEW_3D'
@@ -18,40 +18,40 @@ class MCP_PT_MainPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         
-        # 服务状态
+        # Server status
         box = layout.box()
         row = box.row()
-        row.label(text="服务状态:")
+        row.label(text="Server Status:")
         
         if server.is_running():
-            row.label(text="运行中", icon='PLAY')
-            box.label(text=f"端口: {server.get_port()}")
+            row.label(text="Running", icon='PLAY')
+            box.label(text=f"Port: {server.get_port()}")
         else:
-            row.label(text="已停止", icon='PAUSE')
+            row.label(text="Stopped", icon='PAUSE')
         
-        # 控制按钮
+        # Control buttons
         layout.separator()
         
         if server.is_running():
-            layout.operator("mcp.stop_server", text="停止服务", icon='CANCEL')
-            layout.operator("mcp.restart_server", text="重启服务", icon='FILE_REFRESH')
+            layout.operator("mcp.stop_server", text="Stop Server", icon='CANCEL')
+            layout.operator("mcp.restart_server", text="Restart Server", icon='FILE_REFRESH')
         else:
-            layout.operator("mcp.start_server", text="启动服务", icon='PLAY')
+            layout.operator("mcp.start_server", text="Start Server", icon='PLAY')
         
-        # 信息
+        # Instructions
         layout.separator()
         box = layout.box()
-        box.label(text="使用说明:", icon='INFO')
+        box.label(text="Instructions:", icon='INFO')
         col = box.column(align=True)
         col.scale_y = 0.8
-        col.label(text="1. 启动 MCP 服务")
-        col.label(text="2. 在 IDE 中配置 MCP")
-        col.label(text="3. 通过 AI 助手控制 Blender")
+        col.label(text="1. Start the MCP server")
+        col.label(text="2. Configure MCP in your IDE")
+        col.label(text="3. Control Blender via AI assistant")
 
 
 class MCP_PT_DevPanel(bpy.types.Panel):
-    """MCP 开发者面板"""
-    bl_label = "开发者工具"
+    """MCP Developer Panel"""
+    bl_label = "Developer Tools"
     bl_idname = "MCP_PT_dev_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -61,7 +61,7 @@ class MCP_PT_DevPanel(bpy.types.Panel):
     
     @classmethod
     def poll(cls, context):
-        # 仅在设置了开发源代码路径时显示
+        # Only show when a dev source path is configured
         prefs = context.preferences.addons.get("blender_mcp_addon")
         return prefs and prefs.preferences.dev_source_path
     
@@ -70,30 +70,30 @@ class MCP_PT_DevPanel(bpy.types.Panel):
         prefs = context.preferences.addons.get("blender_mcp_addon")
         
         if prefs and prefs.preferences.dev_source_path:
-            # 显示源代码路径
+            # Display source path
             box = layout.box()
-            box.label(text="源代码目录:", icon='FILE_FOLDER')
+            box.label(text="Source Directory:", icon='FILE_FOLDER')
             col = box.column(align=True)
             col.scale_y = 0.8
-            # 分行显示长路径
+            # Wrap long paths across lines
             path = prefs.preferences.dev_source_path
             col.label(text=path if len(path) < 40 else f"...{path[-37:]}")
             
-            # 热更新按钮
+            # Hot reload button
             layout.separator()
-            layout.operator("mcp.hot_reload", text="热更新", icon='FILE_REFRESH')
+            layout.operator("mcp.hot_reload", text="Hot Reload", icon='FILE_REFRESH')
             
-            # 提示
+            # Tip
             layout.separator()
             col = layout.column(align=True)
             col.scale_y = 0.7
-            col.label(text="提示: 修改源代码后点击热更新")
-            col.label(text="无需重启 Blender 即可应用更改")
+            col.label(text="Tip: Click Hot Reload after editing source code")
+            col.label(text="Changes apply without restarting Blender")
 
 
 class MCP_PT_InfoPanel(bpy.types.Panel):
-    """MCP 信息面板"""
-    bl_label = "场景信息"
+    """MCP Info Panel"""
+    bl_label = "Scene Info"
     bl_idname = "MCP_PT_info_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -106,10 +106,10 @@ class MCP_PT_InfoPanel(bpy.types.Panel):
         scene = context.scene
         
         col = layout.column(align=True)
-        col.label(text=f"场景: {scene.name}")
-        col.label(text=f"对象: {len(scene.objects)}")
-        col.label(text=f"帧范围: {scene.frame_start} - {scene.frame_end}")
-        col.label(text=f"当前帧: {scene.frame_current}")
+        col.label(text=f"Scene: {scene.name}")
+        col.label(text=f"Objects: {len(scene.objects)}")
+        col.label(text=f"Frame Range: {scene.frame_start} - {scene.frame_end}")
+        col.label(text=f"Current Frame: {scene.frame_current}")
 
 
 classes = [

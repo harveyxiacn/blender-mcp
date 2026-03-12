@@ -1,7 +1,7 @@
 """
-AI辅助处理器
+AI assistance handler
 
-处理AI辅助功能命令。
+Handles AI assistance feature commands.
 """
 
 from typing import Any, Dict, List
@@ -10,7 +10,7 @@ import math
 
 
 def handle_describe_scene(params: Dict[str, Any]) -> Dict[str, Any]:
-    """描述场景"""
+    """Describe scene"""
     detail_level = params.get("detail_level", "medium")
     include_materials = params.get("include_materials", True)
     include_animations = params.get("include_animations", True)
@@ -26,7 +26,7 @@ def handle_describe_scene(params: Dict[str, Any]) -> Dict[str, Any]:
             "resolution": [scene.render.resolution_x, scene.render.resolution_y]
         }
         
-        # 对象统计
+        # Object statistics
         objects = {
             "total": len(scene.objects),
             "by_type": {}
@@ -40,7 +40,7 @@ def handle_describe_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         
         description["objects"] = objects
         
-        # 详细信息
+        # Detailed information
         if detail_level in ["medium", "high"]:
             object_list = []
             for obj in scene.objects:
@@ -65,7 +65,7 @@ def handle_describe_scene(params: Dict[str, Any]) -> Dict[str, Any]:
             
             description["object_list"] = object_list
         
-        # 材质信息
+        # Material information
         if include_materials:
             materials = []
             for mat in bpy.data.materials:
@@ -82,7 +82,7 @@ def handle_describe_scene(params: Dict[str, Any]) -> Dict[str, Any]:
                 "list": materials[:20] if detail_level != "high" else materials
             }
         
-        # 动画信息
+        # Animation information
         if include_animations:
             animations = []
             for action in bpy.data.actions:
@@ -99,7 +99,7 @@ def handle_describe_scene(params: Dict[str, Any]) -> Dict[str, Any]:
                 "list": animations
             }
         
-        # 世界设置
+        # World settings
         if scene.world:
             description["world"] = {
                 "name": scene.world.name,
@@ -119,7 +119,7 @@ def handle_describe_scene(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_analyze_object(params: Dict[str, Any]) -> Dict[str, Any]:
-    """分析对象"""
+    """Analyze object"""
     object_name = params.get("object_name")
     include_modifiers = params.get("include_modifiers", True)
     include_topology = params.get("include_topology", True)
@@ -128,7 +128,7 @@ def handle_analyze_object(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
@@ -143,7 +143,7 @@ def handle_analyze_object(params: Dict[str, Any]) -> Dict[str, Any]:
             "parent": obj.parent.name if obj.parent else None
         }
         
-        # 网格拓扑分析
+        # Mesh topology analysis
         if obj.type == 'MESH' and include_topology:
             mesh = obj.data
             
@@ -157,7 +157,7 @@ def handle_analyze_object(params: Dict[str, Any]) -> Dict[str, Any]:
                 "vertex_colors": len(mesh.vertex_colors) if hasattr(mesh, 'vertex_colors') else 0
             }
             
-            # 分析面类型
+            # Analyze face types
             ngons = 0
             quads = 0
             tris = 0
@@ -175,7 +175,7 @@ def handle_analyze_object(params: Dict[str, Any]) -> Dict[str, Any]:
                 "ngons": ngons
             }
         
-        # 修改器分析
+        # Modifier analysis
         if include_modifiers:
             modifiers = []
             for mod in obj.modifiers:
@@ -189,15 +189,15 @@ def handle_analyze_object(params: Dict[str, Any]) -> Dict[str, Any]:
             
             analysis["modifiers"] = modifiers
         
-        # 材质
+        # Materials
         if obj.data and hasattr(obj.data, 'materials'):
             analysis["materials"] = [mat.name if mat else None for mat in obj.data.materials]
         
-        # 约束
+        # Constraints
         if obj.constraints:
             analysis["constraints"] = [{"name": c.name, "type": c.type} for c in obj.constraints]
         
-        # 动画数据
+        # Animation data
         if obj.animation_data:
             analysis["animation"] = {
                 "action": obj.animation_data.action.name if obj.animation_data.action else None,
@@ -217,7 +217,7 @@ def handle_analyze_object(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_suggest_optimization(params: Dict[str, Any]) -> Dict[str, Any]:
-    """优化建议"""
+    """Optimization suggestions"""
     target = params.get("target", "performance")
     
     try:
@@ -225,7 +225,7 @@ def handle_suggest_optimization(params: Dict[str, Any]) -> Dict[str, Any]:
         
         scene = bpy.context.scene
         
-        # 检查高多边形对象
+        # Check for high-poly objects
         high_poly_objects = []
         for obj in scene.objects:
             if obj.type == 'MESH':
@@ -240,12 +240,12 @@ def handle_suggest_optimization(params: Dict[str, Any]) -> Dict[str, Any]:
             suggestions.append({
                 "type": "HIGH_POLY",
                 "severity": "warning",
-                "message": f"发现 {len(high_poly_objects)} 个高多边形对象",
-                "suggestion": "考虑使用细分修改器或减面工具",
+                "message": f"Found {len(high_poly_objects)} high-poly objects",
+                "suggestion": "Consider using subdivision modifiers or decimation tools",
                 "objects": high_poly_objects[:5]
             })
         
-        # 检查未应用的变换
+        # Check for unapplied transforms
         unapplied_transforms = []
         for obj in scene.objects:
             if obj.type == 'MESH':
@@ -256,12 +256,12 @@ def handle_suggest_optimization(params: Dict[str, Any]) -> Dict[str, Any]:
             suggestions.append({
                 "type": "UNAPPLIED_SCALE",
                 "severity": "info",
-                "message": f"发现 {len(unapplied_transforms)} 个对象有未应用的缩放",
-                "suggestion": "应用缩放以避免导出问题",
+                "message": f"Found {len(unapplied_transforms)} objects with unapplied scale",
+                "suggestion": "Apply scale to avoid export issues",
                 "objects": unapplied_transforms[:10]
             })
         
-        # 检查材质
+        # Check materials
         unused_materials = []
         for mat in bpy.data.materials:
             if mat.users == 0:
@@ -271,12 +271,12 @@ def handle_suggest_optimization(params: Dict[str, Any]) -> Dict[str, Any]:
             suggestions.append({
                 "type": "UNUSED_MATERIALS",
                 "severity": "info" if target != "memory" else "warning",
-                "message": f"发现 {len(unused_materials)} 个未使用的材质",
-                "suggestion": "删除未使用的材质以减少内存使用",
+                "message": f"Found {len(unused_materials)} unused materials",
+                "suggestion": "Remove unused materials to reduce memory usage",
                 "items": unused_materials[:10]
             })
         
-        # 检查纹理大小
+        # Check texture sizes
         large_textures = []
         for img in bpy.data.images:
             if img.size[0] * img.size[1] > 4096 * 4096:
@@ -289,19 +289,19 @@ def handle_suggest_optimization(params: Dict[str, Any]) -> Dict[str, Any]:
             suggestions.append({
                 "type": "LARGE_TEXTURES",
                 "severity": "warning" if target in ["performance", "memory"] else "info",
-                "message": f"发现 {len(large_textures)} 个超大纹理",
-                "suggestion": "考虑降低纹理分辨率",
+                "message": f"Found {len(large_textures)} oversized textures",
+                "suggestion": "Consider reducing texture resolution",
                 "textures": large_textures
             })
         
-        # 渲染设置建议
+        # Render settings suggestions
         if target == "performance":
             if scene.render.engine == 'CYCLES':
                 suggestions.append({
                     "type": "RENDER_ENGINE",
                     "severity": "info",
-                    "message": "当前使用 Cycles 渲染引擎",
-                    "suggestion": "对于实时预览，考虑使用 EEVEE"
+                    "message": "Currently using Cycles render engine",
+                    "suggestion": "For real-time preview, consider using EEVEE"
                 })
         
         return {
@@ -321,7 +321,7 @@ def handle_suggest_optimization(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_auto_material(params: Dict[str, Any]) -> Dict[str, Any]:
-    """自动材质"""
+    """Auto material"""
     object_name = params.get("object_name")
     description = params.get("description", "")
     style = params.get("style", "realistic")
@@ -330,92 +330,92 @@ def handle_auto_material(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     try:
-        # 根据描述创建材质
+        # Create material based on description
         mat = bpy.data.materials.new(name=f"{object_name}_{description[:20]}")
         mat.use_nodes = True
         
         nodes = mat.node_tree.nodes
         links = mat.node_tree.links
         
-        # 清除默认节点
+        # Clear default nodes
         nodes.clear()
-        
-        # 创建输出节点
+
+        # Create output node
         output = nodes.new('ShaderNodeOutputMaterial')
         output.location = (300, 0)
-        
-        # 创建 BSDF 节点
+
+        # Create BSDF node
         bsdf = nodes.new('ShaderNodeBsdfPrincipled')
         bsdf.location = (0, 0)
-        
-        # 根据描述设置参数
+
+        # Set parameters based on description
         desc_lower = description.lower()
         
-        # 金属材质
-        if any(word in desc_lower for word in ['metal', '金属', 'steel', '钢', 'iron', '铁', 'gold', '金', 'silver', '银', 'copper', '铜']):
+        # Metal materials
+        if any(word in desc_lower for word in ['metal', 'steel', 'iron', 'gold', 'silver', 'copper']):
             bsdf.inputs['Metallic'].default_value = 1.0
             bsdf.inputs['Roughness'].default_value = 0.3
             
-            if 'gold' in desc_lower or '金' in desc_lower:
+            if 'gold' in desc_lower:
                 bsdf.inputs['Base Color'].default_value = (1.0, 0.766, 0.336, 1.0)
-            elif 'silver' in desc_lower or '银' in desc_lower:
+            elif 'silver' in desc_lower:
                 bsdf.inputs['Base Color'].default_value = (0.972, 0.960, 0.915, 1.0)
-            elif 'copper' in desc_lower or '铜' in desc_lower:
+            elif 'copper' in desc_lower:
                 bsdf.inputs['Base Color'].default_value = (0.955, 0.637, 0.538, 1.0)
             else:
                 bsdf.inputs['Base Color'].default_value = (0.8, 0.8, 0.8, 1.0)
         
-        # 木材
-        elif any(word in desc_lower for word in ['wood', '木', 'wooden', '木质']):
+        # Wood
+        elif any(word in desc_lower for word in ['wood', 'wooden']):
             bsdf.inputs['Metallic'].default_value = 0.0
             bsdf.inputs['Roughness'].default_value = 0.7
             bsdf.inputs['Base Color'].default_value = (0.4, 0.2, 0.1, 1.0)
         
-        # 玻璃
-        elif any(word in desc_lower for word in ['glass', '玻璃', 'transparent', '透明']):
+        # Glass
+        elif any(word in desc_lower for word in ['glass', 'transparent']):
             bsdf.inputs['Metallic'].default_value = 0.0
             bsdf.inputs['Roughness'].default_value = 0.0
             bsdf.inputs['Transmission'].default_value = 1.0
             bsdf.inputs['IOR'].default_value = 1.45
         
-        # 塑料
-        elif any(word in desc_lower for word in ['plastic', '塑料']):
+        # Plastic
+        elif any(word in desc_lower for word in ['plastic']):
             bsdf.inputs['Metallic'].default_value = 0.0
             bsdf.inputs['Roughness'].default_value = 0.4
             bsdf.inputs['Specular IOR Level'].default_value = 0.5
         
-        # 布料
-        elif any(word in desc_lower for word in ['fabric', '布', 'cloth', '织物', 'cotton', '棉']):
+        # Fabric
+        elif any(word in desc_lower for word in ['fabric', 'cloth', 'cotton']):
             bsdf.inputs['Metallic'].default_value = 0.0
             bsdf.inputs['Roughness'].default_value = 0.9
             bsdf.inputs['Sheen Weight'].default_value = 0.3
         
-        # 皮肤
-        elif any(word in desc_lower for word in ['skin', '皮肤']):
+        # Skin
+        elif any(word in desc_lower for word in ['skin']):
             bsdf.inputs['Metallic'].default_value = 0.0
             bsdf.inputs['Roughness'].default_value = 0.5
             bsdf.inputs['Subsurface Weight'].default_value = 0.3
             bsdf.inputs['Base Color'].default_value = (0.8, 0.6, 0.5, 1.0)
         
-        # 默认
+        # Default
         else:
             bsdf.inputs['Metallic'].default_value = 0.0
             bsdf.inputs['Roughness'].default_value = 0.5
         
-        # 风格调整
+        # Style adjustments
         if style == "cartoon":
             bsdf.inputs['Roughness'].default_value = 1.0
         elif style == "stylized":
             bsdf.inputs['Roughness'].default_value = 0.7
         
-        # 连接节点
+        # Connect nodes
         links.new(bsdf.outputs['BSDF'], output.inputs['Surface'])
         
-        # 应用材质
+        # Apply material
         if obj.data.materials:
             obj.data.materials[0] = mat
         else:
@@ -438,7 +438,7 @@ def handle_auto_material(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_scene_statistics(params: Dict[str, Any]) -> Dict[str, Any]:
-    """场景统计"""
+    """Scene statistics"""
     include_hidden = params.get("include_hidden", False)
     
     try:
@@ -471,7 +471,7 @@ def handle_scene_statistics(params: Dict[str, Any]) -> Dict[str, Any]:
             }
         }
         
-        # 对象统计
+        # Object statistics
         for obj in scene.objects:
             if not include_hidden and not obj.visible_get():
                 continue
@@ -485,7 +485,7 @@ def handle_scene_statistics(params: Dict[str, Any]) -> Dict[str, Any]:
                 stats["objects"]["by_type"][obj_type] = 0
             stats["objects"]["by_type"][obj_type] += 1
             
-            # 网格统计
+            # Mesh statistics
             if obj.type == 'MESH':
                 mesh = obj.data
                 stats["geometry"]["total_vertices"] += len(mesh.vertices)
@@ -493,21 +493,21 @@ def handle_scene_statistics(params: Dict[str, Any]) -> Dict[str, Any]:
                 stats["geometry"]["total_faces"] += len(mesh.polygons)
                 stats["geometry"]["total_triangles"] += sum(len(p.vertices) - 2 for p in mesh.polygons)
         
-        # 材质统计
+        # Material statistics
         for mat in bpy.data.materials:
             if mat.users > 0:
                 stats["materials"]["used"] += 1
         
-        # 纹理内存估算
+        # Texture memory estimation
         for img in bpy.data.images:
             if img.size[0] > 0 and img.size[1] > 0:
-                # 估算：RGBA 4字节每像素
+                # Estimate: RGBA 4 bytes per pixel
                 memory_bytes = img.size[0] * img.size[1] * 4
                 stats["textures"]["memory_estimate_mb"] += memory_bytes / (1024 * 1024)
         
         stats["textures"]["memory_estimate_mb"] = round(stats["textures"]["memory_estimate_mb"], 2)
         
-        # 动画统计
+        # Animation statistics
         for action in bpy.data.actions:
             if hasattr(action, 'fcurves'):
                 for fcurve in action.fcurves:
@@ -526,18 +526,18 @@ def handle_scene_statistics(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_list_issues(params: Dict[str, Any]) -> Dict[str, Any]:
-    """检测问题"""
+    """Detect issues"""
     try:
         issues = []
         
         scene = bpy.context.scene
         
-        # 检查非流形几何
+        # Check for non-manifold geometry
         for obj in scene.objects:
             if obj.type == 'MESH':
                 mesh = obj.data
                 
-                # 检查孤立顶点
+                # Check for isolated vertices
                 used_verts = set()
                 for edge in mesh.edges:
                     used_verts.update(edge.vertices)
@@ -548,10 +548,10 @@ def handle_list_issues(params: Dict[str, Any]) -> Dict[str, Any]:
                         "type": "ISOLATED_VERTICES",
                         "severity": "warning",
                         "object": obj.name,
-                        "message": f"发现 {isolated} 个孤立顶点"
+                        "message": f"Found {isolated} isolated vertices"
                     })
                 
-                # 检查零面积面
+                # Check for zero-area faces
                 zero_area_faces = 0
                 for poly in mesh.polygons:
                     if poly.area < 0.00001:
@@ -562,10 +562,10 @@ def handle_list_issues(params: Dict[str, Any]) -> Dict[str, Any]:
                         "type": "ZERO_AREA_FACES",
                         "severity": "warning",
                         "object": obj.name,
-                        "message": f"发现 {zero_area_faces} 个零面积面"
+                        "message": f"Found {zero_area_faces} zero-area faces"
                     })
         
-        # 检查缺失的纹理
+        # Check for missing textures
         for img in bpy.data.images:
             if img.source == 'FILE' and img.filepath:
                 import os
@@ -575,10 +575,10 @@ def handle_list_issues(params: Dict[str, Any]) -> Dict[str, Any]:
                         "type": "MISSING_TEXTURE",
                         "severity": "error",
                         "image": img.name,
-                        "message": f"纹理文件不存在: {img.filepath}"
+                        "message": f"Texture file not found: {img.filepath}"
                     })
         
-        # 检查循环依赖
+        # Check for circular dependencies
         for obj in scene.objects:
             if obj.parent:
                 parent = obj.parent
@@ -589,13 +589,13 @@ def handle_list_issues(params: Dict[str, Any]) -> Dict[str, Any]:
                             "type": "CIRCULAR_PARENTING",
                             "severity": "error",
                             "object": obj.name,
-                            "message": "检测到循环父子关系"
+                            "message": "Circular parenting detected"
                         })
                         break
                     visited.add(parent.name)
                     parent = parent.parent
         
-        # 检查过大的对象
+        # Check for oversized objects
         for obj in scene.objects:
             max_dim = max(obj.dimensions)
             if max_dim > 1000:
@@ -603,7 +603,7 @@ def handle_list_issues(params: Dict[str, Any]) -> Dict[str, Any]:
                     "type": "OVERSIZED_OBJECT",
                     "severity": "info",
                     "object": obj.name,
-                    "message": f"对象尺寸过大: {max_dim:.1f}"
+                    "message": f"Object dimensions too large: {max_dim:.1f}"
                 })
         
         return {

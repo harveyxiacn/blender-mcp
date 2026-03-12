@@ -1,8 +1,8 @@
 """
-高级网格编辑处理器
+Advanced mesh editing handler
 
-处理 inset, bridge, spin, knife, fill, separate, symmetrize,
-edge marks, select by trait, vertex groups, vertex colors 等操作。
+Handles inset, bridge, spin, knife, fill, separate, symmetrize,
+edge marks, select by trait, vertex groups, vertex colors and other operations.
 """
 
 from typing import Any, Dict
@@ -12,7 +12,7 @@ import math
 
 
 def handle_edit(params: Dict[str, Any]) -> Dict[str, Any]:
-    """执行高级网格编辑操作"""
+    """Execute advanced mesh editing operations"""
     object_name = params.get("object_name")
     operation = params.get("operation")
     op_params = params.get("params", {})
@@ -21,7 +21,7 @@ def handle_edit(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "INVALID_OBJECT", "message": f"对象不存在或不是网格: {object_name}"}
+            "error": {"code": "INVALID_OBJECT", "message": f"Object does not exist or is not a mesh: {object_name}"}
         }
 
     bpy.context.view_layer.objects.active = obj
@@ -120,7 +120,7 @@ def handle_edit(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             return {
                 "success": False,
-                "error": {"code": "UNKNOWN_OPERATION", "message": f"未知操作: {operation}"}
+                "error": {"code": "UNKNOWN_OPERATION", "message": f"Unknown operation: {operation}"}
             }
 
     except Exception as e:
@@ -133,7 +133,7 @@ def handle_edit(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_edge_mark(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置边标记 (crease/sharp/seam/bevel_weight)"""
+    """Set edge marks (crease/sharp/seam/bevel_weight)"""
     object_name = params.get("object_name")
     mark_type = params.get("mark_type")
     value = params.get("value", 1.0)
@@ -143,7 +143,7 @@ def handle_edge_mark(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "INVALID_OBJECT", "message": f"对象不存在或不是网格: {object_name}"}
+            "error": {"code": "INVALID_OBJECT", "message": f"Object does not exist or is not a mesh: {object_name}"}
         }
 
     bpy.context.view_layer.objects.active = obj
@@ -156,7 +156,7 @@ def handle_edge_mark(params: Dict[str, Any]) -> Dict[str, Any]:
     if not selected_edges:
         return {
             "success": False,
-            "error": {"code": "NO_SELECTION", "message": "没有选中的边"}
+            "error": {"code": "NO_SELECTION", "message": "No selected edges"}
         }
 
     actual_value = 0.0 if clear else value
@@ -183,7 +183,7 @@ def handle_edge_mark(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             return {
                 "success": False,
-                "error": {"code": "UNKNOWN_MARK_TYPE", "message": f"未知标记类型: {mark_type}"}
+                "error": {"code": "UNKNOWN_MARK_TYPE", "message": f"Unknown mark type: {mark_type}"}
             }
 
         bmesh.update_edit_mesh(obj.data)
@@ -201,7 +201,7 @@ def handle_edge_mark(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_select_by_trait(params: Dict[str, Any]) -> Dict[str, Any]:
-    """按特征选择网格元素"""
+    """Select mesh elements by trait"""
     object_name = params.get("object_name")
     select_mode = params.get("select_mode", "FACE")
     trait = params.get("trait")
@@ -211,14 +211,14 @@ def handle_select_by_trait(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "INVALID_OBJECT", "message": f"对象不存在或不是网格: {object_name}"}
+            "error": {"code": "INVALID_OBJECT", "message": f"Object does not exist or is not a mesh: {object_name}"}
         }
 
     bpy.context.view_layer.objects.active = obj
     if bpy.context.mode != 'EDIT_MESH':
         bpy.ops.object.mode_set(mode='EDIT')
 
-    # 设置选择模式
+    # Set selection mode
     mode_map = {"VERT": (True, False, False), "EDGE": (False, True, False), "FACE": (False, False, True)}
     mode_tuple = mode_map.get(select_mode, (False, False, True))
     bpy.context.tool_settings.mesh_select_mode = mode_tuple
@@ -272,7 +272,7 @@ def handle_select_by_trait(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             return {
                 "success": False,
-                "error": {"code": "UNKNOWN_TRAIT", "message": f"未知特征类型: {trait}"}
+                "error": {"code": "UNKNOWN_TRAIT", "message": f"Unknown trait type: {trait}"}
             }
     except Exception as e:
         return {
@@ -280,7 +280,7 @@ def handle_select_by_trait(params: Dict[str, Any]) -> Dict[str, Any]:
             "error": {"code": "SELECT_FAILED", "message": str(e)}
         }
 
-    # 统计选择数量
+    # Count selected elements
     bm = bmesh.from_edit_mesh(obj.data)
     if select_mode == "VERT":
         count = sum(1 for v in bm.verts if v.select)
@@ -293,7 +293,7 @@ def handle_select_by_trait(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_vertex_group(params: Dict[str, Any]) -> Dict[str, Any]:
-    """顶点组操作"""
+    """Vertex group operations"""
     object_name = params.get("object_name")
     action = params.get("action")
     group_name = params.get("group_name", "Group")
@@ -304,7 +304,7 @@ def handle_vertex_group(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "INVALID_OBJECT", "message": f"对象不存在或不是网格: {object_name}"}
+            "error": {"code": "INVALID_OBJECT", "message": f"Object does not exist or is not a mesh: {object_name}"}
         }
 
     try:
@@ -318,14 +318,14 @@ def handle_vertex_group(params: Dict[str, Any]) -> Dict[str, Any]:
         if not vg:
             return {
                 "success": False,
-                "error": {"code": "GROUP_NOT_FOUND", "message": f"顶点组不存在: {group_name}"}
+                "error": {"code": "GROUP_NOT_FOUND", "message": f"Vertex group not found: {group_name}"}
             }
 
         if action == "ASSIGN":
             if vertex_indices:
                 vg.add(vertex_indices, weight, 'REPLACE')
             else:
-                # 使用编辑模式中的选择
+                # Use selection from edit mode
                 bpy.context.view_layer.objects.active = obj
                 if bpy.context.mode != 'EDIT_MESH':
                     bpy.ops.object.mode_set(mode='EDIT')
@@ -354,7 +354,7 @@ def handle_vertex_group(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             return {
                 "success": False,
-                "error": {"code": "UNKNOWN_ACTION", "message": f"未知操作: {action}"}
+                "error": {"code": "UNKNOWN_ACTION", "message": f"Unknown action: {action}"}
             }
 
     except Exception as e:
@@ -367,7 +367,7 @@ def handle_vertex_group(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_vertex_color(params: Dict[str, Any]) -> Dict[str, Any]:
-    """顶点色操作"""
+    """Vertex color operations"""
     object_name = params.get("object_name")
     action = params.get("action", "CREATE")
     layer_name = params.get("layer_name", "Col")
@@ -378,14 +378,14 @@ def handle_vertex_color(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "INVALID_OBJECT", "message": f"对象不存在或不是网格: {object_name}"}
+            "error": {"code": "INVALID_OBJECT", "message": f"Object does not exist or is not a mesh: {object_name}"}
         }
 
     mesh = obj.data
 
     try:
         if action == "CREATE":
-            # 创建顶点色图层（Blender 3.2+ 使用 color_attributes）
+            # Create vertex color layer (Blender 3.2+ uses color_attributes)
             if hasattr(mesh, 'color_attributes'):
                 if layer_name not in [ca.name for ca in mesh.color_attributes]:
                     mesh.color_attributes.new(name=layer_name, type='BYTE_COLOR', domain='CORNER')
@@ -395,7 +395,7 @@ def handle_vertex_color(params: Dict[str, Any]) -> Dict[str, Any]:
             return {"success": True, "data": {"layer_name": layer_name}}
 
         elif action == "FILL":
-            # 填充所有顶点色
+            # Fill all vertex colors
             if hasattr(mesh, 'color_attributes'):
                 ca = mesh.color_attributes.get(layer_name)
                 if not ca:
@@ -411,7 +411,7 @@ def handle_vertex_color(params: Dict[str, Any]) -> Dict[str, Any]:
             return {"success": True, "data": {"layer_name": layer_name, "filled": True}}
 
         elif action == "PAINT":
-            # 按面索引绘制
+            # Paint by face indices
             if hasattr(mesh, 'color_attributes'):
                 ca = mesh.color_attributes.get(layer_name)
                 if not ca:
@@ -430,7 +430,7 @@ def handle_vertex_color(params: Dict[str, Any]) -> Dict[str, Any]:
                         for li in poly.loop_indices:
                             ca.data[li].color = col
             else:
-                # 对所有面绘制
+                # Paint all faces
                 for i in range(len(ca.data)):
                     ca.data[i].color = col
 
@@ -439,7 +439,7 @@ def handle_vertex_color(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             return {
                 "success": False,
-                "error": {"code": "UNKNOWN_ACTION", "message": f"未知操作: {action}"}
+                "error": {"code": "UNKNOWN_ACTION", "message": f"Unknown action: {action}"}
             }
 
     except Exception as e:

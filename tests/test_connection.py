@@ -41,7 +41,7 @@ class TestBlenderConnectionConnect:
     @pytest.mark.asyncio
     async def test_connect_refused(self):
         conn = BlenderConnection(port=19999, max_retries=1, auto_reconnect=False)
-        with pytest.raises(BlenderConnectionError, match="无法连接"):
+        with pytest.raises(BlenderConnectionError, match="Cannot connect"):
             await conn.connect()
 
     @pytest.mark.asyncio

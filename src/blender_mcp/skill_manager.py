@@ -1,18 +1,18 @@
 """
-Skill Manager - 按需加载工具组的核心管理器
+Skill Manager - Core manager for on-demand tool group loading
 
-Skills 系统架构:
-- 启动时只注册核心工具 (~30个) + 3个 Skill 元工具
-- AI 通过 activate_skill() 按需加载工具组
-- 每个 Skill 提供: 工具组注册 + 工作流指引文本
-- 通过 MCP tools/list_changed 通知客户端工具列表变更
+Skills system architecture:
+- On startup, only core tools (~30) + 3 skill meta-tools are registered
+- AI loads tool groups on demand via activate_skill()
+- Each skill provides: tool group registration + workflow guide text
+- Clients are notified of tool list changes via MCP tools/list_changed
 
-使用方式:
-1. TOOL_PROFILE = "skill" 启用 Skill 模式
-2. AI 调用 list_skills() 查看可用 Skill
-3. AI 调用 activate_skill("modeling") 按需加载建模工具
-4. AI 使用加载的工具完成任务
-5. AI 调用 deactivate_skill("modeling") 卸载工具组
+Usage:
+1. Set TOOL_PROFILE = "skill" to enable skill mode
+2. AI calls list_skills() to view available skills
+3. AI calls activate_skill("modeling") to load modeling tools on demand
+4. AI uses the loaded tools to complete tasks
+5. AI calls deactivate_skill("modeling") to unload the tool group
 """
 
 import logging
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SkillInfo:
-    """Skill 元数据"""
+    """Skill metadata"""
     name: str
     description: str
     modules: list[str]
@@ -38,339 +38,339 @@ class SkillInfo:
 
 
 # ============================================================
-# Skill 注册表 - 定义所有可用的 Skill 及其工具模块映射
+# Skill Registry - Defines all available skills and their tool module mappings
 # ============================================================
 
 SKILL_DEFINITIONS: dict[str, SkillInfo] = {
     "modeling": SkillInfo(
         name="modeling",
-        description="3D建模工具 - 网格编辑、修改器(45种)、曲线、UV映射，支持各风格参数化建模",
+        description="3D modeling tools - mesh editing, modifiers (45 types), curves, UV mapping, parametric modeling for all styles",
         modules=["modeling", "curves", "uv_mapping"],
         estimated_tools=38,
         tags=["3d", "mesh", "modeling"],
-        workflow_guide="""## Modeling Skill 工作流指引
+        workflow_guide="""## Modeling Skill Workflow Guide
 
-### 常用工作流:
-1. **基础建模**: blender_create_object 创建几何体 → blender_add_modifier 添加修改器 → blender_apply_modifier 应用
-2. **曲线建模**: 曲线工具创建路径 → 添加 Curve/Bevel 修改器
-3. **UV展开**: 选择对象 → blender_uv_unwrap 展开 → blender_uv_project 投射
+### Common Workflows:
+1. **Basic Modeling**: blender_create_object (create geometry) -> blender_add_modifier (add modifier) -> blender_apply_modifier (apply)
+2. **Curve Modeling**: Curve tools to create paths -> add Curve/Bevel modifiers
+3. **UV Unwrapping**: Select object -> blender_uv_unwrap -> blender_uv_project
 
-### 各风格推荐 mesh_params:
-| 风格 | 球体 segments | 圆柱 vertices | ICO subdivisions |
-|------|-------------|-------------|------------------|
+### Recommended mesh_params by Style:
+| Style | Sphere segments | Cylinder vertices | ICO subdivisions |
+|-------|----------------|-------------------|------------------|
 | Pixel | 4-6 | 4-6 | 1 |
 | Low Poly | 6-12 | 5-8 | 1 |
 | Stylized/Toon | 16-24 | 12-16 | 2 |
 | Semi Realistic | 32 | 24-32 | 2-3 |
 | PBR/AAA | 32-64 | 32 | 3-4 |
 
-示例: `blender_object_create(type="UV_SPHERE", mesh_params={"segments": 8, "ring_count": 6})`
+Example: `blender_object_create(type="UV_SPHERE", mesh_params={"segments": 8, "ring_count": 6})`
 
-### 各风格常用修改器:
+### Common Modifiers by Style:
 - **Pixel**: REMESH(Blocks), ARRAY
 - **Low Poly**: MIRROR, ARRAY, SOLIDIFY, TRIANGULATE
 - **Stylized/Toon**: SUBSURF(1-2), BEVEL, MIRROR
-- **Sci-Fi硬表面**: BOOLEAN, ARRAY, BEVEL, SOLIDIFY, SCREW, MIRROR
+- **Sci-Fi Hard Surface**: BOOLEAN, ARRAY, BEVEL, SOLIDIFY, SCREW, MIRROR
 - **PBR/AAA**: SUBSURF(2-3), MIRROR, MULTIRES, BEVEL, SHRINKWRAP
 
-### 修改器支持 45 种类型:
-常用: SUBDIVISION, MIRROR, ARRAY, SOLIDIFY, BEVEL, BOOLEAN, REMESH, SCREW, WIREFRAME, WELD, SHRINKWRAP, SIMPLE_DEFORM
+### Supports 45 Modifier Types:
+Common: SUBDIVISION, MIRROR, ARRAY, SOLIDIFY, BEVEL, BOOLEAN, REMESH, SCREW, WIREFRAME, WELD, SHRINKWRAP, SIMPLE_DEFORM
 
-### 提示:
-- 复杂操作可通过 blender_execute_python 直接执行 Blender Python API
-- 详细风格工作流参见 docs/blender_style_modeling_workflows.md
+### Tips:
+- Complex operations can use blender_execute_python to directly call Blender Python API
+- See docs/blender_style_modeling_workflows.md for detailed style workflows
 """,
     ),
     
     "materials": SkillInfo(
         name="materials",
-        description="材质系统 - 标准材质、程序化材质(67种预设8大类)、磨损效果(7种)",
+        description="Material system - standard materials, procedural materials (67 presets in 8 categories), wear effects (7 types)",
         modules=["material", "procedural_materials"],
         estimated_tools=17,
         tags=["material", "shader", "texture"],
-        workflow_guide="""## Materials Skill 工作流指引
+        workflow_guide="""## Materials Skill Workflow Guide
 
-### 常用工作流:
-1. **标准材质**: blender_create_material → blender_set_material_color → blender_assign_material
-2. **程序化材质**: blender_procedural_material 一键创建 (67种预设, 8大分类)
-3. **磨损效果**: blender_material_wear 添加磨损/老化效果
+### Common Workflows:
+1. **Standard Material**: blender_create_material -> blender_set_material_color -> blender_assign_material
+2. **Procedural Material**: blender_procedural_material one-click creation (67 presets, 8 categories)
+3. **Wear Effects**: blender_material_wear to add wear/aging effects
 
-### 程序化材质完整分类:
-- **metal** (10种): STEEL, IRON, GOLD, SILVER, BRONZE, COPPER, CHROME, BRUSHED_METAL, RUSTY_METAL, DAMASCUS
-- **wood** (8种): OAK, PINE, CHERRY, WALNUT, BIRCH, BAMBOO, PLYWOOD, AGED_WOOD
-- **stone** (9种): GRANITE, MARBLE, LIMESTONE, SLATE, COBBLESTONE, SANDSTONE, BRICK, TILE, CONCRETE
-- **fabric** (8种): COTTON, SILK, LEATHER, DENIM, VELVET, CANVAS, WOOL, CHAIN_MAIL
-- **nature** (10种): GRASS, DIRT, SAND, SNOW, MUD, GRAVEL, MOSS, LAVA, WATER, ICE
-- **skin** (4种): SKIN_REALISTIC, SKIN_STYLIZED, SCALES, CARTOON_SKIN
-- **effect** (7种): GLASS, CRYSTAL, HOLOGRAM, ENERGY, PORTAL, EMISSION_GLOW, FORCE_FIELD
-- **toon** (7种): TOON_BASIC, TOON_METAL, TOON_SKIN, TOON_FABRIC, ANIME_HAIR, GENSHIN_STYLE, CEL_SHADE
+### Full Procedural Material Categories:
+- **metal** (10): STEEL, IRON, GOLD, SILVER, BRONZE, COPPER, CHROME, BRUSHED_METAL, RUSTY_METAL, DAMASCUS
+- **wood** (8): OAK, PINE, CHERRY, WALNUT, BIRCH, BAMBOO, PLYWOOD, AGED_WOOD
+- **stone** (9): GRANITE, MARBLE, LIMESTONE, SLATE, COBBLESTONE, SANDSTONE, BRICK, TILE, CONCRETE
+- **fabric** (8): COTTON, SILK, LEATHER, DENIM, VELVET, CANVAS, WOOL, CHAIN_MAIL
+- **nature** (10): GRASS, DIRT, SAND, SNOW, MUD, GRAVEL, MOSS, LAVA, WATER, ICE
+- **skin** (4): SKIN_REALISTIC, SKIN_STYLIZED, SCALES, CARTOON_SKIN
+- **effect** (7): GLASS, CRYSTAL, HOLOGRAM, ENERGY, PORTAL, EMISSION_GLOW, FORCE_FIELD
+- **toon** (7): TOON_BASIC, TOON_METAL, TOON_SKIN, TOON_FABRIC, ANIME_HAIR, GENSHIN_STYLE, CEL_SHADE
 
-### 磨损效果 (7种):
-EDGE_WEAR(边缘磨损), SCRATCHES(划痕), RUST(锈蚀), DIRT(污渍), DUST(灰尘), MOSS(苔藓), PAINT_CHIP(掉漆)
+### Wear Effects (7 types):
+EDGE_WEAR, SCRATCHES, RUST, DIRT, DUST, MOSS, PAINT_CHIP
 
-### 各风格推荐材质:
-- **Pixel/Low Poly**: TOON_BASIC + 顶点色
-- **Toon/Q版**: CEL_SHADE, GENSHIN_STYLE, ANIME_HAIR, TOON_SKIN
+### Recommended Materials by Style:
+- **Pixel/Low Poly**: TOON_BASIC + vertex color
+- **Toon/Chibi**: CEL_SHADE, GENSHIN_STYLE, ANIME_HAIR, TOON_SKIN
 - **Sci-Fi**: CHROME, BRUSHED_METAL, ENERGY, HOLOGRAM, FORCE_FIELD
-- **PBR写实**: 全部 metal/wood/stone/fabric/nature/skin 预设
-- **AAA**: SKIN_REALISTIC + 全套预设 + wear 磨损效果叠加
+- **PBR Realistic**: All metal/wood/stone/fabric/nature/skin presets
+- **AAA**: SKIN_REALISTIC + all presets + layered wear effects
 
-### 提示:
-- 程序化材质自动创建完整节点树, 无需手动连接
-- 磨损效果可叠加使用, intensity 控制强度 (0-1)
-- color_override 可覆盖预设基础色
+### Tips:
+- Procedural materials auto-create full node trees, no manual connections needed
+- Wear effects can be stacked; intensity controls strength (0-1)
+- color_override can override preset base color
 """,
     ),
     
     "style": SkillInfo(
         name="style",
-        description="风格预设 - 像素风→3A级一键环境配置(含摄像机/Bloom/AO/去噪)、描边效果、高低模烘焙",
+        description="Style presets - pixel to AAA one-click environment setup (camera/Bloom/AO/denoising), outline effects, high-to-low poly baking",
         modules=["style_presets", "mesh_edit_advanced"],
         estimated_tools=8,
         tags=["style", "pixel", "toon", "pbr", "aaa", "sci-fi"],
-        workflow_guide="""## Style Skill 工作流指引
+        workflow_guide="""## Style Skill Workflow Guide
 
-### 一键风格配置 (blender_style_setup):
-8 种风格，自动配置渲染引擎+采样+色彩管理+额外设置:
+### One-Click Style Configuration (blender_style_setup):
+8 styles, auto-configures render engine + samples + color management + extras:
 
-| 风格 | 引擎 | 额外自动配置 |
-|------|------|-------------|
-| PIXEL | EEVEE | 摄像机→正交, 纹理→Closest, 关Bloom/AO/SSR |
-| LOW_POLY | EEVEE | 关Bloom/AO/SSR |
-| STYLIZED | EEVEE | 开Bloom(低强度), 关AO |
-| TOON | EEVEE | 开Bloom(低强度), 关AO |
+| Style | Engine | Auto Configuration |
+|-------|--------|--------------------|
+| PIXEL | EEVEE | Camera -> Orthographic, Texture -> Closest, Bloom/AO/SSR off |
+| LOW_POLY | EEVEE | Bloom/AO/SSR off |
+| STYLIZED | EEVEE | Bloom on (low intensity), AO off |
+| TOON | EEVEE | Bloom on (low intensity), AO off |
 | HAND_PAINTED | EEVEE | - |
-| SEMI_REALISTIC | EEVEE | 开AO, 开SSR |
-| PBR_REALISTIC | Cycles | 开去噪(OpenImageDenoise) |
-| AAA | Cycles | 开去噪(OpenImageDenoise) |
+| SEMI_REALISTIC | EEVEE | AO on, SSR on |
+| PBR_REALISTIC | Cycles | Denoising on (OpenImageDenoise) |
+| AAA | Cycles | Denoising on (OpenImageDenoise) |
 
-对指定对象还会自动设置 Flat/Smooth Shading 和纹理插值。
+Also auto-sets Flat/Smooth Shading and texture interpolation for specified objects.
 
-### 描边效果 (blender_outline_effect):
-- SOLIDIFY: 实体化翻转法线 (实时可见, 游戏常用, 推荐卡通风格)
-- FREESTYLE: 渲染线条 (仅渲染时可见, 可控线条粗细变化)
-- GREASE_PENCIL: Line Art描边 (实时可见, 可手动编辑)
+### Outline Effects (blender_outline_effect):
+- SOLIDIFY: Solidify + flipped normals (real-time visible, common in games, recommended for toon)
+- FREESTYLE: Render lines (visible only at render time, variable line width)
+- GREASE_PENCIL: Line Art outline (real-time visible, manually editable)
 
-### 高级网格编辑:
+### Advanced Mesh Editing:
 - blender_mesh_edit_advanced: inset/bridge/spin/knife/fill/gridFill/separate/symmetrize/poke/triangulate/trisToQuads/dissolve
 - blender_mesh_edge_mark: crease/sharp/seam/bevel_weight
 - blender_mesh_select_by_trait: non_manifold/loose/interior/face_sides/ungrouped/boundary/sharp/linked_flat
-- blender_vertex_group: 创建/分配/移除/选择顶点组
-- blender_vertex_color: 创建/绘制/填充顶点颜色 (Low Poly核心)
+- blender_vertex_group: create/assign/remove/select vertex groups
+- blender_vertex_color: create/paint/fill vertex colors (core for Low Poly)
 
-### 烘焙工作流 (blender_bake_maps):
-高模→低模烘焙: NORMAL, AO, CURVATURE, DIFFUSE, ROUGHNESS, COMBINED
-用于 PBR_REALISTIC 和 AAA 风格的纹理制作。
+### Bake Workflow (blender_bake_maps):
+High-poly -> low-poly baking: NORMAL, AO, CURVATURE, DIFFUSE, ROUGHNESS, COMBINED
+Used for PBR_REALISTIC and AAA style texture creation.
 
-### 科幻(Sci-Fi)风格建议:
-1. 硬表面建模: Boolean差集挖孔 + Array重复 + Bevel倒角
-2. 材质: 激活 materials skill → CHROME/ENERGY/HOLOGRAM/FORCE_FIELD
-3. 自发光: Emission + EEVEE Bloom 配合
-4. 详细工作流参见 docs/blender_style_modeling_workflows.md
+### Sci-Fi Style Tips:
+1. Hard surface modeling: Boolean difference cuts + Array repeats + Bevel chamfers
+2. Materials: Activate materials skill -> CHROME/ENERGY/HOLOGRAM/FORCE_FIELD
+3. Emissive: Emission + EEVEE Bloom combination
+4. See docs/blender_style_modeling_workflows.md for detailed workflows
 """,
     ),
     
     "character": SkillInfo(
         name="character",
-        description="角色创建 - Q版角色模板、骨骼绑定、自动绑定",
+        description="Character creation - chibi character templates, rigging, auto-rigging",
         modules=["character_templates", "rigging", "auto_rig"],
         estimated_tools=23,
         tags=["character", "rigging", "template"],
-        workflow_guide="""## Character Skill 工作流指引
+        workflow_guide="""## Character Skill Workflow Guide
 
-### Q版角色快速创建:
-1. blender_create_character_template → 选择体型预设 (chibi/standard/realistic)
-2. 调整比例参数 (head_ratio, body_width 等)
-3. 添加服装和配饰
+### Quick Chibi Character Creation:
+1. blender_create_character_template -> select body preset (chibi/standard/realistic)
+2. Adjust proportion parameters (head_ratio, body_width, etc.)
+3. Add clothing and accessories
 
-### 骨骼绑定工作流:
-1. 创建 Armature → 添加骨骼层级
-2. blender_auto_rig 自动绑定 (自动权重)
-3. 调整权重绘制
+### Rigging Workflow:
+1. Create Armature -> add bone hierarchy
+2. blender_auto_rig auto-rig (automatic weights)
+3. Adjust weight painting
 
-### 提示:
-- Q版角色 head_ratio 建议 2.5-3.0
-- 自动绑定前确保网格法线正确
-- 骨骼命名遵循 Left/Right 约定以支持镜像
+### Tips:
+- Chibi characters: head_ratio recommended 2.5-3.0
+- Ensure correct mesh normals before auto-rigging
+- Bone naming follows Left/Right convention for mirror support
 """,
     ),
     
     "animation": SkillInfo(
         name="animation",
-        description="动画工具 - 关键帧、动画预设、时间线管理",
+        description="Animation tools - keyframes, animation presets, timeline management",
         modules=["animation", "animation_presets"],
         estimated_tools=17,
         tags=["animation", "keyframe", "timeline"],
-        workflow_guide="""## Animation Skill 工作流指引
+        workflow_guide="""## Animation Skill Workflow Guide
 
-### 基础动画:
-1. 选择对象 → blender_insert_keyframe (location/rotation/scale)
-2. 设置帧范围 → 切换帧 → 插入下一关键帧
-3. 调整插值曲线 (LINEAR/BEZIER/CONSTANT)
+### Basic Animation:
+1. Select object -> blender_insert_keyframe (location/rotation/scale)
+2. Set frame range -> change frame -> insert next keyframe
+3. Adjust interpolation curves (LINEAR/BEZIER/CONSTANT)
 
-### 动画预设:
-- 行走循环、呼吸、弹跳等预设动画
-- 可应用到已绑定的角色
+### Animation Presets:
+- Walk cycle, breathing, bounce, and other preset animations
+- Can be applied to rigged characters
 
-### 提示:
-- 使用 CONSTANT 插值实现像素风动画
-- 循环动画确保首尾帧一致
+### Tips:
+- Use CONSTANT interpolation for pixel-art style animation
+- Ensure first and last frames match for looping animations
 """,
     ),
     
     "scene_setup": SkillInfo(
         name="scene_setup",
-        description="场景配置 - 灯光、相机、世界环境、渲染设置",
+        description="Scene setup - lighting, camera, world environment, render settings",
         modules=["lighting", "camera", "world", "render"],
         estimated_tools=18,
         tags=["scene", "lighting", "camera", "render"],
-        workflow_guide="""## Scene Setup Skill 工作流指引
+        workflow_guide="""## Scene Setup Skill Workflow Guide
 
-### 标准场景配置流程:
-1. **灯光**: 三点布光 (Key/Fill/Rim) 或 HDRI 环境光
-2. **相机**: 设置焦距、景深、构图
-3. **世界**: 背景颜色/HDRI/体积雾
-4. **渲染**: 选择引擎 (EEVEE/Cycles), 设置采样和分辨率
+### Standard Scene Configuration:
+1. **Lighting**: Three-point lighting (Key/Fill/Rim) or HDRI environment
+2. **Camera**: Set focal length, depth of field, composition
+3. **World**: Background color/HDRI/volumetric fog
+4. **Render**: Choose engine (EEVEE/Cycles), set samples and resolution
 
-### 快速配置:
-- 产品展示: 3点灯 + 白色背景 + 浅景深
-- 室外场景: HDRI + 太阳灯 + 体积散射
-- 卡通渲染: 平面光 + 纯色背景 + Freestyle描边
+### Quick Presets:
+- Product display: 3-point lighting + white background + shallow DOF
+- Outdoor scene: HDRI + sun lamp + volumetric scattering
+- Toon render: Flat lighting + solid background + Freestyle outlines
 """,
     ),
 
     "automation": SkillInfo(
         name="automation",
-        description="自动化生产线 - 一键生成角色/道具/场景 + 质量审计闭环",
+        description="Automation pipeline - one-click character/prop/scene generation + quality audit loop",
         modules=["pipeline", "quality_audit", "style_presets", "procedural_materials"],
         estimated_tools=12,
         tags=["automation", "pipeline", "quality", "style", "production"],
-        workflow_guide="""## Automation Skill 工作流指引
+        workflow_guide="""## Automation Skill Workflow Guide
 
-### 推荐全自动流程:
-1. `blender_pipeline_generate_character` 生成角色主体（模板/服装/配饰/自动绑定）
-2. `blender_pipeline_generate_prop` 批量生成道具（含程序化材质与UV）
-3. `blender_pipeline_assemble_scene` 自动完成环境、灯光、相机和渲染参数
-4. `blender_quality_audit_full` 进行拓扑 + UV + 性能审计并输出最终评分
+### Recommended Full-Auto Pipeline:
+1. `blender_pipeline_generate_character` - generate character body (template/clothing/accessories/auto-rig)
+2. `blender_pipeline_generate_prop` - batch generate props (with procedural materials and UVs)
+3. `blender_pipeline_assemble_scene` - auto-assemble environment, lighting, camera, and render settings
+4. `blender_quality_audit_full` - run topology + UV + performance audit and output final score
 
-### 多风格落地建议:
-- 像素/低模: style=PIXEL/LOW_POLY + quality_target=draft/production
-- 二次元/卡通: style=TOON/STYLIZED + outline + GENSHIN_STYLE/TOON 系材质
-- 写实/3A: style=PBR_REALISTIC/AAA + 更高采样 + 质量审计目标平台设为 desktop/aaa
+### Multi-Style Recommendations:
+- Pixel/Low Poly: style=PIXEL/LOW_POLY + quality_target=draft/production
+- Anime/Toon: style=TOON/STYLIZED + outline + GENSHIN_STYLE/TOON materials
+- Realistic/AAA: style=PBR_REALISTIC/AAA + higher samples + quality audit target=desktop/aaa
 
-### 质量门禁建议:
-- Topology: N-gon/non-manifold/loose verts 清零或接近零
-- UV: 平均评分 >= 80，重叠面最小化
-- Performance: 不超过目标平台 triangles/draw calls 预算
+### Quality Gate Guidelines:
+- Topology: N-gon/non-manifold/loose verts should be zero or near-zero
+- UV: Average score >= 80, minimize overlapping faces
+- Performance: Stay within target platform triangles/draw calls budget
 
-### 提示:
-- 该 Skill 聚焦“自动生成 + 自动审计”，适合批量资产生产和持续迭代
-- 如需细节手工打磨，可再激活 modeling/materials/advanced_3d Skills
+### Tips:
+- This skill focuses on "auto-generate + auto-audit", ideal for batch asset production and iteration
+- For manual fine-tuning, activate modeling/materials/advanced_3d skills as needed
 """,
     ),
     
     "physics": SkillInfo(
         name="physics",
-        description="物理模拟 - 刚体、布料、流体、约束系统",
+        description="Physics simulation - rigid body, cloth, fluid, constraint system",
         modules=["physics", "constraints"],
         estimated_tools=18,
         tags=["physics", "simulation", "constraints"],
-        workflow_guide="""## Physics Skill 工作流指引
+        workflow_guide="""## Physics Skill Workflow Guide
 
-### 物理模拟:
-- 刚体: 设置 Active/Passive → 调整质量/摩擦 → 烘焙
-- 布料: 添加 Cloth 修改器 → 设置碰撞体 → 模拟
-- 流体: Domain + Inflow/Outflow → 烘焙
+### Physics Simulation:
+- Rigid body: Set Active/Passive -> adjust mass/friction -> bake
+- Cloth: Add Cloth modifier -> set collision objects -> simulate
+- Fluid: Domain + Inflow/Outflow -> bake
 
-### 约束系统:
-- Track To, Copy Location/Rotation, IK 等
-- 用于相机跟踪、机械联动、角色约束
+### Constraint System:
+- Track To, Copy Location/Rotation, IK, etc.
+- Used for camera tracking, mechanical linkage, character constraints
 
-### 提示:
-- 先低分辨率预览, 确认效果后提高精度烘焙
+### Tips:
+- Preview at low resolution first, then increase quality for final bake
 """,
     ),
     
     "batch_assets": SkillInfo(
         name="batch_assets",
-        description="批处理和资产管理 - 批量操作、资产库管理",
+        description="Batch processing and asset management - bulk operations, asset library management",
         modules=["batch", "assets"],
         estimated_tools=11,
         tags=["batch", "assets", "pipeline"],
-        workflow_guide="""## Batch & Assets Skill 工作流指引
+        workflow_guide="""## Batch & Assets Skill Workflow Guide
 
-### 批量操作:
-- 批量重命名、批量材质替换、批量导出
-- 批量修改器应用
+### Batch Operations:
+- Bulk rename, bulk material replace, bulk export
+- Bulk modifier application
 
-### 资产管理:
-- 标记资产、浏览资产库、资产复用
+### Asset Management:
+- Mark assets, browse asset library, asset reuse
 """,
     ),
     
     "advanced_3d": SkillInfo(
         name="advanced_3d",
-        description="高级3D工具 - 节点编辑、合成器、雕刻、纹理绘制",
+        description="Advanced 3D tools - node editing, compositor, sculpting, texture painting",
         modules=["nodes", "compositor", "sculpting", "texture_painting"],
         estimated_tools=32,
         tags=["nodes", "compositor", "sculpting", "painting"],
-        workflow_guide="""## Advanced 3D Skill 工作流指引
+        workflow_guide="""## Advanced 3D Skill Workflow Guide
 
-### 几何节点:
-- 创建程序化几何、散布系统、参数化模型
+### Geometry Nodes:
+- Create procedural geometry, scatter systems, parametric models
 
-### 合成器:
-- 后期处理: 光晕、色彩校正、景深
+### Compositor:
+- Post-processing: glow, color correction, depth of field
 
-### 雕刻:
-- 高模细节雕刻、多分辨率工作流
+### Sculpting:
+- High-poly detail sculpting, multi-resolution workflow
 
-### 纹理绘制:
-- 直接在模型上绘制纹理
+### Texture Painting:
+- Paint textures directly on models
 """,
     ),
     
     "sport_character": SkillInfo(
         name="sport_character",
-        description="运动角色专用 - 运动员建模、装备、运动服、姿势",
+        description="Sport character tools - athlete modeling, gear, sportswear, poses",
         modules=["sport_character"],
         estimated_tools=7,
         tags=["sport", "athlete", "character"],
-        workflow_guide="""## Sport Character Skill 工作流指引
+        workflow_guide="""## Sport Character Skill Workflow Guide
 
-### 运动员角色创建:
-1. 选择运动类型 (乒乓球/篮球/足球等)
-2. 创建基础角色体型
-3. 添加运动装备和服装
-4. 设置运动姿势
-5. Web优化导出 (GLB/GLTF)
+### Athlete Character Creation:
+1. Select sport type (table tennis/basketball/soccer, etc.)
+2. Create base character body
+3. Add sport equipment and uniforms
+4. Set sport poses
+5. Web-optimized export (GLB/GLTF)
 """,
     ),
     
     "training": SkillInfo(
         name="training",
-        description="培训系统 - 交互式Blender学习课程和项目实战",
+        description="Training system - interactive Blender learning courses and project exercises",
         modules=["training"],
         estimated_tools=11,
         tags=["training", "learning", "tutorial"],
-        workflow_guide="""## Training Skill 工作流指引
+        workflow_guide="""## Training Skill Workflow Guide
 
-### 使用培训系统:
-1. 浏览课程列表 → 选择课程
-2. 开始练习 → 按步骤操作
-3. 系统自动验证操作结果
-4. 查看进度和成绩
+### Using the Training System:
+1. Browse course list -> select a course
+2. Start exercise -> follow step-by-step instructions
+3. System auto-verifies operation results
+4. View progress and scores
 """,
     ),
 }
 
 
 class SkillManager:
-    """Skill 管理器 - 负责动态加载/卸载工具组"""
+    """Skill Manager - Handles dynamic loading/unloading of tool groups"""
     
     def __init__(self, server: "BlenderMCPServer"):
         self.server = server
-        self._active_skills: dict[str, list[str]] = {}  # skill_name -> [tool_names]
+        self._active_skills: dict[str, list[str]] = {}   # skill_name -> [tool_names]
         self._registered_tool_funcs: dict[str, Any] = {}  # tool_name -> original func (for cleanup)
     
     @property
@@ -385,7 +385,7 @@ class SkillManager:
         return skill_name in self._active_skills
 
     def _tool_names_snapshot(self) -> set[str]:
-        """获取当前已注册工具名快照（同步方式）。"""
+        """Get a snapshot of currently registered tool names (synchronous)."""
         tool_manager = getattr(self.server.mcp, "_tool_manager", None)
         tools = getattr(tool_manager, "_tools", None)
         if isinstance(tools, dict):
@@ -393,7 +393,7 @@ class SkillManager:
         return set()
 
     def _remove_tool_by_name(self, tool_name: str) -> bool:
-        """移除已注册工具，兼容不同 FastMCP 版本。"""
+        """Remove a registered tool, compatible with different FastMCP versions."""
         remove_tool = getattr(self.server.mcp, "remove_tool", None)
         if callable(remove_tool):
             remove_tool(tool_name)
@@ -407,8 +407,8 @@ class SkillManager:
         return False
     
     def activate_skill(self, skill_name: str) -> tuple[bool, str, list[str]]:
-        """激活一个 Skill, 动态注册其工具模块
-        
+        """Activate a skill, dynamically registering its tool modules
+
         Returns:
             (success, message, registered_tool_names)
         """
@@ -436,13 +436,13 @@ class SkillManager:
                 tool_module = importlib.import_module(f"blender_mcp.tools.{module_name}")
                 register_func = getattr(tool_module, register_func_name)
                 
-                # 记录注册前的工具列表
+                # Record tool list before registration
                 before = self._tool_names_snapshot()
-                
-                # 调用注册函数
+
+                # Call register function
                 register_func(self.server.mcp, self.server)
-                
-                # 计算新注册的工具
+
+                # Calculate newly registered tools
                 after = self._tool_names_snapshot()
                 new_tools = after - before
                 registered_tools.extend(new_tools)
@@ -457,8 +457,8 @@ class SkillManager:
         return True, f"Activated skill '{skill_name}' with {len(registered_tools)} tools", registered_tools
     
     def deactivate_skill(self, skill_name: str) -> tuple[bool, str]:
-        """停用一个 Skill, 移除其工具
-        
+        """Deactivate a skill, removing its tools
+
         Returns:
             (success, message)
         """
@@ -482,7 +482,7 @@ class SkillManager:
         return True, f"Deactivated skill '{skill_name}', removed {len(removed)} tools"
     
     def get_status_summary(self) -> str:
-        """获取所有 Skill 的状态摘要"""
+        """Get a status summary of all skills"""
         lines = []
         for name, info in SKILL_DEFINITIONS.items():
             active = name in self._active_skills

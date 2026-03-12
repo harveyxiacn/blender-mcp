@@ -1,7 +1,7 @@
 """
-角色处理器
+Character handler
 
-处理角色相关的命令，包括高级角色创建、面部系统、服装系统等。
+Handles character-related commands, including advanced character creation, facial system, clothing system, etc.
 """
 
 from typing import Any, Dict, List, Tuple
@@ -9,12 +9,12 @@ import bpy
 
 
 def get_principled_bsdf(nodes):
-    """获取Principled BSDF节点，兼容不同Blender版本"""
-    # 先尝试按名称查找
+    """Get Principled BSDF node, compatible with different Blender versions"""
+    # First try to find by name
     bsdf = nodes.get("Principled BSDF")
     if bsdf:
         return bsdf
-    # 再按类型查找
+    # Then try to find by type
     for node in nodes:
         if node.type == 'BSDF_PRINCIPLED':
             return node
@@ -24,169 +24,169 @@ import bmesh
 import math
 
 
-# ==================== 面部形态键配置 ====================
+# ==================== Face Shape Key Configuration ====================
 FACE_SHAPE_KEYS = {
-    # 眼睛相关
+    # Eye related
     "eye_size": {"min": 0.5, "max": 1.5, "default": 1.0},
     "eye_distance": {"min": 0.8, "max": 1.2, "default": 1.0},
     "eye_height": {"min": 0.8, "max": 1.2, "default": 1.0},
     "eye_tilt": {"min": -0.3, "max": 0.3, "default": 0.0},
     "eye_depth": {"min": 0.8, "max": 1.2, "default": 1.0},
-    # 鼻子相关
+    # Nose related
     "nose_length": {"min": 0.5, "max": 1.5, "default": 1.0},
     "nose_width": {"min": 0.7, "max": 1.3, "default": 1.0},
     "nose_height": {"min": 0.8, "max": 1.2, "default": 1.0},
     "nose_tip": {"min": 0.8, "max": 1.2, "default": 1.0},
-    # 嘴巴相关
+    # Mouth related
     "mouth_width": {"min": 0.7, "max": 1.3, "default": 1.0},
     "mouth_height": {"min": 0.8, "max": 1.2, "default": 1.0},
     "lip_thickness_upper": {"min": 0.5, "max": 1.5, "default": 1.0},
     "lip_thickness_lower": {"min": 0.5, "max": 1.5, "default": 1.0},
-    # 下巴和脸型
+    # Jaw and face shape
     "jaw_width": {"min": 0.7, "max": 1.3, "default": 1.0},
     "jaw_height": {"min": 0.8, "max": 1.2, "default": 1.0},
     "chin_length": {"min": 0.8, "max": 1.2, "default": 1.0},
     "cheekbone_height": {"min": 0.8, "max": 1.2, "default": 1.0},
     "cheekbone_width": {"min": 0.8, "max": 1.2, "default": 1.0},
-    # 额头
+    # Forehead
     "forehead_height": {"min": 0.8, "max": 1.2, "default": 1.0},
     "forehead_width": {"min": 0.8, "max": 1.2, "default": 1.0},
-    # 耳朵
+    # Ears
     "ear_size": {"min": 0.7, "max": 1.3, "default": 1.0},
     "ear_position": {"min": 0.8, "max": 1.2, "default": 1.0},
 }
 
 
-# ==================== 服装模板配置 ====================
+# ==================== Clothing Template Configuration ====================
 CLOTHING_TEMPLATES = {
     "SHIRT": {
-        "description": "基础上衣",
+        "description": "Basic top",
         "scale": (1.08, 1.06, 0.35),
         "offset": (0, 0, 0.65),
         "vertex_groups": ["torso_upper", "arms"],
         "cloth_preset": "cotton"
     },
     "T_SHIRT": {
-        "description": "T恤",
+        "description": "T-shirt",
         "scale": (1.06, 1.04, 0.30),
         "offset": (0, 0, 0.68),
         "vertex_groups": ["torso_upper"],
         "cloth_preset": "cotton"
     },
     "PANTS": {
-        "description": "长裤",
+        "description": "Trousers",
         "scale": (1.04, 1.04, 0.50),
         "offset": (0, 0, 0.25),
         "vertex_groups": ["legs"],
         "cloth_preset": "denim"
     },
     "SHORTS": {
-        "description": "短裤",
+        "description": "Shorts",
         "scale": (1.05, 1.05, 0.25),
         "offset": (0, 0, 0.35),
         "vertex_groups": ["legs_upper"],
         "cloth_preset": "cotton"
     },
     "JACKET": {
-        "description": "夹克外套",
+        "description": "Jacket",
         "scale": (1.12, 1.10, 0.40),
         "offset": (0, 0, 0.60),
         "vertex_groups": ["torso_upper", "arms"],
         "cloth_preset": "leather"
     },
     "COAT": {
-        "description": "大衣",
+        "description": "Coat",
         "scale": (1.15, 1.12, 0.70),
         "offset": (0, 0, 0.45),
         "vertex_groups": ["torso", "arms"],
         "cloth_preset": "leather"
     },
     "DRESS": {
-        "description": "连衣裙",
+        "description": "Dress",
         "scale": (1.06, 1.04, 0.65),
         "offset": (0, 0, 0.50),
         "vertex_groups": ["torso", "legs_upper"],
         "cloth_preset": "silk"
     },
     "SKIRT": {
-        "description": "裙子",
+        "description": "Skirt",
         "scale": (1.08, 1.06, 0.35),
         "offset": (0, 0, 0.30),
         "vertex_groups": ["legs_upper"],
         "cloth_preset": "silk"
     },
     "ROBE": {
-        "description": "长袍（古风/仙侠）",
+        "description": "Robe (ancient/fantasy style)",
         "scale": (1.10, 1.08, 0.85),
         "offset": (0, 0, 0.40),
         "vertex_groups": ["torso", "arms", "legs"],
         "cloth_preset": "silk"
     },
     "HANFU_TOP": {
-        "description": "汉服上衣",
+        "description": "Hanfu upper garment",
         "scale": (1.12, 1.08, 0.45),
         "offset": (0, 0, 0.58),
         "vertex_groups": ["torso_upper", "arms"],
         "cloth_preset": "silk"
     },
     "HANFU_BOTTOM": {
-        "description": "汉服下裳",
+        "description": "Hanfu lower garment",
         "scale": (1.10, 1.08, 0.60),
         "offset": (0, 0, 0.25),
         "vertex_groups": ["legs"],
         "cloth_preset": "silk"
     },
     "ARMOR_CHEST": {
-        "description": "胸甲",
+        "description": "Chest armor",
         "scale": (1.15, 1.12, 0.35),
         "offset": (0, 0, 0.65),
         "vertex_groups": ["torso_upper"],
         "cloth_preset": "leather"
     },
     "ARMOR_FULL": {
-        "description": "全身盔甲",
+        "description": "Full body armor",
         "scale": (1.18, 1.15, 0.90),
         "offset": (0, 0, 0.45),
         "vertex_groups": ["torso", "arms", "legs"],
         "cloth_preset": "leather"
     },
     "CAPE": {
-        "description": "披风",
+        "description": "Cape",
         "scale": (1.20, 0.15, 0.80),
         "offset": (0, -0.15, 0.55),
         "vertex_groups": ["back"],
         "cloth_preset": "silk"
     },
     "SHOES": {
-        "description": "鞋子",
+        "description": "Shoes",
         "scale": (1.05, 1.15, 0.08),
         "offset": (0, 0, 0.04),
         "vertex_groups": ["feet"],
         "cloth_preset": "leather"
     },
     "BOOTS": {
-        "description": "靴子",
+        "description": "Boots",
         "scale": (1.06, 1.12, 0.25),
         "offset": (0, 0, 0.12),
         "vertex_groups": ["feet", "lower_legs"],
         "cloth_preset": "leather"
     },
     "GLOVES": {
-        "description": "手套",
+        "description": "Gloves",
         "scale": (1.03, 1.03, 0.15),
         "offset": (0, 0, 0),
         "vertex_groups": ["hands"],
         "cloth_preset": "leather"
     },
     "HAT": {
-        "description": "帽子",
+        "description": "Hat",
         "scale": (1.10, 1.10, 0.15),
         "offset": (0, 0, 0.95),
         "vertex_groups": ["head"],
         "cloth_preset": "cotton"
     },
     "HELMET": {
-        "description": "头盔",
+        "description": "Helmet",
         "scale": (1.12, 1.12, 0.20),
         "offset": (0, 0, 0.93),
         "vertex_groups": ["head"],
@@ -195,7 +195,7 @@ CLOTHING_TEMPLATES = {
 }
 
 
-# ==================== 布料预设配置 ====================
+# ==================== Cloth Preset Configuration ====================
 CLOTH_PRESETS = {
     "cotton": {
         "mass": 0.3,
@@ -233,7 +233,7 @@ CLOTH_PRESETS = {
 
 
 def handle_create_humanoid(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建人形角色（增强版）"""
+    """Create humanoid character (enhanced version)"""
     name = params.get("name", "Character")
     height = params.get("height", 1.8)
     body_type = params.get("body_type", "AVERAGE")
@@ -241,7 +241,7 @@ def handle_create_humanoid(params: Dict[str, Any]) -> Dict[str, Any]:
     subdivisions = params.get("subdivisions", 2)
     create_face_rig = params.get("create_face_rig", True)
     
-    # 体型参数 - 更精细的控制
+    # Body type parameters - finer control
     body_params = {
         "SLIM": {"width": 0.8, "depth": 0.7, "shoulder": 0.9, "hip": 0.85},
         "AVERAGE": {"width": 1.0, "depth": 1.0, "shoulder": 1.0, "hip": 1.0},
@@ -249,7 +249,7 @@ def handle_create_humanoid(params: Dict[str, Any]) -> Dict[str, Any]:
         "HEAVY": {"width": 1.3, "depth": 1.3, "shoulder": 1.1, "hip": 1.2}
     }
     
-    # 性别差异参数
+    # Gender difference parameters
     gender_params = {
         "MALE": {"shoulder_ratio": 1.1, "hip_ratio": 0.9, "chest": 1.0},
         "FEMALE": {"shoulder_ratio": 0.9, "hip_ratio": 1.1, "chest": 1.15},
@@ -261,14 +261,14 @@ def handle_create_humanoid(params: Dict[str, Any]) -> Dict[str, Any]:
     scale = height / 1.8
     
     try:
-        # 创建更详细的人体基础网格
+        # Create more detailed body base mesh
         body = _create_detailed_body_mesh(name, height, bp, gp, scale, subdivisions)
         
-        # 创建面部形态键基础
+        # Create facial shape key basis
         if create_face_rig:
             _create_face_shape_keys(body)
         
-        # 创建基础顶点组（用于服装绑定）
+        # Create basic vertex groups (for clothing binding)
         _create_body_vertex_groups(body)
         
         return {
@@ -293,46 +293,46 @@ def handle_create_humanoid(params: Dict[str, Any]) -> Dict[str, Any]:
 
 def _create_detailed_body_mesh(name: str, height: float, bp: Dict, gp: Dict, 
                                 scale: float, subdivisions: int) -> bpy.types.Object:
-    """创建详细的人体网格"""
-    # 创建躯干
+    """Create detailed body mesh"""
+    # Create torso
     bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, height * 0.55))
     body = bpy.context.active_object
     body.name = name
     
-    # 设置躯干尺寸
+    # Set torso dimensions
     torso_width = 0.35 * bp["width"] * gp["shoulder_ratio"] * scale
     torso_depth = 0.2 * bp["depth"] * scale
     torso_height = height * 0.35
     body.scale = (torso_width, torso_depth, torso_height)
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     
-    # 进入编辑模式进行细节调整
+    # Enter edit mode for detail adjustments
     bpy.ops.object.mode_set(mode='EDIT')
     bm = bmesh.from_edit_mesh(body.data)
     
-    # 调整顶点位置来创建更自然的躯干形状
+    # Adjust vertex positions for more natural torso shape
     for v in bm.verts:
-        # 收窄腰部
+        # Narrow the waist
         if abs(v.co.z - height * 0.45) < height * 0.1:
             v.co.x *= 0.85
             v.co.y *= 0.9
-        # 扩展胸部
+        # Expand chest
         if v.co.z > height * 0.5:
             v.co.x *= gp["chest"]
-        # 扩展臀部
+        # Expand hips
         if v.co.z < height * 0.4:
             v.co.x *= gp["hip_ratio"]
     
     bmesh.update_edit_mesh(body.data)
     bpy.ops.object.mode_set(mode='OBJECT')
     
-    # 添加修改器
+    # Add modifiers
     if subdivisions > 0:
         mod = body.modifiers.new(name="Subdivision", type='SUBSURF')
-        mod.levels = min(subdivisions, 2)  # 视口细分
+        mod.levels = min(subdivisions, 2)  # Viewport subdivision
         mod.render_levels = subdivisions
     
-    # 添加平滑修改器
+    # Add smooth modifier
     mod_smooth = body.modifiers.new(name="Smooth", type='SMOOTH')
     mod_smooth.factor = 0.5
     mod_smooth.iterations = 2
@@ -341,12 +341,12 @@ def _create_detailed_body_mesh(name: str, height: float, bp: Dict, gp: Dict,
 
 
 def _create_face_shape_keys(obj: bpy.types.Object) -> None:
-    """创建面部形态键"""
-    # 确保对象有网格数据
+    """Create facial shape keys"""
+    # Ensure object has mesh data
     if not obj.data.shape_keys:
         obj.shape_key_add(name="Basis", from_mix=False)
     
-    # 为每个面部参数创建形态键
+    # Create shape key for each facial parameter
     for key_name, config in FACE_SHAPE_KEYS.items():
         sk = obj.shape_key_add(name=key_name, from_mix=False)
         sk.value = config["default"]
@@ -355,7 +355,7 @@ def _create_face_shape_keys(obj: bpy.types.Object) -> None:
 
 
 def _create_body_vertex_groups(obj: bpy.types.Object) -> None:
-    """创建身体顶点组（用于服装和绑定）"""
+    """Create body vertex groups (for clothing and rigging)"""
     vertex_group_names = [
         "head", "neck", "torso", "torso_upper", "torso_lower",
         "arms", "arm_L", "arm_R", "forearm_L", "forearm_R",
@@ -372,10 +372,10 @@ def _create_body_vertex_groups(obj: bpy.types.Object) -> None:
 
 
 def handle_add_face_features(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加面部特征（增强版 - 使用形态键）"""
+    """Add facial features (enhanced - using shape keys)"""
     character_name = params.get("character_name")
     
-    # 支持的面部参数
+    # Supported facial parameters
     face_params = {
         "eye_size": params.get("eye_size", 1.0),
         "eye_distance": params.get("eye_distance", 1.0),
@@ -407,28 +407,28 @@ def handle_add_face_features(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"角色不存在: {character_name}"
+                "message": f"Character not found: {character_name}"
             }
         }
     
     try:
-        # 确保有形态键
+        # Ensure shape keys exist
         if not obj.data.shape_keys:
             _create_face_shape_keys(obj)
         
-        # 应用面部参数到形态键
+        # Apply facial parameters to shape keys
         applied_params = []
         for key_name, value in face_params.items():
             if value != FACE_SHAPE_KEYS.get(key_name, {}).get("default", 1.0):
                 sk = obj.data.shape_keys.key_blocks.get(key_name)
                 if sk:
-                    # 归一化值到0-1范围
+                    # Normalize value to 0-1 range
                     config = FACE_SHAPE_KEYS.get(key_name, {"min": 0.5, "max": 1.5})
                     normalized = (value - config["min"]) / (config["max"] - config["min"])
                     sk.value = max(0, min(1, normalized))
                     applied_params.append(key_name)
         
-        # 同时存储原始参数作为自定义属性
+        # Also store original parameters as custom properties
         for key, value in face_params.items():
             obj[f"face_{key}"] = value
         
@@ -451,12 +451,12 @@ def handle_add_face_features(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_set_face_expression(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置面部表情"""
+    """Set facial expression"""
     character_name = params.get("character_name")
     expression = params.get("expression", "neutral")
     intensity = params.get("intensity", 1.0)
     
-    # 表情预设
+    # Expression presets
     EXPRESSIONS = {
         "neutral": {},
         "smile": {
@@ -509,7 +509,7 @@ def handle_set_face_expression(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"角色不存在: {character_name}"
+                "message": f"Character not found: {character_name}"
             }
         }
     
@@ -519,7 +519,7 @@ def handle_set_face_expression(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "EXPRESSION_NOT_FOUND",
-                "message": f"表情不存在: {expression}，可用: {list(EXPRESSIONS.keys())}"
+                "message": f"Expression not found: {expression}, available: {list(EXPRESSIONS.keys())}"
             }
         }
     
@@ -527,11 +527,11 @@ def handle_set_face_expression(params: Dict[str, Any]) -> Dict[str, Any]:
         if not obj.data.shape_keys:
             _create_face_shape_keys(obj)
         
-        # 应用表情
+        # Apply expression
         for key_name, target_value in expr_config.items():
             sk = obj.data.shape_keys.key_blocks.get(key_name)
             if sk:
-                # 根据强度插值
+                # Interpolate by intensity
                 default_val = FACE_SHAPE_KEYS.get(key_name, {}).get("default", 1.0)
                 final_value = default_val + (target_value - default_val) * intensity
                 config = FACE_SHAPE_KEYS.get(key_name, {"min": 0.5, "max": 1.5})
@@ -556,16 +556,16 @@ def handle_set_face_expression(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_add_hair(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加头发（增强版 - 支持多种发型预设）"""
+    """Add hair (enhanced - supports multiple hairstyle presets)"""
     character_name = params.get("character_name")
     hair_style = params.get("hair_style", "SHORT")
     hair_color = params.get("hair_color", [0.1, 0.08, 0.05])
     use_particles = params.get("use_particles", True)
-    hair_density = params.get("hair_density", 1.0)  # 密度倍率
-    hair_thickness = params.get("hair_thickness", 1.0)  # 粗细倍率
-    use_dynamics = params.get("use_dynamics", False)  # 是否启用动力学
+    hair_density = params.get("hair_density", 1.0)  # Density multiplier
+    hair_thickness = params.get("hair_thickness", 1.0)  # Thickness multiplier
+    use_dynamics = params.get("use_dynamics", False)  # Enable dynamics
     
-    # 增强的发型配置
+    # Enhanced hairstyle configuration
     HAIR_STYLES = {
         "BALD": {
             "length": 0.0,
@@ -658,7 +658,7 @@ def handle_add_hair(params: Dict[str, Any]) -> Dict[str, Any]:
             "children": 18,
             "clump": 0.35
         },
-        # 古风/仙侠发型
+        # Ancient/fantasy hairstyles
         "ANCIENT_MALE": {
             "length": 0.50,
             "count": 3000,
@@ -688,7 +688,7 @@ def handle_add_hair(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"角色不存在: {character_name}"
+                "message": f"Character not found: {character_name}"
             }
         }
     
@@ -697,17 +697,17 @@ def handle_add_hair(params: Dict[str, Any]) -> Dict[str, Any]:
     if style_config["count"] == 0:
         return {
             "success": True,
-            "data": {"hair_style": "BALD", "message": "无需添加头发"}
+            "data": {"hair_style": "BALD", "message": "No hair needed"}
         }
     
     try:
         if use_particles:
-            # 选择对象
+            # Select object
             bpy.ops.object.select_all(action='DESELECT')
             obj.select_set(True)
             bpy.context.view_layer.objects.active = obj
             
-            # 创建粒子系统
+            # Create particle system
             bpy.ops.object.particle_system_add()
             
             ps = obj.particle_systems[-1]
@@ -716,16 +716,16 @@ def handle_add_hair(params: Dict[str, Any]) -> Dict[str, Any]:
             settings = ps.settings
             settings.type = 'HAIR'
             
-            # 应用发型配置
+            # Apply hairstyle configuration
             settings.hair_length = style_config["length"]
             settings.count = int(style_config["count"] * hair_density)
             settings.hair_step = style_config["segments"]
             
-            # 设置根部和尖端半径
+            # Set root and tip radius
             settings.root_radius = 0.01 * hair_thickness
             settings.tip_radius = 0.002 * hair_thickness
             
-            # 子代设置
+            # Child settings
             if style_config["children"] > 0:
                 settings.child_type = 'INTERPOLATED'
                 settings.rendered_child_count = style_config["children"]
@@ -734,7 +734,7 @@ def handle_add_hair(params: Dict[str, Any]) -> Dict[str, Any]:
                 settings.roughness_1 = 0.02
                 settings.roughness_2 = 0.02
             
-            # 动力学设置
+            # Dynamics settings
             if use_dynamics:
                 settings.use_hair_dynamics = True
                 cloth = settings.cloth
@@ -743,16 +743,16 @@ def handle_add_hair(params: Dict[str, Any]) -> Dict[str, Any]:
                 cloth.settings.bending_stiffness = 0.5
                 cloth.settings.air_damping = 1.0
             
-            # 创建头发材质（使用 Principled Hair BSDF）
+            # Create hair material (using Principled Hair BSDF)
             hair_mat = bpy.data.materials.new(name=f"{character_name}_Hair_{hair_style}")
             hair_mat.use_nodes = True
             nodes = hair_mat.node_tree.nodes
             links = hair_mat.node_tree.links
             
-            # 清除默认节点
+            # Clear default nodes
             nodes.clear()
             
-            # 创建 Principled Hair BSDF
+            # Create Principled Hair BSDF
             output = nodes.new('ShaderNodeOutputMaterial')
             output.location = (300, 0)
             
@@ -763,13 +763,13 @@ def handle_add_hair(params: Dict[str, Any]) -> Dict[str, Any]:
                 hair_bsdf.inputs['Roughness'].default_value = 0.3
                 links.new(hair_bsdf.outputs['BSDF'], output.inputs['Surface'])
             except:
-                # 回退到 Principled BSDF
+                # Fall back to Principled BSDF
                 bsdf = nodes.new('ShaderNodeBsdfPrincipled')
                 bsdf.location = (0, 0)
                 bsdf.inputs['Base Color'].default_value = hair_color[:3] + [1.0] if len(hair_color) >= 3 else hair_color + [1.0]
                 links.new(bsdf.outputs['BSDF'], output.inputs['Surface'])
             
-            # 应用材质
+            # Apply material
             obj.data.materials.append(hair_mat)
             try:
                 settings.material_slot = hair_mat.name
@@ -796,15 +796,15 @@ def handle_add_hair(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_add_clothing(params: Dict[str, Any]) -> Dict[str, Any]:
-    """添加服装（增强版 - 支持多种服装类型和布料模拟）"""
+    """Add clothing (enhanced - supports multiple clothing types and cloth simulation)"""
     character_name = params.get("character_name")
     clothing_type = params.get("clothing_type", "SHIRT")
     color = params.get("color", [0.5, 0.5, 0.5])
-    secondary_color = params.get("secondary_color")  # 可选的次要颜色
+    secondary_color = params.get("secondary_color")  # Optional secondary color
     use_cloth_simulation = params.get("use_cloth_simulation", False)
     metallic = params.get("metallic", 0.0)
     roughness = params.get("roughness", 0.8)
-    pattern = params.get("pattern")  # 可选: SOLID, STRIPES, PLAID, FLORAL
+    pattern = params.get("pattern")  # Optional: SOLID, STRIPES, PLAID, FLORAL
     
     obj = bpy.data.objects.get(character_name)
     if not obj or obj.type != 'MESH':
@@ -812,7 +812,7 @@ def handle_add_clothing(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"角色不存在: {character_name}"
+                "message": f"Character not found: {character_name}"
             }
         }
     
@@ -823,12 +823,12 @@ def handle_add_clothing(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "CLOTHING_TYPE_NOT_FOUND",
-                "message": f"服装类型不存在: {clothing_type}，可用: {available}"
+                "message": f"Clothing type not found: {clothing_type}, available: {available}"
             }
         }
     
     try:
-        # 创建服装网格
+        # Create clothing mesh
         clothing = _create_clothing_mesh(obj, clothing_type, template)
         
         if clothing is None:
@@ -836,11 +836,11 @@ def handle_add_clothing(params: Dict[str, Any]) -> Dict[str, Any]:
                 "success": False,
                 "error": {
                     "code": "CLOTHING_CREATE_ERROR",
-                    "message": "创建服装网格失败"
+                    "message": "Failed to create clothing mesh"
                 }
             }
         
-        # 创建服装材质
+        # Create clothing material
         cloth_mat = _create_clothing_material(
             f"{character_name}_{clothing_type}",
             color,
@@ -850,17 +850,17 @@ def handle_add_clothing(params: Dict[str, Any]) -> Dict[str, Any]:
             pattern
         )
         
-        # 应用材质
+        # Apply material
         if clothing.data.materials:
             clothing.data.materials[0] = cloth_mat
         else:
             clothing.data.materials.append(cloth_mat)
         
-        # 添加布料模拟
+        # Add cloth simulation
         if use_cloth_simulation:
             _add_cloth_simulation(clothing, template["cloth_preset"])
         
-        # 设为角色的子对象
+        # Set as child of character
         clothing.parent = obj
         
         return {
@@ -884,17 +884,17 @@ def handle_add_clothing(params: Dict[str, Any]) -> Dict[str, Any]:
 
 def _create_clothing_mesh(character: bpy.types.Object, clothing_type: str, 
                           template: Dict) -> bpy.types.Object:
-    """创建服装网格"""
-    # 复制角色网格作为基础
+    """Create clothing mesh"""
+    # Copy character mesh as base
     clothing = character.copy()
     clothing.data = character.data.copy()
     clothing.name = f"{character.name}_{clothing_type}"
     
-    # 清除形态键（如果有）
+    # Clear shape keys (if any)
     if clothing.data.shape_keys:
         clothing.shape_key_clear()
     
-    # 应用缩放
+    # Apply scaling
     scale = template["scale"]
     offset = template["offset"]
     
@@ -905,21 +905,21 @@ def _create_clothing_mesh(character: bpy.types.Object, clothing_type: str,
         character.location[2] + offset[2]
     )
     
-    # 链接到场景
+    # Link to scene
     bpy.context.collection.objects.link(clothing)
     
-    # 应用变换
+    # Apply transforms
     bpy.ops.object.select_all(action='DESELECT')
     clothing.select_set(True)
     bpy.context.view_layer.objects.active = clothing
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     
-    # 添加适量的细分
+    # Add appropriate subdivision
     subsurf = clothing.modifiers.new(name="Subdivision", type='SUBSURF')
     subsurf.levels = 1
     subsurf.render_levels = 2
     
-    # 添加平滑
+    # Add smooth
     smooth = clothing.modifiers.new(name="Smooth", type='SMOOTH')
     smooth.factor = 0.3
     smooth.iterations = 2
@@ -932,25 +932,25 @@ def _create_clothing_material(name: str, color: List[float],
                               metallic: float = 0.0,
                               roughness: float = 0.8,
                               pattern: str = None) -> bpy.types.Material:
-    """创建服装材质"""
+    """Create clothing material"""
     mat = bpy.data.materials.new(name=f"{name}_Material")
     mat.use_nodes = True
     
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
     
-    # 获取默认节点
+    # Get default nodes
     principled = get_principled_bsdf(nodes)
     output = nodes.get("Material Output")
     
     if principled:
-        # 设置基础颜色
+        # Set base color
         color_rgba = color[:3] + [1.0] if len(color) >= 3 else color + [1.0]
         principled.inputs["Base Color"].default_value = color_rgba
         principled.inputs["Metallic"].default_value = metallic
         principled.inputs["Roughness"].default_value = roughness
         
-        # 如果有次要颜色和图案，创建混合
+        # If secondary color and pattern, create blend
         if secondary_color and pattern and pattern != "SOLID":
             _add_pattern_to_material(mat, color, secondary_color, pattern)
     
@@ -959,23 +959,23 @@ def _create_clothing_material(name: str, color: List[float],
 
 def _add_pattern_to_material(mat: bpy.types.Material, primary_color: List[float],
                              secondary_color: List[float], pattern: str) -> None:
-    """为材质添加图案"""
+    """Add pattern to material"""
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
     
     principled = get_principled_bsdf(nodes)
     
-    # 创建纹理坐标
+    # Create texture coordinates
     tex_coord = nodes.new('ShaderNodeTexCoord')
     tex_coord.location = (-800, 0)
     
-    # 创建映射节点
+    # Create mapping node
     mapping = nodes.new('ShaderNodeMapping')
     mapping.location = (-600, 0)
     links.new(tex_coord.outputs['Generated'], mapping.inputs['Vector'])
     
     if pattern == "STRIPES":
-        # 条纹图案
+        # Stripe pattern
         wave = nodes.new('ShaderNodeTexWave')
         wave.location = (-400, 0)
         wave.wave_type = 'BANDS'
@@ -983,7 +983,7 @@ def _add_pattern_to_material(mat: bpy.types.Material, primary_color: List[float]
         wave.inputs['Scale'].default_value = 10.0
         links.new(mapping.outputs['Vector'], wave.inputs['Vector'])
         
-        # 颜色混合
+        # Color blend
         mix = nodes.new('ShaderNodeMixRGB')
         mix.location = (-200, 0)
         mix.inputs['Color1'].default_value = primary_color[:3] + [1.0] if len(primary_color) >= 3 else primary_color + [1.0]
@@ -992,7 +992,7 @@ def _add_pattern_to_material(mat: bpy.types.Material, primary_color: List[float]
         links.new(mix.outputs['Color'], principled.inputs['Base Color'])
         
     elif pattern == "PLAID":
-        # 格子图案
+        # Plaid pattern
         checker = nodes.new('ShaderNodeTexChecker')
         checker.location = (-400, 0)
         checker.inputs['Scale'].default_value = 8.0
@@ -1007,12 +1007,12 @@ def _add_pattern_to_material(mat: bpy.types.Material, primary_color: List[float]
 
 
 def _add_cloth_simulation(clothing: bpy.types.Object, preset: str) -> None:
-    """为服装添加布料模拟"""
-    # 添加布料修改器
+    """Add cloth simulation to clothing"""
+    # Add cloth modifier
     cloth_mod = clothing.modifiers.new(name="Cloth", type='CLOTH')
     cloth = cloth_mod.settings
     
-    # 应用预设
+    # Apply preset
     preset_config = CLOTH_PRESETS.get(preset, CLOTH_PRESETS["cotton"])
     cloth.mass = preset_config["mass"]
     cloth.air_damping = preset_config["air_damping"]
@@ -1021,14 +1021,14 @@ def _add_cloth_simulation(clothing: bpy.types.Object, preset: str) -> None:
     cloth.shear_stiffness = preset_config["shear_stiffness"]
     cloth.bending_stiffness = preset_config["bending_stiffness"]
     
-    # 设置碰撞
+    # Set collision
     cloth.collision_settings.collision_quality = 3
     cloth.collision_settings.distance_min = 0.001
     
-    # 创建固定顶点组
+    # Create pin vertex group
     if "Pin" not in clothing.vertex_groups:
         pin_group = clothing.vertex_groups.new(name="Pin")
-        # 选择顶部顶点作为固定点
+        # Select top vertices as pin points
         clothing_height = max(v.co.z for v in clothing.data.vertices)
         for v in clothing.data.vertices:
             if v.co.z > clothing_height * 0.9:
@@ -1038,13 +1038,13 @@ def _add_cloth_simulation(clothing: bpy.types.Object, preset: str) -> None:
 
 
 def handle_create_outfit(params: Dict[str, Any]) -> Dict[str, Any]:
-    """创建完整套装"""
+    """Create complete outfit"""
     character_name = params.get("character_name")
     outfit_style = params.get("outfit_style", "CASUAL")
     color_scheme = params.get("color_scheme", "DEFAULT")
     use_cloth_simulation = params.get("use_cloth_simulation", False)
     
-    # 套装配置
+    # Outfit configuration
     OUTFIT_STYLES = {
         "CASUAL": ["T_SHIRT", "PANTS", "SHOES"],
         "FORMAL": ["SHIRT", "PANTS", "SHOES"],
@@ -1056,7 +1056,7 @@ def handle_create_outfit(params: Dict[str, Any]) -> Dict[str, Any]:
         "DANCER": ["DRESS", "SHOES"],
     }
     
-    # 颜色方案
+    # Color schemes
     COLOR_SCHEMES = {
         "DEFAULT": {"primary": [0.5, 0.5, 0.5], "secondary": [0.3, 0.3, 0.3]},
         "RED": {"primary": [0.8, 0.2, 0.2], "secondary": [0.5, 0.1, 0.1]},
@@ -1074,7 +1074,7 @@ def handle_create_outfit(params: Dict[str, Any]) -> Dict[str, Any]:
             "success": False,
             "error": {
                 "code": "OBJECT_NOT_FOUND",
-                "message": f"角色不存在: {character_name}"
+                "message": f"Character not found: {character_name}"
             }
         }
     
@@ -1085,7 +1085,7 @@ def handle_create_outfit(params: Dict[str, Any]) -> Dict[str, Any]:
     
     try:
         for i, item_type in enumerate(outfit_items):
-            # 交替使用主色和次色
+            # Alternate between primary and secondary colors
             item_color = colors["primary"] if i % 2 == 0 else colors["secondary"]
             
             result = handle_add_clothing({

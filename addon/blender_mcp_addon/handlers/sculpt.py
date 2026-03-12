@@ -1,7 +1,7 @@
 """
-雕刻处理器
+Sculpt Handler
 
-处理雕刻相关的命令。
+Handles sculpting-related commands.
 """
 
 from typing import Any, Dict
@@ -9,7 +9,7 @@ import bpy
 
 
 def handle_mode(params: Dict[str, Any]) -> Dict[str, Any]:
-    """进入/退出雕刻模式"""
+    """Enter/exit sculpt mode"""
     object_name = params.get("object_name")
     enable = params.get("enable", True)
     
@@ -17,18 +17,18 @@ def handle_mode(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
     if obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "INVALID_TYPE", "message": "只有网格对象可以雕刻"}
+            "error": {"code": "INVALID_TYPE", "message": "Only mesh objects can be sculpted"}
         }
     
     try:
-        # 确保在正确的上下文中
-        # 首先切换到对象模式（如果不在）
+        # Ensure in the correct context
+        # First switch to object mode (if not already)
         current_mode = bpy.context.mode
         if current_mode != 'OBJECT':
             try:
@@ -36,13 +36,13 @@ def handle_mode(params: Dict[str, Any]) -> Dict[str, Any]:
             except:
                 pass
         
-        # 选择对象
+        # Select object
         for o in bpy.context.selected_objects:
             o.select_set(False)
         obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
         
-        # 切换模式
+        # Switch mode
         if enable:
             bpy.ops.object.mode_set(mode='SCULPT')
         else:
@@ -62,18 +62,18 @@ def handle_mode(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_set_brush(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置雕刻笔刷"""
+    """Set sculpt brush"""
     brush_type = params.get("brush_type", "DRAW")
     radius = params.get("radius", 50.0)
     strength = params.get("strength", 0.5)
     auto_smooth = params.get("auto_smooth", 0.0)
     
     try:
-        # 获取当前工具设置
+        # Get current tool settings
         tool_settings = bpy.context.tool_settings
         sculpt = tool_settings.sculpt
         
-        # 笔刷类型映射
+        # Brush type mapping
         brush_map = {
             "DRAW": "SculptDraw",
             "CLAY": "Clay",
@@ -97,24 +97,24 @@ def handle_set_brush(params: Dict[str, Any]) -> Dict[str, Any]:
         
         brush_name = brush_map.get(brush_type, "SculptDraw")
         
-        # 查找笔刷 - Blender 5.0+ 兼容方式
+        # Find brush - Blender 5.0+ compatible
         brush = bpy.data.brushes.get(brush_name)
         if not brush:
-            # 尝试查找匹配的笔刷
+            # Try to find matching brush
             for b in bpy.data.brushes:
-                # Blender 5.0+ 可能使用不同的属性
+                # Blender 5.0+ may use different properties
                 tool = getattr(b, 'sculpt_tool', None) or getattr(b, 'brush_type', None)
                 if tool == brush_type:
                     brush = b
                     break
         
         if not brush:
-            # 创建新笔刷
+            # Create new brush
             brush = bpy.data.brushes.new(name=brush_name, mode='SCULPT')
         
         if brush:
-            # Blender 5.0+ brush 是只读的，需要使用不同方式
-            # 直接设置笔刷属性
+            # Blender 5.0+ brush is read-only, need different approach
+            # Directly set brush properties
             brush.size = int(radius)
             brush.strength = strength
             if hasattr(brush, 'auto_smooth_factor'):
@@ -136,7 +136,7 @@ def handle_set_brush(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_stroke(params: Dict[str, Any]) -> Dict[str, Any]:
-    """执行雕刻笔触"""
+    """Execute sculpt stroke"""
     object_name = params.get("object_name")
     stroke_points = params.get("stroke_points", [])
     brush_type = params.get("brush_type")
@@ -145,10 +145,10 @@ def handle_stroke(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj:
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"}
         }
     
-    # 确保在雕刻模式
+    # Ensure in sculpt mode
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
@@ -156,16 +156,16 @@ def handle_stroke(params: Dict[str, Any]) -> Dict[str, Any]:
     if bpy.context.object.mode != 'SCULPT':
         bpy.ops.object.mode_set(mode='SCULPT')
     
-    # 设置笔刷
+    # Set brush
     if brush_type:
         handle_set_brush({"brush_type": brush_type})
     
-    # 注意：直接执行笔触在 MCP 环境下比较困难
-    # 这里使用程序化方式修改网格
-    # 对于真实笔触，建议使用 bpy.ops.sculpt.brush_stroke
+    # Note: Directly executing strokes in MCP environment is difficult
+    # Using programmatic mesh modification here
+    # For real strokes, use bpy.ops.sculpt.brush_stroke
     
     try:
-        # 构建笔触数据
+        # Build stroke data
         stroke_data = []
         for point in stroke_points:
             x, y, z = point[:3]
@@ -184,22 +184,22 @@ def handle_stroke(params: Dict[str, Any]) -> Dict[str, Any]:
                 "location": (x, y, z),
             })
         
-        # 由于 API 限制，这里使用替代方案
-        # 对网格应用变形
+        # Due to API limitations, using alternative approach
+        # Apply deformation to mesh
         mesh = obj.data
         
-        # 简单的变形示例
+        # Simple deformation example
         for point in stroke_points:
             x, y, z = point[:3]
             pressure = point[3] if len(point) > 3 else 1.0
             
-            # 找到最近的顶点并稍微移动它
+            # Find nearest vertex and move it slightly
             for vert in mesh.vertices:
                 world_co = obj.matrix_world @ vert.co
                 dist = ((world_co.x - x)**2 + (world_co.y - y)**2 + (world_co.z - z)**2) ** 0.5
                 
-                if dist < 0.5:  # 影响半径
-                    # 沿法线方向移动
+                if dist < 0.5:  # Influence radius
+                    # Move along normal direction
                     normal = vert.normal
                     factor = pressure * 0.1 * (1 - dist / 0.5)
                     vert.co += normal * factor
@@ -220,7 +220,7 @@ def handle_stroke(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_remesh(params: Dict[str, Any]) -> Dict[str, Any]:
-    """重新网格化"""
+    """Remesh"""
     object_name = params.get("object_name")
     mode = params.get("mode", "VOXEL")
     voxel_size = params.get("voxel_size", 0.1)
@@ -230,27 +230,27 @@ def handle_remesh(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"网格对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Mesh object not found: {object_name}"}
         }
     
-    # 选择对象
+    # Select object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     
-    # 确保在对象模式
+    # Ensure in object mode
     if bpy.context.object.mode != 'OBJECT':
         bpy.ops.object.mode_set(mode='OBJECT')
     
     if mode == "VOXEL":
-        # 体素重网格
+        # Voxel remesh
         obj.data.remesh_voxel_size = voxel_size
         obj.data.use_remesh_preserve_volume = True
         obj.data.use_remesh_fix_poles = True
         
         bpy.ops.object.voxel_remesh()
     else:
-        # 四边形重网格（使用修改器）
+        # Quad remesh (using modifier)
         mod = obj.modifiers.new(name="Remesh", type='REMESH')
         mod.mode = 'VOXEL'
         mod.voxel_size = voxel_size
@@ -268,7 +268,7 @@ def handle_remesh(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_multires(params: Dict[str, Any]) -> Dict[str, Any]:
-    """多分辨率细分"""
+    """Multiresolution subdivision"""
     object_name = params.get("object_name")
     levels = params.get("levels", 2)
     sculpt_level = params.get("sculpt_level")
@@ -277,19 +277,19 @@ def handle_multires(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"网格对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Mesh object not found: {object_name}"}
         }
     
-    # 选择对象
+    # Select object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     
-    # 确保在对象模式
+    # Ensure in object mode
     if bpy.context.object.mode != 'OBJECT':
         bpy.ops.object.mode_set(mode='OBJECT')
     
-    # 查找或添加多分辨率修改器
+    # Find or add multiresolution modifier
     multires = None
     for mod in obj.modifiers:
         if mod.type == 'MULTIRES':
@@ -299,12 +299,12 @@ def handle_multires(params: Dict[str, Any]) -> Dict[str, Any]:
     if not multires:
         multires = obj.modifiers.new(name="Multires", type='MULTIRES')
     
-    # 细分
+    # Subdivide
     current_levels = multires.total_levels
     for _ in range(levels - current_levels):
         bpy.ops.object.multires_subdivide(modifier=multires.name, mode='CATMULL_CLARK')
     
-    # 设置雕刻级别
+    # Set sculpt level
     if sculpt_level is not None:
         multires.sculpt_levels = min(sculpt_level, multires.total_levels)
     else:
@@ -320,7 +320,7 @@ def handle_multires(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_mask(params: Dict[str, Any]) -> Dict[str, Any]:
-    """蒙版操作"""
+    """Mask operations"""
     object_name = params.get("object_name")
     action = params.get("action", "CLEAR")
     
@@ -328,19 +328,19 @@ def handle_mask(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"网格对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Mesh object not found: {object_name}"}
         }
     
-    # 选择对象
+    # Select object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     
-    # 切换到雕刻模式
+    # Switch to sculpt mode
     if bpy.context.object.mode != 'SCULPT':
         bpy.ops.object.mode_set(mode='SCULPT')
     
-    # 执行蒙版操作
+    # Execute mask operation
     action_map = {
         "CLEAR": "CLEAR",
         "INVERT": "INVERT",
@@ -375,7 +375,7 @@ def handle_mask(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_symmetry(params: Dict[str, Any]) -> Dict[str, Any]:
-    """设置对称"""
+    """Set symmetry"""
     use_x = params.get("use_x", True)
     use_y = params.get("use_y", False)
     use_z = params.get("use_z", False)
@@ -397,7 +397,7 @@ def handle_symmetry(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def handle_dyntopo(params: Dict[str, Any]) -> Dict[str, Any]:
-    """动态拓扑"""
+    """Dynamic topology"""
     object_name = params.get("object_name")
     enable = params.get("enable", True)
     detail_size = params.get("detail_size", 12.0)
@@ -407,15 +407,15 @@ def handle_dyntopo(params: Dict[str, Any]) -> Dict[str, Any]:
     if not obj or obj.type != 'MESH':
         return {
             "success": False,
-            "error": {"code": "OBJECT_NOT_FOUND", "message": f"网格对象不存在: {object_name}"}
+            "error": {"code": "OBJECT_NOT_FOUND", "message": f"Mesh object not found: {object_name}"}
         }
     
-    # 选择对象
+    # Select object
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     
-    # 切换到雕刻模式
+    # Switch to sculpt mode
     if bpy.context.object.mode != 'SCULPT':
         bpy.ops.object.mode_set(mode='SCULPT')
     
@@ -423,15 +423,15 @@ def handle_dyntopo(params: Dict[str, Any]) -> Dict[str, Any]:
     
     try:
         if enable:
-            # 启用动态拓扑
+            # Enable dynamic topology
             if not bpy.context.sculpt_object.use_dynamic_topology_sculpting:
                 bpy.ops.sculpt.dynamic_topology_toggle()
             
-            # 设置细节
+            # Set detail
             sculpt.detail_size = detail_size
             sculpt.detail_type_method = detail_type
         else:
-            # 禁用动态拓扑
+            # Disable dynamic topology
             if bpy.context.sculpt_object.use_dynamic_topology_sculpting:
                 bpy.ops.sculpt.dynamic_topology_toggle()
         

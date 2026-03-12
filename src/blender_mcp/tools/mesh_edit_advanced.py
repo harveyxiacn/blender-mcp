@@ -1,9 +1,9 @@
 """
-高级网格编辑工具
+Advanced Mesh Editing Tools
 
-合并了 inset_faces, bridge_edge_loops, spin, knife_cut, fill_grid,
-separate, symmetrize, edge_crease, edge_sharp, edge_seam 等操作到
-少量复合工具中，避免工具数量膨胀。
+Consolidates inset_faces, bridge_edge_loops, spin, knife_cut, fill_grid,
+separate, symmetrize, edge_crease, edge_sharp, edge_seam and other operations
+into a small number of composite tools to avoid tool count bloat.
 """
 
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
@@ -16,10 +16,10 @@ if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
 
 
-# ==================== 枚举 ====================
+# ==================== Enums ====================
 
 class MeshEditOperation(str, Enum):
-    """高级网格编辑操作类型"""
+    """Advanced mesh edit operation type"""
     INSET_FACES = "INSET_FACES"
     BRIDGE_EDGE_LOOPS = "BRIDGE_EDGE_LOOPS"
     SPIN = "SPIN"
@@ -35,7 +35,7 @@ class MeshEditOperation(str, Enum):
 
 
 class EdgeMarkOperation(str, Enum):
-    """边标记操作类型"""
+    """Edge mark operation type"""
     CREASE = "CREASE"
     SHARP = "SHARP"
     SEAM = "SEAM"
@@ -43,7 +43,7 @@ class EdgeMarkOperation(str, Enum):
 
 
 class SelectByTraitType(str, Enum):
-    """按特征选择类型"""
+    """Select by trait type"""
     ALL = "ALL"
     NONE = "NONE"
     NON_MANIFOLD = "NON_MANIFOLD"
@@ -57,7 +57,7 @@ class SelectByTraitType(str, Enum):
 
 
 class VertexGroupAction(str, Enum):
-    """顶点组操作"""
+    """Vertex group action"""
     CREATE = "CREATE"
     ASSIGN = "ASSIGN"
     REMOVE = "REMOVE"
@@ -65,15 +65,15 @@ class VertexGroupAction(str, Enum):
     DESELECT = "DESELECT"
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class MeshEditAdvancedInput(BaseModel):
-    """高级网格编辑输入 - 统一接口"""
-    object_name: str = Field(..., description="对象名称")
-    operation: MeshEditOperation = Field(..., description="操作类型")
+    """Advanced mesh edit input - unified interface"""
+    object_name: str = Field(..., description="Object name")
+    operation: MeshEditOperation = Field(..., description="Operation type")
     params: Optional[Dict[str, Any]] = Field(
         default=None,
-        description="操作参数(按operation类型): "
+        description="Operation parameters (by operation type): "
                     "INSET_FACES: thickness(float,0.01), depth(float,0), individual(bool,false), use_boundary(bool,true), use_even_offset(bool,true); "
                     "BRIDGE_EDGE_LOOPS: segments(int,1), twist(int,0), profile_shape(str,'SMOOTH'), blend(float,1.0); "
                     "SPIN: angle(float,6.28=360°), steps(int,12), axis(str,'Z'), center([x,y,z]), dupli(bool,false); "
@@ -82,7 +82,7 @@ class MeshEditAdvancedInput(BaseModel):
                     "GRID_FILL: span(int,1), offset(int,0); "
                     "SEPARATE: mode(str: SELECTED/MATERIAL/LOOSE); "
                     "SYMMETRIZE: direction(str: NEGATIVE_X/POSITIVE_X/NEGATIVE_Y/POSITIVE_Y/NEGATIVE_Z/POSITIVE_Z); "
-                    "POKE_FACES: (无额外参数); "
+                    "POKE_FACES: (no extra parameters); "
                     "TRIANGULATE: quad_method(str,'BEAUTY'), ngon_method(str,'BEAUTY'); "
                     "TRIS_TO_QUADS: max_angle(float,40.0); "
                     "DISSOLVE: use_verts(bool,false), use_face_split(bool,false)"
@@ -90,21 +90,21 @@ class MeshEditAdvancedInput(BaseModel):
 
 
 class EdgeMarkInput(BaseModel):
-    """边标记工具输入"""
-    object_name: str = Field(..., description="对象名称")
-    mark_type: EdgeMarkOperation = Field(..., description="标记类型: CREASE(折痕), SHARP(锐边), SEAM(UV接缝), BEVEL_WEIGHT(倒角权重)")
-    value: float = Field(default=1.0, description="标记值 (0.0-1.0)，0=清除标记", ge=0.0, le=1.0)
-    clear: bool = Field(default=False, description="是否清除标记(设为true则清除选中边的标记)")
+    """Edge mark tool input"""
+    object_name: str = Field(..., description="Object name")
+    mark_type: EdgeMarkOperation = Field(..., description="Mark type: CREASE, SHARP, SEAM (UV seam), BEVEL_WEIGHT")
+    value: float = Field(default=1.0, description="Mark value (0.0-1.0), 0=clear mark", ge=0.0, le=1.0)
+    clear: bool = Field(default=False, description="Whether to clear marks (set to true to clear marks on selected edges)")
 
 
 class SelectByTraitInput(BaseModel):
-    """按特征选择输入"""
-    object_name: str = Field(..., description="对象名称")
-    select_mode: str = Field(default="FACE", description="选择模式: VERT, EDGE, FACE")
-    trait: SelectByTraitType = Field(..., description="特征类型")
+    """Select by trait input"""
+    object_name: str = Field(..., description="Object name")
+    select_mode: str = Field(default="FACE", description="Selection mode: VERT, EDGE, FACE")
+    trait: SelectByTraitType = Field(..., description="Trait type")
     params: Optional[Dict[str, Any]] = Field(
         default=None,
-        description="特征参数: "
+        description="Trait parameters: "
                     "FACE_SIDES: number(int,4), type(str: LESS/EQUAL/GREATER), extend(bool,false); "
                     "LINKED_FLAT: sharpness(float,0.0175=1°); "
                     "NON_MANIFOLD: extend(bool,false), use_wire(bool,true), use_boundary(bool,true), use_multi_face(bool,true), use_non_contiguous(bool,true), use_verts(bool,true); "
@@ -114,32 +114,32 @@ class SelectByTraitInput(BaseModel):
 
 
 class VertexGroupInput(BaseModel):
-    """顶点组操作输入"""
-    object_name: str = Field(..., description="对象名称")
-    action: VertexGroupAction = Field(..., description="操作类型")
-    group_name: str = Field(default="Group", description="顶点组名称")
-    weight: float = Field(default=1.0, description="权重值 (0.0-1.0)", ge=0.0, le=1.0)
-    vertex_indices: Optional[List[int]] = Field(default=None, description="顶点索引列表(为空则使用当前选择)")
+    """Vertex group operation input"""
+    object_name: str = Field(..., description="Object name")
+    action: VertexGroupAction = Field(..., description="Action type")
+    group_name: str = Field(default="Group", description="Vertex group name")
+    weight: float = Field(default=1.0, description="Weight value (0.0-1.0)", ge=0.0, le=1.0)
+    vertex_indices: Optional[List[int]] = Field(default=None, description="Vertex index list (uses current selection if empty)")
 
 
 class VertexColorInput(BaseModel):
-    """顶点色操作输入"""
-    object_name: str = Field(..., description="对象名称")
-    action: str = Field(default="CREATE", description="操作: CREATE(创建图层), PAINT(绘制), FILL(填充全部)")
-    layer_name: str = Field(default="Col", description="顶点色图层名称")
-    color: Optional[List[float]] = Field(default=None, description="颜色 [R,G,B,A] (0-1范围)")
-    face_indices: Optional[List[int]] = Field(default=None, description="面索引列表(仅PAINT时用，为空则对所有面)")
+    """Vertex color operation input"""
+    object_name: str = Field(..., description="Object name")
+    action: str = Field(default="CREATE", description="Action: CREATE (create layer), PAINT (paint), FILL (fill all)")
+    layer_name: str = Field(default="Col", description="Vertex color layer name")
+    color: Optional[List[float]] = Field(default=None, description="Color [R,G,B,A] (0-1 range)")
+    face_indices: Optional[List[int]] = Field(default=None, description="Face index list (PAINT only, applies to all faces if empty)")
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_mesh_edit_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册高级网格编辑工具"""
+    """Register advanced mesh editing tools"""
 
     @mcp.tool(
         name="blender_mesh_edit_advanced",
         annotations={
-            "title": "高级网格编辑",
+            "title": "Advanced Mesh Edit",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -147,19 +147,18 @@ def register_mesh_edit_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") 
         }
     )
     async def blender_mesh_edit_advanced(params: MeshEditAdvancedInput) -> str:
-        """执行高级网格编辑操作。
+        """Perform advanced mesh editing operations.
 
-        支持面内插(Inset)、桥接边循环(Bridge)、旋转体(Spin)、
-        刀切(Knife)、填充(Fill/GridFill)、分离(Separate)、
-        对称化(Symmetrize)等操作。
+        Supports Inset Faces, Bridge Edge Loops, Spin, Knife Cut,
+        Fill/Grid Fill, Separate, Symmetrize, and other operations.
 
-        注意：需要先进入编辑模式并选择元素。
+        Note: Requires entering edit mode and selecting elements first.
 
         Args:
-            params: 操作类型和参数
+            params: Operation type and parameters
 
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "mesh_edit_advanced", "edit",
@@ -172,20 +171,20 @@ def register_mesh_edit_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") 
 
         if result.get("success"):
             op_names = {
-                "INSET_FACES": "面内插", "BRIDGE_EDGE_LOOPS": "桥接边循环",
-                "SPIN": "旋转体", "KNIFE_CUT": "刀切", "FILL": "填充",
-                "GRID_FILL": "栅格填充", "SEPARATE": "分离", "SYMMETRIZE": "对称化",
-                "POKE_FACES": "戳面", "TRIANGULATE": "三角化",
-                "TRIS_TO_QUADS": "三角转四边", "DISSOLVE": "溶解"
+                "INSET_FACES": "Inset Faces", "BRIDGE_EDGE_LOOPS": "Bridge Edge Loops",
+                "SPIN": "Spin", "KNIFE_CUT": "Knife Cut", "FILL": "Fill",
+                "GRID_FILL": "Grid Fill", "SEPARATE": "Separate", "SYMMETRIZE": "Symmetrize",
+                "POKE_FACES": "Poke Faces", "TRIANGULATE": "Triangulate",
+                "TRIS_TO_QUADS": "Tris to Quads", "DISSOLVE": "Dissolve"
             }
-            return f"{op_names.get(params.operation.value, params.operation.value)}操作完成"
+            return f"{op_names.get(params.operation.value, params.operation.value)} operation complete"
         else:
-            return f"操作失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Operation failed: {result.get('error', {}).get('message', 'Unknown error')}"
 
     @mcp.tool(
         name="blender_mesh_edge_mark",
         annotations={
-            "title": "边标记工具",
+            "title": "Edge Mark Tool",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -193,16 +192,17 @@ def register_mesh_edit_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") 
         }
     )
     async def blender_mesh_edge_mark(params: EdgeMarkInput) -> str:
-        """设置边的折痕(Crease)、锐边(Sharp)、UV接缝(Seam)或倒角权重(BevelWeight)。
+        """Set edge Crease, Sharp, UV Seam, or Bevel Weight.
 
-        用于控制细分曲面保锐边(Crease)、平滑着色硬边(Sharp)、
-        UV展开接缝(Seam)等。需先进入编辑模式并选择边。
+        Used to control subdivision surface edge sharpness (Crease),
+        smooth shading hard edges (Sharp), UV unwrap seams (Seam), etc.
+        Requires entering edit mode and selecting edges first.
 
         Args:
-            params: 标记类型、值
+            params: Mark type, value
 
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "mesh_edit_advanced", "edge_mark",
@@ -215,16 +215,16 @@ def register_mesh_edit_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") 
         )
 
         if result.get("success"):
-            mark_names = {"CREASE": "折痕", "SHARP": "锐边", "SEAM": "UV接缝", "BEVEL_WEIGHT": "倒角权重"}
-            action = "清除" if params.clear else f"设置(值={params.value})"
-            return f"已{action} {mark_names.get(params.mark_type.value, params.mark_type.value)}"
+            mark_names = {"CREASE": "Crease", "SHARP": "Sharp", "SEAM": "UV Seam", "BEVEL_WEIGHT": "Bevel Weight"}
+            action = "Cleared" if params.clear else f"Set (value={params.value})"
+            return f"{action} {mark_names.get(params.mark_type.value, params.mark_type.value)}"
         else:
-            return f"操作失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Operation failed: {result.get('error', {}).get('message', 'Unknown error')}"
 
     @mcp.tool(
         name="blender_mesh_select_by_trait",
         annotations={
-            "title": "按特征选择网格",
+            "title": "Select Mesh by Trait",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -232,18 +232,19 @@ def register_mesh_edit_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") 
         }
     )
     async def blender_mesh_select_by_trait(params: SelectByTraitInput) -> str:
-        """按特征选择网格元素。
+        """Select mesh elements by trait.
 
-        支持选择非流形(Non-Manifold)、孤立元素(Loose)、内部面(Interior)、
-        按面边数(三角/四边/N-gon)、未分组顶点、边界边、锐边、相连平面等。
+        Supports selecting non-manifold, loose elements, interior faces,
+        by face side count (tris/quads/n-gons), ungrouped vertices,
+        boundary edges, sharp edges, linked flat faces, etc.
 
-        需要先进入编辑模式。
+        Requires entering edit mode first.
 
         Args:
-            params: 选择模式和特征类型
+            params: Selection mode and trait type
 
         Returns:
-            选择结果
+            Selection result
         """
         result = await server.execute_command(
             "mesh_edit_advanced", "select_by_trait",
@@ -259,19 +260,19 @@ def register_mesh_edit_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") 
             data = result.get("data", {})
             count = data.get("selected_count", "N/A")
             trait_names = {
-                "NON_MANIFOLD": "非流形", "LOOSE": "孤立", "INTERIOR_FACES": "内部面",
-                "FACE_SIDES": "按边数", "UNGROUPED": "未分组", "BOUNDARY": "边界",
-                "SHARP_EDGES": "锐边", "LINKED_FLAT": "相连平面",
-                "ALL": "全选", "NONE": "取消全选"
+                "NON_MANIFOLD": "Non-Manifold", "LOOSE": "Loose", "INTERIOR_FACES": "Interior Faces",
+                "FACE_SIDES": "Face Sides", "UNGROUPED": "Ungrouped", "BOUNDARY": "Boundary",
+                "SHARP_EDGES": "Sharp Edges", "LINKED_FLAT": "Linked Flat",
+                "ALL": "Select All", "NONE": "Deselect All"
             }
-            return f"按{trait_names.get(params.trait.value, params.trait.value)}选择完成，已选择 {count} 个元素"
+            return f"Selection by {trait_names.get(params.trait.value, params.trait.value)} complete, selected {count} elements"
         else:
-            return f"选择失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Selection failed: {result.get('error', {}).get('message', 'Unknown error')}"
 
     @mcp.tool(
         name="blender_vertex_group",
         annotations={
-            "title": "顶点组操作",
+            "title": "Vertex Group Operations",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -279,15 +280,16 @@ def register_mesh_edit_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") 
         }
     )
     async def blender_vertex_group(params: VertexGroupInput) -> str:
-        """创建、分配、选择顶点组。
+        """Create, assign, or select vertex groups.
 
-        顶点组用于绑定权重、修改器影响范围、粒子分布密度等。
+        Vertex groups are used for binding weights, modifier influence ranges,
+        particle distribution density, etc.
 
         Args:
-            params: 操作类型、组名、权重
+            params: Action type, group name, weight
 
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "mesh_edit_advanced", "vertex_group",
@@ -302,17 +304,17 @@ def register_mesh_edit_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") 
 
         if result.get("success"):
             action_names = {
-                "CREATE": "创建", "ASSIGN": "分配", "REMOVE": "移除",
-                "SELECT": "选择", "DESELECT": "取消选择"
+                "CREATE": "Create", "ASSIGN": "Assign", "REMOVE": "Remove",
+                "SELECT": "Select", "DESELECT": "Deselect"
             }
-            return f"顶点组 '{params.group_name}' {action_names.get(params.action.value, params.action.value)}操作完成"
+            return f"Vertex group '{params.group_name}' {action_names.get(params.action.value, params.action.value)} operation complete"
         else:
-            return f"操作失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Operation failed: {result.get('error', {}).get('message', 'Unknown error')}"
 
     @mcp.tool(
         name="blender_vertex_color",
         annotations={
-            "title": "顶点色操作",
+            "title": "Vertex Color Operations",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -320,16 +322,16 @@ def register_mesh_edit_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") 
         }
     )
     async def blender_vertex_color(params: VertexColorInput) -> str:
-        """创建和编辑顶点色(Vertex Color)。
+        """Create and edit vertex colors.
 
-        Low Poly风格的核心着色方式。支持创建顶点色图层、
-        按面填充颜色、全部填充。
+        A core coloring method for Low Poly style. Supports creating vertex color layers,
+        filling colors per face, and filling all faces.
 
         Args:
-            params: 操作类型、颜色、面索引
+            params: Action type, color, face indices
 
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "mesh_edit_advanced", "vertex_color",
@@ -343,7 +345,7 @@ def register_mesh_edit_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") 
         )
 
         if result.get("success"):
-            action_names = {"CREATE": "创建图层", "PAINT": "绘制", "FILL": "填充"}
-            return f"顶点色{action_names.get(params.action, params.action)}完成"
+            action_names = {"CREATE": "Create Layer", "PAINT": "Paint", "FILL": "Fill"}
+            return f"Vertex color {action_names.get(params.action, params.action)} complete"
         else:
-            return f"操作失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Operation failed: {result.get('error', {}).get('message', 'Unknown error')}"

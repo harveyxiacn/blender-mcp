@@ -1,7 +1,7 @@
 """
-相机工具
+Camera Tools
 
-提供相机创建和设置功能。
+Provides camera creation and configuration features.
 """
 
 from typing import TYPE_CHECKING, Optional, List, Union
@@ -13,51 +13,51 @@ if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
 
 
-# ==================== 输入模型 ====================
+# ==================== Input Models ====================
 
 class CameraCreateInput(BaseModel):
-    """创建相机输入"""
-    name: Optional[str] = Field(default="Camera", description="相机名称")
-    location: Optional[List[float]] = Field(default=None, description="位置")
-    rotation: Optional[List[float]] = Field(default=None, description="旋转")
-    lens: float = Field(default=50.0, description="焦距 (mm)", ge=1, le=500)
-    sensor_width: float = Field(default=36.0, description="传感器宽度 (mm)", ge=1)
-    set_active: bool = Field(default=True, description="设为活动相机")
+    """Create camera input"""
+    name: Optional[str] = Field(default="Camera", description="Camera name")
+    location: Optional[List[float]] = Field(default=None, description="Location")
+    rotation: Optional[List[float]] = Field(default=None, description="Rotation")
+    lens: float = Field(default=50.0, description="Focal length (mm)", ge=1, le=500)
+    sensor_width: float = Field(default=36.0, description="Sensor width (mm)", ge=1)
+    set_active: bool = Field(default=True, description="Set as active camera")
 
 
 class CameraSetPropertiesInput(BaseModel):
-    """设置相机属性输入"""
-    camera_name: str = Field(..., description="相机名称")
-    lens: Optional[float] = Field(default=None, description="焦距", ge=1, le=500)
-    sensor_width: Optional[float] = Field(default=None, description="传感器宽度", ge=1)
-    clip_start: Optional[float] = Field(default=None, description="近裁剪", gt=0)
-    clip_end: Optional[float] = Field(default=None, description="远裁剪", gt=0)
-    dof_focus_object: Optional[str] = Field(default=None, description="景深焦点对象")
-    dof_focus_distance: Optional[float] = Field(default=None, description="景深焦点距离", ge=0)
-    dof_aperture_fstop: Optional[float] = Field(default=None, description="光圈值", gt=0)
+    """Set camera properties input"""
+    camera_name: str = Field(..., description="Camera name")
+    lens: Optional[float] = Field(default=None, description="Focal length", ge=1, le=500)
+    sensor_width: Optional[float] = Field(default=None, description="Sensor width", ge=1)
+    clip_start: Optional[float] = Field(default=None, description="Near clip", gt=0)
+    clip_end: Optional[float] = Field(default=None, description="Far clip", gt=0)
+    dof_focus_object: Optional[str] = Field(default=None, description="DOF focus object")
+    dof_focus_distance: Optional[float] = Field(default=None, description="DOF focus distance", ge=0)
+    dof_aperture_fstop: Optional[float] = Field(default=None, description="Aperture f-stop", gt=0)
 
 
 class CameraLookAtInput(BaseModel):
-    """相机朝向目标输入"""
-    camera_name: str = Field(..., description="相机名称")
-    target: Union[str, List[float]] = Field(..., description="目标对象名称或位置坐标")
-    use_constraint: bool = Field(default=False, description="使用约束（持续朝向）")
+    """Camera look at target input"""
+    camera_name: str = Field(..., description="Camera name")
+    target: Union[str, List[float]] = Field(..., description="Target object name or position coordinates")
+    use_constraint: bool = Field(default=False, description="Use constraint (continuous tracking)")
 
 
 class CameraSetActiveInput(BaseModel):
-    """设置活动相机输入"""
-    camera_name: str = Field(..., description="相机名称")
+    """Set active camera input"""
+    camera_name: str = Field(..., description="Camera name")
 
 
-# ==================== 工具注册 ====================
+# ==================== Tool Registration ====================
 
 def register_camera_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
-    """注册相机工具"""
-    
+    """Register camera tools"""
+
     @mcp.tool(
         name="blender_camera_create",
         annotations={
-            "title": "创建相机",
+            "title": "Create Camera",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
@@ -65,13 +65,13 @@ def register_camera_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_camera_create(params: CameraCreateInput) -> str:
-        """创建相机。
-        
+        """Create a camera.
+
         Args:
-            params: 相机名称、位置、焦距等
-            
+            params: Camera name, location, focal length, etc.
+
         Returns:
-            创建结果
+            Creation result
         """
         result = await server.execute_command(
             "camera", "create",
@@ -84,17 +84,17 @@ def register_camera_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "set_active": params.set_active
             }
         )
-        
+
         if result.get("success"):
             name = result.get("data", {}).get("camera_name", params.name)
-            return f"成功创建相机 '{name}'，焦距: {params.lens}mm"
+            return f"Successfully created camera '{name}', focal length: {params.lens}mm"
         else:
-            return f"创建相机失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to create camera: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_camera_set_properties",
         annotations={
-            "title": "设置相机属性",
+            "title": "Set Camera Properties",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -102,15 +102,15 @@ def register_camera_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_camera_set_properties(params: CameraSetPropertiesInput) -> str:
-        """设置相机属性。
-        
-        可以设置焦距、裁剪距离、景深等属性。
-        
+        """Set camera properties.
+
+        Can set focal length, clip distance, depth of field, and other properties.
+
         Args:
-            params: 相机名称和要设置的属性
-            
+            params: Camera name and properties to set
+
         Returns:
-            设置结果
+            Setting result
         """
         properties = {}
         if params.lens is not None:
@@ -127,24 +127,24 @@ def register_camera_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             properties["dof_focus_distance"] = params.dof_focus_distance
         if params.dof_aperture_fstop is not None:
             properties["dof_aperture_fstop"] = params.dof_aperture_fstop
-        
+
         if not properties:
-            return "没有指定任何属性"
-        
+            return "No properties specified"
+
         result = await server.execute_command(
             "camera", "set_properties",
             {"camera_name": params.camera_name, "properties": properties}
         )
-        
+
         if result.get("success"):
-            return f"相机 '{params.camera_name}' 属性已更新"
+            return f"Camera '{params.camera_name}' properties updated"
         else:
-            return f"设置相机属性失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Failed to set camera properties: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_camera_look_at",
         annotations={
-            "title": "相机朝向目标",
+            "title": "Camera Look At Target",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -152,15 +152,15 @@ def register_camera_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_camera_look_at(params: CameraLookAtInput) -> str:
-        """使相机朝向指定目标。
-        
-        可以朝向一个对象或一个坐标点。
-        
+        """Point the camera at a specified target.
+
+        Can point at an object or a coordinate point.
+
         Args:
-            params: 相机名称和目标
-            
+            params: Camera name and target
+
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "camera", "look_at",
@@ -170,17 +170,17 @@ def register_camera_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "use_constraint": params.use_constraint
             }
         )
-        
+
         if result.get("success"):
-            target_str = params.target if isinstance(params.target, str) else f"坐标 {params.target}"
-            return f"相机 '{params.camera_name}' 已朝向 {target_str}"
+            target_str = params.target if isinstance(params.target, str) else f"coordinates {params.target}"
+            return f"Camera '{params.camera_name}' is now pointing at {target_str}"
         else:
-            return f"操作失败: {result.get('error', {}).get('message', '未知错误')}"
-    
+            return f"Operation failed: {result.get('error', {}).get('message', 'unknown error')}"
+
     @mcp.tool(
         name="blender_camera_set_active",
         annotations={
-            "title": "设置活动相机",
+            "title": "Set Active Camera",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
@@ -188,20 +188,20 @@ def register_camera_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         }
     )
     async def blender_camera_set_active(params: CameraSetActiveInput) -> str:
-        """设置活动相机。
-        
+        """Set the active camera.
+
         Args:
-            params: 相机名称
-            
+            params: Camera name
+
         Returns:
-            操作结果
+            Operation result
         """
         result = await server.execute_command(
             "camera", "set_active",
             {"camera_name": params.camera_name}
         )
-        
+
         if result.get("success"):
-            return f"已将 '{params.camera_name}' 设为活动相机"
+            return f"Set '{params.camera_name}' as the active camera"
         else:
-            return f"设置活动相机失败: {result.get('error', {}).get('message', '未知错误')}"
+            return f"Failed to set active camera: {result.get('error', {}).get('message', 'unknown error')}"
