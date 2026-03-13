@@ -125,5 +125,5 @@ disable_error_code = ["arg-type", "assignment"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 markers = ["live: requires running Blender instance"]
-addopts = "--ignore=tests/run_live_test.py --ignore=tests/test_blender_live.py"
+addopts = "--ignore=tests/run_live_test.py --ignore=tests/test_blender_live.py --ignore=tests/create_style_scenes.py"
 

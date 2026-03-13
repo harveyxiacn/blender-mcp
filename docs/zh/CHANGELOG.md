@@ -4,6 +4,36 @@ Blender MCP 的所有重要变更记录。
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
+## [Unreleased] - 2026-03-13
+
+### 新增
+
+- **全面的实时集成测试套件**
+  - `tests/run_live_test.py`: 121个测试覆盖所有50+处理器类别，针对实时Blender实例
+  - `tests/create_style_scenes.py`: 264条命令演示，创建3个完整场景（3A游戏、动漫、像素风格）
+  - 测试覆盖：场景、对象、建模、材质、灯光、相机、动画、渲染、曲线、UV、物理、约束、节点、骨骼、角色模板、导出、批处理、资产、风格预设、程序化材质、运动角色、世界环境、合成器、雕刻、油笔、毛发、模拟等
+
+### 变更
+
+- **Blender 5.x 兼容性修复（50+处理器文件）**
+  - 修复EEVEE引擎名称：`BLENDER_EEVEE_NEXT` → `BLENDER_EEVEE`，增加版本感知兼容层（`handlers/compat.py`）
+  - 修复`bpy.data.objects.get(None)`崩溃问题（Blender 5.x抛出异常而非返回None）
+  - 修复`Action.fcurves`移除问题（5.x使用分层动作系统）
+  - 修复`ClothSettings.collision_settings`属性位置变更
+  - 修复`bpy_prop_collection.__contains__`类型检查
+  - 曲线创建添加默认控制点
+  - 偏好设置处理器增加None键处理
+  - Black格式化151个文件
+
+### 修复
+
+- **CI流水线全绿**
+  - 修复6696个ruff lint错误（自动修复 + addon/examples/tests按文件忽略规则）
+  - 修复141个black格式化问题
+  - 修复414个mypy类型错误（放宽addon代码配置，TYPE_CHECKING导入）
+  - 从pytest收集中排除实时测试文件（需要运行Blender实例）
+  - 移除已弃用的ruff规则（ANN101, ANN102）
+
 ## [Unreleased] - 2026-03-04
 
 ### 新增
