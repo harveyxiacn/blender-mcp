@@ -15,8 +15,8 @@ Usage:
 5. AI calls deactivate_skill("modeling") to unload the tool group
 """
 
-import logging
 import importlib
+import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SkillInfo:
     """Skill metadata"""
+
     name: str
     description: str
     modules: list[str]
@@ -81,7 +82,6 @@ Common: SUBDIVISION, MIRROR, ARRAY, SOLIDIFY, BEVEL, BOOLEAN, REMESH, SCREW, WIR
 - See docs/blender_style_modeling_workflows.md for detailed style workflows
 """,
     ),
-    
     "materials": SkillInfo(
         name="materials",
         description="Material system - standard materials, procedural materials (67 presets in 8 categories), wear effects (7 types)",
@@ -121,7 +121,6 @@ EDGE_WEAR, SCRATCHES, RUST, DIRT, DUST, MOSS, PAINT_CHIP
 - color_override can override preset base color
 """,
     ),
-    
     "style": SkillInfo(
         name="style",
         description="Style presets - pixel to AAA one-click environment setup (camera/Bloom/AO/denoising), outline effects, high-to-low poly baking",
@@ -169,7 +168,6 @@ Used for PBR_REALISTIC and AAA style texture creation.
 4. See docs/blender_style_modeling_workflows.md for detailed workflows
 """,
     ),
-    
     "character": SkillInfo(
         name="character",
         description="Character creation - chibi character templates, rigging, auto-rigging",
@@ -194,7 +192,6 @@ Used for PBR_REALISTIC and AAA style texture creation.
 - Bone naming follows Left/Right convention for mirror support
 """,
     ),
-    
     "animation": SkillInfo(
         name="animation",
         description="Animation tools - keyframes, animation presets, timeline management",
@@ -217,7 +214,6 @@ Used for PBR_REALISTIC and AAA style texture creation.
 - Ensure first and last frames match for looping animations
 """,
     ),
-    
     "scene_setup": SkillInfo(
         name="scene_setup",
         description="Scene setup - lighting, camera, world environment, render settings",
@@ -238,7 +234,6 @@ Used for PBR_REALISTIC and AAA style texture creation.
 - Toon render: Flat lighting + solid background + Freestyle outlines
 """,
     ),
-
     "automation": SkillInfo(
         name="automation",
         description="Automation pipeline - one-click character/prop/scene generation + quality audit loop",
@@ -268,7 +263,6 @@ Used for PBR_REALISTIC and AAA style texture creation.
 - For manual fine-tuning, activate modeling/materials/advanced_3d skills as needed
 """,
     ),
-    
     "physics": SkillInfo(
         name="physics",
         description="Physics simulation - rigid body, cloth, fluid, constraint system",
@@ -290,7 +284,6 @@ Used for PBR_REALISTIC and AAA style texture creation.
 - Preview at low resolution first, then increase quality for final bake
 """,
     ),
-    
     "batch_assets": SkillInfo(
         name="batch_assets",
         description="Batch processing and asset management - bulk operations, asset library management",
@@ -307,7 +300,6 @@ Used for PBR_REALISTIC and AAA style texture creation.
 - Mark assets, browse asset library, asset reuse
 """,
     ),
-    
     "advanced_3d": SkillInfo(
         name="advanced_3d",
         description="Advanced 3D tools - node editing, compositor, sculpting, texture painting",
@@ -329,7 +321,6 @@ Used for PBR_REALISTIC and AAA style texture creation.
 - Paint textures directly on models
 """,
     ),
-    
     "sport_character": SkillInfo(
         name="sport_character",
         description="Sport character tools - athlete modeling, gear, sportswear, poses",
@@ -346,7 +337,6 @@ Used for PBR_REALISTIC and AAA style texture creation.
 5. Web-optimized export (GLB/GLTF)
 """,
     ),
-    
     "training": SkillInfo(
         name="training",
         description="Training system - interactive Blender learning courses and project exercises",
@@ -367,20 +357,20 @@ Used for PBR_REALISTIC and AAA style texture creation.
 
 class SkillManager:
     """Skill Manager - Handles dynamic loading/unloading of tool groups"""
-    
-    def __init__(self, server: "BlenderMCPServer"):
+
+    def __init__(self, server: "BlenderMCPServer") -> None:
         self.server = server
-        self._active_skills: dict[str, list[str]] = {}   # skill_name -> [tool_names]
+        self._active_skills: dict[str, list[str]] = {}  # skill_name -> [tool_names]
         self._registered_tool_funcs: dict[str, Any] = {}  # tool_name -> original func (for cleanup)
-    
+
     @property
     def available_skills(self) -> dict[str, SkillInfo]:
         return SKILL_DEFINITIONS
-    
+
     @property
     def active_skills(self) -> dict[str, list[str]]:
         return self._active_skills
-    
+
     def is_active(self, skill_name: str) -> bool:
         return skill_name in self._active_skills
 
@@ -405,7 +395,7 @@ class SkillManager:
             del tools[tool_name]
             return True
         return False
-    
+
     def activate_skill(self, skill_name: str) -> tuple[bool, str, list[str]]:
         """Activate a skill, dynamically registering its tool modules
 
@@ -415,27 +405,27 @@ class SkillManager:
         if skill_name not in SKILL_DEFINITIONS:
             available = ", ".join(SKILL_DEFINITIONS.keys())
             return False, f"Unknown skill: {skill_name}. Available: {available}", []
-        
+
         if skill_name in self._active_skills:
             tools = self._active_skills[skill_name]
             return False, f"Skill '{skill_name}' is already active with {len(tools)} tools", tools
-        
+
         skill_info = SKILL_DEFINITIONS[skill_name]
         registered_tools: list[str] = []
-        
+
         from blender_mcp.tools_config import MODULE_REGISTRY
-        
+
         for module_name in skill_info.modules:
             if module_name not in MODULE_REGISTRY:
                 logger.warning(f"Skill '{skill_name}': unknown module '{module_name}'")
                 continue
-            
+
             register_func_name = MODULE_REGISTRY[module_name]
-            
+
             try:
                 tool_module = importlib.import_module(f"blender_mcp.tools.{module_name}")
                 register_func = getattr(tool_module, register_func_name)
-                
+
                 # Record tool list before registration
                 before = self._tool_names_snapshot()
 
@@ -446,16 +436,22 @@ class SkillManager:
                 after = self._tool_names_snapshot()
                 new_tools = after - before
                 registered_tools.extend(new_tools)
-                
-                logger.info(f"Skill '{skill_name}': loaded module '{module_name}' ({len(new_tools)} tools)")
-                
+
+                logger.info(
+                    f"Skill '{skill_name}': loaded module '{module_name}' ({len(new_tools)} tools)"
+                )
+
             except Exception as e:
                 logger.error(f"Skill '{skill_name}': failed to load module '{module_name}': {e}")
-        
+
         self._active_skills[skill_name] = registered_tools
-        
-        return True, f"Activated skill '{skill_name}' with {len(registered_tools)} tools", registered_tools
-    
+
+        return (
+            True,
+            f"Activated skill '{skill_name}' with {len(registered_tools)} tools",
+            registered_tools,
+        )
+
     def deactivate_skill(self, skill_name: str) -> tuple[bool, str]:
         """Deactivate a skill, removing its tools
 
@@ -464,10 +460,10 @@ class SkillManager:
         """
         if skill_name not in self._active_skills:
             return False, f"Skill '{skill_name}' is not active"
-        
+
         tool_names = self._active_skills[skill_name]
         removed = []
-        
+
         for tool_name in tool_names:
             try:
                 if self._remove_tool_by_name(tool_name):
@@ -476,11 +472,11 @@ class SkillManager:
                     logger.warning(f"Could not remove tool '{tool_name}': tool not found")
             except Exception as e:
                 logger.warning(f"Could not remove tool '{tool_name}': {e}")
-        
+
         del self._active_skills[skill_name]
-        
+
         return True, f"Deactivated skill '{skill_name}', removed {len(removed)} tools"
-    
+
     def get_status_summary(self) -> str:
         """Get a status summary of all skills"""
         lines = []
@@ -489,9 +485,9 @@ class SkillManager:
             tool_count = len(self._active_skills.get(name, []))
             status = f"✅ ACTIVE ({tool_count} tools)" if active else "⬚ available"
             lines.append(f"- **{name}**: {info.description} [{status}]")
-        
+
         active_count = len(self._active_skills)
         total_tools = sum(len(t) for t in self._active_skills.values())
-        
+
         lines.insert(0, f"## Skills Status ({active_count} active, {total_tools} tools loaded)\n")
         return "\n".join(lines)

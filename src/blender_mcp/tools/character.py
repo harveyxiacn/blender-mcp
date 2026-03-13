@@ -4,11 +4,11 @@ Character System Tools
 Provides character creation and editing features, including advanced face system, clothing system, hair system, and more.
 """
 
-from typing import TYPE_CHECKING, Optional, List
 from enum import Enum
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 class BodyType(str, Enum):
     """Body type"""
+
     SLIM = "SLIM"
     AVERAGE = "AVERAGE"
     MUSCULAR = "MUSCULAR"
@@ -24,6 +25,7 @@ class BodyType(str, Enum):
 
 class Gender(str, Enum):
     """Gender"""
+
     MALE = "MALE"
     FEMALE = "FEMALE"
     NEUTRAL = "NEUTRAL"
@@ -31,6 +33,7 @@ class Gender(str, Enum):
 
 class HairStyle(str, Enum):
     """Hair style"""
+
     BALD = "BALD"
     BUZZ = "BUZZ"
     SHORT = "SHORT"
@@ -51,6 +54,7 @@ class HairStyle(str, Enum):
 
 class ClothingType(str, Enum):
     """Clothing type"""
+
     SHIRT = "SHIRT"
     T_SHIRT = "T_SHIRT"
     PANTS = "PANTS"
@@ -74,6 +78,7 @@ class ClothingType(str, Enum):
 
 class OutfitStyle(str, Enum):
     """Outfit style"""
+
     CASUAL = "CASUAL"
     FORMAL = "FORMAL"
     WARRIOR = "WARRIOR"
@@ -86,6 +91,7 @@ class OutfitStyle(str, Enum):
 
 class Expression(str, Enum):
     """Facial expression"""
+
     NEUTRAL = "neutral"
     SMILE = "smile"
     SAD = "sad"
@@ -98,9 +104,11 @@ class Expression(str, Enum):
 
 # ==================== Input Models ====================
 
+
 class CharacterCreateHumanoidInput(BaseModel):
     """Create humanoid character input"""
-    name: Optional[str] = Field(default="Character", description="Character name")
+
+    name: str | None = Field(default="Character", description="Character name")
     height: float = Field(default=1.8, description="Height (meters)", ge=0.5, le=3.0)
     body_type: BodyType = Field(default=BodyType.AVERAGE, description="Body type")
     gender: Gender = Field(default=Gender.NEUTRAL, description="Gender")
@@ -110,6 +118,7 @@ class CharacterCreateHumanoidInput(BaseModel):
 
 class CharacterAddFaceFeaturesInput(BaseModel):
     """Add face features input (enhanced)"""
+
     character_name: str = Field(..., description="Character name")
     # Eye parameters
     eye_size: float = Field(default=1.0, description="Eye size", ge=0.5, le=1.5)
@@ -125,8 +134,12 @@ class CharacterAddFaceFeaturesInput(BaseModel):
     # Mouth parameters
     mouth_width: float = Field(default=1.0, description="Mouth width", ge=0.7, le=1.3)
     mouth_height: float = Field(default=1.0, description="Mouth height", ge=0.8, le=1.2)
-    lip_thickness_upper: float = Field(default=1.0, description="Upper lip thickness", ge=0.5, le=1.5)
-    lip_thickness_lower: float = Field(default=1.0, description="Lower lip thickness", ge=0.5, le=1.5)
+    lip_thickness_upper: float = Field(
+        default=1.0, description="Upper lip thickness", ge=0.5, le=1.5
+    )
+    lip_thickness_lower: float = Field(
+        default=1.0, description="Lower lip thickness", ge=0.5, le=1.5
+    )
     # Jaw and face shape parameters
     jaw_width: float = Field(default=1.0, description="Jaw width", ge=0.7, le=1.3)
     jaw_height: float = Field(default=1.0, description="Jaw height", ge=0.8, le=1.2)
@@ -143,6 +156,7 @@ class CharacterAddFaceFeaturesInput(BaseModel):
 
 class CharacterSetExpressionInput(BaseModel):
     """Set facial expression input"""
+
     character_name: str = Field(..., description="Character name")
     expression: Expression = Field(default=Expression.NEUTRAL, description="Expression type")
     intensity: float = Field(default=1.0, description="Expression intensity", ge=0.0, le=1.0)
@@ -150,36 +164,47 @@ class CharacterSetExpressionInput(BaseModel):
 
 class CharacterAddHairInput(BaseModel):
     """Add hair input (enhanced)"""
+
     character_name: str = Field(..., description="Character name")
     hair_style: HairStyle = Field(default=HairStyle.SHORT, description="Hair style")
-    hair_color: Optional[List[float]] = Field(default=None, description="Hair color [r, g, b]")
+    hair_color: list[float] | None = Field(default=None, description="Hair color [r, g, b]")
     use_particles: bool = Field(default=True, description="Use particle hair")
     hair_density: float = Field(default=1.0, description="Hair density multiplier", ge=0.1, le=3.0)
-    hair_thickness: float = Field(default=1.0, description="Hair thickness multiplier", ge=0.5, le=2.0)
+    hair_thickness: float = Field(
+        default=1.0, description="Hair thickness multiplier", ge=0.5, le=2.0
+    )
     use_dynamics: bool = Field(default=False, description="Enable hair dynamics")
 
 
 class CharacterAddClothingInput(BaseModel):
     """Add clothing input (enhanced)"""
+
     character_name: str = Field(..., description="Character name")
     clothing_type: ClothingType = Field(..., description="Clothing type")
-    color: Optional[List[float]] = Field(default=None, description="Primary clothing color [r, g, b]")
-    secondary_color: Optional[List[float]] = Field(default=None, description="Secondary clothing color [r, g, b]")
+    color: list[float] | None = Field(default=None, description="Primary clothing color [r, g, b]")
+    secondary_color: list[float] | None = Field(
+        default=None, description="Secondary clothing color [r, g, b]"
+    )
     use_cloth_simulation: bool = Field(default=False, description="Enable cloth simulation")
     metallic: float = Field(default=0.0, description="Metallic", ge=0.0, le=1.0)
     roughness: float = Field(default=0.8, description="Roughness", ge=0.0, le=1.0)
-    pattern: Optional[str] = Field(default=None, description="Pattern: SOLID, STRIPES, PLAID, FLORAL")
+    pattern: str | None = Field(default=None, description="Pattern: SOLID, STRIPES, PLAID, FLORAL")
 
 
 class CharacterCreateOutfitInput(BaseModel):
     """Create complete outfit input"""
+
     character_name: str = Field(..., description="Character name")
     outfit_style: OutfitStyle = Field(default=OutfitStyle.CASUAL, description="Outfit style")
-    color_scheme: str = Field(default="DEFAULT", description="Color scheme: DEFAULT, RED, BLUE, GREEN, WHITE, BLACK, GOLD, PURPLE")
+    color_scheme: str = Field(
+        default="DEFAULT",
+        description="Color scheme: DEFAULT, RED, BLUE, GREEN, WHITE, BLACK, GOLD, PURPLE",
+    )
     use_cloth_simulation: bool = Field(default=False, description="Enable cloth simulation")
 
 
 # ==================== Tool Registration ====================
+
 
 def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register character system tools"""
@@ -191,8 +216,8 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_character_create_humanoid(params: CharacterCreateHumanoidInput) -> str:
         """Create a humanoid base mesh (enhanced).
@@ -209,19 +234,25 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Creation result
         """
         result = await server.execute_command(
-            "character", "create_humanoid",
+            "character",
+            "create_humanoid",
             {
                 "name": params.name,
                 "height": params.height,
                 "body_type": params.body_type.value,
                 "gender": params.gender.value,
                 "subdivisions": params.subdivisions,
-                "create_face_rig": params.create_face_rig
-            }
+                "create_face_rig": params.create_face_rig,
+            },
         )
 
         if result.get("success"):
-            body_types = {"SLIM": "slim", "AVERAGE": "average", "MUSCULAR": "muscular", "HEAVY": "heavy"}
+            body_types = {
+                "SLIM": "slim",
+                "AVERAGE": "average",
+                "MUSCULAR": "muscular",
+                "HEAVY": "heavy",
+            }
             data = result.get("data", {})
             face_info = " (with face system)" if data.get("has_face_rig") else ""
             return f"Successfully created character '{params.name}', height: {params.height}m, body type: {body_types.get(params.body_type.value)}{face_info}"
@@ -235,8 +266,8 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_character_add_face_features(params: CharacterAddFaceFeaturesInput) -> str:
         """Adjust a character's face features (enhanced - using shape keys).
@@ -255,7 +286,8 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Operation result
         """
         result = await server.execute_command(
-            "character", "add_face_features",
+            "character",
+            "add_face_features",
             {
                 "character_name": params.character_name,
                 "eye_size": params.eye_size,
@@ -279,8 +311,8 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "forehead_height": params.forehead_height,
                 "forehead_width": params.forehead_width,
                 "ear_size": params.ear_size,
-                "ear_position": params.ear_position
-            }
+                "ear_position": params.ear_position,
+            },
         )
 
         if result.get("success"):
@@ -297,8 +329,8 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_character_set_expression(params: CharacterSetExpressionInput) -> str:
         """Set a character's facial expression.
@@ -320,18 +352,24 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Operation result
         """
         result = await server.execute_command(
-            "character", "set_face_expression",
+            "character",
+            "set_face_expression",
             {
                 "character_name": params.character_name,
                 "expression": params.expression.value,
-                "intensity": params.intensity
-            }
+                "intensity": params.intensity,
+            },
         )
 
         expr_names = {
-            "neutral": "neutral", "smile": "smile", "sad": "sad",
-            "angry": "angry", "surprised": "surprised", "fear": "fear",
-            "disgust": "disgust", "contempt": "contempt"
+            "neutral": "neutral",
+            "smile": "smile",
+            "sad": "sad",
+            "angry": "angry",
+            "surprised": "surprised",
+            "fear": "fear",
+            "disgust": "disgust",
+            "contempt": "contempt",
         }
 
         if result.get("success"):
@@ -346,8 +384,8 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_character_add_hair(params: CharacterAddHairInput) -> str:
         """Add a hair system to a character (enhanced).
@@ -365,7 +403,8 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Operation result
         """
         result = await server.execute_command(
-            "character", "add_hair",
+            "character",
+            "add_hair",
             {
                 "character_name": params.character_name,
                 "hair_style": params.hair_style.value,
@@ -373,14 +412,16 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "use_particles": params.use_particles,
                 "hair_density": params.hair_density,
                 "hair_thickness": params.hair_thickness,
-                "use_dynamics": params.use_dynamics
-            }
+                "use_dynamics": params.use_dynamics,
+            },
         )
 
         if result.get("success"):
             data = result.get("data", {})
             dyn_info = " (dynamics enabled)" if data.get("dynamics_enabled") else ""
-            return f"Added {params.hair_style.value} hair style to '{params.character_name}'{dyn_info}"
+            return (
+                f"Added {params.hair_style.value} hair style to '{params.character_name}'{dyn_info}"
+            )
         else:
             return f"Failed to add hair: {result.get('error', {}).get('message', 'unknown error')}"
 
@@ -391,8 +432,8 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_character_add_clothing(params: CharacterAddClothingInput) -> str:
         """Add clothing to a character (enhanced).
@@ -412,7 +453,8 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Operation result
         """
         result = await server.execute_command(
-            "character", "add_clothing",
+            "character",
+            "add_clothing",
             {
                 "character_name": params.character_name,
                 "clothing_type": params.clothing_type.value,
@@ -421,18 +463,30 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "use_cloth_simulation": params.use_cloth_simulation,
                 "metallic": params.metallic,
                 "roughness": params.roughness,
-                "pattern": params.pattern
-            }
+                "pattern": params.pattern,
+            },
         )
 
         clothing_names = {
-            "SHIRT": "shirt", "T_SHIRT": "T-shirt", "PANTS": "pants",
-            "SHORTS": "shorts", "JACKET": "jacket", "COAT": "coat",
-            "DRESS": "dress", "SKIRT": "skirt", "ROBE": "robe",
-            "HANFU_TOP": "hanfu top", "HANFU_BOTTOM": "hanfu bottom",
-            "ARMOR_CHEST": "chest armor", "ARMOR_FULL": "full armor",
-            "CAPE": "cape", "SHOES": "shoes", "BOOTS": "boots",
-            "GLOVES": "gloves", "HAT": "hat", "HELMET": "helmet"
+            "SHIRT": "shirt",
+            "T_SHIRT": "T-shirt",
+            "PANTS": "pants",
+            "SHORTS": "shorts",
+            "JACKET": "jacket",
+            "COAT": "coat",
+            "DRESS": "dress",
+            "SKIRT": "skirt",
+            "ROBE": "robe",
+            "HANFU_TOP": "hanfu top",
+            "HANFU_BOTTOM": "hanfu bottom",
+            "ARMOR_CHEST": "chest armor",
+            "ARMOR_FULL": "full armor",
+            "CAPE": "cape",
+            "SHOES": "shoes",
+            "BOOTS": "boots",
+            "GLOVES": "gloves",
+            "HAT": "hat",
+            "HELMET": "helmet",
         }
 
         if result.get("success"):
@@ -441,7 +495,9 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             name = clothing_names.get(params.clothing_type.value, params.clothing_type.value)
             return f"Added {name} to '{params.character_name}'{cloth_info}"
         else:
-            return f"Failed to add clothing: {result.get('error', {}).get('message', 'unknown error')}"
+            return (
+                f"Failed to add clothing: {result.get('error', {}).get('message', 'unknown error')}"
+            )
 
     @mcp.tool(
         name="blender_character_create_outfit",
@@ -450,8 +506,8 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_character_create_outfit(params: CharacterCreateOutfitInput) -> str:
         """Create a complete outfit for a character.
@@ -475,19 +531,25 @@ def register_character_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Operation result
         """
         result = await server.execute_command(
-            "character", "create_outfit",
+            "character",
+            "create_outfit",
             {
                 "character_name": params.character_name,
                 "outfit_style": params.outfit_style.value,
                 "color_scheme": params.color_scheme,
-                "use_cloth_simulation": params.use_cloth_simulation
-            }
+                "use_cloth_simulation": params.use_cloth_simulation,
+            },
         )
 
         style_names = {
-            "CASUAL": "casual", "FORMAL": "formal", "WARRIOR": "warrior",
-            "MAGE": "mage", "HANFU": "hanfu", "ANCIENT_WARRIOR": "ancient warrior",
-            "NOBLE": "noble", "DANCER": "dancer"
+            "CASUAL": "casual",
+            "FORMAL": "formal",
+            "WARRIOR": "warrior",
+            "MAGE": "mage",
+            "HANFU": "hanfu",
+            "ANCIENT_WARRIOR": "ancient warrior",
+            "NOBLE": "noble",
+            "DANCER": "dancer",
         }
 
         if result.get("success"):

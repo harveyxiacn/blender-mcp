@@ -6,11 +6,11 @@ from pixel art to AAA quality. Consolidates multiple tool calls into a single
 high-level style setup tool.
 """
 
-from typing import TYPE_CHECKING, Optional, List, Dict, Any
 from enum import Enum
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 class ModelingStyle(str, Enum):
     """Modeling style"""
+
     PIXEL = "PIXEL"
     LOW_POLY = "LOW_POLY"
     STYLIZED = "STYLIZED"
@@ -30,6 +31,7 @@ class ModelingStyle(str, Enum):
 
 class OutlineMethod(str, Enum):
     """Outline method"""
+
     SOLIDIFY = "SOLIDIFY"
     FREESTYLE = "FREESTYLE"
     GREASE_PENCIL = "GREASE_PENCIL"
@@ -37,48 +39,60 @@ class OutlineMethod(str, Enum):
 
 class StyleSetupInput(BaseModel):
     """Style setup input"""
+
     style: ModelingStyle = Field(
         ...,
         description="Modeling style: "
-                    "PIXEL (pixel/voxel, Flat Shading + pixel textures), "
-                    "LOW_POLY (low polygon, Flat Shading + solid/vertex color), "
-                    "STYLIZED (stylized, gradient + simple textures), "
-                    "TOON (cartoon/cel-shaded, Cel Shading + outlines), "
-                    "HAND_PAINTED (hand-painted, Diffuse-Only textures), "
-                    "SEMI_REALISTIC (semi-realistic, simplified PBR), "
-                    "PBR_REALISTIC (PBR realistic, full PBR pipeline), "
-                    "AAA (AAA/cinematic, high-poly sculpt + full texture set)"
+        "PIXEL (pixel/voxel, Flat Shading + pixel textures), "
+        "LOW_POLY (low polygon, Flat Shading + solid/vertex color), "
+        "STYLIZED (stylized, gradient + simple textures), "
+        "TOON (cartoon/cel-shaded, Cel Shading + outlines), "
+        "HAND_PAINTED (hand-painted, Diffuse-Only textures), "
+        "SEMI_REALISTIC (semi-realistic, simplified PBR), "
+        "PBR_REALISTIC (PBR realistic, full PBR pipeline), "
+        "AAA (AAA/cinematic, high-poly sculpt + full texture set)",
     )
-    apply_to_scene: bool = Field(default=True, description="Whether to apply to scene render settings")
-    apply_to_objects: Optional[List[str]] = Field(default=None, description="Apply to specified objects (empty = scene only)")
+    apply_to_scene: bool = Field(
+        default=True, description="Whether to apply to scene render settings"
+    )
+    apply_to_objects: list[str] | None = Field(
+        default=None, description="Apply to specified objects (empty = scene only)"
+    )
 
 
 class OutlineSetupInput(BaseModel):
     """Outline effect setup input"""
+
     object_name: str = Field(..., description="Object name")
     method: OutlineMethod = Field(
         default=OutlineMethod.SOLIDIFY,
-        description="Outline method: SOLIDIFY (solidify + flipped normals, most versatile), FREESTYLE (render lines, Cycles/EEVEE only), GREASE_PENCIL (grease pencil outline)"
+        description="Outline method: SOLIDIFY (solidify + flipped normals, most versatile), FREESTYLE (render lines, Cycles/EEVEE only), GREASE_PENCIL (grease pencil outline)",
     )
     thickness: float = Field(default=0.02, description="Outline thickness", gt=0)
-    color: Optional[List[float]] = Field(default=None, description="Outline color [R,G,B] (default: black)")
+    color: list[float] | None = Field(
+        default=None, description="Outline color [R,G,B] (default: black)"
+    )
 
 
 class BakeWorkflowInput(BaseModel):
     """Bake workflow input"""
+
     high_poly: str = Field(..., description="High-poly object name")
     low_poly: str = Field(..., description="Low-poly object name")
-    maps: List[str] = Field(
+    maps: list[str] = Field(
         default=["NORMAL", "AO"],
-        description="Map types to bake: NORMAL, AO (ambient occlusion), CURVATURE, DIFFUSE, ROUGHNESS, COMBINED"
+        description="Map types to bake: NORMAL, AO (ambient occlusion), CURVATURE, DIFFUSE, ROUGHNESS, COMBINED",
     )
     resolution: int = Field(default=2048, description="Texture resolution", ge=256, le=8192)
     cage_extrusion: float = Field(default=0.1, description="Cage extrusion distance", ge=0.001)
-    output_dir: Optional[str] = Field(default=None, description="Output directory (empty = same as .blend file)")
+    output_dir: str | None = Field(
+        default=None, description="Output directory (empty = same as .blend file)"
+    )
     margin: int = Field(default=16, description="Edge margin in pixels", ge=0, le=64)
 
 
 # ==================== Tool Registration ====================
+
 
 def register_style_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register style preset tools."""
@@ -90,8 +104,8 @@ def register_style_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") -> Non
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_style_setup(params: StyleSetupInput) -> str:
         """One-click modeling style environment configuration.
@@ -112,20 +126,26 @@ def register_style_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") -> Non
             Configuration results and modeling tips
         """
         result = await server.execute_command(
-            "style_presets", "setup",
+            "style_presets",
+            "setup",
             {
                 "style": params.style.value,
                 "apply_to_scene": params.apply_to_scene,
-                "apply_to_objects": params.apply_to_objects or []
-            }
+                "apply_to_objects": params.apply_to_objects or [],
+            },
         )
 
         if result.get("success"):
             data = result.get("data", {})
             style_names = {
-                "PIXEL": "Pixel/Voxel", "LOW_POLY": "Low Poly", "STYLIZED": "Stylized",
-                "TOON": "Toon/Cel-Shaded", "HAND_PAINTED": "Hand-Painted", "SEMI_REALISTIC": "Semi-Realistic",
-                "PBR_REALISTIC": "PBR Realistic", "AAA": "AAA/Cinematic"
+                "PIXEL": "Pixel/Voxel",
+                "LOW_POLY": "Low Poly",
+                "STYLIZED": "Stylized",
+                "TOON": "Toon/Cel-Shaded",
+                "HAND_PAINTED": "Hand-Painted",
+                "SEMI_REALISTIC": "Semi-Realistic",
+                "PBR_REALISTIC": "PBR Realistic",
+                "AAA": "AAA/Cinematic",
             }
             tips = data.get("tips", "")
             settings = data.get("settings_applied", {})
@@ -157,8 +177,8 @@ def register_style_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") -> Non
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_outline_effect(params: OutlineSetupInput) -> str:
         """Add outline effect to an object.
@@ -175,20 +195,27 @@ def register_style_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") -> Non
             Operation result
         """
         result = await server.execute_command(
-            "style_presets", "outline",
+            "style_presets",
+            "outline",
             {
                 "object_name": params.object_name,
                 "method": params.method.value,
                 "thickness": params.thickness,
-                "color": params.color or [0, 0, 0]
-            }
+                "color": params.color or [0, 0, 0],
+            },
         )
 
         if result.get("success"):
-            method_names = {"SOLIDIFY": "Solidify Flip", "FREESTYLE": "Freestyle", "GREASE_PENCIL": "Grease Pencil"}
+            method_names = {
+                "SOLIDIFY": "Solidify Flip",
+                "FREESTYLE": "Freestyle",
+                "GREASE_PENCIL": "Grease Pencil",
+            }
             return f"Added {method_names.get(params.method.value, params.method.value)} outline effect, thickness: {params.thickness}"
         else:
-            return f"Failed to add outline: {result.get('error', {}).get('message', 'Unknown error')}"
+            return (
+                f"Failed to add outline: {result.get('error', {}).get('message', 'Unknown error')}"
+            )
 
     @mcp.tool(
         name="blender_bake_maps",
@@ -197,8 +224,8 @@ def register_style_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") -> Non
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_bake_maps(params: BakeWorkflowInput) -> str:
         """Bake texture maps from high-poly to low-poly (normal/AO/curvature etc.).
@@ -219,7 +246,8 @@ def register_style_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") -> Non
             Bake results
         """
         result = await server.execute_command(
-            "style_presets", "bake_maps",
+            "style_presets",
+            "bake_maps",
             {
                 "high_poly": params.high_poly,
                 "low_poly": params.low_poly,
@@ -227,8 +255,8 @@ def register_style_preset_tools(mcp: FastMCP, server: "BlenderMCPServer") -> Non
                 "resolution": params.resolution,
                 "cage_extrusion": params.cage_extrusion,
                 "output_dir": params.output_dir,
-                "margin": params.margin
-            }
+                "margin": params.margin,
+            },
         )
 
         if result.get("success"):

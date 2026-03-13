@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-
 HANDLERS = [
     "ai_generation.py",
     "character_template.py",
@@ -14,7 +13,7 @@ HANDLERS = [
 HELPER_IMPORT = "from .node_utils import find_principled_bsdf as get_principled_bsdf"
 
 
-def test_handlers_use_shared_principled_bsdf_helper():
+def test_handlers_use_shared_principled_bsdf_helper() -> None:
     base = Path(__file__).resolve().parent.parent / "addon" / "blender_mcp_addon" / "handlers"
 
     for filename in HANDLERS:

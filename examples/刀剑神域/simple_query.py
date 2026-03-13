@@ -1,11 +1,12 @@
 """
 简单查询Blender场景
 """
-import socket
+
 import json
+import socket
 import time
 
-code = '''
+code = """
 import bpy
 
 print("=== Scene Info ===")
@@ -29,19 +30,19 @@ print("\\n=== Character Objects ===")
 print("K_ objects:", k_count)
 print("A_ objects:", a_count)
 print("Klein objects:", klein_count)
-'''
+"""
 
 try:
     s = socket.socket()
     s.settimeout(30)
-    s.connect(('127.0.0.1', 9876))
+    s.connect(("127.0.0.1", 9876))
 
     req = {
         "id": f"query_{int(time.time())}",
         "type": "command",
         "category": "utility",
         "action": "execute_python",
-        "params": {"code": code, "timeout": 30}
+        "params": {"code": code, "timeout": 30},
     }
 
     s.send((json.dumps(req, ensure_ascii=False) + "\n").encode("utf-8"))
@@ -51,7 +52,7 @@ try:
         d = s.recv(8192)
         if not d:
             break
-        buf += d.decode("utf-8", errors='replace')
+        buf += d.decode("utf-8", errors="replace")
 
     s.close()
 

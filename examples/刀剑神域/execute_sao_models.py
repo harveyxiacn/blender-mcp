@@ -1,17 +1,20 @@
 """
 通过Blender MCP Socket执行刀剑神域角色建模
 """
-import socket
+
+import contextlib
 import json
 import os
+import socket
 import time
 
-def execute_script_in_blender(script_path, timeout=180):
+
+def execute_script_in_blender(script_path, timeout=180) -> bool | None:
     """通过socket在Blender中执行Python脚本"""
     print(f"\n执行脚本: {script_path}")
 
     # 读取脚本内容
-    with open(script_path, 'r', encoding='utf-8') as f:
+    with open(script_path, encoding="utf-8") as f:
         code = f.read()
 
     # 连接到Blender MCP服务器
@@ -19,7 +22,7 @@ def execute_script_in_blender(script_path, timeout=180):
     s.settimeout(timeout)
 
     try:
-        s.connect(('127.0.0.1', 9876))
+        s.connect(("127.0.0.1", 9876))
 
         # 构建请求
         req = {
@@ -27,7 +30,7 @@ def execute_script_in_blender(script_path, timeout=180):
             "type": "command",
             "category": "utility",
             "action": "execute_python",
-            "params": {"code": code, "timeout": timeout}
+            "params": {"code": code, "timeout": timeout},
         }
 
         # 发送请求
@@ -39,7 +42,7 @@ def execute_script_in_blender(script_path, timeout=180):
             d = s.recv(8192)
             if not d:
                 break
-            buf += d.decode("utf-8", errors='replace')
+            buf += d.decode("utf-8", errors="replace")
 
         s.close()
 
@@ -64,12 +67,11 @@ def execute_script_in_blender(script_path, timeout=180):
         print(f"✗ 错误: {e}")
         return False
     finally:
-        try:
+        with contextlib.suppress(BaseException):
             s.close()
-        except:
-            pass
 
-def main():
+
+def main() -> None:
     print("=" * 60)
     print("刀剑神域角色建模 - Blender MCP执行器")
     print("=" * 60)
@@ -79,9 +81,9 @@ def main():
 
     # 要执行的脚本列表
     scripts = [
-        "AAA_v2_kirito.py",    # 桐人
-        "AAA_v2_asuna.py",     # 亚丝娜
-        "AAA_v2_klein.py",     # 克莱因
+        "AAA_v2_kirito.py",  # 桐人
+        "AAA_v2_asuna.py",  # 亚丝娜
+        "AAA_v2_klein.py",  # 克莱因
     ]
 
     # 执行每个脚本
@@ -101,30 +103,31 @@ def main():
 
     # 保存场景
     print("\n保存Blender场景...")
-    save_code = '''
+    save_code = """
 import bpy
 output_path = r"E:\\Projects\\blender-mcp\\examples\\刀剑神域\\sao_characters.blend"
 bpy.ops.wm.save_as_mainfile(filepath=output_path)
 print(f"场景已保存: {output_path}")
-'''
+"""
     execute_script_in_blender_inline(save_code)
 
     print("\n✓ 所有任务完成!")
     print("可以在Blender中打开查看: examples/刀剑神域/sao_characters.blend")
 
-def execute_script_in_blender_inline(code, timeout=60):
+
+def execute_script_in_blender_inline(code, timeout=60) -> bool | None:
     """直接执行代码字符串"""
     s = socket.socket()
     s.settimeout(timeout)
 
     try:
-        s.connect(('127.0.0.1', 9876))
+        s.connect(("127.0.0.1", 9876))
         req = {
             "id": f"inline_{int(time.time())}",
             "type": "command",
             "category": "utility",
             "action": "execute_python",
-            "params": {"code": code, "timeout": timeout}
+            "params": {"code": code, "timeout": timeout},
         }
         s.send((json.dumps(req, ensure_ascii=False) + "\n").encode("utf-8"))
         buf = ""
@@ -132,7 +135,7 @@ def execute_script_in_blender_inline(code, timeout=60):
             d = s.recv(8192)
             if not d:
                 break
-            buf += d.decode("utf-8", errors='replace')
+            buf += d.decode("utf-8", errors="replace")
         s.close()
 
         if buf.strip():
@@ -147,10 +150,9 @@ def execute_script_in_blender_inline(code, timeout=60):
         print(f"错误: {e}")
         return False
     finally:
-        try:
+        with contextlib.suppress(BaseException):
             s.close()
-        except:
-            pass
+
 
 if __name__ == "__main__":
     main()

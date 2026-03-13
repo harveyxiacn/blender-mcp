@@ -1,7 +1,7 @@
 """Automation pipeline tools for end-to-end model production workflows."""
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel, Field
@@ -37,10 +37,14 @@ class QualityTarget(str, Enum):
 
 class CharacterPipelineInput(BaseModel):
     name: str = Field(..., description="Character name")
-    template: CharacterTemplate = Field(default=CharacterTemplate.CHIBI, description="Template type")
+    template: CharacterTemplate = Field(
+        default=CharacterTemplate.CHIBI, description="Template type"
+    )
     style: PipelineStyle = Field(default=PipelineStyle.TOON, description="Target style")
     height: float = Field(default=1.7, ge=0.5, le=3.0, description="Character height")
-    location: list[float] = Field(default_factory=lambda: [0.0, 0.0, 0.0], description="Character location [x, y, z]")
+    location: list[float] = Field(
+        default_factory=lambda: [0.0, 0.0, 0.0], description="Character location [x, y, z]"
+    )
     with_hair: bool = Field(default=True, description="Auto-create hair")
     hair_style: str = Field(default="short", description="Hair style")
     with_clothing: bool = Field(default=True, description="Auto-add clothing")
@@ -55,22 +59,38 @@ class PropPipelineInput(BaseModel):
     name: str = Field(..., description="Prop name")
     primitive: str = Field(default="CUBE", description="Base primitive type")
     style: PipelineStyle = Field(default=PipelineStyle.LOW_POLY, description="Target style")
-    quality_target: QualityTarget = Field(default=QualityTarget.PRODUCTION, description="Quality tier")
-    location: list[float] = Field(default_factory=lambda: [0.0, 0.0, 0.0], description="Location [x, y, z]")
-    scale: list[float] = Field(default_factory=lambda: [1.0, 1.0, 1.0], description="Scale [x, y, z]")
-    material_preset: Optional[str] = Field(default=None, description="Procedural material preset (empty to auto-select by style)")
+    quality_target: QualityTarget = Field(
+        default=QualityTarget.PRODUCTION, description="Quality tier"
+    )
+    location: list[float] = Field(
+        default_factory=lambda: [0.0, 0.0, 0.0], description="Location [x, y, z]"
+    )
+    scale: list[float] = Field(
+        default_factory=lambda: [1.0, 1.0, 1.0], description="Scale [x, y, z]"
+    )
+    material_preset: str | None = Field(
+        default=None, description="Procedural material preset (empty to auto-select by style)"
+    )
     auto_uv: bool = Field(default=True, description="Auto UV unwrap")
-    add_outline: bool = Field(default=False, description="Whether to add outline (recommended for toon style)")
+    add_outline: bool = Field(
+        default=False, description="Whether to add outline (recommended for toon style)"
+    )
 
 
 class ScenePipelineInput(BaseModel):
-    style: PipelineStyle = Field(default=PipelineStyle.SEMI_REALISTIC, description="Scene target style")
-    environment_preset: Optional[str] = Field(default=None, description="Environment preset (empty to auto-select by style)")
+    style: PipelineStyle = Field(
+        default=PipelineStyle.SEMI_REALISTIC, description="Scene target style"
+    )
+    environment_preset: str | None = Field(
+        default=None, description="Environment preset (empty to auto-select by style)"
+    )
     create_ground: bool = Field(default=True, description="Create ground plane")
     ground_size: float = Field(default=30.0, ge=1.0, le=500.0, description="Ground size")
     ground_material: str = Field(default="concrete", description="Ground material preset")
     create_camera: bool = Field(default=True, description="Auto-create and activate camera")
-    camera_location: list[float] = Field(default_factory=lambda: [7.0, -7.0, 5.0], description="Camera location")
+    camera_location: list[float] = Field(
+        default_factory=lambda: [7.0, -7.0, 5.0], description="Camera location"
+    )
     resolution_x: int = Field(default=1920, ge=256, le=8192)
     resolution_y: int = Field(default=1080, ge=256, le=8192)
     samples: int = Field(default=128, ge=1, le=8192)
@@ -103,13 +123,18 @@ def _environment_for_style(style: PipelineStyle) -> str:
 def _engine_for_style(style: PipelineStyle) -> str:
     if style in {PipelineStyle.PBR_REALISTIC, PipelineStyle.AAA}:
         return "CYCLES"
-    return "BLENDER_EEVEE_NEXT"
+    return "BLENDER_EEVEE"
 
 
 def _mesh_params_for_quality(primitive: str, quality: QualityTarget) -> dict[str, Any]:
     quality_map = {
         QualityTarget.DRAFT: {"segments": 8, "ring_count": 6, "vertices": 8, "subdivisions": 1},
-        QualityTarget.PRODUCTION: {"segments": 24, "ring_count": 16, "vertices": 16, "subdivisions": 2},
+        QualityTarget.PRODUCTION: {
+            "segments": 24,
+            "ring_count": 16,
+            "vertices": 16,
+            "subdivisions": 2,
+        },
         QualityTarget.HERO: {"segments": 48, "ring_count": 24, "vertices": 32, "subdivisions": 3},
     }
     cfg = quality_map[quality]
@@ -121,7 +146,12 @@ def _mesh_params_for_quality(primitive: str, quality: QualityTarget) -> dict[str
     if prim in {"CYLINDER", "CONE"}:
         return {"vertices": cfg["vertices"], "radius": 1.0, "depth": 2.0}
     if prim == "TORUS":
-        return {"major_segments": cfg["segments"], "minor_segments": max(8, cfg["vertices"]), "major_radius": 1.0, "minor_radius": 0.25}
+        return {
+            "major_segments": cfg["segments"],
+            "minor_segments": max(8, cfg["vertices"]),
+            "major_radius": 1.0,
+            "minor_radius": 0.25,
+        }
     return {"size": 2.0}
 
 

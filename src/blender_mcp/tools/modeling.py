@@ -4,11 +4,11 @@ Modeling Tools
 Provides mesh editing, modifiers, and other modeling features.
 """
 
-from typing import TYPE_CHECKING, Optional, List
 from enum import Enum
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field, ConfigDict
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, ConfigDict, Field
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 class SelectMode(str, Enum):
     """Selection mode"""
+
     VERT = "VERT"
     EDGE = "EDGE"
     FACE = "FACE"
@@ -23,6 +24,7 @@ class SelectMode(str, Enum):
 
 class SelectAction(str, Enum):
     """Selection action"""
+
     ALL = "ALL"
     NONE = "NONE"
     INVERT = "INVERT"
@@ -32,6 +34,7 @@ class SelectAction(str, Enum):
 
 class ModifierType(str, Enum):
     """Modifier type"""
+
     # Generate
     SUBSURF = "SUBSURF"
     MIRROR = "MIRROR"
@@ -83,6 +86,7 @@ class ModifierType(str, Enum):
 
 class BooleanOperation(str, Enum):
     """Boolean operation type"""
+
     UNION = "UNION"
     DIFFERENCE = "DIFFERENCE"
     INTERSECT = "INTERSECT"
@@ -90,14 +94,17 @@ class BooleanOperation(str, Enum):
 
 # ==================== Input Models ====================
 
+
 class MeshEditModeInput(BaseModel):
     """Edit mode input"""
+
     object_name: str = Field(..., description="Object name")
     enter: bool = Field(default=True, description="true=enter, false=exit")
 
 
 class MeshSelectInput(BaseModel):
     """Mesh selection input"""
+
     object_name: str = Field(..., description="Object name")
     select_mode: SelectMode = Field(default=SelectMode.VERT, description="Selection mode")
     action: SelectAction = Field(..., description="Selection action")
@@ -106,14 +113,16 @@ class MeshSelectInput(BaseModel):
 
 class MeshExtrudeInput(BaseModel):
     """Extrude input"""
+
     object_name: str = Field(..., description="Object name")
-    direction: Optional[List[float]] = Field(default=None, description="Extrude direction vector")
+    direction: list[float] | None = Field(default=None, description="Extrude direction vector")
     distance: float = Field(default=1.0, description="Extrude distance")
     use_normal: bool = Field(default=True, description="Along normal direction")
 
 
 class MeshSubdivideInput(BaseModel):
     """Subdivide input"""
+
     object_name: str = Field(..., description="Object name")
     cuts: int = Field(default=1, description="Number of cuts", ge=1, le=100)
     smoothness: float = Field(default=0.0, description="Smoothness", ge=0, le=1)
@@ -121,6 +130,7 @@ class MeshSubdivideInput(BaseModel):
 
 class MeshBevelInput(BaseModel):
     """Bevel input"""
+
     object_name: str = Field(..., description="Object name")
     width: float = Field(default=0.1, description="Bevel width", gt=0)
     segments: int = Field(default=1, description="Number of segments", ge=1, le=100)
@@ -130,36 +140,41 @@ class MeshBevelInput(BaseModel):
 
 class MeshLoopCutInput(BaseModel):
     """Loop cut input"""
+
     object_name: str = Field(..., description="Object name")
     number_cuts: int = Field(default=1, description="Number of cuts", ge=1, le=100)
     smoothness: float = Field(default=0.0, description="Smoothness", ge=0, le=1)
-    edge_index: Optional[int] = Field(default=None, description="Edge index")
+    edge_index: int | None = Field(default=None, description="Edge index")
 
 
 class ModifierAddInput(BaseModel):
     """Add modifier input"""
+
     model_config = ConfigDict(str_strip_whitespace=True)
 
     object_name: str = Field(..., description="Object name")
     modifier_type: ModifierType = Field(..., description="Modifier type")
-    modifier_name: Optional[str] = Field(default=None, description="Modifier name")
-    settings: Optional[dict] = Field(default=None, description="Modifier settings")
+    modifier_name: str | None = Field(default=None, description="Modifier name")
+    settings: dict | None = Field(default=None, description="Modifier settings")
 
 
 class ModifierApplyInput(BaseModel):
     """Apply modifier input"""
+
     object_name: str = Field(..., description="Object name")
     modifier_name: str = Field(..., description="Modifier name")
 
 
 class ModifierRemoveInput(BaseModel):
     """Remove modifier input"""
+
     object_name: str = Field(..., description="Object name")
     modifier_name: str = Field(..., description="Modifier name")
 
 
 class BooleanOperationInput(BaseModel):
     """Boolean operation input"""
+
     object_name: str = Field(..., description="Main object name")
     target_name: str = Field(..., description="Target object name")
     operation: BooleanOperation = Field(..., description="Operation type")
@@ -169,8 +184,10 @@ class BooleanOperationInput(BaseModel):
 
 # ==================== Shape Key Input Models ====================
 
+
 class ShapeKeyCreateInput(BaseModel):
     """Create shape key input"""
+
     object_name: str = Field(..., description="Object name")
     key_name: str = Field(default="Key", description="Shape key name")
     from_mix: bool = Field(default=False, description="Create from current mix state")
@@ -178,29 +195,32 @@ class ShapeKeyCreateInput(BaseModel):
 
 class ShapeKeyEditInput(BaseModel):
     """Edit shape key input"""
+
     object_name: str = Field(..., description="Object name")
     key_name: str = Field(..., description="Shape key name")
-    value: Optional[float] = Field(default=None, description="Shape key value (0.0-1.0)", ge=0, le=1)
-    mute: Optional[bool] = Field(default=None, description="Whether to mute")
-    vertex_offsets: Optional[List[dict]] = Field(
-        default=None,
-        description="Vertex offset list [{\"index\": int, \"offset\": [x, y, z]}, ...]"
+    value: float | None = Field(default=None, description="Shape key value (0.0-1.0)", ge=0, le=1)
+    mute: bool | None = Field(default=None, description="Whether to mute")
+    vertex_offsets: list[dict] | None = Field(
+        default=None, description='Vertex offset list [{"index": int, "offset": [x, y, z]}, ...]'
     )
 
 
 class ShapeKeyDeleteInput(BaseModel):
     """Delete shape key input"""
+
     object_name: str = Field(..., description="Object name")
     key_name: str = Field(..., description="Shape key name")
 
 
 class ShapeKeyListInput(BaseModel):
     """List shape keys input"""
+
     object_name: str = Field(..., description="Object name")
 
 
 class ExpressionType(str, Enum):
     """Expression type"""
+
     SMILE = "smile"
     FROWN = "frown"
     SURPRISE = "surprise"
@@ -215,49 +235,69 @@ class ExpressionType(str, Enum):
 
 class ShapeKeyCreateExpressionInput(BaseModel):
     """Create expression shape key set input"""
+
     object_name: str = Field(..., description="Object name")
-    expressions: List[ExpressionType] = Field(
-        default=[ExpressionType.SMILE, ExpressionType.BLINK, ExpressionType.SURPRISE, ExpressionType.ANGRY],
-        description="List of expression types to create"
+    expressions: list[ExpressionType] = Field(
+        default=[
+            ExpressionType.SMILE,
+            ExpressionType.BLINK,
+            ExpressionType.SURPRISE,
+            ExpressionType.ANGRY,
+        ],
+        description="List of expression types to create",
     )
 
 
 class MeshAssignMaterialToFacesInput(BaseModel):
     """Assign material to specific faces input"""
+
     object_name: str = Field(..., description="Object name")
-    face_indices: List[int] = Field(..., description="Face index list")
-    material_slot: Optional[int] = Field(default=None, description="Material slot index")
-    material_name: Optional[str] = Field(default=None, description="Material name (alternative to material_slot)")
+    face_indices: list[int] = Field(..., description="Face index list")
+    material_slot: int | None = Field(default=None, description="Material slot index")
+    material_name: str | None = Field(
+        default=None, description="Material name (alternative to material_slot)"
+    )
 
 
 class SelectFacesByMaterialInput(BaseModel):
     """Select faces by material input"""
+
     object_name: str = Field(..., description="Object name")
-    material_slot: Optional[int] = Field(default=None, description="Material slot index")
-    material_name: Optional[str] = Field(default=None, description="Material name (alternative to material_slot)")
+    material_slot: int | None = Field(default=None, description="Material slot index")
+    material_name: str | None = Field(
+        default=None, description="Material name (alternative to material_slot)"
+    )
 
 
 # ==================== Production Standard Optimization Tool Input Models ====================
 
+
 class TargetPlatform(str, Enum):
     """Target platform"""
-    MOBILE = "MOBILE"           # Mobile: 500-2000 triangles
-    PC_CONSOLE = "PC_CONSOLE"   # PC/Console: 2000-50000 triangles
-    CINEMATIC = "CINEMATIC"     # Cinematic: no limit
-    VR = "VR"                   # VR: 1000-10000 triangles
+
+    MOBILE = "MOBILE"  # Mobile: 500-2000 triangles
+    PC_CONSOLE = "PC_CONSOLE"  # PC/Console: 2000-50000 triangles
+    CINEMATIC = "CINEMATIC"  # Cinematic: no limit
+    VR = "VR"  # VR: 1000-10000 triangles
 
 
 class MeshAnalyzeInput(BaseModel):
     """Mesh analysis input"""
+
     object_name: str = Field(..., description="Object name")
-    target_platform: TargetPlatform = Field(default=TargetPlatform.PC_CONSOLE, description="Target platform")
+    target_platform: TargetPlatform = Field(
+        default=TargetPlatform.PC_CONSOLE, description="Target platform"
+    )
 
 
 class MeshOptimizeInput(BaseModel):
     """Mesh optimization input"""
+
     object_name: str = Field(..., description="Object name")
-    target_triangles: Optional[int] = Field(default=None, description="Target triangle count")
-    target_platform: TargetPlatform = Field(default=TargetPlatform.PC_CONSOLE, description="Target platform")
+    target_triangles: int | None = Field(default=None, description="Target triangle count")
+    target_platform: TargetPlatform = Field(
+        default=TargetPlatform.PC_CONSOLE, description="Target platform"
+    )
     preserve_uvs: bool = Field(default=True, description="Preserve UV coordinates")
     preserve_normals: bool = Field(default=True, description="Preserve normals")
     symmetry: bool = Field(default=False, description="Maintain symmetry")
@@ -265,8 +305,11 @@ class MeshOptimizeInput(BaseModel):
 
 class MeshCleanupInput(BaseModel):
     """Mesh cleanup input"""
+
     object_name: str = Field(..., description="Object name")
-    merge_distance: float = Field(default=0.0001, description="Merge distance (merge overlapping vertices)", ge=0)
+    merge_distance: float = Field(
+        default=0.0001, description="Merge distance (merge overlapping vertices)", ge=0
+    )
     remove_doubles: bool = Field(default=True, description="Remove duplicate vertices")
     dissolve_degenerate: bool = Field(default=True, description="Dissolve degenerate geometry")
     fix_non_manifold: bool = Field(default=True, description="Fix non-manifold geometry")
@@ -276,6 +319,7 @@ class MeshCleanupInput(BaseModel):
 
 class TrisToQuadsInput(BaseModel):
     """Triangles to quads input"""
+
     object_name: str = Field(..., description="Object name")
     max_angle: float = Field(default=40.0, description="Maximum angle (degrees)", ge=0, le=180)
     compare_uvs: bool = Field(default=True, description="Compare UV coordinates")
@@ -285,6 +329,7 @@ class TrisToQuadsInput(BaseModel):
 
 class LODGenerateInput(BaseModel):
     """LOD generation input"""
+
     object_name: str = Field(..., description="Object name")
     lod_levels: int = Field(default=3, description="Number of LOD levels", ge=1, le=5)
     ratio_step: float = Field(default=0.5, description="Reduction ratio per level", gt=0, lt=1)
@@ -293,9 +338,12 @@ class LODGenerateInput(BaseModel):
 
 class SmartSubdivideInput(BaseModel):
     """Smart subdivide input"""
+
     object_name: str = Field(..., description="Object name")
     levels: int = Field(default=1, description="Subdivision levels", ge=1, le=4)
-    render_levels: Optional[int] = Field(default=None, description="Render levels (optional, defaults to levels)")
+    render_levels: int | None = Field(
+        default=None, description="Render levels (optional, defaults to levels)"
+    )
     use_creases: bool = Field(default=True, description="Use crease edges to preserve sharp edges")
     apply_smooth: bool = Field(default=False, description="Apply smooth shading")
     quality: int = Field(default=3, description="Quality level (1-5)", ge=1, le=5)
@@ -303,12 +351,14 @@ class SmartSubdivideInput(BaseModel):
 
 class AutoSmoothInput(BaseModel):
     """Auto smooth input"""
+
     object_name: str = Field(..., description="Object name")
     angle: float = Field(default=30.0, description="Smooth angle threshold (degrees)", ge=0, le=180)
     use_sharp_edges: bool = Field(default=True, description="Use hard edges for sharp edges")
 
 
 # ==================== Tool Registration ====================
+
 
 def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register modeling tools"""
@@ -320,8 +370,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_mesh_edit_mode(params: MeshEditModeInput) -> str:
         """Enter or exit mesh edit mode.
@@ -333,8 +383,7 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Operation result
         """
         result = await server.execute_command(
-            "modeling", "edit_mode",
-            {"object_name": params.object_name, "enter": params.enter}
+            "modeling", "edit_mode", {"object_name": params.object_name, "enter": params.enter}
         )
 
         if result.get("success"):
@@ -350,8 +399,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_mesh_select(params: MeshSelectInput) -> str:
         """Select mesh elements in edit mode.
@@ -363,17 +412,18 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Selection result
         """
         result = await server.execute_command(
-            "modeling", "select",
+            "modeling",
+            "select",
             {
                 "object_name": params.object_name,
                 "select_mode": params.select_mode.value,
                 "action": params.action.value,
-                "random_ratio": params.random_ratio
-            }
+                "random_ratio": params.random_ratio,
+            },
         )
 
         if result.get("success"):
-            return f"Selection operation completed"
+            return "Selection operation completed"
         else:
             return f"Selection failed: {result.get('error', {}).get('message', 'Unknown error')}"
 
@@ -384,8 +434,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_mesh_extrude(params: MeshExtrudeInput) -> str:
         """Extrude selected mesh elements.
@@ -397,13 +447,14 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Extrude result
         """
         result = await server.execute_command(
-            "modeling", "extrude",
+            "modeling",
+            "extrude",
             {
                 "object_name": params.object_name,
                 "direction": params.direction or [0, 0, 1],
                 "distance": params.distance,
-                "use_normal": params.use_normal
-            }
+                "use_normal": params.use_normal,
+            },
         )
 
         if result.get("success"):
@@ -418,8 +469,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_mesh_subdivide(params: MeshSubdivideInput) -> str:
         """Subdivide the selected mesh.
@@ -431,12 +482,13 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Subdivide result
         """
         result = await server.execute_command(
-            "modeling", "subdivide",
+            "modeling",
+            "subdivide",
             {
                 "object_name": params.object_name,
                 "cuts": params.cuts,
-                "smoothness": params.smoothness
-            }
+                "smoothness": params.smoothness,
+            },
         )
 
         if result.get("success"):
@@ -451,8 +503,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_mesh_bevel(params: MeshBevelInput) -> str:
         """Bevel selected edges or vertices.
@@ -464,14 +516,15 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Bevel result
         """
         result = await server.execute_command(
-            "modeling", "bevel",
+            "modeling",
+            "bevel",
             {
                 "object_name": params.object_name,
                 "width": params.width,
                 "segments": params.segments,
                 "profile": params.profile,
-                "affect": params.affect
-            }
+                "affect": params.affect,
+            },
         )
 
         if result.get("success"):
@@ -486,8 +539,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_modifier_add(params: ModifierAddInput) -> str:
         """Add a modifier to an object.
@@ -501,20 +554,23 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Addition result
         """
         result = await server.execute_command(
-            "modeling", "modifier_add",
+            "modeling",
+            "modifier_add",
             {
                 "object_name": params.object_name,
                 "modifier_type": params.modifier_type.value,
                 "modifier_name": params.modifier_name,
-                "settings": params.settings or {}
-            }
+                "settings": params.settings or {},
+            },
         )
 
         if result.get("success"):
             name = result.get("data", {}).get("modifier_name", params.modifier_type.value)
             return f"Added {params.modifier_type.value} modifier '{name}'"
         else:
-            return f"Failed to add modifier: {result.get('error', {}).get('message', 'Unknown error')}"
+            return (
+                f"Failed to add modifier: {result.get('error', {}).get('message', 'Unknown error')}"
+            )
 
     @mcp.tool(
         name="blender_modifier_apply",
@@ -523,8 +579,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_modifier_apply(params: ModifierApplyInput) -> str:
         """Apply a modifier to the mesh.
@@ -538,8 +594,9 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Apply result
         """
         result = await server.execute_command(
-            "modeling", "modifier_apply",
-            {"object_name": params.object_name, "modifier_name": params.modifier_name}
+            "modeling",
+            "modifier_apply",
+            {"object_name": params.object_name, "modifier_name": params.modifier_name},
         )
 
         if result.get("success"):
@@ -554,8 +611,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_modifier_remove(params: ModifierRemoveInput) -> str:
         """Remove a modifier.
@@ -567,8 +624,9 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Removal result
         """
         result = await server.execute_command(
-            "modeling", "modifier_remove",
-            {"object_name": params.object_name, "modifier_name": params.modifier_name}
+            "modeling",
+            "modifier_remove",
+            {"object_name": params.object_name, "modifier_name": params.modifier_name},
         )
 
         if result.get("success"):
@@ -583,8 +641,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_boolean_operation(params: BooleanOperationInput) -> str:
         """Perform a boolean operation.
@@ -598,14 +656,15 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Operation result
         """
         result = await server.execute_command(
-            "modeling", "boolean",
+            "modeling",
+            "boolean",
             {
                 "object_name": params.object_name,
                 "target_name": params.target_name,
                 "operation": params.operation.value,
                 "apply": params.apply,
-                "hide_target": params.hide_target
-            }
+                "hide_target": params.hide_target,
+            },
         )
 
         if result.get("success"):
@@ -623,8 +682,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_shapekey_create(params: ShapeKeyCreateInput) -> str:
         """Create a shape key.
@@ -639,12 +698,13 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Creation result
         """
         result = await server.execute_command(
-            "modeling", "shapekey_create",
+            "modeling",
+            "shapekey_create",
             {
                 "object_name": params.object_name,
                 "key_name": params.key_name,
-                "from_mix": params.from_mix
-            }
+                "from_mix": params.from_mix,
+            },
         )
 
         if result.get("success"):
@@ -660,8 +720,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_shapekey_edit(params: ShapeKeyEditInput) -> str:
         """Edit shape key properties.
@@ -675,19 +735,22 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Edit result
         """
         result = await server.execute_command(
-            "modeling", "shapekey_edit",
+            "modeling",
+            "shapekey_edit",
             {
                 "object_name": params.object_name,
                 "key_name": params.key_name,
                 "value": params.value,
                 "mute": params.mute,
-                "vertex_offsets": params.vertex_offsets or []
-            }
+                "vertex_offsets": params.vertex_offsets or [],
+            },
         )
 
         if result.get("success"):
             data = result.get("data", {})
-            return f"Edited shape key '{params.key_name}', current value: {data.get('value', 'N/A')}"
+            return (
+                f"Edited shape key '{params.key_name}', current value: {data.get('value', 'N/A')}"
+            )
         else:
             return f"Failed to edit shape key: {result.get('error', {}).get('message', 'Unknown error')}"
 
@@ -698,8 +761,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_shapekey_delete(params: ShapeKeyDeleteInput) -> str:
         """Delete a shape key.
@@ -711,11 +774,9 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Deletion result
         """
         result = await server.execute_command(
-            "modeling", "shapekey_delete",
-            {
-                "object_name": params.object_name,
-                "key_name": params.key_name
-            }
+            "modeling",
+            "shapekey_delete",
+            {"object_name": params.object_name, "key_name": params.key_name},
         )
 
         if result.get("success"):
@@ -730,8 +791,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_shapekey_list(params: ShapeKeyListInput) -> str:
         """List all shape keys for an object.
@@ -743,8 +804,7 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Shape key list
         """
         result = await server.execute_command(
-            "modeling", "shapekey_list",
-            {"object_name": params.object_name}
+            "modeling", "shapekey_list", {"object_name": params.object_name}
         )
 
         if result.get("success"):
@@ -757,7 +817,9 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             lines = [f"# Shape Keys for {params.object_name}", ""]
             for key in keys:
                 status = "🔇" if key.get("mute") else "🔊"
-                lines.append(f"- {status} **{key['name']}** (index: {key['index']}, value: {key['value']:.2f})")
+                lines.append(
+                    f"- {status} **{key['name']}** (index: {key['index']}, value: {key['value']:.2f})"
+                )
 
             return "\n".join(lines)
         else:
@@ -770,8 +832,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_shapekey_create_expressions(params: ShapeKeyCreateExpressionInput) -> str:
         """Create a set of common expression shape keys for a character.
@@ -785,11 +847,12 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Creation result
         """
         result = await server.execute_command(
-            "modeling", "shapekey_create_expression",
+            "modeling",
+            "shapekey_create_expression",
             {
                 "object_name": params.object_name,
-                "expressions": [e.value for e in params.expressions]
-            }
+                "expressions": [e.value for e in params.expressions],
+            },
         )
 
         if result.get("success"):
@@ -798,7 +861,9 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             if created:
                 return f"Created {len(created)} expression shape keys: {', '.join(created)}"
             else:
-                return "All specified expression shape keys already exist, no new shape keys created"
+                return (
+                    "All specified expression shape keys already exist, no new shape keys created"
+                )
         else:
             return f"Failed to create expression shape keys: {result.get('error', {}).get('message', 'Unknown error')}"
 
@@ -811,8 +876,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_mesh_assign_material_to_faces(params: MeshAssignMaterialToFacesInput) -> str:
         """Assign a material to specific faces of a mesh.
@@ -826,13 +891,14 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Assignment result
         """
         result = await server.execute_command(
-            "modeling", "mesh_assign_material_to_faces",
+            "modeling",
+            "mesh_assign_material_to_faces",
             {
                 "object_name": params.object_name,
                 "face_indices": params.face_indices,
                 "material_slot": params.material_slot,
-                "material_name": params.material_name
-            }
+                "material_name": params.material_name,
+            },
         )
 
         if result.get("success"):
@@ -848,8 +914,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_select_faces_by_material(params: SelectFacesByMaterialInput) -> str:
         """Select mesh faces by material.
@@ -863,19 +929,22 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Selection result
         """
         result = await server.execute_command(
-            "modeling", "select_faces_by_material",
+            "modeling",
+            "select_faces_by_material",
             {
                 "object_name": params.object_name,
                 "material_slot": params.material_slot,
-                "material_name": params.material_name
-            }
+                "material_name": params.material_name,
+            },
         )
 
         if result.get("success"):
             data = result.get("data", {})
             return f"Selected {data.get('selected_faces', 0)} face(s) using material slot {data.get('material_slot', 'N/A')}"
         else:
-            return f"Failed to select faces: {result.get('error', {}).get('message', 'Unknown error')}"
+            return (
+                f"Failed to select faces: {result.get('error', {}).get('message', 'Unknown error')}"
+            )
 
     # ==================== Production Standard Optimization Tools ====================
 
@@ -886,8 +955,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_mesh_analyze(params: MeshAnalyzeInput) -> str:
         """Analyze mesh topology quality and check if it meets production standards.
@@ -906,11 +975,9 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Detailed topology analysis report
         """
         result = await server.execute_command(
-            "modeling", "mesh_analyze",
-            {
-                "object_name": params.object_name,
-                "target_platform": params.target_platform.value
-            }
+            "modeling",
+            "mesh_analyze",
+            {"object_name": params.object_name, "target_platform": params.target_platform.value},
         )
 
         if result.get("success"):
@@ -929,18 +996,30 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             # Face type distribution
             face_types = data.get("face_types", {})
             lines.append("## Face Type Distribution")
-            lines.append(f"- Triangles: {face_types.get('tris', 0)} ({face_types.get('tris_percent', 0):.1f}%)")
-            lines.append(f"- Quads: {face_types.get('quads', 0)} ({face_types.get('quads_percent', 0):.1f}%)")
-            lines.append(f"- N-gons: {face_types.get('ngons', 0)} ({face_types.get('ngons_percent', 0):.1f}%)")
+            lines.append(
+                f"- Triangles: {face_types.get('tris', 0)} ({face_types.get('tris_percent', 0):.1f}%)"
+            )
+            lines.append(
+                f"- Quads: {face_types.get('quads', 0)} ({face_types.get('quads_percent', 0):.1f}%)"
+            )
+            lines.append(
+                f"- N-gons: {face_types.get('ngons', 0)} ({face_types.get('ngons_percent', 0):.1f}%)"
+            )
             lines.append("")
 
             # Platform compatibility
             platform_check = data.get("platform_check", {})
             lines.append(f"## Platform Compatibility ({params.target_platform.value})")
-            lines.append(f"- Status: {'✅ Passed' if platform_check.get('passed') else '❌ Failed'}")
-            lines.append(f"- Recommended triangle range: {platform_check.get('min_tris', 0)} - {platform_check.get('max_tris', 0)}")
-            if not platform_check.get('passed'):
-                lines.append(f"- Suggestion: {platform_check.get('suggestion', 'Reduce face count')}")
+            lines.append(
+                f"- Status: {'✅ Passed' if platform_check.get('passed') else '❌ Failed'}"
+            )
+            lines.append(
+                f"- Recommended triangle range: {platform_check.get('min_tris', 0)} - {platform_check.get('max_tris', 0)}"
+            )
+            if not platform_check.get("passed"):
+                lines.append(
+                    f"- Suggestion: {platform_check.get('suggestion', 'Reduce face count')}"
+                )
             lines.append("")
 
             # Issue detection
@@ -968,8 +1047,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_mesh_optimize(params: MeshOptimizeInput) -> str:
         """Optimize mesh by reducing face count to meet target platform requirements.
@@ -983,15 +1062,16 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Optimization result
         """
         result = await server.execute_command(
-            "modeling", "mesh_optimize",
+            "modeling",
+            "mesh_optimize",
             {
                 "object_name": params.object_name,
                 "target_triangles": params.target_triangles,
                 "target_platform": params.target_platform.value,
                 "preserve_uvs": params.preserve_uvs,
                 "preserve_normals": params.preserve_normals,
-                "symmetry": params.symmetry
-            }
+                "symmetry": params.symmetry,
+            },
         )
 
         if result.get("success"):
@@ -1010,8 +1090,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_mesh_cleanup(params: MeshCleanupInput) -> str:
         """Clean up mesh and fix common topology issues.
@@ -1026,7 +1106,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Cleanup result
         """
         result = await server.execute_command(
-            "modeling", "mesh_cleanup",
+            "modeling",
+            "mesh_cleanup",
             {
                 "object_name": params.object_name,
                 "merge_distance": params.merge_distance,
@@ -1034,8 +1115,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "dissolve_degenerate": params.dissolve_degenerate,
                 "fix_non_manifold": params.fix_non_manifold,
                 "recalculate_normals": params.recalculate_normals,
-                "remove_loose": params.remove_loose
-            }
+                "remove_loose": params.remove_loose,
+            },
         )
 
         if result.get("success"):
@@ -1053,8 +1134,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_tris_to_quads(params: TrisToQuadsInput) -> str:
         """Convert triangle faces to quads.
@@ -1068,14 +1149,15 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Conversion result
         """
         result = await server.execute_command(
-            "modeling", "tris_to_quads",
+            "modeling",
+            "tris_to_quads",
             {
                 "object_name": params.object_name,
                 "max_angle": params.max_angle,
                 "compare_uvs": params.compare_uvs,
                 "compare_vcol": params.compare_vcol,
-                "compare_materials": params.compare_materials
-            }
+                "compare_materials": params.compare_materials,
+            },
         )
 
         if result.get("success"):
@@ -1092,8 +1174,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_lod_generate(params: LODGenerateInput) -> str:
         """Generate multiple Level of Detail (LOD) versions for a model.
@@ -1107,13 +1189,14 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Generation result
         """
         result = await server.execute_command(
-            "modeling", "lod_generate",
+            "modeling",
+            "lod_generate",
             {
                 "object_name": params.object_name,
                 "lod_levels": params.lod_levels,
                 "ratio_step": params.ratio_step,
-                "create_collection": params.create_collection
-            }
+                "create_collection": params.create_collection,
+            },
         )
 
         if result.get("success"):
@@ -1124,7 +1207,9 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 lines.append(f"- {lod['name']}: {lod['triangles']} triangles")
             return "\n".join(lines)
         else:
-            return f"LOD generation failed: {result.get('error', {}).get('message', 'Unknown error')}"
+            return (
+                f"LOD generation failed: {result.get('error', {}).get('message', 'Unknown error')}"
+            )
 
     @mcp.tool(
         name="blender_smart_subdivide",
@@ -1133,8 +1218,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_smart_subdivide(params: SmartSubdivideInput) -> str:
         """Smart subdivide mesh with automatic crease edge and smoothing group handling.
@@ -1148,19 +1233,20 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Subdivision result
         """
         result = await server.execute_command(
-            "modeling", "smart_subdivide",
+            "modeling",
+            "smart_subdivide",
             {
                 "object_name": params.object_name,
                 "levels": params.levels,
                 "render_levels": params.render_levels or params.levels,
                 "use_creases": params.use_creases,
                 "apply_smooth": params.apply_smooth,
-                "quality": params.quality
-            }
+                "quality": params.quality,
+            },
         )
 
         if result.get("success"):
-            data = result.get("data", {})
+            result.get("data", {})
             return f"Smart subdivision completed: viewport level {params.levels}, render level {params.render_levels or params.levels}"
         else:
             return f"Subdivision failed: {result.get('error', {}).get('message', 'Unknown error')}"
@@ -1172,8 +1258,8 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_auto_smooth(params: AutoSmoothInput) -> str:
         """Set auto smooth, distinguishing smooth faces and hard edges by angle threshold.
@@ -1187,12 +1273,13 @@ def register_modeling_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Setting result
         """
         result = await server.execute_command(
-            "modeling", "auto_smooth",
+            "modeling",
+            "auto_smooth",
             {
                 "object_name": params.object_name,
                 "angle": params.angle,
-                "use_sharp_edges": params.use_sharp_edges
-            }
+                "use_sharp_edges": params.use_sharp_edges,
+            },
         )
 
         if result.get("success"):

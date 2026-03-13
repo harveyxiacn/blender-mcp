@@ -12,17 +12,21 @@ Tool module configuration:
 - "full": ~319 tools (all features)
 """
 
+# Dynamically import enabled tool modules
+from __future__ import annotations
+
+import importlib
 import logging
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from blender_mcp.skill_manager import SkillManager
 
 from mcp.server.fastmcp import FastMCP
 
-from blender_mcp.connection import BlenderConnection
-from blender_mcp.tools_config import get_enabled_modules, MODULE_REGISTRY, TOOL_PROFILE
 from blender_mcp import config
-
-# Dynamically import enabled tool modules
-import importlib
+from blender_mcp.connection import BlenderConnection
+from blender_mcp.tools_config import MODULE_REGISTRY, TOOL_PROFILE, get_enabled_modules
 
 logger = logging.getLogger(__name__)
 
@@ -36,13 +40,13 @@ class BlenderMCPServer:
     - Managing the Blender connection
     - Handling requests and responses
     """
-    
+
     def __init__(
         self,
         blender_host: str = config.BLENDER_HOST,
         blender_port: int = config.BLENDER_PORT,
-        name: str = "blender_mcp"
-    ):
+        name: str = "blender_mcp",
+    ) -> None:
         """Initialize the server
 
         Args:
@@ -52,39 +56,37 @@ class BlenderMCPServer:
         """
         self.blender_host = blender_host
         self.blender_port = blender_port
-        
+
         # Create MCP server instance
         self.mcp = FastMCP(name)
 
         # Blender connection (lazy initialization)
-        self._connection: Optional[BlenderConnection] = None
+        self._connection: BlenderConnection | None = None
 
         # Skill manager (lazy initialization, only used in skill profile)
-        self._skill_manager = None
+        self._skill_manager: SkillManager | None = None
 
         # Register all tools
         self._register_tools()
 
         logger.info(f"Blender MCP server initialized: {name}")
-    
+
     @property
-    def skill_manager(self):
+    def skill_manager(self) -> SkillManager:
         """Get the skill manager instance (only available in skill profile)"""
         if self._skill_manager is None:
             from blender_mcp.skill_manager import SkillManager
+
             self._skill_manager = SkillManager(self)
         return self._skill_manager
-    
+
     @property
     def connection(self) -> BlenderConnection:
         """Get the Blender connection instance"""
         if self._connection is None:
-            self._connection = BlenderConnection(
-                host=self.blender_host,
-                port=self.blender_port
-            )
+            self._connection = BlenderConnection(host=self.blender_host, port=self.blender_port)
         return self._connection
-    
+
     def _register_tools(self) -> None:
         """Register enabled MCP tool modules
 
@@ -98,16 +100,16 @@ class BlenderMCPServer:
         """
         enabled_modules = get_enabled_modules()
         loaded_count = 0
-        
+
         logger.info(f"Tool profile: {TOOL_PROFILE} ({len(enabled_modules)} modules enabled)")
-        
+
         for module_name in enabled_modules:
             if module_name not in MODULE_REGISTRY:
                 logger.warning(f"Unknown module: {module_name}")
                 continue
-            
+
             register_func_name = MODULE_REGISTRY[module_name]
-            
+
             try:
                 # Dynamically import module
                 tool_module = importlib.import_module(f"blender_mcp.tools.{module_name}")
@@ -121,17 +123,18 @@ class BlenderMCPServer:
             except ImportError as e:
                 logger.warning(f"Cannot import module {module_name}: {e}")
             except AttributeError as e:
-                logger.warning(f"Module {module_name} missing register function {register_func_name}: {e}")
+                logger.warning(
+                    f"Module {module_name} missing register function {register_func_name}: {e}"
+                )
             except Exception as e:
                 logger.warning(f"Failed to load module {module_name}: {e}")
 
-        logger.info(f"Tool registration complete: loaded {loaded_count}/{len(enabled_modules)} modules")
-    
+        logger.info(
+            f"Tool registration complete: loaded {loaded_count}/{len(enabled_modules)} modules"
+        )
+
     async def execute_command(
-        self,
-        category: str,
-        action: str,
-        params: dict[str, Any]
+        self, category: str, action: str, params: dict[str, Any]
     ) -> dict[str, Any]:
         """Execute a Blender command
 
@@ -155,23 +158,14 @@ class BlenderMCPServer:
 
         except Exception as e:
             logger.error(f"Command execution failed: {category}.{action} - {e}")
-            return {
-                "success": False,
-                "error": {
-                    "code": "EXECUTION_ERROR",
-                    "message": str(e)
-                }
-            }
+            return {"success": False, "error": {"code": "EXECUTION_ERROR", "message": str(e)}}
 
     async def send_command(
-        self,
-        category: str,
-        action: str,
-        params: dict[str, Any]
+        self, category: str, action: str, params: dict[str, Any]
     ) -> dict[str, Any]:
         """Backward-compatible alias for tool modules using send_command()."""
         return await self.execute_command(category, action, params)
-    
+
     def run_stdio(self) -> None:
         """Run the server in stdio mode (synchronous method)"""
         logger.info("Starting stdio transport")

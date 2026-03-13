@@ -1,11 +1,12 @@
-import socket, json
+import json
+import socket
 
 s = socket.socket()
 s.settimeout(30)
-s.connect(('127.0.0.1', 9876))
+s.connect(("127.0.0.1", 9876))
 
 # Frame all objects and take screenshot
-code = '''
+code = """
 import bpy
 
 # Switch to camera view and set viewport to material preview
@@ -37,14 +38,14 @@ for area in bpy.context.screen.areas:
         break
 
 print(f"Screenshot saved: {scene.render.filepath}")
-'''
+"""
 
 req = {
     "id": "screenshot",
     "type": "command",
     "category": "utility",
     "action": "execute_python",
-    "params": {"code": code, "timeout": 30}
+    "params": {"code": code, "timeout": 30},
 }
 
 s.send((json.dumps(req, ensure_ascii=False) + "\n").encode("utf-8"))
@@ -52,7 +53,8 @@ s.send((json.dumps(req, ensure_ascii=False) + "\n").encode("utf-8"))
 buf = ""
 while "\n" not in buf:
     d = s.recv(8192)
-    if not d: break
+    if not d:
+        break
     buf += d.decode("utf-8")
 s.close()
 

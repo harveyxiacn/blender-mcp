@@ -4,10 +4,10 @@ Auto Rigging Tools
 Provides automatic bone creation, weight painting, IK/FK setup, and more.
 """
 
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -15,12 +15,13 @@ if TYPE_CHECKING:
 
 # ==================== Input Models ====================
 
+
 class AutoRigSetupInput(BaseModel):
     """Auto rig setup input"""
+
     character_name: str = Field(..., description="Character name prefix")
     rig_type: str = Field(
-        default="humanoid",
-        description="Rig type: humanoid, quadruped, bird, simple"
+        default="humanoid", description="Rig type: humanoid, quadruped, bird, simple"
     )
     auto_weight: bool = Field(default=True, description="Automatic weight painting")
     symmetric: bool = Field(default=True, description="Symmetric bones")
@@ -28,55 +29,55 @@ class AutoRigSetupInput(BaseModel):
 
 class BoneAddInput(BaseModel):
     """Add bone input"""
+
     armature_name: str = Field(..., description="Armature name")
     bone_name: str = Field(..., description="Bone name")
-    head: List[float] = Field(..., description="Bone head position")
-    tail: List[float] = Field(..., description="Bone tail position")
-    parent_bone: Optional[str] = Field(default=None, description="Parent bone name")
+    head: list[float] = Field(..., description="Bone head position")
+    tail: list[float] = Field(..., description="Bone tail position")
+    parent_bone: str | None = Field(default=None, description="Parent bone name")
     connect: bool = Field(default=False, description="Connect to parent bone")
 
 
 class IKSetupInput(BaseModel):
     """IK setup input"""
+
     armature_name: str = Field(..., description="Armature name")
     bone_name: str = Field(..., description="Bone to add IK to")
     chain_length: int = Field(default=2, description="IK chain length")
-    target_name: Optional[str] = Field(default=None, description="IK target object")
-    pole_target: Optional[str] = Field(default=None, description="Pole target")
+    target_name: str | None = Field(default=None, description="IK target object")
+    pole_target: str | None = Field(default=None, description="Pole target")
 
 
 class WeightPaintInput(BaseModel):
     """Weight paint input"""
+
     object_name: str = Field(..., description="Mesh object name")
     armature_name: str = Field(..., description="Armature name")
-    method: str = Field(
-        default="automatic",
-        description="Method: automatic, envelope, nearest"
-    )
+    method: str = Field(default="automatic", description="Method: automatic, envelope, nearest")
 
 
 class PoseApplyInput(BaseModel):
     """Apply pose input"""
+
     armature_name: str = Field(..., description="Armature name")
-    pose_name: str = Field(
-        default="t_pose",
-        description="Pose: t_pose, a_pose, rest, action_pose"
-    )
+    pose_name: str = Field(default="t_pose", description="Pose: t_pose, a_pose, rest, action_pose")
 
 
 class RigConstraintInput(BaseModel):
     """Bone constraint input"""
+
     armature_name: str = Field(..., description="Armature name")
     bone_name: str = Field(..., description="Bone name")
     constraint_type: str = Field(
         default="COPY_ROTATION",
-        description="Constraint type: COPY_ROTATION, COPY_LOCATION, LIMIT_ROTATION, DAMPED_TRACK"
+        description="Constraint type: COPY_ROTATION, COPY_LOCATION, LIMIT_ROTATION, DAMPED_TRACK",
     )
-    target_armature: Optional[str] = Field(default=None, description="Target armature")
-    target_bone: Optional[str] = Field(default=None, description="Target bone")
+    target_armature: str | None = Field(default=None, description="Target armature")
+    target_bone: str | None = Field(default=None, description="Target bone")
 
 
 # ==================== Tool Registration ====================
+
 
 def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register auto rigging tools"""
@@ -88,8 +89,8 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_rig_auto_setup(params: AutoRigSetupInput) -> str:
         """Automatically create a bone system for a character.
@@ -103,13 +104,14 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Creation result
         """
         result = await server.execute_command(
-            "auto_rig", "setup",
+            "auto_rig",
+            "setup",
             {
                 "character_name": params.character_name,
                 "rig_type": params.rig_type,
                 "auto_weight": params.auto_weight,
-                "symmetric": params.symmetric
-            }
+                "symmetric": params.symmetric,
+            },
         )
 
         if result.get("success"):
@@ -125,8 +127,8 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_rig_bone_add(params: BoneAddInput) -> str:
         """Manually add a bone.
@@ -138,15 +140,16 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Creation result
         """
         result = await server.execute_command(
-            "auto_rig", "bone_add",
+            "auto_rig",
+            "bone_add",
             {
                 "armature_name": params.armature_name,
                 "bone_name": params.bone_name,
                 "head": params.head,
                 "tail": params.tail,
                 "parent_bone": params.parent_bone,
-                "connect": params.connect
-            }
+                "connect": params.connect,
+            },
         )
 
         if result.get("success"):
@@ -161,8 +164,8 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_rig_ik_setup(params: IKSetupInput) -> str:
         """Set up Inverse Kinematics (IK) for a bone.
@@ -174,14 +177,15 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Setup result
         """
         result = await server.execute_command(
-            "auto_rig", "ik_setup",
+            "auto_rig",
+            "ik_setup",
             {
                 "armature_name": params.armature_name,
                 "bone_name": params.bone_name,
                 "chain_length": params.chain_length,
                 "target_name": params.target_name,
-                "pole_target": params.pole_target
-            }
+                "pole_target": params.pole_target,
+            },
         )
 
         if result.get("success"):
@@ -196,8 +200,8 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_rig_weight_paint(params: WeightPaintInput) -> str:
         """Perform automatic weight painting for a mesh object.
@@ -209,18 +213,23 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Painting result
         """
         result = await server.execute_command(
-            "auto_rig", "weight_paint",
+            "auto_rig",
+            "weight_paint",
             {
                 "object_name": params.object_name,
                 "armature_name": params.armature_name,
-                "method": params.method
-            }
+                "method": params.method,
+            },
         )
 
         if result.get("success"):
-            return f"Successfully performed {params.method} weight painting for '{params.object_name}'"
+            return (
+                f"Successfully performed {params.method} weight painting for '{params.object_name}'"
+            )
         else:
-            return f"Weight painting failed: {result.get('error', {}).get('message', 'unknown error')}"
+            return (
+                f"Weight painting failed: {result.get('error', {}).get('message', 'unknown error')}"
+            )
 
     @mcp.tool(
         name="blender_rig_pose_apply",
@@ -229,8 +238,8 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_rig_pose_apply(params: PoseApplyInput) -> str:
         """Apply a preset pose to an armature.
@@ -242,11 +251,9 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Application result
         """
         result = await server.execute_command(
-            "auto_rig", "pose_apply",
-            {
-                "armature_name": params.armature_name,
-                "pose_name": params.pose_name
-            }
+            "auto_rig",
+            "pose_apply",
+            {"armature_name": params.armature_name, "pose_name": params.pose_name},
         )
 
         if result.get("success"):
@@ -261,8 +268,8 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_rig_constraint_add(params: RigConstraintInput) -> str:
         """Add a constraint to a bone.
@@ -274,14 +281,15 @@ def register_auto_rig_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Addition result
         """
         result = await server.execute_command(
-            "auto_rig", "constraint_add",
+            "auto_rig",
+            "constraint_add",
             {
                 "armature_name": params.armature_name,
                 "bone_name": params.bone_name,
                 "constraint_type": params.constraint_type,
                 "target_armature": params.target_armature,
-                "target_bone": params.target_bone
-            }
+                "target_bone": params.target_bone,
+            },
         )
 
         if result.get("success"):

@@ -5,11 +5,11 @@ Provides 50+ procedural material presets generated through node combinations wit
 Covers categories including metal, wood, stone, fabric, nature, skin, effects, and more.
 """
 
-from typing import TYPE_CHECKING, Optional, List, Dict, Any
 from enum import Enum
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 class MaterialCategory(str, Enum):
     """Material category"""
+
     METAL = "METAL"
     WOOD = "WOOD"
     STONE = "STONE"
@@ -29,40 +30,55 @@ class MaterialCategory(str, Enum):
 
 class ProceduralMaterialInput(BaseModel):
     """Procedural material preset input"""
+
     preset: str = Field(
         ...,
         description="Material preset name. Available presets: "
-                    "Metal: STEEL, IRON, GOLD, SILVER, BRONZE, COPPER, CHROME, BRUSHED_METAL, RUSTY_METAL, DAMASCUS; "
-                    "Wood: OAK, PINE, CHERRY, WALNUT, BIRCH, BAMBOO, PLYWOOD, AGED_WOOD; "
-                    "Stone: GRANITE, MARBLE, LIMESTONE, SLATE, COBBLESTONE, SANDSTONE, BRICK, TILE, CONCRETE; "
-                    "Fabric: COTTON, SILK, LEATHER, DENIM, VELVET, CANVAS, WOOL, CHAIN_MAIL; "
-                    "Nature: GRASS, DIRT, SAND, SNOW, MUD, GRAVEL, MOSS, LAVA, WATER, ICE; "
-                    "Skin: SKIN_REALISTIC, SKIN_STYLIZED, SCALES, CARTOON_SKIN; "
-                    "Effects: GLASS, CRYSTAL, HOLOGRAM, ENERGY, PORTAL, EMISSION_GLOW, FORCE_FIELD; "
-                    "Toon: TOON_BASIC, TOON_METAL, TOON_SKIN, TOON_FABRIC, ANIME_HAIR, GENSHIN_STYLE, CEL_SHADE"
+        "Metal: STEEL, IRON, GOLD, SILVER, BRONZE, COPPER, CHROME, BRUSHED_METAL, RUSTY_METAL, DAMASCUS; "
+        "Wood: OAK, PINE, CHERRY, WALNUT, BIRCH, BAMBOO, PLYWOOD, AGED_WOOD; "
+        "Stone: GRANITE, MARBLE, LIMESTONE, SLATE, COBBLESTONE, SANDSTONE, BRICK, TILE, CONCRETE; "
+        "Fabric: COTTON, SILK, LEATHER, DENIM, VELVET, CANVAS, WOOL, CHAIN_MAIL; "
+        "Nature: GRASS, DIRT, SAND, SNOW, MUD, GRAVEL, MOSS, LAVA, WATER, ICE; "
+        "Skin: SKIN_REALISTIC, SKIN_STYLIZED, SCALES, CARTOON_SKIN; "
+        "Effects: GLASS, CRYSTAL, HOLOGRAM, ENERGY, PORTAL, EMISSION_GLOW, FORCE_FIELD; "
+        "Toon: TOON_BASIC, TOON_METAL, TOON_SKIN, TOON_FABRIC, ANIME_HAIR, GENSHIN_STYLE, CEL_SHADE",
     )
-    material_name: Optional[str] = Field(default=None, description="Material name (auto-named if empty)")
-    object_name: Optional[str] = Field(default=None, description="Object name to apply to (create only if empty)")
-    color_override: Optional[List[float]] = Field(default=None, description="Override base color [R,G,B] (0-1)")
+    material_name: str | None = Field(
+        default=None, description="Material name (auto-named if empty)"
+    )
+    object_name: str | None = Field(
+        default=None, description="Object name to apply to (create only if empty)"
+    )
+    color_override: list[float] | None = Field(
+        default=None, description="Override base color [R,G,B] (0-1)"
+    )
     scale: float = Field(default=1.0, description="Texture scale (affects pattern size)", gt=0)
-    roughness_override: Optional[float] = Field(default=None, description="Override roughness (0-1)", ge=0, le=1)
+    roughness_override: float | None = Field(
+        default=None, description="Override roughness (0-1)", ge=0, le=1
+    )
 
 
 class MaterialWearInput(BaseModel):
     """Material wear effect input"""
+
     object_name: str = Field(..., description="Object name")
-    material_name: Optional[str] = Field(default=None, description="Material name (uses active material if empty)")
+    material_name: str | None = Field(
+        default=None, description="Material name (uses active material if empty)"
+    )
     wear_type: str = Field(
         default="EDGE_WEAR",
         description="Wear type: "
-                    "EDGE_WEAR (edge wear/highlights), SCRATCHES (scratches), RUST (rust), "
-                    "DIRT (dirt), DUST (dust), MOSS (moss), PAINT_CHIP (paint chipping)"
+        "EDGE_WEAR (edge wear/highlights), SCRATCHES (scratches), RUST (rust), "
+        "DIRT (dirt), DUST (dust), MOSS (moss), PAINT_CHIP (paint chipping)",
     )
     intensity: float = Field(default=0.5, description="Wear intensity (0-1)", ge=0, le=1)
-    color: Optional[List[float]] = Field(default=None, description="Wear color [R,G,B] (auto by default)")
+    color: list[float] | None = Field(
+        default=None, description="Wear color [R,G,B] (auto by default)"
+    )
 
 
 # ==================== Tool Registration ====================
+
 
 def register_procedural_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register procedural material tools"""
@@ -74,8 +90,8 @@ def register_procedural_material_tools(mcp: FastMCP, server: "BlenderMCPServer")
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_procedural_material(params: ProceduralMaterialInput) -> str:
         """Create a procedural material preset (no external textures required).
@@ -92,15 +108,16 @@ def register_procedural_material_tools(mcp: FastMCP, server: "BlenderMCPServer")
             Creation result
         """
         result = await server.execute_command(
-            "procedural_materials", "create",
+            "procedural_materials",
+            "create",
             {
                 "preset": params.preset,
                 "material_name": params.material_name,
                 "object_name": params.object_name,
                 "color_override": params.color_override,
                 "scale": params.scale,
-                "roughness_override": params.roughness_override
-            }
+                "roughness_override": params.roughness_override,
+            },
         )
 
         if result.get("success"):
@@ -121,8 +138,8 @@ def register_procedural_material_tools(mcp: FastMCP, server: "BlenderMCPServer")
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_material_wear(params: MaterialWearInput) -> str:
         """Add wear/aging effects to a material.
@@ -140,20 +157,26 @@ def register_procedural_material_tools(mcp: FastMCP, server: "BlenderMCPServer")
             Operation result
         """
         result = await server.execute_command(
-            "procedural_materials", "wear",
+            "procedural_materials",
+            "wear",
             {
                 "object_name": params.object_name,
                 "material_name": params.material_name,
                 "wear_type": params.wear_type,
                 "intensity": params.intensity,
-                "color": params.color
-            }
+                "color": params.color,
+            },
         )
 
         if result.get("success"):
             wear_names = {
-                "EDGE_WEAR": "edge wear", "SCRATCHES": "scratches", "RUST": "rust",
-                "DIRT": "dirt", "DUST": "dust", "MOSS": "moss", "PAINT_CHIP": "paint chipping"
+                "EDGE_WEAR": "edge wear",
+                "SCRATCHES": "scratches",
+                "RUST": "rust",
+                "DIRT": "dirt",
+                "DUST": "dust",
+                "MOSS": "moss",
+                "PAINT_CHIP": "paint chipping",
             }
             return f"Added {wear_names.get(params.wear_type, params.wear_type)} effect, intensity: {params.intensity}"
         else:

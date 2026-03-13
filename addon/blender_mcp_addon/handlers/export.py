@@ -4,33 +4,31 @@ Export Handler
 Handles export commands for various formats.
 """
 
-from typing import Any, Dict
-import bpy
 import os
+from typing import Any
+
+import bpy
 
 
-def handle_fbx(params: Dict[str, Any]) -> Dict[str, Any]:
+def handle_fbx(params: dict[str, Any]) -> dict[str, Any]:
     """Export FBX"""
     filepath = params.get("filepath")
-    
+
     if not filepath:
         return {
             "success": False,
-            "error": {
-                "code": "MISSING_FILEPATH",
-                "message": "Export filepath is required"
-            }
+            "error": {"code": "MISSING_FILEPATH", "message": "Export filepath is required"},
         }
-    
+
     # Ensure directory exists
     directory = os.path.dirname(filepath)
     if directory and not os.path.exists(directory):
         os.makedirs(directory)
-    
+
     # Ensure correct file extension
-    if not filepath.lower().endswith('.fbx'):
-        filepath += '.fbx'
-    
+    if not filepath.lower().endswith(".fbx"):
+        filepath += ".fbx"
+
     try:
         bpy.ops.export_scene.fbx(
             filepath=filepath,
@@ -44,99 +42,71 @@ def handle_fbx(params: Dict[str, Any]) -> Dict[str, Any]:
             bake_anim=params.get("include_animation", True),
             bake_anim_use_all_actions=params.get("bake_animation", False),
         )
-        
-        return {
-            "success": True,
-            "data": {
-                "filepath": filepath
-            }
-        }
-        
+
+        return {"success": True, "data": {"filepath": filepath}}
+
     except Exception as e:
-        return {
-            "success": False,
-            "error": {
-                "code": "EXPORT_ERROR",
-                "message": str(e)
-            }
-        }
+        return {"success": False, "error": {"code": "EXPORT_ERROR", "message": str(e)}}
 
 
-def handle_gltf(params: Dict[str, Any]) -> Dict[str, Any]:
+def handle_gltf(params: dict[str, Any]) -> dict[str, Any]:
     """Export glTF"""
     filepath = params.get("filepath")
-    
+
     if not filepath:
         return {
             "success": False,
-            "error": {
-                "code": "MISSING_FILEPATH",
-                "message": "Export filepath is required"
-            }
+            "error": {"code": "MISSING_FILEPATH", "message": "Export filepath is required"},
         }
-    
+
     # Ensure directory exists
     directory = os.path.dirname(filepath)
     if directory and not os.path.exists(directory):
         os.makedirs(directory)
-    
+
     export_format = params.get("export_format", "GLB")
-    
+
     # Ensure correct file extension
-    if export_format == "GLB" and not filepath.lower().endswith('.glb'):
-        filepath += '.glb'
-    elif export_format == "GLTF_SEPARATE" and not filepath.lower().endswith('.gltf'):
-        filepath += '.gltf'
-    
+    if export_format == "GLB" and not filepath.lower().endswith(".glb"):
+        filepath += ".glb"
+    elif export_format == "GLTF_SEPARATE" and not filepath.lower().endswith(".gltf"):
+        filepath += ".gltf"
+
     try:
         bpy.ops.export_scene.gltf(
             filepath=filepath,
             use_selection=params.get("selected_only", False),
             export_format=export_format,
             export_animations=params.get("include_animation", True),
-            export_image_format='AUTO' if params.get("export_textures", True) else 'NONE',
+            export_image_format="AUTO" if params.get("export_textures", True) else "NONE",
             export_draco_mesh_compression_enable=params.get("export_draco", False),
         )
-        
-        return {
-            "success": True,
-            "data": {
-                "filepath": filepath
-            }
-        }
-        
+
+        return {"success": True, "data": {"filepath": filepath}}
+
     except Exception as e:
-        return {
-            "success": False,
-            "error": {
-                "code": "EXPORT_ERROR",
-                "message": str(e)
-            }
-        }
+        return {"success": False, "error": {"code": "EXPORT_ERROR", "message": str(e)}}
 
 
-def handle_obj(params: Dict[str, Any]) -> Dict[str, Any]:
+def handle_obj(params: dict[str, Any]) -> dict[str, Any]:
     """Export OBJ"""
     filepath = params.get("filepath")
-    
+
     if not filepath:
         return {
             "success": False,
-            "error": {
-                "code": "MISSING_FILEPATH",
-                "message": "Export filepath is required"
-            }
+            "error": {"code": "MISSING_FILEPATH", "message": "Export filepath is required"},
         }
-    
+
     # Ensure directory exists
     directory = os.path.dirname(filepath)
     if directory and not os.path.exists(directory):
         os.makedirs(directory)
-    
+
     # Ensure correct file extension
-    if not filepath.lower().endswith('.obj'):
-        filepath += '.obj'
-    
+    if not filepath.lower().endswith(".obj"):
+        filepath += ".obj"
+
     try:
         bpy.ops.wm.obj_export(
             filepath=filepath,
@@ -144,19 +114,8 @@ def handle_obj(params: Dict[str, Any]) -> Dict[str, Any]:
             apply_modifiers=params.get("apply_modifiers", True),
             export_materials=params.get("export_materials", True),
         )
-        
-        return {
-            "success": True,
-            "data": {
-                "filepath": filepath
-            }
-        }
-        
+
+        return {"success": True, "data": {"filepath": filepath}}
+
     except Exception as e:
-        return {
-            "success": False,
-            "error": {
-                "code": "EXPORT_ERROR",
-                "message": str(e)
-            }
-        }
+        return {"success": False, "error": {"code": "EXPORT_ERROR", "message": str(e)}}

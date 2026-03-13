@@ -4,22 +4,25 @@ Cloud Rendering Integration Tools
 MCP tools for cloud rendering service integration.
 """
 
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
-from mcp.server.fastmcp import FastMCP
+from typing import Any
 
+from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 # ============ Pydantic Models ============
 
+
 class CloudRenderSetupInput(BaseModel):
     """Configure cloud rendering"""
+
     service: str = Field("local", description="Service: local, sheepit, custom")
-    api_key: Optional[str] = Field(None, description="API key")
-    endpoint: Optional[str] = Field(None, description="Custom endpoint")
+    api_key: str | None = Field(None, description="API key")
+    endpoint: str | None = Field(None, description="Custom endpoint")
 
 
 class CloudRenderSubmitInput(BaseModel):
     """Submit render job"""
+
     frame_start: int = Field(1, description="Start frame")
     frame_end: int = Field(250, description="End frame")
     output_path: str = Field(..., description="Output path")
@@ -30,21 +33,21 @@ class CloudRenderSubmitInput(BaseModel):
 
 class LocalFarmInput(BaseModel):
     """Local render farm"""
-    nodes: List[str] = Field(..., description="Node address list")
+
+    nodes: list[str] = Field(..., description="Node address list")
     port: int = Field(5000, description="Port")
 
 
 # ============ Tool Registration ============
 
-def register_cloud_render_tools(mcp: FastMCP, server):
+
+def register_cloud_render_tools(mcp: FastMCP, server) -> None:
     """Register cloud rendering tools"""
 
     @mcp.tool()
     async def blender_cloud_render_setup(
-        service: str = "local",
-        api_key: Optional[str] = None,
-        endpoint: Optional[str] = None
-    ) -> Dict[str, Any]:
+        service: str = "local", api_key: str | None = None, endpoint: str | None = None
+    ) -> dict[str, Any]:
         """
         Configure cloud rendering service
 
@@ -53,11 +56,7 @@ def register_cloud_render_tools(mcp: FastMCP, server):
             api_key: API key (required for some services)
             endpoint: Custom service endpoint
         """
-        params = CloudRenderSetupInput(
-            service=service,
-            api_key=api_key,
-            endpoint=endpoint
-        )
+        params = CloudRenderSetupInput(service=service, api_key=api_key, endpoint=endpoint)
         return await server.send_command("cloud_render", "setup", params.model_dump())
 
     @mcp.tool()
@@ -67,8 +66,8 @@ def register_cloud_render_tools(mcp: FastMCP, server):
         output_path: str = "",
         samples: int = 128,
         resolution_x: int = 1920,
-        resolution_y: int = 1080
-    ) -> Dict[str, Any]:
+        resolution_y: int = 1080,
+    ) -> dict[str, Any]:
         """
         Submit render job
 
@@ -86,43 +85,32 @@ def register_cloud_render_tools(mcp: FastMCP, server):
             output_path=output_path,
             samples=samples,
             resolution_x=resolution_x,
-            resolution_y=resolution_y
+            resolution_y=resolution_y,
         )
         return await server.send_command("cloud_render", "submit", params.model_dump())
 
     @mcp.tool()
-    async def blender_cloud_render_status(
-        job_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+    async def blender_cloud_render_status(job_id: str | None = None) -> dict[str, Any]:
         """
         Query render job status
 
         Args:
             job_id: Job ID (queries all jobs if empty)
         """
-        return await server.send_command("cloud_render", "status", {
-            "job_id": job_id
-        })
+        return await server.send_command("cloud_render", "status", {"job_id": job_id})
 
     @mcp.tool()
-    async def blender_cloud_render_cancel(
-        job_id: str
-    ) -> Dict[str, Any]:
+    async def blender_cloud_render_cancel(job_id: str) -> dict[str, Any]:
         """
         Cancel render job
 
         Args:
             job_id: Job ID
         """
-        return await server.send_command("cloud_render", "cancel", {
-            "job_id": job_id
-        })
+        return await server.send_command("cloud_render", "cancel", {"job_id": job_id})
 
     @mcp.tool()
-    async def blender_cloud_render_download(
-        job_id: str,
-        output_folder: str
-    ) -> Dict[str, Any]:
+    async def blender_cloud_render_download(job_id: str, output_folder: str) -> dict[str, Any]:
         """
         Download render results
 
@@ -130,16 +118,12 @@ def register_cloud_render_tools(mcp: FastMCP, server):
             job_id: Job ID
             output_folder: Output folder
         """
-        return await server.send_command("cloud_render", "download", {
-            "job_id": job_id,
-            "output_folder": output_folder
-        })
+        return await server.send_command(
+            "cloud_render", "download", {"job_id": job_id, "output_folder": output_folder}
+        )
 
     @mcp.tool()
-    async def blender_render_farm_local(
-        nodes: List[str],
-        port: int = 5000
-    ) -> Dict[str, Any]:
+    async def blender_render_farm_local(nodes: list[str], port: int = 5000) -> dict[str, Any]:
         """
         Configure local render farm
 
@@ -147,14 +131,11 @@ def register_cloud_render_tools(mcp: FastMCP, server):
             nodes: Render node address list (e.g. ["192.168.1.100", "192.168.1.101"])
             port: Port number
         """
-        params = LocalFarmInput(
-            nodes=nodes,
-            port=port
-        )
+        params = LocalFarmInput(nodes=nodes, port=port)
         return await server.send_command("cloud_render", "local_farm", params.model_dump())
 
     @mcp.tool()
-    async def blender_render_farm_discover() -> Dict[str, Any]:
+    async def blender_render_farm_discover() -> dict[str, Any]:
         """
         Discover render nodes on the local network
         """
@@ -162,11 +143,8 @@ def register_cloud_render_tools(mcp: FastMCP, server):
 
     @mcp.tool()
     async def blender_cloud_render_estimate(
-        frame_count: int,
-        samples: int = 128,
-        resolution_x: int = 1920,
-        resolution_y: int = 1080
-    ) -> Dict[str, Any]:
+        frame_count: int, samples: int = 128, resolution_x: int = 1920, resolution_y: int = 1080
+    ) -> dict[str, Any]:
         """
         Estimate rendering cost/time
 
@@ -176,9 +154,13 @@ def register_cloud_render_tools(mcp: FastMCP, server):
             resolution_x: Resolution width
             resolution_y: Resolution height
         """
-        return await server.send_command("cloud_render", "estimate", {
-            "frame_count": frame_count,
-            "samples": samples,
-            "resolution_x": resolution_x,
-            "resolution_y": resolution_y
-        })
+        return await server.send_command(
+            "cloud_render",
+            "estimate",
+            {
+                "frame_count": frame_count,
+                "samples": samples,
+                "resolution_x": resolution_x,
+                "resolution_y": resolution_y,
+            },
+        )

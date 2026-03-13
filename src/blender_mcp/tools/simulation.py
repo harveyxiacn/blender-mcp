@@ -4,15 +4,17 @@ Advanced simulation tools
 Provides MCP tools for fluid, smoke, ocean, and other advanced simulations.
 """
 
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
-from mcp.server.fastmcp import FastMCP
+from typing import Any
 
+from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 # ============ Pydantic Models ============
 
+
 class FluidDomainInput(BaseModel):
     """Fluid domain settings"""
+
     object_name: str = Field(..., description="Object name")
     domain_type: str = Field("LIQUID", description="Domain type: LIQUID, GAS")
     resolution: int = Field(64, description="Resolution")
@@ -21,21 +23,24 @@ class FluidDomainInput(BaseModel):
 
 class FluidFlowInput(BaseModel):
     """Fluid inflow/outflow"""
+
     object_name: str = Field(..., description="Object name")
     flow_type: str = Field("INFLOW", description="Type: INFLOW, OUTFLOW, GEOMETRY")
     flow_behavior: str = Field("GEOMETRY", description="Behavior: INFLOW, OUTFLOW, GEOMETRY")
     use_initial_velocity: bool = Field(False, description="Use initial velocity")
-    velocity: List[float] = Field([0, 0, 0], description="Velocity [x, y, z]")
+    velocity: list[float] = Field([0, 0, 0], description="Velocity [x, y, z]")
 
 
 class FluidEffectorInput(BaseModel):
     """Fluid effector"""
+
     object_name: str = Field(..., description="Object name")
     effector_type: str = Field("COLLISION", description="Type: COLLISION, GUIDE")
 
 
 class SmokeDomainInput(BaseModel):
     """Smoke/fire domain"""
+
     object_name: str = Field(..., description="Object name")
     smoke_type: str = Field("SMOKE", description="Type: SMOKE, FIRE, BOTH")
     resolution: int = Field(32, description="Resolution")
@@ -44,15 +49,17 @@ class SmokeDomainInput(BaseModel):
 
 class SmokeFlowInput(BaseModel):
     """Smoke flow emitter"""
+
     object_name: str = Field(..., description="Object name")
     flow_type: str = Field("SMOKE", description="Type: SMOKE, FIRE, BOTH")
     temperature: float = Field(1.0, description="Temperature")
     density: float = Field(1.0, description="Density")
-    smoke_color: List[float] = Field([1, 1, 1], description="Smoke color")
+    smoke_color: list[float] = Field([1, 1, 1], description="Smoke color")
 
 
 class OceanModifierInput(BaseModel):
     """Ocean modifier"""
+
     object_name: str = Field(..., description="Object name")
     resolution: int = Field(7, description="Resolution (2^n)")
     spatial_size: int = Field(50, description="Spatial size")
@@ -64,6 +71,7 @@ class OceanModifierInput(BaseModel):
 
 class DynamicPaintCanvasInput(BaseModel):
     """Dynamic paint canvas"""
+
     object_name: str = Field(..., description="Object name")
     surface_type: str = Field("PAINT", description="Type: PAINT, DISPLACE, WAVE, WEIGHT")
     use_dissolve: bool = Field(False, description="Use dissolve")
@@ -72,13 +80,15 @@ class DynamicPaintCanvasInput(BaseModel):
 
 class DynamicPaintBrushInput(BaseModel):
     """Dynamic paint brush"""
+
     object_name: str = Field(..., description="Object name")
-    paint_color: List[float] = Field([1, 0, 0], description="Paint color")
+    paint_color: list[float] = Field([1, 0, 0], description="Paint color")
     paint_alpha: float = Field(1.0, description="Alpha")
 
 
 class SimulationBakeInput(BaseModel):
     """Bake simulation"""
+
     object_name: str = Field(..., description="Domain object name")
     frame_start: int = Field(1, description="Start frame")
     frame_end: int = Field(250, description="End frame")
@@ -86,7 +96,8 @@ class SimulationBakeInput(BaseModel):
 
 # ============ Tool Registration ============
 
-def register_simulation_tools(mcp: FastMCP, server):
+
+def register_simulation_tools(mcp: FastMCP, server) -> None:
     """Register advanced simulation tools"""
 
     @mcp.tool()
@@ -94,8 +105,8 @@ def register_simulation_tools(mcp: FastMCP, server):
         object_name: str,
         domain_type: str = "LIQUID",
         resolution: int = 64,
-        use_adaptive_domain: bool = False
-    ) -> Dict[str, Any]:
+        use_adaptive_domain: bool = False,
+    ) -> dict[str, Any]:
         """
         Set up fluid domain
 
@@ -109,7 +120,7 @@ def register_simulation_tools(mcp: FastMCP, server):
             object_name=object_name,
             domain_type=domain_type,
             resolution=resolution,
-            use_adaptive_domain=use_adaptive_domain
+            use_adaptive_domain=use_adaptive_domain,
         )
         return await server.send_command("simulation", "fluid_domain", params.model_dump())
 
@@ -119,8 +130,8 @@ def register_simulation_tools(mcp: FastMCP, server):
         flow_type: str = "INFLOW",
         flow_behavior: str = "GEOMETRY",
         use_initial_velocity: bool = False,
-        velocity: List[float] = [0, 0, 0]
-    ) -> Dict[str, Any]:
+        velocity: list[float] = None,
+    ) -> dict[str, Any]:
         """
         Set up fluid inflow/outflow
 
@@ -131,20 +142,21 @@ def register_simulation_tools(mcp: FastMCP, server):
             use_initial_velocity: Use initial velocity
             velocity: Velocity vector [x, y, z]
         """
+        if velocity is None:
+            velocity = [0, 0, 0]
         params = FluidFlowInput(
             object_name=object_name,
             flow_type=flow_type,
             flow_behavior=flow_behavior,
             use_initial_velocity=use_initial_velocity,
-            velocity=velocity
+            velocity=velocity,
         )
         return await server.send_command("simulation", "fluid_flow", params.model_dump())
 
     @mcp.tool()
     async def blender_sim_fluid_effector(
-        object_name: str,
-        effector_type: str = "COLLISION"
-    ) -> Dict[str, Any]:
+        object_name: str, effector_type: str = "COLLISION"
+    ) -> dict[str, Any]:
         """
         Set up fluid effector (collision body)
 
@@ -152,10 +164,7 @@ def register_simulation_tools(mcp: FastMCP, server):
             object_name: Effector object name
             effector_type: Effector type (COLLISION, GUIDE)
         """
-        params = FluidEffectorInput(
-            object_name=object_name,
-            effector_type=effector_type
-        )
+        params = FluidEffectorInput(object_name=object_name, effector_type=effector_type)
         return await server.send_command("simulation", "fluid_effector", params.model_dump())
 
     @mcp.tool()
@@ -163,8 +172,8 @@ def register_simulation_tools(mcp: FastMCP, server):
         object_name: str,
         smoke_type: str = "SMOKE",
         resolution: int = 32,
-        use_high_resolution: bool = False
-    ) -> Dict[str, Any]:
+        use_high_resolution: bool = False,
+    ) -> dict[str, Any]:
         """
         Set up smoke/fire domain
 
@@ -178,7 +187,7 @@ def register_simulation_tools(mcp: FastMCP, server):
             object_name=object_name,
             smoke_type=smoke_type,
             resolution=resolution,
-            use_high_resolution=use_high_resolution
+            use_high_resolution=use_high_resolution,
         )
         return await server.send_command("simulation", "smoke_domain", params.model_dump())
 
@@ -188,8 +197,8 @@ def register_simulation_tools(mcp: FastMCP, server):
         flow_type: str = "SMOKE",
         temperature: float = 1.0,
         density: float = 1.0,
-        smoke_color: List[float] = [1, 1, 1]
-    ) -> Dict[str, Any]:
+        smoke_color: list[float] = None,
+    ) -> dict[str, Any]:
         """
         Set up smoke/fire emitter
 
@@ -200,12 +209,14 @@ def register_simulation_tools(mcp: FastMCP, server):
             density: Density
             smoke_color: Smoke color [R, G, B]
         """
+        if smoke_color is None:
+            smoke_color = [1, 1, 1]
         params = SmokeFlowInput(
             object_name=object_name,
             flow_type=flow_type,
             temperature=temperature,
             density=density,
-            smoke_color=smoke_color
+            smoke_color=smoke_color,
         )
         return await server.send_command("simulation", "smoke_flow", params.model_dump())
 
@@ -217,8 +228,8 @@ def register_simulation_tools(mcp: FastMCP, server):
         wave_scale: float = 1.0,
         choppiness: float = 1.0,
         wind_velocity: float = 30.0,
-        use_foam: bool = False
-    ) -> Dict[str, Any]:
+        use_foam: bool = False,
+    ) -> dict[str, Any]:
         """
         Add ocean modifier
 
@@ -238,7 +249,7 @@ def register_simulation_tools(mcp: FastMCP, server):
             wave_scale=wave_scale,
             choppiness=choppiness,
             wind_velocity=wind_velocity,
-            use_foam=use_foam
+            use_foam=use_foam,
         )
         return await server.send_command("simulation", "ocean", params.model_dump())
 
@@ -247,8 +258,8 @@ def register_simulation_tools(mcp: FastMCP, server):
         object_name: str,
         surface_type: str = "PAINT",
         use_dissolve: bool = False,
-        dissolve_speed: int = 80
-    ) -> Dict[str, Any]:
+        dissolve_speed: int = 80,
+    ) -> dict[str, Any]:
         """
         Set up dynamic paint canvas
 
@@ -262,16 +273,14 @@ def register_simulation_tools(mcp: FastMCP, server):
             object_name=object_name,
             surface_type=surface_type,
             use_dissolve=use_dissolve,
-            dissolve_speed=dissolve_speed
+            dissolve_speed=dissolve_speed,
         )
         return await server.send_command("simulation", "dynamic_paint_canvas", params.model_dump())
 
     @mcp.tool()
     async def blender_sim_dynamic_paint_brush(
-        object_name: str,
-        paint_color: List[float] = [1, 0, 0],
-        paint_alpha: float = 1.0
-    ) -> Dict[str, Any]:
+        object_name: str, paint_color: list[float] = None, paint_alpha: float = 1.0
+    ) -> dict[str, Any]:
         """
         Set up dynamic paint brush
 
@@ -280,19 +289,17 @@ def register_simulation_tools(mcp: FastMCP, server):
             paint_color: Paint color [R, G, B]
             paint_alpha: Alpha
         """
+        if paint_color is None:
+            paint_color = [1, 0, 0]
         params = DynamicPaintBrushInput(
-            object_name=object_name,
-            paint_color=paint_color,
-            paint_alpha=paint_alpha
+            object_name=object_name, paint_color=paint_color, paint_alpha=paint_alpha
         )
         return await server.send_command("simulation", "dynamic_paint_brush", params.model_dump())
 
     @mcp.tool()
     async def blender_sim_bake(
-        object_name: str,
-        frame_start: int = 1,
-        frame_end: int = 250
-    ) -> Dict[str, Any]:
+        object_name: str, frame_start: int = 1, frame_end: int = 250
+    ) -> dict[str, Any]:
         """
         Bake simulation
 
@@ -302,8 +309,6 @@ def register_simulation_tools(mcp: FastMCP, server):
             frame_end: End frame
         """
         params = SimulationBakeInput(
-            object_name=object_name,
-            frame_start=frame_start,
-            frame_end=frame_end
+            object_name=object_name, frame_start=frame_start, frame_end=frame_end
         )
         return await server.send_command("simulation", "bake", params.model_dump())

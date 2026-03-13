@@ -14,22 +14,21 @@ Options:
     --help              Show help info
 """
 
-import sys
+import asyncio
+import atexit
+import contextlib
+import logging
 import os
 import signal
-import atexit
-import asyncio
-import logging
-from typing import Optional
+import sys
 from pathlib import Path
 
 import click
 from rich.console import Console
 from rich.logging import RichHandler
 
-from blender_mcp import __version__
+from blender_mcp import __version__, config
 from blender_mcp.server import BlenderMCPServer
-from blender_mcp import config
 
 # Use stderr to avoid interfering with MCP stdio communication
 console = Console(file=sys.stderr)
@@ -41,6 +40,7 @@ _PID_FILE = Path(__file__).parent.parent.parent / ".blender_mcp.pid"
 def _get_pid_file() -> Path:
     """Get PID file path (prefer temp directory)"""
     import tempfile
+
     return Path(tempfile.gettempdir()) / "blender_mcp.pid"
 
 
@@ -52,7 +52,7 @@ def _cleanup_zombie_processes() -> int:
     """
     current_pid = os.getpid()
     killed = 0
-    
+
     # Method 1: Clean up via PID file
     pid_file = _get_pid_file()
     if pid_file.exists():
@@ -61,20 +61,20 @@ def _cleanup_zombie_processes() -> int:
             if old_pid != current_pid and _is_blender_mcp_process(old_pid):
                 os.kill(old_pid, signal.SIGTERM)
                 killed += 1
-                console.print(f"[yellow]Terminated leftover process PID={old_pid}[/yellow]", highlight=False)
+                console.print(
+                    f"[yellow]Terminated leftover process PID={old_pid}[/yellow]", highlight=False
+                )
         except (ValueError, ProcessLookupError, PermissionError, OSError):
             pass
-        try:
+        with contextlib.suppress(OSError):
             pid_file.unlink()
-        except OSError:
-            pass
-    
+
     # Method 2: Scan all Python processes to find blender-mcp related ones
     if sys.platform == "win32":
         killed += _cleanup_windows(current_pid)
     else:
         killed += _cleanup_unix(current_pid)
-    
+
     return killed
 
 
@@ -83,15 +83,18 @@ def _is_blender_mcp_process(pid: int) -> bool:
     try:
         if sys.platform == "win32":
             import subprocess
+
             result = subprocess.run(
                 ["wmic", "process", "where", f"ProcessId={pid}", "get", "CommandLine", "/value"],
-                capture_output=True, text=True, timeout=5
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             return "blender-mcp" in result.stdout or "blender_mcp" in result.stdout
         else:
             cmdline_path = f"/proc/{pid}/cmdline"
             if os.path.exists(cmdline_path):
-                with open(cmdline_path, "r") as f:
+                with open(cmdline_path) as f:
                     cmdline = f.read()
                 return "blender-mcp" in cmdline or "blender_mcp" in cmdline
     except Exception:
@@ -104,35 +107,52 @@ def _cleanup_windows(current_pid: int) -> int:
     killed = 0
     try:
         import subprocess
+
         result = subprocess.run(
-            ["wmic", "process", "where", "Name='python.exe'", "get", "ProcessId,CommandLine", "/value"],
-            capture_output=True, text=True, timeout=10
+            [
+                "wmic",
+                "process",
+                "where",
+                "Name='python.exe'",
+                "get",
+                "ProcessId,CommandLine",
+                "/value",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
         )
-        
+
         # Parse WMIC output
         entries = result.stdout.split("\n\n")
         pid = None
         cmdline = ""
-        
+
         for entry in entries:
             for line in entry.strip().split("\n"):
                 line = line.strip()
                 if line.startswith("CommandLine="):
-                    cmdline = line[len("CommandLine="):]
+                    cmdline = line[len("CommandLine=") :]
                 elif line.startswith("ProcessId="):
                     try:
-                        pid = int(line[len("ProcessId="):])
+                        pid = int(line[len("ProcessId=") :])
                     except ValueError:
                         pid = None
-            
-            if pid and pid != current_pid and ("blender-mcp" in cmdline or "blender_mcp" in cmdline):
+
+            if (
+                pid
+                and pid != current_pid
+                and ("blender-mcp" in cmdline or "blender_mcp" in cmdline)
+            ):
                 try:
                     os.kill(pid, signal.SIGTERM)
                     killed += 1
-                    console.print(f"[yellow]Terminated leftover process PID={pid}[/yellow]", highlight=False)
+                    console.print(
+                        f"[yellow]Terminated leftover process PID={pid}[/yellow]", highlight=False
+                    )
                 except (ProcessLookupError, PermissionError, OSError):
                     pass
-            
+
             pid = None
             cmdline = ""
     except Exception:
@@ -145,9 +165,9 @@ def _cleanup_unix(current_pid: int) -> int:
     killed = 0
     try:
         import subprocess
+
         result = subprocess.run(
-            ["pgrep", "-f", "blender.mcp"],
-            capture_output=True, text=True, timeout=5
+            ["pgrep", "-f", "blender.mcp"], capture_output=True, text=True, timeout=5
         )
         for line in result.stdout.strip().split("\n"):
             if not line.strip():
@@ -157,7 +177,9 @@ def _cleanup_unix(current_pid: int) -> int:
                 if pid != current_pid:
                     os.kill(pid, signal.SIGTERM)
                     killed += 1
-                    console.print(f"[yellow]Terminated leftover process PID={pid}[/yellow]", highlight=False)
+                    console.print(
+                        f"[yellow]Terminated leftover process PID={pid}[/yellow]", highlight=False
+                    )
             except (ValueError, ProcessLookupError, PermissionError, OSError):
                 pass
     except Exception:
@@ -165,7 +187,7 @@ def _cleanup_unix(current_pid: int) -> int:
     return killed
 
 
-def _write_pid_file():
+def _write_pid_file() -> None:
     """Write the current process PID file"""
     try:
         pid_file = _get_pid_file()
@@ -174,7 +196,7 @@ def _write_pid_file():
         pass
 
 
-def _remove_pid_file():
+def _remove_pid_file() -> None:
     """Remove the PID file"""
     try:
         pid_file = _get_pid_file()
@@ -190,25 +212,27 @@ def setup_logging(level: str) -> None:
         level=getattr(logging, level.upper()),
         format="%(message)s",
         datefmt="[%X]",
-        handlers=[RichHandler(console=console, rich_tracebacks=True, show_path=False)]
+        handlers=[RichHandler(console=console, rich_tracebacks=True, show_path=False)],
     )
 
 
 @click.group(invoke_without_command=True)
 @click.option("--host", default=config.BLENDER_HOST, help="Blender connection host")
 @click.option("--port", default=config.BLENDER_PORT, help="Blender connection port")
-@click.option("--transport", default="stdio", type=click.Choice(["stdio", "http"]), help="Transport mode")
+@click.option(
+    "--transport", default="stdio", type=click.Choice(["stdio", "http"]), help="Transport mode"
+)
 @click.option("--http-port", default=config.MCP_HTTP_PORT, help="HTTP server port")
-@click.option("--log-level", default=config.LOG_LEVEL, type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"]), help="Log level")
+@click.option(
+    "--log-level",
+    default=config.LOG_LEVEL,
+    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"]),
+    help="Log level",
+)
 @click.version_option(version=__version__, prog_name="blender-mcp")
 @click.pass_context
 def main(
-    ctx: click.Context,
-    host: str,
-    port: int,
-    transport: str,
-    http_port: int,
-    log_level: str
+    ctx: click.Context, host: str, port: int, transport: str, http_port: int, log_level: str
 ) -> None:
     """Blender MCP - Blender control interface for AI assistants
 
@@ -217,29 +241,26 @@ def main(
     """
     if ctx.invoked_subcommand is None:
         setup_logging(log_level)
-        
+
         # === Clean up zombie processes before startup ===
         killed = _cleanup_zombie_processes()
         if killed > 0:
             console.print(f"[yellow]Cleaned up {killed} leftover process(es)[/yellow]")
-        
+
         # === Write PID file + register exit hook ===
         _write_pid_file()
         atexit.register(_remove_pid_file)
-        
-        server = BlenderMCPServer(
-            blender_host=host,
-            blender_port=port
-        )
-        
+
+        server = BlenderMCPServer(blender_host=host, blender_port=port)
+
         try:
             if transport == "stdio":
                 # stdio mode: stdout used for MCP protocol, logs go to stderr
-                console.print(f"[green]Starting Blender MCP server (stdio mode)[/green]")
+                console.print("[green]Starting Blender MCP server (stdio mode)[/green]")
                 console.print(f"[dim]Blender connection: {host}:{port} | PID: {os.getpid()}[/dim]")
                 server.run_stdio()  # synchronous call
             else:
-                console.print(f"[green]Starting Blender MCP server (HTTP mode)[/green]")
+                console.print("[green]Starting Blender MCP server (HTTP mode)[/green]")
                 console.print(f"[dim]HTTP port: {http_port}[/dim]")
                 console.print(f"[dim]Blender connection: {host}:{port} | PID: {os.getpid()}[/dim]")
                 server.run_http(http_port)  # synchronous call
@@ -255,13 +276,13 @@ def main(
 @main.command()
 @click.option("--blender-path", default=None, help="Blender installation path")
 @click.option("--force", is_flag=True, help="Force reinstall")
-def install_addon(blender_path: Optional[str], force: bool) -> None:
+def install_addon(blender_path: str | None, force: bool) -> None:
     """Install the Blender addon
 
     Automatically detects the Blender installation path and installs the MCP addon.
     """
     from blender_mcp.installer import install_blender_addon
-    
+
     try:
         result = install_blender_addon(blender_path, force)
         if result:
@@ -278,10 +299,10 @@ def install_addon(blender_path: Optional[str], force: bool) -> None:
 def check() -> None:
     """Check Blender connection status"""
     from blender_mcp.connection import BlenderConnection
-    
+
     console.print("[dim]Checking Blender connection...[/dim]")
-    
-    async def do_check():
+
+    async def do_check() -> None:
         conn = BlenderConnection()
         try:
             await conn.connect()
@@ -292,8 +313,10 @@ def check() -> None:
             await conn.disconnect()
         except Exception as e:
             console.print(f"[red]✗ Connection failed: {e}[/red]")
-            console.print("[dim]Please ensure Blender is running and the MCP addon is enabled[/dim]")
-    
+            console.print(
+                "[dim]Please ensure Blender is running and the MCP addon is enabled[/dim]"
+            )
+
     asyncio.run(do_check())
 
 

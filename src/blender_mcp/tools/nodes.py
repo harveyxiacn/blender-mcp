@@ -4,10 +4,10 @@ Node System Tools
 Provides creation and editing functionality for shader nodes, geometry nodes, and compositor nodes.
 """
 
-from typing import TYPE_CHECKING, Optional, List, Dict, Any
+from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -15,16 +15,21 @@ if TYPE_CHECKING:
 
 # ==================== Input Models ====================
 
+
 class NodeAddInput(BaseModel):
     """Add node input"""
-    target: str = Field(..., description="Target: material name, 'compositor', or object name (geometry nodes)")
+
+    target: str = Field(
+        ..., description="Target: material name, 'compositor', or object name (geometry nodes)"
+    )
     node_type: str = Field(..., description="Node type (e.g. ShaderNodeBsdfPrincipled)")
-    location: Optional[List[float]] = Field(default=None, description="Node position [x, y]")
-    name: Optional[str] = Field(default=None, description="Node name")
+    location: list[float] | None = Field(default=None, description="Node position [x, y]")
+    name: str | None = Field(default=None, description="Node name")
 
 
 class NodeConnectInput(BaseModel):
     """Connect nodes input"""
+
     target: str = Field(..., description="Target material/compositor/object name")
     from_node: str = Field(..., description="Source node name")
     from_socket: str = Field(..., description="Source socket name or index")
@@ -34,6 +39,7 @@ class NodeConnectInput(BaseModel):
 
 class NodeSetValueInput(BaseModel):
     """Set node value input"""
+
     target: str = Field(..., description="Target material/compositor/object name")
     node_name: str = Field(..., description="Node name")
     input_name: str = Field(..., description="Input name")
@@ -42,37 +48,41 @@ class NodeSetValueInput(BaseModel):
 
 class NodeGroupCreateInput(BaseModel):
     """Create node group input"""
+
     group_name: str = Field(..., description="Node group name")
     node_type: str = Field(default="SHADER", description="Type: SHADER, GEOMETRY, COMPOSITOR")
 
 
 class ShaderPresetInput(BaseModel):
     """Shader preset input"""
+
     material_name: str = Field(..., description="Material name")
     preset: str = Field(
         default="pbr_basic",
-        description="Preset: pbr_basic, glass, metal, emission, subsurface, toon"
+        description="Preset: pbr_basic, glass, metal, emission, subsurface, toon",
     )
-    color: Optional[List[float]] = Field(default=None, description="Base color RGBA")
+    color: list[float] | None = Field(default=None, description="Base color RGBA")
 
 
 class GeometryNodesAddInput(BaseModel):
     """Add geometry nodes modifier input"""
+
     object_name: str = Field(..., description="Object name")
     modifier_name: str = Field(default="GeometryNodes", description="Modifier name")
 
 
 class GeometryNodesPresetInput(BaseModel):
     """Geometry nodes preset input"""
+
     object_name: str = Field(..., description="Object name")
     preset: str = Field(
-        default="scatter",
-        description="Preset: scatter, array, curve_to_mesh, instance_points"
+        default="scatter", description="Preset: scatter, array, curve_to_mesh, instance_points"
     )
-    params: Optional[Dict[str, Any]] = Field(default=None, description="Preset parameters")
+    params: dict[str, Any] | None = Field(default=None, description="Preset parameters")
 
 
 # ==================== Tool Registration ====================
+
 
 def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register node system tools"""
@@ -84,8 +94,8 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_node_add(params: NodeAddInput) -> str:
         """Add a node to a node tree.
@@ -107,13 +117,14 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Addition result
         """
         result = await server.execute_command(
-            "nodes", "add",
+            "nodes",
+            "add",
             {
                 "target": params.target,
                 "node_type": params.node_type,
                 "location": params.location or [0, 0],
-                "name": params.name
-            }
+                "name": params.name,
+            },
         )
 
         if result.get("success"):
@@ -129,8 +140,8 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_node_connect(params: NodeConnectInput) -> str:
         """Connect two nodes.
@@ -142,14 +153,15 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Connection result
         """
         result = await server.execute_command(
-            "nodes", "connect",
+            "nodes",
+            "connect",
             {
                 "target": params.target,
                 "from_node": params.from_node,
                 "from_socket": params.from_socket,
                 "to_node": params.to_node,
-                "to_socket": params.to_socket
-            }
+                "to_socket": params.to_socket,
+            },
         )
 
         if result.get("success"):
@@ -164,8 +176,8 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_node_set_value(params: NodeSetValueInput) -> str:
         """Set a node input value.
@@ -177,13 +189,14 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Setting result
         """
         result = await server.execute_command(
-            "nodes", "set_value",
+            "nodes",
+            "set_value",
             {
                 "target": params.target,
                 "node_name": params.node_name,
                 "input_name": params.input_name,
-                "value": params.value
-            }
+                "value": params.value,
+            },
         )
 
         if result.get("success"):
@@ -198,8 +211,8 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_shader_preset(params: ShaderPresetInput) -> str:
         """Apply a shader preset (PBR, glass, metal, etc.).
@@ -219,12 +232,9 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Application result
         """
         result = await server.execute_command(
-            "nodes", "shader_preset",
-            {
-                "material_name": params.material_name,
-                "preset": params.preset,
-                "color": params.color
-            }
+            "nodes",
+            "shader_preset",
+            {"material_name": params.material_name, "preset": params.preset, "color": params.color},
         )
 
         if result.get("success"):
@@ -239,8 +249,8 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_geometry_nodes_add(params: GeometryNodesAddInput) -> str:
         """Add a geometry nodes modifier to an object.
@@ -252,11 +262,9 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Addition result
         """
         result = await server.execute_command(
-            "nodes", "geonodes_add",
-            {
-                "object_name": params.object_name,
-                "modifier_name": params.modifier_name
-            }
+            "nodes",
+            "geonodes_add",
+            {"object_name": params.object_name, "modifier_name": params.modifier_name},
         )
 
         if result.get("success"):
@@ -271,8 +279,8 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_geometry_nodes_preset(params: GeometryNodesPresetInput) -> str:
         """Apply a geometry nodes preset (scatter, array, etc.).
@@ -290,12 +298,13 @@ def register_node_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Application result
         """
         result = await server.execute_command(
-            "nodes", "geonodes_preset",
+            "nodes",
+            "geonodes_preset",
             {
                 "object_name": params.object_name,
                 "preset": params.preset,
-                "params": params.params or {}
-            }
+                "params": params.params or {},
+            },
         )
 
         if result.get("success"):

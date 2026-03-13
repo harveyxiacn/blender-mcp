@@ -4,17 +4,19 @@ Style Presets Handler
 Handles style environment setup, outline effects, baking workflows and other operations.
 """
 
-from typing import Any, Dict
-import bpy
+import contextlib
 import os
-import math
+from typing import Any
 
+import bpy
+
+from .compat import get_eevee_engine
 
 # ==================== Style Configuration Data ====================
 
 STYLE_CONFIGS = {
     "PIXEL": {
-        "render_engine": "BLENDER_EEVEE_NEXT" if bpy.app.version >= (4, 0, 0) else "BLENDER_EEVEE",
+        "render_engine": get_eevee_engine(),
         "shading": "FLAT",
         "texture_filter": "Closest",
         "color_management": "Standard",
@@ -35,10 +37,10 @@ STYLE_CONFIGS = {
             "Texture Filtering": "Closest (Nearest Neighbor)",
             "Recommended Poly Count": "50-500 faces",
             "Texture Resolution": "16×16 ~ 64×64",
-        }
+        },
     },
     "LOW_POLY": {
-        "render_engine": "BLENDER_EEVEE_NEXT" if bpy.app.version >= (4, 0, 0) else "BLENDER_EEVEE",
+        "render_engine": get_eevee_engine(),
         "shading": "FLAT",
         "texture_filter": "Linear",
         "color_management": "Standard",
@@ -59,10 +61,10 @@ STYLE_CONFIGS = {
             "Texture Filtering": "Linear",
             "Recommended Poly Count": "200-2000 faces",
             "Texture Resolution": "No textures / Solid colors",
-        }
+        },
     },
     "STYLIZED": {
-        "render_engine": "BLENDER_EEVEE_NEXT" if bpy.app.version >= (4, 0, 0) else "BLENDER_EEVEE",
+        "render_engine": get_eevee_engine(),
         "shading": "SMOOTH",
         "texture_filter": "Linear",
         "color_management": "Standard",
@@ -83,10 +85,10 @@ STYLE_CONFIGS = {
             "Texture Filtering": "Linear",
             "Recommended Poly Count": "2K-10K faces",
             "Texture Resolution": "128-512",
-        }
+        },
     },
     "TOON": {
-        "render_engine": "BLENDER_EEVEE_NEXT" if bpy.app.version >= (4, 0, 0) else "BLENDER_EEVEE",
+        "render_engine": get_eevee_engine(),
         "shading": "SMOOTH",
         "texture_filter": "Linear",
         "color_management": "Standard",
@@ -107,10 +109,10 @@ STYLE_CONFIGS = {
             "Outline": "Recommended: Solidify with flipped normals",
             "Recommended Poly Count": "3K-15K faces",
             "Texture Resolution": "512-1K",
-        }
+        },
     },
     "HAND_PAINTED": {
-        "render_engine": "BLENDER_EEVEE_NEXT" if bpy.app.version >= (4, 0, 0) else "BLENDER_EEVEE",
+        "render_engine": get_eevee_engine(),
         "shading": "SMOOTH",
         "texture_filter": "Linear",
         "color_management": "Standard",
@@ -131,10 +133,10 @@ STYLE_CONFIGS = {
             "Material Mode": "Diffuse Only (No PBR)",
             "Recommended Poly Count": "5K-30K faces",
             "Texture Resolution": "1K-2K",
-        }
+        },
     },
     "SEMI_REALISTIC": {
-        "render_engine": "BLENDER_EEVEE_NEXT" if bpy.app.version >= (4, 0, 0) else "BLENDER_EEVEE",
+        "render_engine": get_eevee_engine(),
         "shading": "SMOOTH",
         "texture_filter": "Linear",
         "color_management": "Filmic",
@@ -155,7 +157,7 @@ STYLE_CONFIGS = {
             "Color Management": "Filmic",
             "Recommended Poly Count": "10K-50K faces",
             "Texture Resolution": "1K-2K",
-        }
+        },
     },
     "PBR_REALISTIC": {
         "render_engine": "CYCLES",
@@ -179,7 +181,7 @@ STYLE_CONFIGS = {
             "Color Management": "Filmic",
             "Recommended Poly Count": "30K-100K faces",
             "Texture Resolution": "2K-4K",
-        }
+        },
     },
     "AAA": {
         "render_engine": "CYCLES",
@@ -205,12 +207,12 @@ STYLE_CONFIGS = {
             "Color Management": "Filmic",
             "Recommended Poly Count": "100K-10M faces (sculpting)",
             "Texture Resolution": "4K-8K + UDIM",
-        }
+        },
     },
 }
 
 
-def handle_setup(params: Dict[str, Any]) -> Dict[str, Any]:
+def handle_setup(params: dict[str, Any]) -> dict[str, Any]:
     """Set up style environment"""
     style = params.get("style", "LOW_POLY")
     apply_to_scene = params.get("apply_to_scene", True)
@@ -220,7 +222,7 @@ def handle_setup(params: Dict[str, Any]) -> Dict[str, Any]:
     if not config:
         return {
             "success": False,
-            "error": {"code": "UNKNOWN_STYLE", "message": f"Unknown style: {style}"}
+            "error": {"code": "UNKNOWN_STYLE", "message": f"Unknown style: {style}"},
         }
 
     scene = bpy.context.scene
@@ -232,61 +234,57 @@ def handle_setup(params: Dict[str, Any]) -> Dict[str, Any]:
             scene.render.engine = config["render_engine"]
         except Exception:
             if "EEVEE" in config["render_engine"]:
-                try:
-                    scene.render.engine = "BLENDER_EEVEE"
-                except Exception:
-                    pass
+                with contextlib.suppress(Exception):
+                    scene.render.engine = get_eevee_engine()
 
         # Set samples
-        if hasattr(scene, 'eevee') and "EEVEE" in scene.render.engine:
+        if hasattr(scene, "eevee") and "EEVEE" in scene.render.engine:
             scene.eevee.taa_render_samples = config["samples"]
         elif scene.render.engine == "CYCLES":
             scene.cycles.samples = config["samples"]
             # Cycles denoising
             if style in ("PBR_REALISTIC", "AAA", "SEMI_REALISTIC"):
                 scene.cycles.use_denoising = True
-                try:
-                    scene.cycles.denoiser = 'OPENIMAGEDENOISE'
-                except Exception:
-                    pass
+                with contextlib.suppress(Exception):
+                    scene.cycles.denoiser = "OPENIMAGEDENOISE"
                 extra_applied.append("Denoising: OpenImageDenoise")
 
         # Color management
         scene.view_settings.view_transform = config.get("color_management", "Standard")
 
         # EEVEE features (Bloom/AO/SSR)
-        if hasattr(scene, 'eevee') and "EEVEE" in scene.render.engine:
+        if hasattr(scene, "eevee") and "EEVEE" in scene.render.engine:
             eevee = scene.eevee
             if style in ("STYLIZED", "TOON"):
                 # Stylized/Toon: Optional Bloom, disable AO
-                if hasattr(eevee, 'use_bloom'):
+                if hasattr(eevee, "use_bloom"):
                     eevee.use_bloom = True
                     eevee.bloom_threshold = 0.8
                     eevee.bloom_intensity = 0.1
                     extra_applied.append("Bloom: Enabled (low intensity)")
-                if hasattr(eevee, 'use_gtao'):
+                if hasattr(eevee, "use_gtao"):
                     eevee.use_gtao = False
                     extra_applied.append("AO: Disabled (preserve Cel style)")
             elif style in ("SEMI_REALISTIC",):
-                if hasattr(eevee, 'use_gtao'):
+                if hasattr(eevee, "use_gtao"):
                     eevee.use_gtao = True
                     extra_applied.append("AO: Enabled")
-                if hasattr(eevee, 'use_ssr'):
+                if hasattr(eevee, "use_ssr"):
                     eevee.use_ssr = True
                     extra_applied.append("Screen Space Reflections: Enabled")
             elif style in ("PIXEL", "LOW_POLY"):
-                if hasattr(eevee, 'use_bloom'):
+                if hasattr(eevee, "use_bloom"):
                     eevee.use_bloom = False
-                if hasattr(eevee, 'use_gtao'):
+                if hasattr(eevee, "use_gtao"):
                     eevee.use_gtao = False
-                if hasattr(eevee, 'use_ssr'):
+                if hasattr(eevee, "use_ssr"):
                     eevee.use_ssr = False
 
         # Pixel style: Set active camera to orthographic
         if style == "PIXEL":
             cam = scene.camera
-            if cam and cam.type == 'CAMERA':
-                cam.data.type = 'ORTHO'
+            if cam and cam.type == "CAMERA":
+                cam.data.type = "ORTHO"
                 cam.data.ortho_scale = 10.0
                 extra_applied.append("Camera: Orthographic projection")
 
@@ -296,7 +294,7 @@ def handle_setup(params: Dict[str, Any]) -> Dict[str, Any]:
     # Apply shading and texture settings to specified objects
     for obj_name in apply_to_objects:
         obj = bpy.data.objects.get(obj_name)
-        if obj and obj.type == 'MESH':
+        if obj and obj.type == "MESH":
             # Shading mode
             if config["shading"] == "FLAT":
                 for poly in obj.data.polygons:
@@ -310,8 +308,8 @@ def handle_setup(params: Dict[str, Any]) -> Dict[str, Any]:
                 for mat in obj.data.materials:
                     if mat and mat.use_nodes:
                         for node in mat.node_tree.nodes:
-                            if node.type == 'TEX_IMAGE':
-                                node.interpolation = 'Closest'
+                            if node.type == "TEX_IMAGE":
+                                node.interpolation = "Closest"
                 extra_applied.append(f"{obj_name}: Texture interpolation -> Closest")
 
     return {
@@ -320,12 +318,12 @@ def handle_setup(params: Dict[str, Any]) -> Dict[str, Any]:
             "style": style,
             "tips": config["tips"],
             "settings_applied": config["settings_applied"],
-            "extra_applied": extra_applied
-        }
+            "extra_applied": extra_applied,
+        },
     }
 
 
-def handle_outline(params: Dict[str, Any]) -> Dict[str, Any]:
+def handle_outline(params: dict[str, Any]) -> dict[str, Any]:
     """Add outline effect"""
     object_name = params.get("object_name")
     method = params.get("method", "SOLIDIFY")
@@ -333,10 +331,13 @@ def handle_outline(params: Dict[str, Any]) -> Dict[str, Any]:
     color = params.get("color", [0, 0, 0])
 
     obj = bpy.data.objects.get(object_name)
-    if not obj or obj.type != 'MESH':
+    if not obj or obj.type != "MESH":
         return {
             "success": False,
-            "error": {"code": "INVALID_OBJECT", "message": f"Object does not exist or is not a mesh: {object_name}"}
+            "error": {
+                "code": "INVALID_OBJECT",
+                "message": f"Object does not exist or is not a mesh: {object_name}",
+            },
         }
 
     try:
@@ -352,24 +353,26 @@ def handle_outline(params: Dict[str, Any]) -> Dict[str, Any]:
                 nodes = outline_mat.node_tree.nodes
                 bsdf = None
                 for node in nodes:
-                    if node.type == 'BSDF_PRINCIPLED':
+                    if node.type == "BSDF_PRINCIPLED":
                         bsdf = node
                         break
                 if bsdf:
-                    bsdf.inputs['Base Color'].default_value = (*color[:3], 1.0)
-                    if 'Emission Color' in bsdf.inputs:
-                        bsdf.inputs['Emission Color'].default_value = (*color[:3], 1.0)
-                    elif 'Emission' in bsdf.inputs:
-                        bsdf.inputs['Emission'].default_value = (*color[:3], 1.0)
+                    bsdf.inputs["Base Color"].default_value = (*color[:3], 1.0)
+                    if "Emission Color" in bsdf.inputs:
+                        bsdf.inputs["Emission Color"].default_value = (*color[:3], 1.0)
+                    elif "Emission" in bsdf.inputs:
+                        bsdf.inputs["Emission"].default_value = (*color[:3], 1.0)
 
             # Add to material slot
-            if outline_mat_name not in [ms.material.name for ms in obj.material_slots if ms.material]:
+            if outline_mat_name not in [
+                ms.material.name for ms in obj.material_slots if ms.material
+            ]:
                 obj.data.materials.append(outline_mat)
 
             outline_slot = len(obj.material_slots) - 1
 
             # Add Solidify modifier
-            mod = obj.modifiers.new(name="Outline", type='SOLIDIFY')
+            mod = obj.modifiers.new(name="Outline", type="SOLIDIFY")
             mod.thickness = -thickness  # Negative value = outward
             mod.use_flip_normals = True
             mod.use_rim = False
@@ -382,25 +385,22 @@ def handle_outline(params: Dict[str, Any]) -> Dict[str, Any]:
             scene.render.use_freestyle = True
             # Configure Freestyle lines
             view_layer = bpy.context.view_layer
-            if hasattr(view_layer, 'freestyle_settings'):
+            if hasattr(view_layer, "freestyle_settings"):
                 fs = view_layer.freestyle_settings
-                if len(fs.linesets) == 0:
-                    ls = fs.linesets.new("OutlineSet")
-                else:
-                    ls = fs.linesets[0]
+                ls = fs.linesets.new("OutlineSet") if len(fs.linesets) == 0 else fs.linesets[0]
                 ls.linestyle.thickness = thickness * 100  # Freestyle uses pixel units
                 ls.linestyle.color = color[:3] if len(color) >= 3 else (0, 0, 0)
 
         elif method == "GREASE_PENCIL":
             # Use Line Art modifier (Blender 3.0+)
-            bpy.ops.object.gpencil_add(type='LRT_COLLECTION')
+            bpy.ops.object.gpencil_add(type="LRT_COLLECTION")
             gp_obj = bpy.context.active_object
-            if gp_obj and gp_obj.type == 'GPENCIL':
+            if gp_obj and gp_obj.type == "GPENCIL":
                 gp_obj.name = f"{object_name}_LineArt"
                 # Configure Line Art modifier
                 for mod in gp_obj.grease_pencil_modifiers:
-                    if mod.type == 'GP_LINEART':
-                        mod.source_type = 'OBJECT'
+                    if mod.type == "GP_LINEART":
+                        mod.source_type = "OBJECT"
                         mod.source_object = obj
                         mod.thickness = int(thickness * 100)
                         break
@@ -408,19 +408,16 @@ def handle_outline(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             return {
                 "success": False,
-                "error": {"code": "UNKNOWN_METHOD", "message": f"Unknown outline method: {method}"}
+                "error": {"code": "UNKNOWN_METHOD", "message": f"Unknown outline method: {method}"},
             }
 
     except Exception as e:
-        return {
-            "success": False,
-            "error": {"code": "OUTLINE_FAILED", "message": str(e)}
-        }
+        return {"success": False, "error": {"code": "OUTLINE_FAILED", "message": str(e)}}
 
     return {"success": True, "data": {"method": method, "thickness": thickness}}
 
 
-def handle_bake_maps(params: Dict[str, Any]) -> Dict[str, Any]:
+def handle_bake_maps(params: dict[str, Any]) -> dict[str, Any]:
     """Bake maps (high poly → low poly)"""
     high_poly_name = params.get("high_poly")
     low_poly_name = params.get("low_poly")
@@ -433,30 +430,33 @@ def handle_bake_maps(params: Dict[str, Any]) -> Dict[str, Any]:
     high_obj = bpy.data.objects.get(high_poly_name)
     low_obj = bpy.data.objects.get(low_poly_name)
 
-    if not high_obj or high_obj.type != 'MESH':
+    if not high_obj or high_obj.type != "MESH":
         return {
             "success": False,
-            "error": {"code": "INVALID_OBJECT", "message": f"High poly does not exist or is not a mesh: {high_poly_name}"}
+            "error": {
+                "code": "INVALID_OBJECT",
+                "message": f"High poly does not exist or is not a mesh: {high_poly_name}",
+            },
         }
-    if not low_obj or low_obj.type != 'MESH':
+    if not low_obj or low_obj.type != "MESH":
         return {
             "success": False,
-            "error": {"code": "INVALID_OBJECT", "message": f"Low poly does not exist or is not a mesh: {low_poly_name}"}
+            "error": {
+                "code": "INVALID_OBJECT",
+                "message": f"Low poly does not exist or is not a mesh: {low_poly_name}",
+            },
         }
 
     # Switch to Cycles (required for baking)
     scene = bpy.context.scene
     original_engine = scene.render.engine
-    scene.render.engine = 'CYCLES'
+    scene.render.engine = "CYCLES"
     scene.cycles.samples = 64
 
     # Determine output directory
     if not output_dir:
         blend_path = bpy.data.filepath
-        if blend_path:
-            output_dir = os.path.dirname(blend_path)
-        else:
-            output_dir = os.path.expanduser("~")
+        output_dir = os.path.dirname(blend_path) if blend_path else os.path.expanduser("~")
 
     baked_maps = []
 
@@ -489,10 +489,10 @@ def handle_bake_maps(params: Dict[str, Any]) -> Dict[str, Any]:
                 float_buffer=is_data,
             )
             if is_data:
-                img.colorspace_settings.name = 'Non-Color'
+                img.colorspace_settings.name = "Non-Color"
 
             # Create image texture node
-            tex_node = nodes.new(type='ShaderNodeTexImage')
+            tex_node = nodes.new(type="ShaderNodeTexImage")
             tex_node.image = img
             tex_node.name = f"Bake_{map_type}"
             tex_node.label = f"Bake {map_type}"
@@ -509,7 +509,7 @@ def handle_bake_maps(params: Dict[str, Any]) -> Dict[str, Any]:
             scene.render.bake.margin = margin
 
             # Select objects
-            bpy.ops.object.select_all(action='DESELECT')
+            bpy.ops.object.select_all(action="DESELECT")
             high_obj.select_set(True)
             low_obj.select_set(True)
             bpy.context.view_layer.objects.active = low_obj
@@ -535,7 +535,7 @@ def handle_bake_maps(params: Dict[str, Any]) -> Dict[str, Any]:
             # Save image
             output_path = os.path.join(output_dir, f"{img_name}.png")
             img.filepath_raw = output_path
-            img.file_format = 'PNG'
+            img.file_format = "PNG"
             img.save()
 
             baked_maps.append({"type": map_type, "path": output_path, "resolution": resolution})
@@ -545,10 +545,7 @@ def handle_bake_maps(params: Dict[str, Any]) -> Dict[str, Any]:
 
     except Exception as e:
         scene.render.engine = original_engine
-        return {
-            "success": False,
-            "error": {"code": "BAKE_FAILED", "message": str(e)}
-        }
+        return {"success": False, "error": {"code": "BAKE_FAILED", "message": str(e)}}
 
     # Restore render engine
     scene.render.engine = original_engine

@@ -1,13 +1,15 @@
 """
 查询Blender场景中的对象
 """
-import socket
+
 import json
+import socket
 import time
 
-def query_scene():
+
+def query_scene() -> bool | None:
     """查询场景中的对象"""
-    code = '''
+    code = """
 import bpy
 
 print("\\n=== Scene Objects ===")
@@ -50,19 +52,19 @@ if mat_names:
     print("Material list (first 10):")
     for m in mat_names:
         print("  -", m)
-'''
+"""
 
     try:
         s = socket.socket()
         s.settimeout(30)
-        s.connect(('127.0.0.1', 9876))
+        s.connect(("127.0.0.1", 9876))
 
         req = {
             "id": f"query_{int(time.time())}",
             "type": "command",
             "category": "utility",
             "action": "execute_python",
-            "params": {"code": code, "timeout": 30}
+            "params": {"code": code, "timeout": 30},
         }
 
         s.send((json.dumps(req, ensure_ascii=False) + "\n").encode("utf-8"))
@@ -72,7 +74,7 @@ if mat_names:
             d = s.recv(8192)
             if not d:
                 break
-            buf += d.decode("utf-8", errors='replace')
+            buf += d.decode("utf-8", errors="replace")
 
         s.close()
 
@@ -90,6 +92,7 @@ if mat_names:
     except Exception as e:
         print(f"Error: {e}")
         return False
+
 
 if __name__ == "__main__":
     query_scene()

@@ -3,7 +3,7 @@
 from blender_mcp import tools
 
 
-def test_pipeline_and_quality_audit_exports_exist():
+def test_pipeline_and_quality_audit_exports_exist() -> None:
     assert hasattr(tools, "register_pipeline_tools")
     assert hasattr(tools, "register_quality_audit_tools")
     assert "register_pipeline_tools" in tools.__all__

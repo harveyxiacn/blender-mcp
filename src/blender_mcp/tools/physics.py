@@ -4,10 +4,10 @@ Physics simulation tools
 Provides physics simulation features including cloth, rigid body, particle systems, etc.
 """
 
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -15,22 +15,27 @@ if TYPE_CHECKING:
 
 # ==================== Input Models ====================
 
+
 class ClothAddInput(BaseModel):
     """Add cloth simulation input"""
+
     object_name: str = Field(..., description="Mesh object name")
     preset: str = Field(
-        default="cotton",
-        description="Cloth preset: cotton, silk, leather, denim, rubber"
+        default="cotton", description="Cloth preset: cotton, silk, leather, denim, rubber"
     )
-    pin_group: Optional[str] = Field(default=None, description="Pin vertex group")
+    pin_group: str | None = Field(default=None, description="Pin vertex group")
     collision_quality: int = Field(default=2, description="Collision quality", ge=1, le=10)
 
 
 class RigidBodyAddInput(BaseModel):
     """Add rigid body input"""
+
     object_name: str = Field(..., description="Object name")
     body_type: str = Field(default="ACTIVE", description="Type: ACTIVE, PASSIVE")
-    shape: str = Field(default="CONVEX_HULL", description="Collision shape: BOX, SPHERE, CAPSULE, CYLINDER, CONE, CONVEX_HULL, MESH")
+    shape: str = Field(
+        default="CONVEX_HULL",
+        description="Collision shape: BOX, SPHERE, CAPSULE, CYLINDER, CONE, CONVEX_HULL, MESH",
+    )
     mass: float = Field(default=1.0, description="Mass (kg)", ge=0)
     friction: float = Field(default=0.5, description="Friction", ge=0, le=1)
     bounciness: float = Field(default=0.0, description="Bounciness", ge=0, le=1)
@@ -38,6 +43,7 @@ class RigidBodyAddInput(BaseModel):
 
 class CollisionAddInput(BaseModel):
     """Add collision body input"""
+
     object_name: str = Field(..., description="Object name")
     damping: float = Field(default=0.0, description="Damping", ge=0, le=1)
     thickness: float = Field(default=0.02, description="Thickness", ge=0)
@@ -46,6 +52,7 @@ class CollisionAddInput(BaseModel):
 
 class ParticleSystemInput(BaseModel):
     """Particle system input"""
+
     object_name: str = Field(..., description="Emitter object name")
     particle_type: str = Field(default="EMITTER", description="Type: EMITTER, HAIR")
     count: int = Field(default=1000, description="Particle count", ge=1, le=100000)
@@ -56,17 +63,19 @@ class ParticleSystemInput(BaseModel):
 
 class ForceFieldInput(BaseModel):
     """Force field input"""
+
     force_type: str = Field(
         default="WIND",
-        description="Force field type: WIND, VORTEX, TURBULENCE, DRAG, FORCE, MAGNETIC"
+        description="Force field type: WIND, VORTEX, TURBULENCE, DRAG, FORCE, MAGNETIC",
     )
-    location: Optional[List[float]] = Field(default=None, description="Location")
+    location: list[float] | None = Field(default=None, description="Location")
     strength: float = Field(default=1.0, description="Strength")
     flow: float = Field(default=0.0, description="Flow")
 
 
 class SoftBodyAddInput(BaseModel):
     """Add soft body input"""
+
     object_name: str = Field(..., description="Object name")
     mass: float = Field(default=1.0, description="Mass", ge=0)
     friction: float = Field(default=0.5, description="Friction", ge=0, le=1)
@@ -74,6 +83,7 @@ class SoftBodyAddInput(BaseModel):
 
 
 # ==================== Tool Registration ====================
+
 
 def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register physics simulation tools"""
@@ -85,8 +95,8 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_physics_cloth_add(params: ClothAddInput) -> str:
         """Add cloth simulation to a mesh.
@@ -98,13 +108,14 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Operation result
         """
         result = await server.execute_command(
-            "physics", "cloth_add",
+            "physics",
+            "cloth_add",
             {
                 "object_name": params.object_name,
                 "preset": params.preset,
                 "pin_group": params.pin_group,
-                "collision_quality": params.collision_quality
-            }
+                "collision_quality": params.collision_quality,
+            },
         )
 
         if result.get("success"):
@@ -119,8 +130,8 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_physics_rigid_body_add(params: RigidBodyAddInput) -> str:
         """Add rigid body physics to an object.
@@ -132,15 +143,16 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Operation result
         """
         result = await server.execute_command(
-            "physics", "rigid_body_add",
+            "physics",
+            "rigid_body_add",
             {
                 "object_name": params.object_name,
                 "body_type": params.body_type,
                 "shape": params.shape,
                 "mass": params.mass,
                 "friction": params.friction,
-                "bounciness": params.bounciness
-            }
+                "bounciness": params.bounciness,
+            },
         )
 
         if result.get("success"):
@@ -155,8 +167,8 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_physics_collision_add(params: CollisionAddInput) -> str:
         """Add collision body to an object (for cloth/soft body collision).
@@ -168,13 +180,14 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Operation result
         """
         result = await server.execute_command(
-            "physics", "collision_add",
+            "physics",
+            "collision_add",
             {
                 "object_name": params.object_name,
                 "damping": params.damping,
                 "thickness": params.thickness,
-                "friction": params.friction
-            }
+                "friction": params.friction,
+            },
         )
 
         if result.get("success"):
@@ -189,8 +202,8 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_physics_particles_create(params: ParticleSystemInput) -> str:
         """Create a particle system.
@@ -202,15 +215,16 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Operation result
         """
         result = await server.execute_command(
-            "physics", "particles_create",
+            "physics",
+            "particles_create",
             {
                 "object_name": params.object_name,
                 "particle_type": params.particle_type,
                 "count": params.count,
                 "lifetime": params.lifetime,
                 "emit_from": params.emit_from,
-                "velocity_normal": params.velocity_normal
-            }
+                "velocity_normal": params.velocity_normal,
+            },
         )
 
         if result.get("success"):
@@ -225,8 +239,8 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_physics_force_field_add(params: ForceFieldInput) -> str:
         """Add a force field (wind, vortex, turbulence, etc.).
@@ -238,13 +252,14 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Operation result
         """
         result = await server.execute_command(
-            "physics", "force_field_add",
+            "physics",
+            "force_field_add",
             {
                 "force_type": params.force_type,
                 "location": params.location or [0, 0, 0],
                 "strength": params.strength,
-                "flow": params.flow
-            }
+                "flow": params.flow,
+            },
         )
 
         if result.get("success"):
@@ -259,8 +274,8 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_physics_soft_body_add(params: SoftBodyAddInput) -> str:
         """Add soft body simulation to an object.
@@ -272,13 +287,14 @@ def register_physics_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Operation result
         """
         result = await server.execute_command(
-            "physics", "soft_body_add",
+            "physics",
+            "soft_body_add",
             {
                 "object_name": params.object_name,
                 "mass": params.mass,
                 "friction": params.friction,
-                "goal_strength": params.goal_strength
-            }
+                "goal_strength": params.goal_strength,
+            },
         )
 
         if result.get("success"):

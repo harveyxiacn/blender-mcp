@@ -5,12 +5,11 @@ Automatically detects the Blender installation path and installs the MCP addon.
 Supports Blender 4.x and 5.x with automatic version detection.
 """
 
-import os
-import sys
-import shutil
 import logging
+import os
+import shutil
+import sys
 from pathlib import Path
-from typing import Optional, List
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +25,7 @@ def resolve_addon_source() -> Path:
     candidates = [
         module_file.parents[2] / "addon" / "blender_mcp_addon",  # repo_root/addon/...
         module_file.parents[1] / "addon" / "blender_mcp_addon",  # src/addon/... (fallback)
-        Path.cwd() / "addon" / "blender_mcp_addon",              # cwd fallback
+        Path.cwd() / "addon" / "blender_mcp_addon",  # cwd fallback
     ]
 
     for candidate in candidates:
@@ -37,14 +36,15 @@ def resolve_addon_source() -> Path:
     raise FileNotFoundError(f"Addon source not found. Tried:\n{tried}")
 
 
-def find_blender_paths() -> List[Path]:
+def find_blender_paths() -> list[Path]:
     """Find Blender installation paths on the system."""
     paths = []
 
     if sys.platform == "win32":
         common_paths = [
             Path(os.environ.get("PROGRAMFILES", "C:/Program Files")) / "Blender Foundation",
-            Path(os.environ.get("PROGRAMFILES(X86)", "C:/Program Files (x86)")) / "Blender Foundation",
+            Path(os.environ.get("PROGRAMFILES(X86)", "C:/Program Files (x86)"))
+            / "Blender Foundation",
             Path.home() / "AppData" / "Roaming" / "Blender Foundation",
         ]
         for base in common_paths:
@@ -79,7 +79,7 @@ def find_blender_paths() -> List[Path]:
     return paths
 
 
-def get_addon_path(blender_path: Path) -> Optional[Path]:
+def get_addon_path(blender_path: Path) -> Path | None:
     """Get the addon directory for a specific Blender installation."""
     if sys.platform == "darwin":
         if blender_path.suffix == ".app":
@@ -117,7 +117,9 @@ def _detect_latest_blender_version() -> str:
             if item.is_dir() and item.name[0].isdigit():
                 try:
                     parts = item.name.split(".")
-                    versions.append((int(parts[0]), int(parts[1]) if len(parts) > 1 else 0, item.name))
+                    versions.append(
+                        (int(parts[0]), int(parts[1]) if len(parts) > 1 else 0, item.name)
+                    )
                 except (ValueError, IndexError):
                     continue
         if versions:
@@ -127,7 +129,7 @@ def _detect_latest_blender_version() -> str:
     return "4.0"
 
 
-def get_user_addon_path(version: Optional[str] = None) -> Path:
+def get_user_addon_path(version: str | None = None) -> Path:
     """Get the user addon directory path.
 
     Args:
@@ -143,15 +145,20 @@ def get_user_addon_path(version: Optional[str] = None) -> Path:
         base = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
         return base / "Blender Foundation" / "Blender" / version / "scripts" / "addons"
     elif sys.platform == "darwin":
-        return Path.home() / "Library" / "Application Support" / "Blender" / version / "scripts" / "addons"
+        return (
+            Path.home()
+            / "Library"
+            / "Application Support"
+            / "Blender"
+            / version
+            / "scripts"
+            / "addons"
+        )
     else:
         return Path.home() / ".config" / "blender" / version / "scripts" / "addons"
 
 
-def install_blender_addon(
-    blender_path: Optional[str] = None,
-    force: bool = False
-) -> bool:
+def install_blender_addon(blender_path: str | None = None, force: bool = False) -> bool:
     """Install the Blender MCP addon.
 
     Args:

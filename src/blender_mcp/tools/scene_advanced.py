@@ -4,10 +4,10 @@ Scene enhancement tools
 Provides environment presets, procedural generation, HDRI setup, and related functionality.
 """
 
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -15,17 +15,20 @@ if TYPE_CHECKING:
 
 # ==================== Input Models ====================
 
+
 class EnvironmentPresetInput(BaseModel):
     """Environment preset input"""
+
     preset: str = Field(
         default="studio",
-        description="Preset: studio, outdoor_day, outdoor_night, sunset, indoor, stadium, space"
+        description="Preset: studio, outdoor_day, outdoor_night, sunset, indoor, stadium, space",
     )
     intensity: float = Field(default=1.0, description="Environment light intensity", ge=0)
 
 
 class ScatterObjectsInput(BaseModel):
     """Scatter objects input"""
+
     source_object: str = Field(..., description="Source object name")
     target_surface: str = Field(..., description="Target surface name")
     count: int = Field(default=100, description="Scatter count", ge=1, le=10000)
@@ -38,6 +41,7 @@ class ScatterObjectsInput(BaseModel):
 
 class ArrayGenerateInput(BaseModel):
     """Array generation input"""
+
     object_name: str = Field(..., description="Object name")
     count_x: int = Field(default=1, description="X direction count", ge=1)
     count_y: int = Field(default=1, description="Y direction count", ge=1)
@@ -49,7 +53,8 @@ class ArrayGenerateInput(BaseModel):
 
 class HDRISetupInput(BaseModel):
     """HDRI setup input"""
-    hdri_path: Optional[str] = Field(default=None, description="HDRI file path")
+
+    hdri_path: str | None = Field(default=None, description="HDRI file path")
     rotation: float = Field(default=0.0, description="Rotation angle (degrees)")
     strength: float = Field(default=1.0, description="Strength", ge=0)
     use_background: bool = Field(default=True, description="Use as background")
@@ -57,19 +62,20 @@ class HDRISetupInput(BaseModel):
 
 class GroundPlaneInput(BaseModel):
     """Ground plane input"""
+
     size: float = Field(default=100.0, description="Size", ge=1)
     material_preset: str = Field(
         default="concrete",
-        description="Material preset: concrete, grass, wood, marble, sand, water"
+        description="Material preset: concrete, grass, wood, marble, sand, water",
     )
-    location: Optional[List[float]] = Field(default=None, description="Location")
+    location: list[float] | None = Field(default=None, description="Location")
 
 
 class SkySetupInput(BaseModel):
     """Sky setup input"""
+
     sky_type: str = Field(
-        default="hosek_wilkie",
-        description="Sky type: hosek_wilkie, preetham, nishita"
+        default="hosek_wilkie", description="Sky type: hosek_wilkie, preetham, nishita"
     )
     sun_elevation: float = Field(default=45.0, description="Sun elevation (degrees)", ge=-90, le=90)
     sun_rotation: float = Field(default=0.0, description="Sun azimuth (degrees)")
@@ -78,13 +84,15 @@ class SkySetupInput(BaseModel):
 
 class FogAddInput(BaseModel):
     """Add fog effect input"""
+
     density: float = Field(default=0.1, description="Density", ge=0)
-    color: Optional[List[float]] = Field(default=None, description="Color RGB")
+    color: list[float] | None = Field(default=None, description="Color RGB")
     height: float = Field(default=0.0, description="Fog height")
     falloff: float = Field(default=1.0, description="Falloff", ge=0)
 
 
 # ==================== Tool Registration ====================
+
 
 def register_scene_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register scene enhancement tools"""
@@ -96,8 +104,8 @@ def register_scene_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") -> N
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_scene_environment_preset(params: EnvironmentPresetInput) -> str:
         """Apply an environment preset.
@@ -118,11 +126,9 @@ def register_scene_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") -> N
             Operation result
         """
         result = await server.execute_command(
-            "scene_advanced", "environment_preset",
-            {
-                "preset": params.preset,
-                "intensity": params.intensity
-            }
+            "scene_advanced",
+            "environment_preset",
+            {"preset": params.preset, "intensity": params.intensity},
         )
 
         if result.get("success"):
@@ -137,8 +143,8 @@ def register_scene_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") -> N
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_scene_scatter(params: ScatterObjectsInput) -> str:
         """Scatter objects on a surface (grass, trees, rocks, etc.).
@@ -150,7 +156,8 @@ def register_scene_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") -> N
             Scatter result
         """
         result = await server.execute_command(
-            "scene_advanced", "scatter",
+            "scene_advanced",
+            "scatter",
             {
                 "source_object": params.source_object,
                 "target_surface": params.target_surface,
@@ -159,8 +166,8 @@ def register_scene_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") -> N
                 "scale_min": params.scale_min,
                 "scale_max": params.scale_max,
                 "rotation_random": params.rotation_random,
-                "align_to_normal": params.align_to_normal
-            }
+                "align_to_normal": params.align_to_normal,
+            },
         )
 
         if result.get("success"):
@@ -176,8 +183,8 @@ def register_scene_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") -> N
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_scene_array_generate(params: ArrayGenerateInput) -> str:
         """Generate an object array (buildings, seats, etc.).
@@ -189,7 +196,8 @@ def register_scene_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") -> N
             Generation result
         """
         result = await server.execute_command(
-            "scene_advanced", "array_generate",
+            "scene_advanced",
+            "array_generate",
             {
                 "object_name": params.object_name,
                 "count_x": params.count_x,
@@ -197,8 +205,8 @@ def register_scene_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") -> N
                 "count_z": params.count_z,
                 "offset_x": params.offset_x,
                 "offset_y": params.offset_y,
-                "offset_z": params.offset_z
-            }
+                "offset_z": params.offset_z,
+            },
         )
 
         if result.get("success"):
@@ -214,8 +222,8 @@ def register_scene_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") -> N
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_scene_ground_plane(params: GroundPlaneInput) -> str:
         """Create a ground plane with material.
@@ -227,12 +235,13 @@ def register_scene_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") -> N
             Creation result
         """
         result = await server.execute_command(
-            "scene_advanced", "ground_plane",
+            "scene_advanced",
+            "ground_plane",
             {
                 "size": params.size,
                 "material_preset": params.material_preset,
-                "location": params.location or [0, 0, 0]
-            }
+                "location": params.location or [0, 0, 0],
+            },
         )
 
         if result.get("success"):
@@ -247,8 +256,8 @@ def register_scene_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") -> N
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_scene_sky_setup(params: SkySetupInput) -> str:
         """Set up procedural sky.
@@ -260,13 +269,14 @@ def register_scene_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") -> N
             Setup result
         """
         result = await server.execute_command(
-            "scene_advanced", "sky_setup",
+            "scene_advanced",
+            "sky_setup",
             {
                 "sky_type": params.sky_type,
                 "sun_elevation": params.sun_elevation,
                 "sun_rotation": params.sun_rotation,
-                "turbidity": params.turbidity
-            }
+                "turbidity": params.turbidity,
+            },
         )
 
         if result.get("success"):
@@ -281,8 +291,8 @@ def register_scene_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") -> N
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_scene_fog_add(params: FogAddInput) -> str:
         """Add volumetric fog effect.
@@ -294,13 +304,14 @@ def register_scene_advanced_tools(mcp: FastMCP, server: "BlenderMCPServer") -> N
             Operation result
         """
         result = await server.execute_command(
-            "scene_advanced", "fog_add",
+            "scene_advanced",
+            "fog_add",
             {
                 "density": params.density,
                 "color": params.color or [0.8, 0.9, 1.0],
                 "height": params.height,
-                "falloff": params.falloff
-            }
+                "falloff": params.falloff,
+            },
         )
 
         if result.get("success"):

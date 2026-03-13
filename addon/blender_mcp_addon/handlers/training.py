@@ -5,11 +5,12 @@ Handles training system-related commands on the Blender side.
 Primarily responsible for executing scene creation and model operation commands in exercises.
 """
 
+from typing import Any
+
 import bpy
-from typing import Dict, Any
 
 
-def handle_training(params: Dict[str, Any]) -> Dict[str, Any]:
+def handle_training(params: dict[str, Any]) -> dict[str, Any]:
     """Handle training system commands"""
     action = params.get("action", "")
 
@@ -27,7 +28,7 @@ def handle_training(params: Dict[str, Any]) -> Dict[str, Any]:
     return {"success": False, "error": f"Unknown training action: {action}"}
 
 
-def _setup_penglai_scene(params: Dict[str, Any]) -> Dict[str, Any]:
+def _setup_penglai_scene(params: dict[str, Any]) -> dict[str, Any]:
     """Set up Penglai Nine Chapters training scene"""
     try:
         scene_name = params.get("scene_name", "PenglaiTraining")
@@ -64,6 +65,7 @@ def _setup_penglai_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         if level in ("intermediate", "full"):
             # Add tree placeholders
             import math
+
             for i in range(6):
                 angle = i * math.pi * 2 / 6
                 x = 8 * math.cos(angle)
@@ -106,7 +108,7 @@ def _setup_penglai_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 
-def _setup_fanzhendong_scene(params: Dict[str, Any]) -> Dict[str, Any]:
+def _setup_fanzhendong_scene(params: dict[str, Any]) -> dict[str, Any]:
     """Set up chibi Fan Zhendong training scene"""
     try:
         scene_name = params.get("scene_name", "FZDTraining")
@@ -179,20 +181,18 @@ def _setup_fanzhendong_scene(params: Dict[str, Any]) -> Dict[str, Any]:
 
         if level == "full":
             # Paris Olympic rings
-            import math
             ring_colors = [
-                (0.0, 0.3, 0.7, 1.0),   # Blue
-                (0.0, 0.0, 0.0, 1.0),   # Black
-                (0.8, 0.1, 0.1, 1.0),   # Red
+                (0.0, 0.3, 0.7, 1.0),  # Blue
+                (0.0, 0.0, 0.0, 1.0),  # Black
+                (0.8, 0.1, 0.1, 1.0),  # Red
                 (1.0, 0.75, 0.0, 1.0),  # Yellow
-                (0.0, 0.5, 0.2, 1.0),   # Green
+                (0.0, 0.5, 0.2, 1.0),  # Green
             ]
             for i, color in enumerate(ring_colors):
                 x = (i - 2) * 0.5
                 y_offset = 0.2 if i % 2 == 1 else 0
                 bpy.ops.mesh.primitive_torus_add(
-                    major_radius=0.2, minor_radius=0.02,
-                    location=(x, -3, 3 - y_offset)
+                    major_radius=0.2, minor_radius=0.02, location=(x, -3, 3 - y_offset)
                 )
                 ring = bpy.context.active_object
                 ring.name = f"Olympic_Ring_{i+1}"
@@ -204,7 +204,7 @@ def _setup_fanzhendong_scene(params: Dict[str, Any]) -> Dict[str, Any]:
                 ring.data.materials.append(mat_ring)
 
             # Lighting
-            bpy.ops.object.light_add(type='AREA', location=(0, -2, 4))
+            bpy.ops.object.light_add(type="AREA", location=(0, -2, 4))
             light = bpy.context.active_object
             light.name = "StadiumLight_Key"
             light.data.energy = 500
@@ -223,7 +223,7 @@ def _setup_fanzhendong_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 
-def _create_exercise_scene(params: Dict[str, Any]) -> Dict[str, Any]:
+def _create_exercise_scene(params: dict[str, Any]) -> dict[str, Any]:
     """Create a clean scene for exercises"""
     try:
         exercise_id = params.get("exercise_id", "exercise")
@@ -236,7 +236,7 @@ def _create_exercise_scene(params: Dict[str, Any]) -> Dict[str, Any]:
             bpy.context.window.scene = scene
 
         # Add basic lighting and camera
-        bpy.ops.object.light_add(type='SUN', location=(5, -5, 10))
+        bpy.ops.object.light_add(type="SUN", location=(5, -5, 10))
         sun = bpy.context.active_object
         sun.name = "Training_Sun"
         sun.data.energy = 3
@@ -257,7 +257,7 @@ def _create_exercise_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 
-def _verify_exercise(params: Dict[str, Any]) -> Dict[str, Any]:
+def _verify_exercise(params: dict[str, Any]) -> dict[str, Any]:
     """Verify exercise results"""
     try:
         expected_objects = params.get("expected_objects", [])
@@ -284,7 +284,7 @@ def _verify_exercise(params: Dict[str, Any]) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 
-def _cleanup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
+def _cleanup_scene(params: dict[str, Any]) -> dict[str, Any]:
     """Clean up training scenes"""
     try:
         keep_scenes = params.get("keep_scenes", ["Scene"])

@@ -6,12 +6,14 @@ reference image loading, model optimization and other commands.
 Optimized for table tennis player (especially Fan Zhendong) 3D model creation.
 """
 
-from typing import Any, Dict, List, Optional
+import contextlib
 import math
 import os
+from typing import Any
 
 import bpy
 
+from .compat import get_eevee_engine
 
 # ==================== Configuration Data ====================
 
@@ -63,20 +65,20 @@ STYLE_CONFIG = {
 ATHLETE_PRESETS = {
     "FAN_ZHENDONG": {
         "name": "FanZhendong",
-        "height_real": 1.72,      # Real height 172cm
+        "height_real": 1.72,  # Real height 172cm
         "build": "athletic",
         "skin_color": [0.95, 0.82, 0.72, 1.0],  # Asian skin tone
-        "hair_color": [0.05, 0.03, 0.02, 1.0],   # Black short hair
+        "hair_color": [0.05, 0.03, 0.02, 1.0],  # Black short hair
         "hair_style": "short",
-        "eye_color": [0.15, 0.08, 0.05, 1.0],    # Dark brown eyes
+        "eye_color": [0.15, 0.08, 0.05, 1.0],  # Dark brown eyes
         "face_features": {
-            "face_shape": "round",       # Round face
-            "eyebrow_thickness": 1.2,    # Thick eyebrows
-            "eye_size": 1.1,             # Large eyes
-            "nose_size": 1.0,            # Standard nose
-            "mouth_width": 1.0,          # Standard mouth
-            "jaw_width": 1.1,            # Slightly wide jaw
-            "ear_size": 1.1,             # Slightly large ears (chibi feature)
+            "face_shape": "round",  # Round face
+            "eyebrow_thickness": 1.2,  # Thick eyebrows
+            "eye_size": 1.1,  # Large eyes
+            "nose_size": 1.0,  # Standard nose
+            "mouth_width": 1.0,  # Standard mouth
+            "jaw_width": 1.1,  # Slightly wide jaw
+            "ear_size": 1.1,  # Slightly large ears (chibi feature)
         },
         "jersey_number": 20,
         "brand": "Li-Ning",
@@ -86,29 +88,29 @@ ATHLETE_PRESETS = {
 # Team color configuration
 TEAM_COLORS = {
     "CHINA_NATIONAL": {
-        "primary": [0.85, 0.1, 0.1, 1.0],     # China red
-        "secondary": [1.0, 0.85, 0.0, 1.0],     # Gold
-        "accent": [1.0, 1.0, 1.0, 1.0],         # White
+        "primary": [0.85, 0.1, 0.1, 1.0],  # China red
+        "secondary": [1.0, 0.85, 0.0, 1.0],  # Gold
+        "accent": [1.0, 1.0, 1.0, 1.0],  # White
     },
     "CHINA_NATIONAL_BLUE": {
-        "primary": [0.1, 0.2, 0.7, 1.0],       # Dark blue
-        "secondary": [0.3, 0.5, 0.9, 1.0],      # Light blue
-        "accent": [1.0, 1.0, 1.0, 1.0],         # White
+        "primary": [0.1, 0.2, 0.7, 1.0],  # Dark blue
+        "secondary": [0.3, 0.5, 0.9, 1.0],  # Light blue
+        "accent": [1.0, 1.0, 1.0, 1.0],  # White
     },
     "CHINA_NATIONAL_WHITE": {
-        "primary": [1.0, 1.0, 1.0, 1.0],       # White
-        "secondary": [0.85, 0.1, 0.1, 1.0],     # Red stripes
-        "accent": [0.1, 0.1, 0.1, 1.0],         # Black
+        "primary": [1.0, 1.0, 1.0, 1.0],  # White
+        "secondary": [0.85, 0.1, 0.1, 1.0],  # Red stripes
+        "accent": [0.1, 0.1, 0.1, 1.0],  # Black
     },
     "CLUB_SHENZHEN": {
-        "primary": [0.0, 0.5, 0.8, 1.0],       # Sky blue
-        "secondary": [1.0, 1.0, 1.0, 1.0],      # White
-        "accent": [0.1, 0.1, 0.1, 1.0],         # Black
+        "primary": [0.0, 0.5, 0.8, 1.0],  # Sky blue
+        "secondary": [1.0, 1.0, 1.0, 1.0],  # White
+        "accent": [0.1, 0.1, 0.1, 1.0],  # Black
     },
     "TRAINING": {
-        "primary": [0.2, 0.2, 0.2, 1.0],       # Dark gray
-        "secondary": [0.85, 0.1, 0.1, 1.0],     # Red
-        "accent": [1.0, 1.0, 1.0, 1.0],         # White
+        "primary": [0.2, 0.2, 0.2, 1.0],  # Dark gray
+        "secondary": [0.85, 0.1, 0.1, 1.0],  # Red
+        "accent": [1.0, 1.0, 1.0, 1.0],  # White
     },
 }
 
@@ -303,17 +305,22 @@ PLATFORM_TRI_DEFAULTS = {
 
 # ==================== Utility Functions ====================
 
+
 def _get_principled_bsdf(nodes):
     """Get Principled BSDF node (compatible with all Blender locales)"""
     for node in nodes:
-        if node.type == 'BSDF_PRINCIPLED':
+        if node.type == "BSDF_PRINCIPLED":
             return node
     return None
 
 
-def _create_material(name: str, color: List[float],
-                     metallic: float = 0.0, roughness: float = 0.5,
-                     specular: float = 0.5) -> bpy.types.Material:
+def _create_material(
+    name: str,
+    color: list[float],
+    metallic: float = 0.0,
+    roughness: float = 0.5,
+    specular: float = 0.5,
+) -> bpy.types.Material:
     """Create PBR material"""
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
@@ -327,15 +334,13 @@ def _create_material(name: str, color: List[float],
         try:
             bsdf.inputs["Specular IOR Level"].default_value = specular
         except (KeyError, IndexError):
-            try:
+            with contextlib.suppress(KeyError, IndexError):
                 bsdf.inputs["Specular"].default_value = specular
-            except (KeyError, IndexError):
-                pass
 
     return mat
 
 
-def _assign_material(obj, material):
+def _assign_material(obj, material) -> None:
     """Assign material to object"""
     if obj.data.materials:
         obj.data.materials[0] = material
@@ -343,18 +348,18 @@ def _assign_material(obj, material):
         obj.data.materials.append(material)
 
 
-def _ensure_object_mode():
+def _ensure_object_mode() -> None:
     """Ensure in Object mode"""
-    if bpy.context.active_object and bpy.context.active_object.mode != 'OBJECT':
-        bpy.ops.object.mode_set(mode='OBJECT')
+    if bpy.context.active_object and bpy.context.active_object.mode != "OBJECT":
+        bpy.ops.object.mode_set(mode="OBJECT")
 
 
-def _deselect_all():
+def _deselect_all() -> None:
     """Deselect all objects"""
-    bpy.ops.object.select_all(action='DESELECT')
+    bpy.ops.object.select_all(action="DESELECT")
 
 
-def _set_smooth_shading(obj):
+def _set_smooth_shading(obj) -> None:
     """Set smooth shading (compatible across versions)"""
     try:
         for poly in obj.data.polygons:
@@ -363,7 +368,7 @@ def _set_smooth_shading(obj):
         pass
 
 
-def _parent_to(child_obj, parent_obj, keep_transform=True):
+def _parent_to(child_obj, parent_obj, keep_transform=True) -> None:
     """Set parent-child relationship"""
     child_obj.parent = parent_obj
     if keep_transform:
@@ -372,7 +377,8 @@ def _parent_to(child_obj, parent_obj, keep_transform=True):
 
 # ==================== Character Creation ====================
 
-def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
+
+def handle_create_character(params: dict[str, Any]) -> dict[str, Any]:
     """Create sport character"""
     _ensure_object_mode()
 
@@ -420,7 +426,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
     # Create root empty
     root_empty = bpy.data.objects.new(f"{name}_Root", None)
     bpy.context.collection.objects.link(root_empty)
-    root_empty.empty_display_type = 'ARROWS'
+    root_empty.empty_display_type = "ARROWS"
     root_empty.empty_display_size = 0.1
 
     # Create skin material (SSS suitable for skin rendering)
@@ -431,10 +437,8 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
         try:
             bsdf.inputs["Subsurface Weight"].default_value = 0.15
         except (KeyError, IndexError):
-            try:
+            with contextlib.suppress(KeyError, IndexError):
                 bsdf.inputs["Subsurface"].default_value = 0.15
-            except (KeyError, IndexError):
-                pass
 
     # Determine subdivision level based on face count budget
     if face_count_budget <= 3000:
@@ -458,7 +462,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
         segments=sphere_segments,
         ring_count=sphere_rings,
         radius=head_radius,
-        location=[0, 0, head_z]
+        location=[0, 0, head_z],
     )
     head = bpy.context.active_object
     head.name = f"{name}_Head"
@@ -486,7 +490,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
             segments=max(12, sphere_segments // 2),
             ring_count=max(8, sphere_rings // 2),
             radius=eye_size * 1.3,
-            location=[x_offset, eye_y, eye_z]
+            location=[x_offset, eye_y, eye_z],
         )
         eye_white = bpy.context.active_object
         eye_white.name = f"{name}_EyeWhite_{side}"
@@ -499,7 +503,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
             segments=max(12, sphere_segments // 2),
             ring_count=max(8, sphere_rings // 2),
             radius=eye_size,
-            location=[x_offset, eye_y - eye_size * 0.3, eye_z]
+            location=[x_offset, eye_y - eye_size * 0.3, eye_z],
         )
         eye_pupil = bpy.context.active_object
         eye_pupil.name = f"{name}_Eye_{side}"
@@ -517,7 +521,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
         segments=max(8, sphere_segments // 3),
         ring_count=max(6, sphere_rings // 3),
         radius=nose_size,
-        location=[0, eye_y - nose_size, eye_z - head_radius * 0.3]
+        location=[0, eye_y - nose_size, eye_z - head_radius * 0.3],
     )
     nose = bpy.context.active_object
     nose.name = f"{name}_Nose"
@@ -534,10 +538,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
     # ========== Mouth ==========
     mouth_width = 0.06 * scale_factor
     mouth_z = eye_z - head_radius * 0.55
-    bpy.ops.mesh.primitive_cube_add(
-        size=0.01,
-        location=[0, eye_y, mouth_z]
-    )
+    bpy.ops.mesh.primitive_cube_add(size=0.01, location=[0, eye_y, mouth_z])
     mouth = bpy.context.active_object
     mouth.name = f"{name}_Mouth"
     mouth.scale = [mouth_width * 10, 0.3, 0.2]
@@ -556,7 +557,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
             segments=max(8, sphere_segments // 3),
             ring_count=max(6, sphere_rings // 3),
             radius=ear_size,
-            location=[x_mult * head_radius * 0.95, 0, eye_z - head_radius * 0.15]
+            location=[x_mult * head_radius * 0.95, 0, eye_z - head_radius * 0.15],
         )
         ear = bpy.context.active_object
         ear.name = f"{name}_Ear_{side}"
@@ -579,7 +580,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
         segments=sphere_segments,
         ring_count=sphere_rings,
         radius=head_radius * 1.08,
-        location=[0, 0, hair_base_z]
+        location=[0, 0, hair_base_z],
     )
     hair_base = bpy.context.active_object
     hair_base.name = f"{name}_Hair"
@@ -589,12 +590,18 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
     _parent_to(hair_base, head)
 
     # Bangs (short fringe hair)
-    for i, (x, y_off) in enumerate([(-0.3, -0.2), (0, -0.3), (0.3, -0.2), (-0.15, -0.25), (0.15, -0.25)]):
+    for i, (x, y_off) in enumerate(
+        [(-0.3, -0.2), (0, -0.3), (0.3, -0.2), (-0.15, -0.25), (0.15, -0.25)]
+    ):
         bpy.ops.mesh.primitive_uv_sphere_add(
             segments=max(8, sphere_segments // 3),
             ring_count=max(6, sphere_rings // 3),
             radius=head_radius * 0.25,
-            location=[x * head_radius, y_off * head_radius - head_radius * 0.6, hair_base_z + head_radius * 0.1]
+            location=[
+                x * head_radius,
+                y_off * head_radius - head_radius * 0.6,
+                hair_base_z + head_radius * 0.1,
+            ],
         )
         bang = bpy.context.active_object
         bang.name = f"{name}_HairBang_{i}"
@@ -617,7 +624,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
     body.scale = [body_width, body_depth, body_height]
     # Add subdivision modifier for rounder body
     if subdivisions > 0:
-        subsurf = body.modifiers.new("Subdivide", 'SUBSURF')
+        subsurf = body.modifiers.new("Subdivide", "SUBSURF")
         subsurf.levels = subdivisions
         subsurf.render_levels = subdivisions
     _set_smooth_shading(body)
@@ -637,7 +644,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
         bpy.ops.mesh.primitive_cylinder_add(
             radius=arm_thickness,
             depth=arm_length,
-            location=[shoulder_x, 0, shoulder_z - arm_length * 0.4]
+            location=[shoulder_x, 0, shoulder_z - arm_length * 0.4],
         )
         upper_arm = bpy.context.active_object
         upper_arm.name = f"{name}_UpperArm_{side}"
@@ -649,7 +656,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
         bpy.ops.mesh.primitive_cylinder_add(
             radius=arm_thickness * 0.85,
             depth=arm_length * 0.9,
-            location=[shoulder_x, 0, shoulder_z - arm_length * 1.2]
+            location=[shoulder_x, 0, shoulder_z - arm_length * 1.2],
         )
         forearm = bpy.context.active_object
         forearm.name = f"{name}_Forearm_{side}"
@@ -663,7 +670,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
             segments=max(8, sphere_segments // 3),
             ring_count=max(6, sphere_rings // 3),
             radius=arm_thickness * hand_scale,
-            location=[shoulder_x, 0, shoulder_z - arm_length * 1.7]
+            location=[shoulder_x, 0, shoulder_z - arm_length * 1.7],
         )
         hand = bpy.context.active_object
         hand.name = f"{name}_Hand_{side}"
@@ -684,9 +691,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
 
         # Thigh
         bpy.ops.mesh.primitive_cylinder_add(
-            radius=leg_thickness,
-            depth=leg_length,
-            location=[leg_x, 0, hip_z - leg_length * 0.3]
+            radius=leg_thickness, depth=leg_length, location=[leg_x, 0, hip_z - leg_length * 0.3]
         )
         thigh = bpy.context.active_object
         thigh.name = f"{name}_Thigh_{side}"
@@ -698,7 +703,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
         bpy.ops.mesh.primitive_cylinder_add(
             radius=leg_thickness * 0.85,
             depth=leg_length,
-            location=[leg_x, 0, hip_z - leg_length * 1.2]
+            location=[leg_x, 0, hip_z - leg_length * 1.2],
         )
         shin = bpy.context.active_object
         shin.name = f"{name}_Shin_{side}"
@@ -709,14 +714,17 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
         # Foot
         foot_scale = config["foot_scale"]
         bpy.ops.mesh.primitive_cube_add(
-            size=0.01,
-            location=[leg_x, -leg_thickness * 0.3, hip_z - leg_length * 2.0]
+            size=0.01, location=[leg_x, -leg_thickness * 0.3, hip_z - leg_length * 2.0]
         )
         foot = bpy.context.active_object
         foot.name = f"{name}_Foot_{side}"
-        foot.scale = [leg_thickness * 8 * foot_scale, leg_thickness * 15 * foot_scale, leg_thickness * 5]
+        foot.scale = [
+            leg_thickness * 8 * foot_scale,
+            leg_thickness * 15 * foot_scale,
+            leg_thickness * 5,
+        ]
         if subdivisions > 0:
-            subsurf = foot.modifiers.new("Subdivide", 'SUBSURF')
+            subsurf = foot.modifiers.new("Subdivide", "SUBSURF")
             subsurf.levels = 1
             subsurf.render_levels = 1
         _set_smooth_shading(foot)
@@ -739,7 +747,7 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
             armature.name = f"{name}_Armature"
 
             # Enter edit mode to add bones
-            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.object.mode_set(mode="EDIT")
 
             # Root bone
             root_bone = armature.edit_bones[0]
@@ -802,13 +810,13 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
                 foot_bone.tail = (l_x, -leg_thickness, hip_z - leg_length * 2)
                 foot_bone.parent = shin_bone
 
-            bpy.ops.object.mode_set(mode='OBJECT')
+            bpy.ops.object.mode_set(mode="OBJECT")
 
             _parent_to(armature_obj, root_empty)
             has_armature = True
             created_parts.append(f"{name}_Armature")
 
-        except Exception as e:
+        except Exception:
             _ensure_object_mode()
             # Armature creation failure does not affect the rest
             pass
@@ -823,13 +831,14 @@ def handle_create_character(params: Dict[str, Any]) -> Dict[str, Any]:
             "style": style,
             "sport": sport,
             "preset": preset,
-        }
+        },
     }
 
 
 # ==================== Equipment Addition ====================
 
-def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
+
+def handle_add_equipment(params: dict[str, Any]) -> dict[str, Any]:
     """Add sport equipment"""
     _ensure_object_mode()
 
@@ -842,7 +851,7 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
 
     # Find character root object
     root_obj = bpy.data.objects.get(f"{character_name}_Root")
-    hand_obj = bpy.data.objects.get(f"{character_name}_Hand_R")
+    bpy.data.objects.get(f"{character_name}_Hand_R")
 
     # Auto-determine attachment position
     if attach_to == "auto":
@@ -894,31 +903,27 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
 
         # Blade face
         bpy.ops.mesh.primitive_cylinder_add(
-            vertices=32,
-            radius=0.08 * scale,
-            depth=0.01 * scale,
-            location=attach_location
+            vertices=32, radius=0.08 * scale, depth=0.01 * scale, location=attach_location
         )
         blade = bpy.context.active_object
         blade.name = f"{character_name}_Paddle_Blade"
         blade.scale[2] = 0.3  # Flat
-        blade_mat = _create_material(f"{character_name}_PaddleRubber",
-                                     paddle_color + [1.0], roughness=0.9)
+        blade_mat = _create_material(
+            f"{character_name}_PaddleRubber", paddle_color + [1.0], roughness=0.9
+        )
         _assign_material(blade, blade_mat)
 
         # Handle
         handle_loc = list(attach_location)
         handle_loc[2] -= 0.1 * scale
         bpy.ops.mesh.primitive_cylinder_add(
-            vertices=8,
-            radius=0.015 * scale,
-            depth=0.08 * scale,
-            location=handle_loc
+            vertices=8, radius=0.015 * scale, depth=0.08 * scale, location=handle_loc
         )
         handle = bpy.context.active_object
         handle.name = f"{character_name}_Paddle_Handle"
-        handle_mat = _create_material(f"{character_name}_PaddleHandle",
-                                      handle_color + [1.0], roughness=0.6)
+        handle_mat = _create_material(
+            f"{character_name}_PaddleHandle", handle_color + [1.0], roughness=0.6
+        )
         _assign_material(handle, handle_mat)
 
         # Combine
@@ -931,16 +936,12 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
         # Table tennis ball
         ball_color = color or [1.0, 0.6, 0.0]  # Orange table tennis ball
         bpy.ops.mesh.primitive_uv_sphere_add(
-            segments=16,
-            ring_count=12,
-            radius=0.02 * scale,
-            location=attach_location
+            segments=16, ring_count=12, radius=0.02 * scale, location=attach_location
         )
         equip_obj = bpy.context.active_object
         equip_obj.name = f"{character_name}_Ball"
         _set_smooth_shading(equip_obj)
-        ball_mat = _create_material(f"{character_name}_Ball",
-                                    ball_color + [1.0], roughness=0.3)
+        ball_mat = _create_material(f"{character_name}_Ball", ball_color + [1.0], roughness=0.3)
         _assign_material(equip_obj, ball_mat)
         if parent_obj:
             _parent_to(equip_obj, parent_obj)
@@ -949,27 +950,21 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
         # Table tennis table
         table_color = color or [0.0, 0.3, 0.5]  # Dark blue-green
         # Table surface
-        bpy.ops.mesh.primitive_cube_add(
-            size=0.01,
-            location=[0, 0, 0.76 * scale]
-        )
+        bpy.ops.mesh.primitive_cube_add(size=0.01, location=[0, 0, 0.76 * scale])
         table_top = bpy.context.active_object
         table_top.name = f"{character_name}_Table"
         table_top.scale = [1.525 * scale * 50, 0.7625 * scale * 50, 0.02 * scale * 50]
-        table_mat = _create_material(f"{character_name}_Table",
-                                     table_color + [1.0], roughness=0.4)
+        table_mat = _create_material(f"{character_name}_Table", table_color + [1.0], roughness=0.4)
         _assign_material(table_top, table_mat)
 
         # White center line
-        bpy.ops.mesh.primitive_cube_add(
-            size=0.01,
-            location=[0, 0, 0.761 * scale]
-        )
+        bpy.ops.mesh.primitive_cube_add(size=0.01, location=[0, 0, 0.761 * scale])
         center_line = bpy.context.active_object
         center_line.name = f"{character_name}_TableLine"
         center_line.scale = [0.01 * 50, 0.76 * scale * 50, 0.005 * 50]
-        line_mat = _create_material(f"{character_name}_TableLine",
-                                    [1.0, 1.0, 1.0, 1.0], roughness=0.5)
+        line_mat = _create_material(
+            f"{character_name}_TableLine", [1.0, 1.0, 1.0, 1.0], roughness=0.5
+        )
         _assign_material(center_line, line_mat)
         _parent_to(center_line, table_top)
 
@@ -978,16 +973,12 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
     elif equipment_type == "NET":
         # Net
         net_color = color or [1.0, 1.0, 1.0]
-        bpy.ops.mesh.primitive_cube_add(
-            size=0.01,
-            location=[0, 0, 0.91 * scale]
-        )
+        bpy.ops.mesh.primitive_cube_add(size=0.01, location=[0, 0, 0.91 * scale])
         net = bpy.context.active_object
         net.name = f"{character_name}_Net"
         net.scale = [0.01 * 50, 0.9125 * scale * 50, 0.1525 * scale * 50]
-        net_mat = _create_material(f"{character_name}_Net",
-                                   net_color + [1.0], roughness=0.8)
-        net_mat.blend_method = 'CLIP' if hasattr(net_mat, 'blend_method') else None
+        net_mat = _create_material(f"{character_name}_Net", net_color + [1.0], roughness=0.8)
+        net_mat.blend_method = "CLIP" if hasattr(net_mat, "blend_method") else None
         _assign_material(net, net_mat)
         equip_obj = net
 
@@ -1002,30 +993,26 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
 
         # Medal body
         bpy.ops.mesh.primitive_cylinder_add(
-            vertices=32,
-            radius=0.04 * scale,
-            depth=0.005 * scale,
-            location=attach_location
+            vertices=32, radius=0.04 * scale, depth=0.005 * scale, location=attach_location
         )
         equip_obj = bpy.context.active_object
         equip_obj.name = f"{character_name}_{equipment_type}"
-        medal_mat = _create_material(f"{character_name}_{equipment_type}",
-                                     medal_color + [1.0], metallic=0.9, roughness=0.2)
+        medal_mat = _create_material(
+            f"{character_name}_{equipment_type}", medal_color + [1.0], metallic=0.9, roughness=0.2
+        )
         _assign_material(equip_obj, medal_mat)
 
         # Ribbon
         ribbon_color = [0.0, 0.2, 0.8]  # Blue ribbon (Paris Olympics style)
         ribbon_loc = list(attach_location)
         ribbon_loc[2] += 0.06 * scale
-        bpy.ops.mesh.primitive_cube_add(
-            size=0.01,
-            location=ribbon_loc
-        )
+        bpy.ops.mesh.primitive_cube_add(size=0.01, location=ribbon_loc)
         ribbon = bpy.context.active_object
         ribbon.name = f"{character_name}_{equipment_type}_Ribbon"
         ribbon.scale = [0.015 * scale * 50, 0.002 * 50, 0.05 * scale * 50]
-        ribbon_mat = _create_material(f"{character_name}_Ribbon",
-                                      ribbon_color + [1.0], roughness=0.7)
+        ribbon_mat = _create_material(
+            f"{character_name}_Ribbon", ribbon_color + [1.0], roughness=0.7
+        )
         _assign_material(ribbon, ribbon_mat)
         _parent_to(ribbon, equip_obj)
 
@@ -1036,14 +1023,11 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
         # Wristband
         wb_color = color or [1.0, 1.0, 1.0]
         bpy.ops.mesh.primitive_torus_add(
-            major_radius=0.025 * scale,
-            minor_radius=0.008 * scale,
-            location=attach_location
+            major_radius=0.025 * scale, minor_radius=0.008 * scale, location=attach_location
         )
         equip_obj = bpy.context.active_object
         equip_obj.name = f"{character_name}_Wristband"
-        wb_mat = _create_material(f"{character_name}_Wristband",
-                                  wb_color + [1.0], roughness=0.8)
+        wb_mat = _create_material(f"{character_name}_Wristband", wb_color + [1.0], roughness=0.8)
         _assign_material(equip_obj, wb_mat)
         if parent_obj:
             _parent_to(equip_obj, parent_obj)
@@ -1059,14 +1043,11 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
             attach_location[2] += head_radius * 0.3
 
         bpy.ops.mesh.primitive_torus_add(
-            major_radius=head_radius * 1.05,
-            minor_radius=0.01 * scale,
-            location=attach_location
+            major_radius=head_radius * 1.05, minor_radius=0.01 * scale, location=attach_location
         )
         equip_obj = bpy.context.active_object
         equip_obj.name = f"{character_name}_Headband"
-        hb_mat = _create_material(f"{character_name}_Headband",
-                                  hb_color + [1.0], roughness=0.8)
+        hb_mat = _create_material(f"{character_name}_Headband", hb_color + [1.0], roughness=0.8)
         _assign_material(equip_obj, hb_mat)
         if head_obj:
             _parent_to(equip_obj, head_obj)
@@ -1076,30 +1057,26 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
         trophy_color = color or [1.0, 0.85, 0.0]
         # Cup body
         bpy.ops.mesh.primitive_cylinder_add(
-            vertices=24,
-            radius=0.04 * scale,
-            depth=0.12 * scale,
-            location=attach_location
+            vertices=24, radius=0.04 * scale, depth=0.12 * scale, location=attach_location
         )
         equip_obj = bpy.context.active_object
         equip_obj.name = f"{character_name}_Trophy"
-        trophy_mat = _create_material(f"{character_name}_Trophy",
-                                      trophy_color + [1.0], metallic=0.95, roughness=0.15)
+        trophy_mat = _create_material(
+            f"{character_name}_Trophy", trophy_color + [1.0], metallic=0.95, roughness=0.15
+        )
         _assign_material(equip_obj, trophy_mat)
 
         # Base
         base_loc = list(attach_location)
         base_loc[2] -= 0.07 * scale
         bpy.ops.mesh.primitive_cylinder_add(
-            vertices=24,
-            radius=0.03 * scale,
-            depth=0.02 * scale,
-            location=base_loc
+            vertices=24, radius=0.03 * scale, depth=0.02 * scale, location=base_loc
         )
         base = bpy.context.active_object
         base.name = f"{character_name}_Trophy_Base"
-        base_mat = _create_material(f"{character_name}_TrophyBase",
-                                    [0.15, 0.1, 0.05, 1.0], roughness=0.4)
+        base_mat = _create_material(
+            f"{character_name}_TrophyBase", [0.15, 0.1, 0.05, 1.0], roughness=0.4
+        )
         _assign_material(base, base_mat)
         _parent_to(base, equip_obj)
 
@@ -1109,15 +1086,11 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
     elif equipment_type == "TOWEL":
         # Towel
         towel_color = color or [1.0, 1.0, 1.0]
-        bpy.ops.mesh.primitive_cube_add(
-            size=0.01,
-            location=attach_location
-        )
+        bpy.ops.mesh.primitive_cube_add(size=0.01, location=attach_location)
         equip_obj = bpy.context.active_object
         equip_obj.name = f"{character_name}_Towel"
         equip_obj.scale = [0.3 * scale * 50, 0.002 * 50, 0.15 * scale * 50]
-        towel_mat = _create_material(f"{character_name}_Towel",
-                                     towel_color + [1.0], roughness=0.9)
+        towel_mat = _create_material(f"{character_name}_Towel", towel_color + [1.0], roughness=0.9)
         _assign_material(equip_obj, towel_mat)
         if parent_obj:
             _parent_to(equip_obj, parent_obj)
@@ -1125,7 +1098,10 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
     if equip_obj is None:
         return {
             "success": False,
-            "error": {"code": "UNKNOWN_EQUIPMENT", "message": f"Unknown equipment type: {equipment_type}"}
+            "error": {
+                "code": "UNKNOWN_EQUIPMENT",
+                "message": f"Unknown equipment type: {equipment_type}",
+            },
         }
 
     return {
@@ -1134,13 +1110,14 @@ def handle_add_equipment(params: Dict[str, Any]) -> Dict[str, Any]:
             "equipment_name": equip_obj.name,
             "equipment_type": equipment_type,
             "attached_to": attach_to,
-        }
+        },
     }
 
 
 # ==================== Sportswear ====================
 
-def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
+
+def handle_create_uniform(params: dict[str, Any]) -> dict[str, Any]:
     """Create sportswear"""
     _ensure_object_mode()
 
@@ -1149,7 +1126,7 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
     uniform_style = params.get("uniform_style", "MATCH_JERSEY")
     jersey_number = params.get("jersey_number", 20)
     player_name = params.get("player_name", "FAN ZHENDONG")
-    brand = params.get("brand", "Li-Ning")
+    params.get("brand", "Li-Ning")
     custom_primary = params.get("custom_primary_color")
     custom_secondary = params.get("custom_secondary_color")
 
@@ -1157,7 +1134,11 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
     if team == "CLUB_CUSTOM" and custom_primary:
         colors = {
             "primary": custom_primary + [1.0] if len(custom_primary) == 3 else custom_primary,
-            "secondary": (custom_secondary or [1.0, 1.0, 1.0]) + [1.0] if custom_secondary and len(custom_secondary) == 3 else (custom_secondary or [1.0, 1.0, 1.0, 1.0]),
+            "secondary": (
+                (custom_secondary or [1.0, 1.0, 1.0]) + [1.0]
+                if custom_secondary and len(custom_secondary) == 3
+                else (custom_secondary or [1.0, 1.0, 1.0, 1.0])
+            ),
             "accent": [0.1, 0.1, 0.1, 1.0],
         }
     else:
@@ -1168,7 +1149,10 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
     if not body_obj:
         return {
             "success": False,
-            "error": {"code": "CHARACTER_NOT_FOUND", "message": f"Character not found: {character_name}"}
+            "error": {
+                "code": "CHARACTER_NOT_FOUND",
+                "message": f"Character not found: {character_name}",
+            },
         }
 
     body_loc = list(body_obj.location)
@@ -1178,22 +1162,14 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
     if uniform_style in ("MATCH_JERSEY", "TRAINING_WEAR"):
         # Jersey top
         jersey_color = colors["primary"]
-        jersey_mat = _create_material(f"{character_name}_Jersey",
-                                      jersey_color, roughness=0.7)
+        jersey_mat = _create_material(f"{character_name}_Jersey", jersey_color, roughness=0.7)
 
-        bpy.ops.mesh.primitive_cube_add(
-            size=0.01,
-            location=[body_loc[0], body_loc[1], body_loc[2]]
-        )
+        bpy.ops.mesh.primitive_cube_add(size=0.01, location=[body_loc[0], body_loc[1], body_loc[2]])
         jersey = bpy.context.active_object
         jersey.name = f"{character_name}_Jersey"
-        jersey.scale = [
-            body_scale[0] * 1.08,
-            body_scale[1] * 1.08,
-            body_scale[2] * 1.02
-        ]
+        jersey.scale = [body_scale[0] * 1.08, body_scale[1] * 1.08, body_scale[2] * 1.02]
         # Add subdivision for more natural clothing
-        subsurf = jersey.modifiers.new("Smooth", 'SUBSURF')
+        subsurf = jersey.modifiers.new("Smooth", "SUBSURF")
         subsurf.levels = 1
         subsurf.render_levels = 1
         _set_smooth_shading(jersey)
@@ -1203,29 +1179,18 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
 
         # Shorts
         shorts_color = colors.get("accent", [0.1, 0.1, 0.1, 1.0])
-        shorts_mat = _create_material(f"{character_name}_Shorts",
-                                      shorts_color, roughness=0.7)
+        shorts_mat = _create_material(f"{character_name}_Shorts", shorts_color, roughness=0.7)
 
         # Find thigh position
         thigh_r = bpy.data.objects.get(f"{character_name}_Thigh_R")
-        thigh_l = bpy.data.objects.get(f"{character_name}_Thigh_L")
-        if thigh_r:
-            shorts_z = thigh_r.location[2]
-        else:
-            shorts_z = body_loc[2] - body_scale[2] * 1.5
+        bpy.data.objects.get(f"{character_name}_Thigh_L")
+        shorts_z = thigh_r.location[2] if thigh_r else body_loc[2] - body_scale[2] * 1.5
 
-        bpy.ops.mesh.primitive_cube_add(
-            size=0.01,
-            location=[body_loc[0], body_loc[1], shorts_z]
-        )
+        bpy.ops.mesh.primitive_cube_add(size=0.01, location=[body_loc[0], body_loc[1], shorts_z])
         shorts = bpy.context.active_object
         shorts.name = f"{character_name}_Shorts"
-        shorts.scale = [
-            body_scale[0] * 1.2,
-            body_scale[1] * 1.1,
-            body_scale[2] * 0.6
-        ]
-        subsurf = shorts.modifiers.new("Smooth", 'SUBSURF')
+        shorts.scale = [body_scale[0] * 1.2, body_scale[1] * 1.1, body_scale[2] * 0.6]
+        subsurf = shorts.modifiers.new("Smooth", "SUBSURF")
         subsurf.levels = 1
         subsurf.render_levels = 1
         _set_smooth_shading(shorts)
@@ -1235,21 +1200,15 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
 
     elif uniform_style == "AWARD_CEREMONY":
         # Award ceremony outfit (white with red stripes jacket)
-        jacket_mat = _create_material(f"{character_name}_AwardJacket",
-                                      colors["primary"], roughness=0.6)
-
-        bpy.ops.mesh.primitive_cube_add(
-            size=0.01,
-            location=[body_loc[0], body_loc[1], body_loc[2]]
+        jacket_mat = _create_material(
+            f"{character_name}_AwardJacket", colors["primary"], roughness=0.6
         )
+
+        bpy.ops.mesh.primitive_cube_add(size=0.01, location=[body_loc[0], body_loc[1], body_loc[2]])
         jacket = bpy.context.active_object
         jacket.name = f"{character_name}_AwardJacket"
-        jacket.scale = [
-            body_scale[0] * 1.15,
-            body_scale[1] * 1.15,
-            body_scale[2] * 1.1
-        ]
-        subsurf = jacket.modifiers.new("Smooth", 'SUBSURF')
+        jacket.scale = [body_scale[0] * 1.15, body_scale[1] * 1.15, body_scale[2] * 1.1]
+        subsurf = jacket.modifiers.new("Smooth", "SUBSURF")
         subsurf.levels = 1
         _set_smooth_shading(jacket)
         _assign_material(jacket, jacket_mat)
@@ -1257,23 +1216,17 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
         created_items.append(jacket.name)
 
         # Sweatpants (white)
-        pants_mat = _create_material(f"{character_name}_AwardPants",
-                                     colors["primary"], roughness=0.6)
+        pants_mat = _create_material(
+            f"{character_name}_AwardPants", colors["primary"], roughness=0.6
+        )
         thigh_r = bpy.data.objects.get(f"{character_name}_Thigh_R")
         pants_z = thigh_r.location[2] if thigh_r else body_loc[2] - body_scale[2] * 1.5
 
-        bpy.ops.mesh.primitive_cube_add(
-            size=0.01,
-            location=[body_loc[0], body_loc[1], pants_z]
-        )
+        bpy.ops.mesh.primitive_cube_add(size=0.01, location=[body_loc[0], body_loc[1], pants_z])
         pants = bpy.context.active_object
         pants.name = f"{character_name}_AwardPants"
-        pants.scale = [
-            body_scale[0] * 1.1,
-            body_scale[1] * 1.05,
-            body_scale[2] * 0.8
-        ]
-        subsurf = pants.modifiers.new("Smooth", 'SUBSURF')
+        pants.scale = [body_scale[0] * 1.1, body_scale[1] * 1.05, body_scale[2] * 0.8]
+        subsurf = pants.modifiers.new("Smooth", "SUBSURF")
         subsurf.levels = 1
         _set_smooth_shading(pants)
         _assign_material(pants, pants_mat)
@@ -1282,21 +1235,17 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
 
     elif uniform_style == "WARMUP_JACKET":
         # Warmup jacket
-        jacket_mat = _create_material(f"{character_name}_WarmupJacket",
-                                      colors["primary"], roughness=0.55)
+        jacket_mat = _create_material(
+            f"{character_name}_WarmupJacket", colors["primary"], roughness=0.55
+        )
 
         bpy.ops.mesh.primitive_cube_add(
-            size=0.01,
-            location=[body_loc[0], body_loc[1], body_loc[2] + body_scale[2] * 0.1]
+            size=0.01, location=[body_loc[0], body_loc[1], body_loc[2] + body_scale[2] * 0.1]
         )
         jacket = bpy.context.active_object
         jacket.name = f"{character_name}_WarmupJacket"
-        jacket.scale = [
-            body_scale[0] * 1.2,
-            body_scale[1] * 1.2,
-            body_scale[2] * 1.15
-        ]
-        subsurf = jacket.modifiers.new("Smooth", 'SUBSURF')
+        jacket.scale = [body_scale[0] * 1.2, body_scale[1] * 1.2, body_scale[2] * 1.15]
+        subsurf = jacket.modifiers.new("Smooth", "SUBSURF")
         subsurf.levels = 1
         _set_smooth_shading(jacket)
         _assign_material(jacket, jacket_mat)
@@ -1311,13 +1260,14 @@ def handle_create_uniform(params: Dict[str, Any]) -> Dict[str, Any]:
             "jersey_number": jersey_number,
             "player_name": player_name,
             "items_created": created_items,
-        }
+        },
     }
 
 
 # ==================== Sport Poses ====================
 
-def handle_set_pose(params: Dict[str, Any]) -> Dict[str, Any]:
+
+def handle_set_pose(params: dict[str, Any]) -> dict[str, Any]:
     """Set sport pose"""
     _ensure_object_mode()
 
@@ -1332,7 +1282,7 @@ def handle_set_pose(params: Dict[str, Any]) -> Dict[str, Any]:
     if not pose_data:
         return {
             "success": False,
-            "error": {"code": "UNKNOWN_POSE", "message": f"Unknown pose: {pose}"}
+            "error": {"code": "UNKNOWN_POSE", "message": f"Unknown pose: {pose}"},
         }
 
     # Find armature
@@ -1340,12 +1290,15 @@ def handle_set_pose(params: Dict[str, Any]) -> Dict[str, Any]:
     if not armature_obj:
         return {
             "success": False,
-            "error": {"code": "NO_ARMATURE", "message": f"Character armature not found: {character_name}_Armature"}
+            "error": {
+                "code": "NO_ARMATURE",
+                "message": f"Character armature not found: {character_name}_Armature",
+            },
         }
 
     # Enter Pose mode
     bpy.context.view_layer.objects.active = armature_obj
-    bpy.ops.object.mode_set(mode='POSE')
+    bpy.ops.object.mode_set(mode="POSE")
 
     applied_bones = []
 
@@ -1370,16 +1323,20 @@ def handle_set_pose(params: Dict[str, Any]) -> Dict[str, Any]:
             ry = math.radians(rotation[1] * intensity)
             rz = math.radians(rotation[2] * intensity)
 
-            pose_bone.rotation_mode = 'XYZ'
+            pose_bone.rotation_mode = "XYZ"
             pose_bone.rotation_euler = (rx, ry, rz)
             applied_bones.append(actual_bone_name)
 
-    bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.object.mode_set(mode="OBJECT")
 
     # Motion trail effect (optional)
     has_motion_trail = False
-    if add_motion_trail and pose in ("FOREHAND_ATTACK", "BACKHAND_ATTACK",
-                                      "FOREHAND_LOOP", "SERVE_HIT"):
+    if add_motion_trail and pose in (
+        "FOREHAND_ATTACK",
+        "BACKHAND_ATTACK",
+        "FOREHAND_LOOP",
+        "SERVE_HIT",
+    ):
         # Create arc trail
         try:
             hand_obj = bpy.data.objects.get(f"{character_name}_Hand_R")
@@ -1388,15 +1345,17 @@ def handle_set_pose(params: Dict[str, Any]) -> Dict[str, Any]:
                 hand_loc = list(hand_obj.location)
                 for i in range(5):
                     t = i / 4.0
-                    trail_points.append((
-                        hand_loc[0] + math.sin(t * math.pi) * 0.3,
-                        hand_loc[1] - t * 0.2,
-                        hand_loc[2] + math.cos(t * math.pi) * 0.1
-                    ))
+                    trail_points.append(
+                        (
+                            hand_loc[0] + math.sin(t * math.pi) * 0.3,
+                            hand_loc[1] - t * 0.2,
+                            hand_loc[2] + math.cos(t * math.pi) * 0.1,
+                        )
+                    )
 
-                curve_data = bpy.data.curves.new(f"{character_name}_MotionTrail", 'CURVE')
-                curve_data.dimensions = '3D'
-                spline = curve_data.splines.new('BEZIER')
+                curve_data = bpy.data.curves.new(f"{character_name}_MotionTrail", "CURVE")
+                curve_data.dimensions = "3D"
+                spline = curve_data.splines.new("BEZIER")
                 spline.bezier_points.add(len(trail_points) - 1)
                 for i, point in enumerate(trail_points):
                     spline.bezier_points[i].co = point
@@ -1404,8 +1363,9 @@ def handle_set_pose(params: Dict[str, Any]) -> Dict[str, Any]:
                 trail_obj = bpy.data.objects.new(f"{character_name}_MotionTrail", curve_data)
                 bpy.context.collection.objects.link(trail_obj)
                 curve_data.bevel_depth = 0.005
-                trail_mat = _create_material(f"{character_name}_TrailMat",
-                                             [1.0, 1.0, 1.0, 0.5], roughness=0.1)
+                trail_mat = _create_material(
+                    f"{character_name}_TrailMat", [1.0, 1.0, 1.0, 0.5], roughness=0.1
+                )
                 trail_obj.data.materials.append(trail_mat)
                 has_motion_trail = True
         except Exception:
@@ -1420,13 +1380,14 @@ def handle_set_pose(params: Dict[str, Any]) -> Dict[str, Any]:
             "intensity": intensity,
             "mirrored": mirror,
             "has_motion_trail": has_motion_trail,
-        }
+        },
     }
 
 
 # ==================== Reference Image Loading ====================
 
-def handle_load_reference(params: Dict[str, Any]) -> Dict[str, Any]:
+
+def handle_load_reference(params: dict[str, Any]) -> dict[str, Any]:
     """Load reference image"""
     _ensure_object_mode()
 
@@ -1441,7 +1402,7 @@ def handle_load_reference(params: Dict[str, Any]) -> Dict[str, Any]:
     if not os.path.exists(image_path):
         return {
             "success": False,
-            "error": {"code": "FILE_NOT_FOUND", "message": f"File not found: {image_path}"}
+            "error": {"code": "FILE_NOT_FOUND", "message": f"File not found: {image_path}"},
         }
 
     # Load image
@@ -1450,18 +1411,18 @@ def handle_load_reference(params: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         return {
             "success": False,
-            "error": {"code": "LOAD_ERROR", "message": f"Failed to load image: {str(e)}"}
+            "error": {"code": "LOAD_ERROR", "message": f"Failed to load image: {str(e)}"},
         }
 
     image_name = os.path.basename(image_path)
 
     # Create empty object as reference image carrier
-    bpy.ops.object.empty_add(type='IMAGE', location=[offset_x, offset_y, 0])
+    bpy.ops.object.empty_add(type="IMAGE", location=[offset_x, offset_y, 0])
     ref_obj = bpy.context.active_object
     ref_obj.name = f"Ref_{view}_{image_name}"
     ref_obj.data = image
     ref_obj.empty_display_size = scale
-    ref_obj.empty_image_depth = 'BACK'
+    ref_obj.empty_image_depth = "BACK"
     ref_obj.color[3] = opacity
 
     # Rotate based on view angle
@@ -1488,13 +1449,14 @@ def handle_load_reference(params: Dict[str, Any]) -> Dict[str, Any]:
             "object_name": ref_obj.name,
             "view": view,
             "opacity": opacity,
-        }
+        },
     }
 
 
 # ==================== Model Optimization ====================
 
-def handle_optimize_model(params: Dict[str, Any]) -> Dict[str, Any]:
+
+def handle_optimize_model(params: dict[str, Any]) -> dict[str, Any]:
     """Optimize sport character model"""
     _ensure_object_mode()
 
@@ -1512,20 +1474,30 @@ def handle_optimize_model(params: Dict[str, Any]) -> Dict[str, Any]:
     root_obj = bpy.data.objects.get(f"{character_name}_Root")
     if not root_obj:
         # Try to find objects with matching names
-        matching_objs = [obj for obj in bpy.data.objects if obj.name.startswith(character_name) and obj.type == 'MESH']
+        matching_objs = [
+            obj
+            for obj in bpy.data.objects
+            if obj.name.startswith(character_name) and obj.type == "MESH"
+        ]
         if not matching_objs:
             return {
                 "success": False,
-                "error": {"code": "CHARACTER_NOT_FOUND", "message": f"Character not found: {character_name}"}
+                "error": {
+                    "code": "CHARACTER_NOT_FOUND",
+                    "message": f"Character not found: {character_name}",
+                },
             }
     else:
-        matching_objs = [obj for obj in bpy.data.objects
-                         if obj.name.startswith(character_name) and obj.type == 'MESH']
+        matching_objs = [
+            obj
+            for obj in bpy.data.objects
+            if obj.name.startswith(character_name) and obj.type == "MESH"
+        ]
 
     # Count original faces
     original_tris = 0
     for obj in matching_objs:
-        if obj.type == 'MESH':
+        if obj.type == "MESH":
             # Each quad is approximately 2 triangles
             original_tris += len(obj.data.polygons) * 2
 
@@ -1533,26 +1505,26 @@ def handle_optimize_model(params: Dict[str, Any]) -> Dict[str, Any]:
     if original_tris > target_tris and target != "PRINT_3D":
         ratio = target_tris / max(original_tris, 1)
         for obj in matching_objs:
-            if obj.type == 'MESH' and len(obj.data.polygons) > 10:
-                decimate = obj.modifiers.new("Decimate", 'DECIMATE')
+            if obj.type == "MESH" and len(obj.data.polygons) > 10:
+                decimate = obj.modifiers.new("Decimate", "DECIMATE")
                 decimate.ratio = max(0.1, ratio)
 
     # Cleanup: remove loose vertices
     for obj in matching_objs:
-        if obj.type == 'MESH':
+        if obj.type == "MESH":
             bpy.context.view_layer.objects.active = obj
             try:
-                bpy.ops.object.mode_set(mode='EDIT')
-                bpy.ops.mesh.select_all(action='SELECT')
+                bpy.ops.object.mode_set(mode="EDIT")
+                bpy.ops.mesh.select_all(action="SELECT")
                 bpy.ops.mesh.delete_loose()
-                bpy.ops.object.mode_set(mode='OBJECT')
+                bpy.ops.object.mode_set(mode="OBJECT")
             except Exception:
                 _ensure_object_mode()
 
     # Count final faces
     final_tris = 0
     for obj in matching_objs:
-        if obj.type == 'MESH':
+        if obj.type == "MESH":
             # Evaluate face count after modifiers
             depsgraph = bpy.context.evaluated_depsgraph_get()
             eval_obj = obj.evaluated_get(depsgraph)
@@ -1562,9 +1534,9 @@ def handle_optimize_model(params: Dict[str, Any]) -> Dict[str, Any]:
     lod_count = 0
     if generate_lod:
         for level in range(1, lod_levels + 1):
-            lod_ratio = 1.0 / (2 ** level)
+            lod_ratio = 1.0 / (2**level)
             for obj in matching_objs:
-                if obj.type == 'MESH' and len(obj.data.polygons) > 20:
+                if obj.type == "MESH" and len(obj.data.polygons) > 20:
                     # Copy object
                     lod_obj = obj.copy()
                     lod_obj.data = obj.data.copy()
@@ -1572,7 +1544,7 @@ def handle_optimize_model(params: Dict[str, Any]) -> Dict[str, Any]:
                     bpy.context.collection.objects.link(lod_obj)
 
                     # Add decimate
-                    decimate = lod_obj.modifiers.new(f"LOD{level}", 'DECIMATE')
+                    decimate = lod_obj.modifiers.new(f"LOD{level}", "DECIMATE")
                     decimate.ratio = max(0.05, lod_ratio)
 
                     # Hide LOD objects
@@ -1586,19 +1558,13 @@ def handle_optimize_model(params: Dict[str, Any]) -> Dict[str, Any]:
         if not export_path:
             blend_path = bpy.data.filepath
             if blend_path:
-                export_path = os.path.join(
-                    os.path.dirname(blend_path),
-                    f"{character_name}.glb"
-                )
+                export_path = os.path.join(os.path.dirname(blend_path), f"{character_name}.glb")
             else:
-                export_path = os.path.join(
-                    os.path.expanduser("~"),
-                    f"{character_name}.glb"
-                )
+                export_path = os.path.join(os.path.expanduser("~"), f"{character_name}.glb")
 
         try:
             # Select character objects
-            bpy.ops.object.select_all(action='DESELECT')
+            bpy.ops.object.select_all(action="DESELECT")
             for obj in matching_objs:
                 obj.select_set(True)
             # Also select armature
@@ -1608,21 +1574,21 @@ def handle_optimize_model(params: Dict[str, Any]) -> Dict[str, Any]:
 
             # Export GLB
             export_settings = {
-                'filepath': export_path,
-                'use_selection': True,
-                'export_format': 'GLB',
-                'export_apply': True,
+                "filepath": export_path,
+                "use_selection": True,
+                "export_format": "GLB",
+                "export_apply": True,
             }
 
             # Draco compression
             if apply_draco:
-                export_settings['export_draco_mesh_compression_enable'] = True
-                export_settings['export_draco_mesh_compression_level'] = 6
+                export_settings["export_draco_mesh_compression_enable"] = True
+                export_settings["export_draco_mesh_compression_level"] = 6
 
             bpy.ops.export_scene.gltf(**export_settings)
             exported_path = export_path
 
-        except Exception as e:
+        except Exception:
             # Export failure does not affect other results
             pass
 
@@ -1636,20 +1602,21 @@ def handle_optimize_model(params: Dict[str, Any]) -> Dict[str, Any]:
             "texture_size": texture_size,
             "lod_count": lod_count,
             "export_path": exported_path,
-        }
+        },
     }
 
 
 # ==================== Scene Setup ====================
 
-def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
+
+def handle_setup_scene(params: dict[str, Any]) -> dict[str, Any]:
     """Set up sport scene"""
     _ensure_object_mode()
 
     scene_type = params.get("scene_type", "PORTRAIT")
     character_name = params.get("character_name")
     background_color = params.get("background_color")
-    use_hdri = params.get("use_hdri", False)
+    params.get("use_hdri", False)
     camera_distance = params.get("camera_distance", 3.0)
     render_engine = params.get("render_engine", "EEVEE")
 
@@ -1658,20 +1625,20 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
 
     # Set render engine
     if render_engine == "CYCLES":
-        scene.render.engine = 'CYCLES'
+        scene.render.engine = "CYCLES"
     else:
-        scene.render.engine = 'BLENDER_EEVEE_NEXT' if hasattr(bpy.types, 'ShaderNodeBsdfPrincipled') else 'BLENDER_EEVEE'
+        scene.render.engine = get_eevee_engine()
 
     # Set color management
     try:
-        scene.view_settings.view_transform = 'Filmic'
-        scene.view_settings.look = 'Medium Contrast'
+        scene.view_settings.view_transform = "Filmic"
+        scene.view_settings.look = "Medium Contrast"
     except Exception:
         pass
 
     # Delete default lights
     for obj in list(bpy.data.objects):
-        if obj.type == 'LIGHT' and obj.name in ('Light', 'Lamp'):
+        if obj.type == "LIGHT" and obj.name in ("Light", "Lamp"):
             bpy.data.objects.remove(obj, do_unlink=True)
 
     # Background color
@@ -1683,13 +1650,15 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         world.use_nodes = True
         bg_node = world.node_tree.nodes.get("Background")
         if bg_node:
-            bg_node.inputs["Color"].default_value = background_color + [1.0] if len(background_color) == 3 else background_color
+            bg_node.inputs["Color"].default_value = (
+                background_color + [1.0] if len(background_color) == 3 else background_color
+            )
 
     # Set up lights based on scene type
     if scene_type == "PORTRAIT":
         # Three-point lighting: portrait display
         # Key light (warm, 45 degrees front-side)
-        bpy.ops.object.light_add(type='AREA', location=(2, -2, 3))
+        bpy.ops.object.light_add(type="AREA", location=(2, -2, 3))
         key_light = bpy.context.active_object
         key_light.name = "KeyLight"
         key_light.data.energy = 200
@@ -1699,7 +1668,7 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         lights_count += 1
 
         # Fill light (cool, opposite side)
-        bpy.ops.object.light_add(type='AREA', location=(-2, -1.5, 2))
+        bpy.ops.object.light_add(type="AREA", location=(-2, -1.5, 2))
         fill_light = bpy.context.active_object
         fill_light.name = "FillLight"
         fill_light.data.energy = 80
@@ -1709,7 +1678,7 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         lights_count += 1
 
         # Rim light (back)
-        bpy.ops.object.light_add(type='AREA', location=(0, 2, 2.5))
+        bpy.ops.object.light_add(type="AREA", location=(0, 2, 2.5))
         rim_light = bpy.context.active_object
         rim_light.name = "RimLight"
         rim_light.data.energy = 150
@@ -1721,7 +1690,7 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
     elif scene_type == "PRODUCT":
         # Product/figurine display lighting
         # Top ambient light
-        bpy.ops.object.light_add(type='AREA', location=(0, 0, 4))
+        bpy.ops.object.light_add(type="AREA", location=(0, 0, 4))
         top_light = bpy.context.active_object
         top_light.name = "TopLight"
         top_light.data.energy = 150
@@ -1730,7 +1699,7 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         lights_count += 1
 
         # Front-side light
-        bpy.ops.object.light_add(type='AREA', location=(1.5, -2, 1.5))
+        bpy.ops.object.light_add(type="AREA", location=(1.5, -2, 1.5))
         front_light = bpy.context.active_object
         front_light.name = "FrontLight"
         front_light.data.energy = 100
@@ -1740,7 +1709,7 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         lights_count += 1
 
         # Bottom fill light (product display specific)
-        bpy.ops.object.light_add(type='AREA', location=(0, -1, -0.5))
+        bpy.ops.object.light_add(type="AREA", location=(0, -1, -0.5))
         bottom_light = bpy.context.active_object
         bottom_light.name = "BottomFill"
         bottom_light.data.energy = 30
@@ -1749,21 +1718,18 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         lights_count += 1
 
         # Display base
-        bpy.ops.mesh.primitive_cylinder_add(
-            radius=0.5,
-            depth=0.05,
-            location=(0, 0, -0.025)
-        )
+        bpy.ops.mesh.primitive_cylinder_add(radius=0.5, depth=0.05, location=(0, 0, -0.025))
         base = bpy.context.active_object
         base.name = "DisplayBase"
-        base_mat = _create_material("DisplayBase", [0.1, 0.1, 0.1, 1.0],
-                                    metallic=0.3, roughness=0.2)
+        base_mat = _create_material(
+            "DisplayBase", [0.1, 0.1, 0.1, 1.0], metallic=0.3, roughness=0.2
+        )
         _assign_material(base, base_mat)
 
     elif scene_type == "MATCH":
         # Match scene lighting (stadium overhead lights)
         for i, x_offset in enumerate([-2, 0, 2]):
-            bpy.ops.object.light_add(type='AREA', location=(x_offset, 0, 5))
+            bpy.ops.object.light_add(type="AREA", location=(x_offset, 0, 5))
             light = bpy.context.active_object
             light.name = f"StadiumLight_{i}"
             light.data.energy = 300
@@ -1772,7 +1738,7 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
             lights_count += 1
 
         # Side fill light
-        bpy.ops.object.light_add(type='AREA', location=(4, -3, 2))
+        bpy.ops.object.light_add(type="AREA", location=(4, -3, 2))
         side_light = bpy.context.active_object
         side_light.name = "SideLight"
         side_light.data.energy = 80
@@ -1782,7 +1748,7 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
     elif scene_type == "AWARD_CEREMONY":
         # Award ceremony scene
         # Spotlight (award ceremony effect)
-        bpy.ops.object.light_add(type='SPOT', location=(0, -3, 5))
+        bpy.ops.object.light_add(type="SPOT", location=(0, -3, 5))
         spot = bpy.context.active_object
         spot.name = "AwardSpotlight"
         spot.data.energy = 500
@@ -1792,7 +1758,7 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
         lights_count += 1
 
         # Ambient fill light
-        bpy.ops.object.light_add(type='AREA', location=(2, -1, 3))
+        bpy.ops.object.light_add(type="AREA", location=(2, -1, 3))
         fill = bpy.context.active_object
         fill.name = "AwardFill"
         fill.data.energy = 100
@@ -1801,14 +1767,11 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
 
         # Podium
         for pos, h, color in [
-            ((0, 0, 0), 0.3, [1.0, 0.85, 0.0, 1.0]),    # Gold medal position (center, highest)
+            ((0, 0, 0), 0.3, [1.0, 0.85, 0.0, 1.0]),  # Gold medal position (center, highest)
             ((-0.6, 0, 0), 0.2, [0.75, 0.75, 0.8, 1.0]),  # Silver medal position
-            ((0.6, 0, 0), 0.15, [0.7, 0.45, 0.2, 1.0]),   # Bronze medal position
+            ((0.6, 0, 0), 0.15, [0.7, 0.45, 0.2, 1.0]),  # Bronze medal position
         ]:
-            bpy.ops.mesh.primitive_cube_add(
-                size=0.01,
-                location=(pos[0], pos[1], h / 2)
-            )
+            bpy.ops.mesh.primitive_cube_add(size=0.01, location=(pos[0], pos[1], h / 2))
             podium = bpy.context.active_object
             podium.name = f"Podium_{pos[0]}"
             podium.scale = [0.25 * 50, 0.2 * 50, h / 2 * 50]
@@ -1817,14 +1780,14 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
 
     elif scene_type == "TRAINING":
         # Training scene
-        bpy.ops.object.light_add(type='AREA', location=(0, 0, 4))
+        bpy.ops.object.light_add(type="AREA", location=(0, 0, 4))
         overhead = bpy.context.active_object
         overhead.name = "TrainingLight"
         overhead.data.energy = 200
         overhead.data.size = 5
         lights_count += 1
 
-        bpy.ops.object.light_add(type='AREA', location=(3, -2, 2))
+        bpy.ops.object.light_add(type="AREA", location=(3, -2, 2))
         side = bpy.context.active_object
         side.name = "TrainingSide"
         side.data.energy = 60
@@ -1834,13 +1797,12 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
     # Set up camera
     # Delete default camera
     for obj in list(bpy.data.objects):
-        if obj.type == 'CAMERA' and obj.name == 'Camera':
+        if obj.type == "CAMERA" and obj.name == "Camera":
             bpy.data.objects.remove(obj, do_unlink=True)
 
     cam_height = 1.0 if scene_type in ("PORTRAIT", "PRODUCT") else 1.5
     bpy.ops.object.camera_add(
-        location=(0, -camera_distance, cam_height),
-        rotation=(math.radians(80), 0, 0)
+        location=(0, -camera_distance, cam_height), rotation=(math.radians(80), 0, 0)
     )
     camera = bpy.context.active_object
     camera.name = "SportCamera"
@@ -1848,13 +1810,14 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
 
     # If character exists, camera tracks character
     if character_name:
-        target_obj = bpy.data.objects.get(f"{character_name}_Root") or \
-                     bpy.data.objects.get(f"{character_name}_Body")
+        target_obj = bpy.data.objects.get(f"{character_name}_Root") or bpy.data.objects.get(
+            f"{character_name}_Body"
+        )
         if target_obj:
-            constraint = camera.constraints.new('TRACK_TO')
+            constraint = camera.constraints.new("TRACK_TO")
             constraint.target = target_obj
-            constraint.track_axis = 'TRACK_NEGATIVE_Z'
-            constraint.up_axis = 'UP_Y'
+            constraint.track_axis = "TRACK_NEGATIVE_Z"
+            constraint.up_axis = "UP_Y"
 
     return {
         "success": True,
@@ -1863,5 +1826,5 @@ def handle_setup_scene(params: Dict[str, Any]) -> Dict[str, Any]:
             "render_engine": render_engine,
             "lights_count": lights_count,
             "camera_distance": camera_distance,
-        }
+        },
     }

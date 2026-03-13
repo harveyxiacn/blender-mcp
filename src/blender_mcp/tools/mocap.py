@@ -4,17 +4,19 @@ Motion Capture Tools
 Provides MCP tools for motion capture data import and processing.
 """
 
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
-from mcp.server.fastmcp import FastMCP
+from typing import Any
 
+from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 # ============ Pydantic Models ============
 
+
 class MocapImportInput(BaseModel):
     """Import mocap data"""
+
     filepath: str = Field(..., description="Mocap file path (.bvh, .fbx)")
-    target_armature: Optional[str] = Field(None, description="Target armature name")
+    target_armature: str | None = Field(None, description="Target armature name")
     scale: float = Field(1.0, description="Scale factor")
     frame_start: int = Field(1, description="Start frame")
     use_fps_scale: bool = Field(False, description="Use FPS scaling")
@@ -22,21 +24,24 @@ class MocapImportInput(BaseModel):
 
 class MocapRetargetInput(BaseModel):
     """Retarget motion"""
+
     source_armature: str = Field(..., description="Source armature name")
     target_armature: str = Field(..., description="Target armature name")
-    bone_mapping: Optional[Dict[str, str]] = Field(None, description="Bone mapping")
+    bone_mapping: dict[str, str] | None = Field(None, description="Bone mapping")
 
 
 class MocapCleanInput(BaseModel):
     """Clean motion data"""
+
     armature_name: str = Field(..., description="Armature name")
-    action_name: Optional[str] = Field(None, description="Action name")
+    action_name: str | None = Field(None, description="Action name")
     threshold: float = Field(0.001, description="Cleanup threshold")
     remove_noise: bool = Field(True, description="Remove noise")
 
 
 class MocapBlendInput(BaseModel):
     """Blend motions"""
+
     armature_name: str = Field(..., description="Armature name")
     action1: str = Field(..., description="Action 1 name")
     action2: str = Field(..., description="Action 2 name")
@@ -46,6 +51,7 @@ class MocapBlendInput(BaseModel):
 
 class MocapBakeInput(BaseModel):
     """Bake motion"""
+
     armature_name: str = Field(..., description="Armature name")
     frame_start: int = Field(1, description="Start frame")
     frame_end: int = Field(250, description="End frame")
@@ -55,17 +61,18 @@ class MocapBakeInput(BaseModel):
 
 # ============ Tool Registration ============
 
-def register_mocap_tools(mcp: FastMCP, server):
+
+def register_mocap_tools(mcp: FastMCP, server) -> None:
     """Register motion capture tools"""
 
     @mcp.tool()
     async def blender_mocap_import(
         filepath: str,
-        target_armature: Optional[str] = None,
+        target_armature: str | None = None,
         scale: float = 1.0,
         frame_start: int = 1,
-        use_fps_scale: bool = False
-    ) -> Dict[str, Any]:
+        use_fps_scale: bool = False,
+    ) -> dict[str, Any]:
         """
         Import motion capture data
 
@@ -81,16 +88,14 @@ def register_mocap_tools(mcp: FastMCP, server):
             target_armature=target_armature,
             scale=scale,
             frame_start=frame_start,
-            use_fps_scale=use_fps_scale
+            use_fps_scale=use_fps_scale,
         )
         return await server.send_command("mocap", "import", params.model_dump())
 
     @mcp.tool()
     async def blender_mocap_retarget(
-        source_armature: str,
-        target_armature: str,
-        bone_mapping: Optional[Dict[str, str]] = None
-    ) -> Dict[str, Any]:
+        source_armature: str, target_armature: str, bone_mapping: dict[str, str] | None = None
+    ) -> dict[str, Any]:
         """
         Retarget motion to another armature
 
@@ -102,17 +107,17 @@ def register_mocap_tools(mcp: FastMCP, server):
         params = MocapRetargetInput(
             source_armature=source_armature,
             target_armature=target_armature,
-            bone_mapping=bone_mapping
+            bone_mapping=bone_mapping,
         )
         return await server.send_command("mocap", "retarget", params.model_dump())
 
     @mcp.tool()
     async def blender_mocap_clean(
         armature_name: str,
-        action_name: Optional[str] = None,
+        action_name: str | None = None,
         threshold: float = 0.001,
-        remove_noise: bool = True
-    ) -> Dict[str, Any]:
+        remove_noise: bool = True,
+    ) -> dict[str, Any]:
         """
         Clean motion data noise
 
@@ -126,7 +131,7 @@ def register_mocap_tools(mcp: FastMCP, server):
             armature_name=armature_name,
             action_name=action_name,
             threshold=threshold,
-            remove_noise=remove_noise
+            remove_noise=remove_noise,
         )
         return await server.send_command("mocap", "clean", params.model_dump())
 
@@ -136,8 +141,8 @@ def register_mocap_tools(mcp: FastMCP, server):
         action1: str,
         action2: str,
         blend_factor: float = 0.5,
-        output_name: str = "BlendedAction"
-    ) -> Dict[str, Any]:
+        output_name: str = "BlendedAction",
+    ) -> dict[str, Any]:
         """
         Blend two motions
 
@@ -153,7 +158,7 @@ def register_mocap_tools(mcp: FastMCP, server):
             action1=action1,
             action2=action2,
             blend_factor=blend_factor,
-            output_name=output_name
+            output_name=output_name,
         )
         return await server.send_command("mocap", "blend", params.model_dump())
 
@@ -163,8 +168,8 @@ def register_mocap_tools(mcp: FastMCP, server):
         frame_start: int = 1,
         frame_end: int = 250,
         only_selected: bool = False,
-        visual_keying: bool = True
-    ) -> Dict[str, Any]:
+        visual_keying: bool = True,
+    ) -> dict[str, Any]:
         """
         Bake motion to keyframes
 
@@ -180,6 +185,6 @@ def register_mocap_tools(mcp: FastMCP, server):
             frame_start=frame_start,
             frame_end=frame_end,
             only_selected=only_selected,
-            visual_keying=visual_keying
+            visual_keying=visual_keying,
         )
         return await server.send_command("mocap", "bake", params.model_dump())

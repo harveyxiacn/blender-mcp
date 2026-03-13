@@ -4,10 +4,10 @@ Batch Processing Tools
 Provides batch material application, transformation, renaming, export, and more.
 """
 
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -15,8 +15,10 @@ if TYPE_CHECKING:
 
 # ==================== Input Models ====================
 
+
 class BatchMaterialInput(BaseModel):
     """Batch apply material input"""
+
     pattern: str = Field(..., description="Object name pattern (supports wildcard *)")
     material_name: str = Field(..., description="Material name")
     replace_existing: bool = Field(default=True, description="Replace existing materials")
@@ -24,14 +26,16 @@ class BatchMaterialInput(BaseModel):
 
 class BatchTransformInput(BaseModel):
     """Batch transform input"""
+
     pattern: str = Field(..., description="Object name pattern")
-    location_offset: Optional[List[float]] = Field(default=None, description="Location offset")
-    rotation_offset: Optional[List[float]] = Field(default=None, description="Rotation offset")
-    scale_factor: Optional[List[float]] = Field(default=None, description="Scale factor")
+    location_offset: list[float] | None = Field(default=None, description="Location offset")
+    rotation_offset: list[float] | None = Field(default=None, description="Rotation offset")
+    scale_factor: list[float] | None = Field(default=None, description="Scale factor")
 
 
 class BatchRenameInput(BaseModel):
     """Batch rename input"""
+
     pattern: str = Field(..., description="Object name pattern")
     new_name: str = Field(..., description="New name prefix")
     numbering: bool = Field(default=True, description="Add numbering")
@@ -40,12 +44,14 @@ class BatchRenameInput(BaseModel):
 
 class BatchDeleteInput(BaseModel):
     """Batch delete input"""
+
     pattern: str = Field(..., description="Object name pattern")
     delete_data: bool = Field(default=True, description="Delete associated data")
 
 
 class BatchExportInput(BaseModel):
     """Batch export input"""
+
     pattern: str = Field(..., description="Object name pattern")
     export_path: str = Field(..., description="Export directory path")
     format: str = Field(default="fbx", description="Format: fbx, obj, gltf")
@@ -54,19 +60,22 @@ class BatchExportInput(BaseModel):
 
 class BatchModifierInput(BaseModel):
     """Batch add modifier input"""
+
     pattern: str = Field(..., description="Object name pattern")
     modifier_type: str = Field(..., description="Modifier type: SUBSURF, BEVEL, SOLIDIFY, MIRROR")
-    settings: Optional[dict] = Field(default=None, description="Modifier settings")
+    settings: dict | None = Field(default=None, description="Modifier settings")
 
 
 class BatchParentInput(BaseModel):
     """Batch set parent input"""
+
     pattern: str = Field(..., description="Child object name pattern")
     parent_name: str = Field(..., description="Parent object name")
     keep_transform: bool = Field(default=True, description="Keep transform")
 
 
 # ==================== Tool Registration ====================
+
 
 def register_batch_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register batch processing tools"""
@@ -78,8 +87,8 @@ def register_batch_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_batch_apply_material(params: BatchMaterialInput) -> str:
         """Batch apply material to matching objects.
@@ -91,12 +100,13 @@ def register_batch_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Application result
         """
         result = await server.execute_command(
-            "batch", "apply_material",
+            "batch",
+            "apply_material",
             {
                 "pattern": params.pattern,
                 "material_name": params.material_name,
-                "replace_existing": params.replace_existing
-            }
+                "replace_existing": params.replace_existing,
+            },
         )
 
         if result.get("success"):
@@ -112,8 +122,8 @@ def register_batch_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_batch_transform(params: BatchTransformInput) -> str:
         """Batch transform matching objects.
@@ -125,13 +135,14 @@ def register_batch_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Transform result
         """
         result = await server.execute_command(
-            "batch", "transform",
+            "batch",
+            "transform",
             {
                 "pattern": params.pattern,
                 "location_offset": params.location_offset,
                 "rotation_offset": params.rotation_offset,
-                "scale_factor": params.scale_factor
-            }
+                "scale_factor": params.scale_factor,
+            },
         )
 
         if result.get("success"):
@@ -147,8 +158,8 @@ def register_batch_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_batch_rename(params: BatchRenameInput) -> str:
         """Batch rename matching objects.
@@ -160,13 +171,14 @@ def register_batch_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Rename result
         """
         result = await server.execute_command(
-            "batch", "rename",
+            "batch",
+            "rename",
             {
                 "pattern": params.pattern,
                 "new_name": params.new_name,
                 "numbering": params.numbering,
-                "start_number": params.start_number
-            }
+                "start_number": params.start_number,
+            },
         )
 
         if result.get("success"):
@@ -182,8 +194,8 @@ def register_batch_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_batch_delete(params: BatchDeleteInput) -> str:
         """Batch delete matching objects.
@@ -195,11 +207,7 @@ def register_batch_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Deletion result
         """
         result = await server.execute_command(
-            "batch", "delete",
-            {
-                "pattern": params.pattern,
-                "delete_data": params.delete_data
-            }
+            "batch", "delete", {"pattern": params.pattern, "delete_data": params.delete_data}
         )
 
         if result.get("success"):
@@ -215,8 +223,8 @@ def register_batch_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": True
-        }
+            "openWorldHint": True,
+        },
     )
     async def blender_batch_export(params: BatchExportInput) -> str:
         """Batch export matching objects.
@@ -228,13 +236,14 @@ def register_batch_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Export result
         """
         result = await server.execute_command(
-            "batch", "export",
+            "batch",
+            "export",
             {
                 "pattern": params.pattern,
                 "export_path": params.export_path,
                 "format": params.format,
-                "individual_files": params.individual_files
-            }
+                "individual_files": params.individual_files,
+            },
         )
 
         if result.get("success"):
@@ -250,8 +259,8 @@ def register_batch_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_batch_add_modifier(params: BatchModifierInput) -> str:
         """Batch add modifiers to matching objects.
@@ -263,12 +272,13 @@ def register_batch_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Addition result
         """
         result = await server.execute_command(
-            "batch", "add_modifier",
+            "batch",
+            "add_modifier",
             {
                 "pattern": params.pattern,
                 "modifier_type": params.modifier_type,
-                "settings": params.settings or {}
-            }
+                "settings": params.settings or {},
+            },
         )
 
         if result.get("success"):
@@ -284,8 +294,8 @@ def register_batch_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_batch_set_parent(params: BatchParentInput) -> str:
         """Batch set parent for matching objects.
@@ -297,12 +307,13 @@ def register_batch_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Setting result
         """
         result = await server.execute_command(
-            "batch", "set_parent",
+            "batch",
+            "set_parent",
             {
                 "pattern": params.pattern,
                 "parent_name": params.parent_name,
-                "keep_transform": params.keep_transform
-            }
+                "keep_transform": params.keep_transform,
+            },
         )
 
         if result.get("success"):

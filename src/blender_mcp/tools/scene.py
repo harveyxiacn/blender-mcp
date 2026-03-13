@@ -4,11 +4,11 @@ Scene Management Tools
 Provides scene creation, listing, switching, deletion, and other features.
 """
 
-from typing import TYPE_CHECKING, Optional
 from enum import Enum
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field, ConfigDict
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, ConfigDict, Field
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -16,12 +16,14 @@ if TYPE_CHECKING:
 
 class ResponseFormat(str, Enum):
     """Response format"""
+
     MARKDOWN = "markdown"
     JSON = "json"
 
 
 class UnitSystem(str, Enum):
     """Unit system"""
+
     NONE = "NONE"
     METRIC = "METRIC"
     IMPERIAL = "IMPERIAL"
@@ -29,53 +31,59 @@ class UnitSystem(str, Enum):
 
 # ==================== Input Models ====================
 
+
 class SceneCreateInput(BaseModel):
     """Create scene input"""
+
     model_config = ConfigDict(str_strip_whitespace=True)
 
     name: str = Field(..., description="Scene name", min_length=1, max_length=100)
-    copy_from: Optional[str] = Field(default=None, description="Source scene name to copy from")
+    copy_from: str | None = Field(default=None, description="Source scene name to copy from")
 
 
 class SceneListInput(BaseModel):
     """List scenes input"""
+
     response_format: ResponseFormat = Field(
-        default=ResponseFormat.MARKDOWN,
-        description="Output format: markdown or json"
+        default=ResponseFormat.MARKDOWN, description="Output format: markdown or json"
     )
 
 
 class SceneGetInfoInput(BaseModel):
     """Get scene info input"""
-    scene_name: Optional[str] = Field(
-        default=None,
-        description="Scene name; returns current scene if empty"
+
+    scene_name: str | None = Field(
+        default=None, description="Scene name; returns current scene if empty"
     )
 
 
 class SceneSwitchInput(BaseModel):
     """Switch scene input"""
+
     scene_name: str = Field(..., description="Name of the scene to switch to")
 
 
 class SceneDeleteInput(BaseModel):
     """Delete scene input"""
+
     scene_name: str = Field(..., description="Name of the scene to delete")
 
 
 class SceneSettingsInput(BaseModel):
     """Scene settings input"""
+
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    scene_name: Optional[str] = Field(default=None, description="Scene name")
-    frame_start: Optional[int] = Field(default=None, description="Start frame", ge=0)
-    frame_end: Optional[int] = Field(default=None, description="End frame", ge=1)
-    fps: Optional[int] = Field(default=None, description="Frame rate", ge=1, le=120)
-    unit_system: Optional[UnitSystem] = Field(default=None, description="Unit system")
-    unit_scale: Optional[float] = Field(default=None, description="Unit scale", gt=0)
+    scene_name: str | None = Field(default=None, description="Scene name")
+    frame_start: int | None = Field(default=None, description="Start frame", ge=0)
+    frame_end: int | None = Field(default=None, description="End frame", ge=1)
+    fps: int | None = Field(default=None, description="Frame rate", ge=1, le=120)
+    unit_system: UnitSystem | None = Field(default=None, description="Unit system")
+    unit_scale: float | None = Field(default=None, description="Unit scale", gt=0)
 
 
 # ==================== Tool Registration ====================
+
 
 def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register scene management tools"""
@@ -87,8 +95,8 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_scene_create(params: SceneCreateInput) -> str:
         """Create a new scene in Blender.
@@ -102,8 +110,7 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Creation result as JSON string
         """
         result = await server.execute_command(
-            "scene", "create",
-            {"name": params.name, "copy_from": params.copy_from}
+            "scene", "create", {"name": params.name, "copy_from": params.copy_from}
         )
 
         if result.get("success"):
@@ -119,8 +126,8 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_scene_list(params: SceneListInput) -> str:
         """List all scenes in Blender.
@@ -142,6 +149,7 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
 
         if params.response_format == ResponseFormat.JSON:
             import json
+
             return json.dumps({"scenes": scenes, "total": len(scenes)}, indent=2)
 
         # Markdown format
@@ -164,8 +172,8 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_scene_get_info(params: SceneGetInfoInput) -> str:
         """Get detailed information about a scene.
@@ -179,8 +187,7 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Detailed scene information
         """
         result = await server.execute_command(
-            "scene", "get_info",
-            {"scene_name": params.scene_name}
+            "scene", "get_info", {"scene_name": params.scene_name}
         )
 
         if not result.get("success"):
@@ -189,7 +196,9 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         data = result.get("data", {})
 
         lines = [f"# Scene: {data.get('name', 'Unknown')}", ""]
-        lines.append(f"- **Frame Range**: {data.get('frame_start', 1)} - {data.get('frame_end', 250)}")
+        lines.append(
+            f"- **Frame Range**: {data.get('frame_start', 1)} - {data.get('frame_end', 250)}"
+        )
         lines.append(f"- **Current Frame**: {data.get('frame_current', 1)}")
         lines.append(f"- **Frame Rate**: {data.get('fps', 24)} FPS")
         lines.append(f"- **Object Count**: {data.get('objects_count', 0)}")
@@ -205,8 +214,8 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_scene_switch(params: SceneSwitchInput) -> str:
         """Switch to the specified scene.
@@ -217,15 +226,14 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         Returns:
             Switch result
         """
-        result = await server.execute_command(
-            "scene", "switch",
-            {"scene_name": params.scene_name}
-        )
+        result = await server.execute_command("scene", "switch", {"scene_name": params.scene_name})
 
         if result.get("success"):
             return f"Switched to scene '{params.scene_name}'"
         else:
-            return f"Failed to switch scene: {result.get('error', {}).get('message', 'Unknown error')}"
+            return (
+                f"Failed to switch scene: {result.get('error', {}).get('message', 'Unknown error')}"
+            )
 
     @mcp.tool(
         name="blender_scene_delete",
@@ -234,8 +242,8 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_scene_delete(params: SceneDeleteInput) -> str:
         """Delete the specified scene.
@@ -248,15 +256,14 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         Returns:
             Deletion result
         """
-        result = await server.execute_command(
-            "scene", "delete",
-            {"scene_name": params.scene_name}
-        )
+        result = await server.execute_command("scene", "delete", {"scene_name": params.scene_name})
 
         if result.get("success"):
             return f"Deleted scene '{params.scene_name}'"
         else:
-            return f"Failed to delete scene: {result.get('error', {}).get('message', 'Unknown error')}"
+            return (
+                f"Failed to delete scene: {result.get('error', {}).get('message', 'Unknown error')}"
+            )
 
     @mcp.tool(
         name="blender_scene_set_settings",
@@ -265,8 +272,8 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_scene_set_settings(params: SceneSettingsInput) -> str:
         """Set scene settings.
@@ -295,11 +302,10 @@ def register_scene_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             return "No settings parameters specified"
 
         result = await server.execute_command(
-            "scene", "set_settings",
-            {"scene_name": params.scene_name, "settings": settings}
+            "scene", "set_settings", {"scene_name": params.scene_name, "settings": settings}
         )
 
         if result.get("success"):
-            return f"Scene settings updated"
+            return "Scene settings updated"
         else:
             return f"Settings failed: {result.get('error', {}).get('message', 'Unknown error')}"

@@ -5,11 +5,12 @@ Manages socket communication with the Blender addon, supporting auto-reconnectio
 """
 
 import asyncio
+import contextlib
 import json
 import logging
 import time
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ READ_BUFFER_SIZE = 65536
 
 class BlenderConnectionError(Exception):
     """Blender connection error"""
+
     pass
 
 
@@ -37,7 +39,7 @@ class BlenderConnection:
     - Sending commands and receiving responses
     - Heartbeat detection and auto-reconnection
     """
-    
+
     def __init__(
         self,
         host: str = DEFAULT_HOST,
@@ -46,32 +48,32 @@ class BlenderConnection:
         max_retries: int = DEFAULT_MAX_RETRIES,
         auto_reconnect: bool = True,
         heartbeat_interval: float = HEARTBEAT_INTERVAL,
-    ):
+    ) -> None:
         self.host = host
         self.port = port
         self.timeout = timeout
         self.max_retries = max_retries
         self.auto_reconnect = auto_reconnect
         self.heartbeat_interval = heartbeat_interval
-        
-        self._reader: Optional[asyncio.StreamReader] = None
-        self._writer: Optional[asyncio.StreamWriter] = None
+
+        self._reader: asyncio.StreamReader | None = None
+        self._writer: asyncio.StreamWriter | None = None
         self._connected = False
         self._lock = asyncio.Lock()
-        
+
         self._pending_requests: dict[str, asyncio.Future] = {}
-        self._read_task: Optional[asyncio.Task] = None
-        self._heartbeat_task: Optional[asyncio.Task] = None
-        
+        self._read_task: asyncio.Task | None = None
+        self._heartbeat_task: asyncio.Task | None = None
+
         self._last_activity: float = 0.0
         self._reconnect_count: int = 0
         self._total_commands: int = 0
         self._failed_commands: int = 0
-    
+
     @property
     def connected(self) -> bool:
         return self._connected and self._writer is not None
-    
+
     @property
     def stats(self) -> dict[str, Any]:
         """Connection statistics"""
@@ -85,7 +87,7 @@ class BlenderConnection:
             "pending_requests": len(self._pending_requests),
             "last_activity": self._last_activity,
         }
-    
+
     async def connect(self) -> None:
         """Establish connection"""
         async with self._lock:
@@ -94,21 +96,22 @@ class BlenderConnection:
 
             for attempt in range(self.max_retries):
                 try:
-                    logger.info(f"Connecting to Blender: {self.host}:{self.port} (attempt {attempt + 1}/{self.max_retries})")
-                    
-                    self._reader, self._writer = await asyncio.wait_for(
-                        asyncio.open_connection(self.host, self.port),
-                        timeout=5.0
+                    logger.info(
+                        f"Connecting to Blender: {self.host}:{self.port} (attempt {attempt + 1}/{self.max_retries})"
                     )
-                    
+
+                    self._reader, self._writer = await asyncio.wait_for(
+                        asyncio.open_connection(self.host, self.port), timeout=5.0
+                    )
+
                     self._connected = True
                     self._last_activity = time.monotonic()
-                    
+
                     self._read_task = asyncio.create_task(self._read_responses())
-                    
+
                     if self.heartbeat_interval > 0:
                         self._heartbeat_task = asyncio.create_task(self._heartbeat_loop())
-                    
+
                     logger.info("Blender connection established")
                     return
 
@@ -118,19 +121,16 @@ class BlenderConnection:
                     logger.warning(f"Connection refused (attempt {attempt + 1})")
                 except Exception as e:
                     logger.warning(f"Connection failed: {e} (attempt {attempt + 1})")
-                
+
                 if attempt < self.max_retries - 1:
-                    backoff = min(
-                        RECONNECT_BACKOFF_BASE * (2 ** attempt),
-                        RECONNECT_BACKOFF_MAX
-                    )
+                    backoff = min(RECONNECT_BACKOFF_BASE * (2**attempt), RECONNECT_BACKOFF_MAX)
                     await asyncio.sleep(backoff)
-            
+
             raise BlenderConnectionError(
                 f"Cannot connect to Blender ({self.host}:{self.port}). "
                 "Please ensure Blender is running and the MCP addon is enabled."
             )
-    
+
     async def disconnect(self) -> None:
         """Disconnect"""
         async with self._lock:
@@ -140,33 +140,27 @@ class BlenderConnection:
     async def _cleanup(self) -> None:
         """Clean up connection resources (caller must hold _lock)"""
         self._connected = False
-        
+
         if self._heartbeat_task:
             self._heartbeat_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._heartbeat_task
-            except asyncio.CancelledError:
-                pass
             self._heartbeat_task = None
-        
+
         if self._read_task:
             self._read_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._read_task
-            except asyncio.CancelledError:
-                pass
             self._read_task = None
-        
+
         if self._writer:
             self._writer.close()
-            try:
+            with contextlib.suppress(Exception):
                 await self._writer.wait_closed()
-            except Exception:
-                pass
             self._writer = None
-        
+
         self._reader = None
-        
+
         for future in self._pending_requests.values():
             if not future.done():
                 future.set_exception(BlenderConnectionError("Connection closed"))
@@ -179,17 +173,17 @@ class BlenderConnection:
 
         logger.info("Attempting auto-reconnect...")
         self._reconnect_count += 1
-        
+
         async with self._lock:
             await self._cleanup()
-        
+
         try:
             await self.connect()
             return True
         except BlenderConnectionError:
             logger.warning("Auto-reconnect failed")
             return False
-    
+
     async def _heartbeat_loop(self) -> None:
         """Periodically send heartbeats to detect connection liveness"""
         while self._connected:
@@ -197,33 +191,33 @@ class BlenderConnection:
                 await asyncio.sleep(self.heartbeat_interval)
                 if not self._connected:
                     break
-                
+
                 idle = time.monotonic() - self._last_activity
                 if idle < self.heartbeat_interval:
                     continue
-                
+
                 request_id = f"heartbeat-{uuid.uuid4().hex[:8]}"
                 request = {
                     "id": request_id,
                     "type": "command",
                     "category": "system",
                     "action": "get_info",
-                    "params": {}
+                    "params": {},
                 }
-                
+
                 future: asyncio.Future = asyncio.get_running_loop().create_future()
                 self._pending_requests[request_id] = future
-                
+
                 message = json.dumps(request) + "\n"
                 if self._writer is None:
                     break
                 self._writer.write(message.encode("utf-8"))
                 await self._writer.drain()
-                
+
                 await asyncio.wait_for(future, timeout=HEARTBEAT_TIMEOUT)
                 self._last_activity = time.monotonic()
                 logger.debug("Heartbeat OK")
-                
+
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -231,20 +225,20 @@ class BlenderConnection:
                 if self._connected:
                     asyncio.create_task(self._reconnect())
                 break
-    
+
     async def _read_responses(self) -> None:
         """Continuously read responses"""
         buffer = ""
-        
+
         while self._connected and self._reader:
             try:
                 data = await self._reader.read(READ_BUFFER_SIZE)
                 if not data:
                     logger.warning("Connection closed")
                     break
-                
+
                 buffer += data.decode("utf-8", errors="replace")
-                
+
                 while "\n" in buffer:
                     line, buffer = buffer.split("\n", 1)
                     if line.strip():
@@ -254,13 +248,13 @@ class BlenderConnection:
                             await self._handle_response(response)
                         except json.JSONDecodeError as e:
                             logger.error(f"JSON parse error: {e}")
-                            
+
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 logger.error(f"Error reading response: {e}")
                 break
-        
+
         self._connected = False
         if self._pending_requests:
             error = BlenderConnectionError("Connection closed")
@@ -268,26 +262,23 @@ class BlenderConnection:
                 if not future.done():
                     future.set_exception(error)
             self._pending_requests.clear()
-        
+
         if self.auto_reconnect:
             asyncio.create_task(self._reconnect())
-    
+
     async def _handle_response(self, response: dict[str, Any]) -> None:
         """Handle a response message"""
         request_id = response.get("id")
-        
+
         if request_id and request_id in self._pending_requests:
             future = self._pending_requests.pop(request_id)
             if not future.done():
                 future.set_result(response)
         else:
             logger.debug(f"Received unmatched response: {response}")
-    
+
     async def send_command(
-        self,
-        category: str,
-        action: str,
-        params: dict[str, Any]
+        self, category: str, action: str, params: dict[str, Any]
     ) -> dict[str, Any]:
         """Send a command and wait for response, with auto-reconnect retry on failure
 
@@ -300,41 +291,41 @@ class BlenderConnection:
             Response result
         """
         self._total_commands += 1
-        
+
         for attempt in range(2):
             if not self.connected:
                 await self.connect()
-            
+
             request_id = str(uuid.uuid4())
             request = {
                 "id": request_id,
                 "type": "command",
                 "category": category,
                 "action": action,
-                "params": params
+                "params": params,
             }
-            
+
             future: asyncio.Future = asyncio.get_running_loop().create_future()
             self._pending_requests[request_id] = future
-            
+
             try:
                 message = json.dumps(request) + "\n"
                 if self._writer is None:
                     raise BlenderConnectionError("Connection unavailable")
                 self._writer.write(message.encode("utf-8"))
                 await self._writer.drain()
-                
+
                 logger.debug(f"Sending command: {category}.{action}")
-                
+
                 response = await asyncio.wait_for(future, timeout=self.timeout)
                 self._last_activity = time.monotonic()
-                
+
                 return response
-                
+
             except asyncio.TimeoutError:
                 self._pending_requests.pop(request_id, None)
                 self._failed_commands += 1
-                raise BlenderConnectionError(f"Command timed out: {category}.{action}")
+                raise BlenderConnectionError(f"Command timed out: {category}.{action}") from None
             except BlenderConnectionError:
                 self._pending_requests.pop(request_id, None)
                 self._failed_commands += 1
@@ -342,21 +333,19 @@ class BlenderConnection:
             except Exception as e:
                 self._pending_requests.pop(request_id, None)
                 if self._connected:
-                    try:
+                    with contextlib.suppress(Exception):
                         await self.disconnect()
-                    except Exception:
-                        pass
-                
+
                 if attempt == 0 and self.auto_reconnect:
                     logger.info(f"Command failed, attempting reconnect: {e}")
                     continue
-                
+
                 self._failed_commands += 1
-                raise BlenderConnectionError(f"Command failed: {e}")
+                raise BlenderConnectionError(f"Command failed: {e}") from e
 
         self._failed_commands += 1
         raise BlenderConnectionError(f"Command ultimately failed: {category}.{action}")
-    
+
     async def get_blender_info(self) -> dict[str, Any]:
         """Get Blender information"""
         result = await self.send_command("system", "get_info", {})

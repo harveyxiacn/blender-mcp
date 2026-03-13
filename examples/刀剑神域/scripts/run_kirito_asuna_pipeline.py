@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import socket
 import sys
 import time
 from pathlib import Path
-
 
 HOST = "127.0.0.1"
 PORT = 9876
@@ -35,14 +35,14 @@ def recv_json_line(sock: socket.socket) -> dict:
 
 
 def execute_script(script_path: Path, timeout: int = TIMEOUT) -> tuple[bool, str]:
-    code = f'''
+    code = f"""
 import bpy
 path = r"{script_path}"
 ns = {{"__name__": "__main__", "__file__": path, "__builtins__": __builtins__}}
 with open(path, "r", encoding="utf-8") as f:
     src = f.read()
 exec(compile(src, path, "exec"), ns)
-'''
+"""
     request = {
         "id": f"run-{int(time.time()*1000)}",
         "type": "command",
@@ -70,10 +70,8 @@ exec(compile(src, path, "exec"), ns)
 
 def main() -> int:
     if hasattr(sys.stdout, "reconfigure"):
-        try:
+        with contextlib.suppress(Exception):
             sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-        except Exception:
-            pass
 
     print(f"Blender MCP target: {HOST}:{PORT}")
     for filename, label in PIPELINE:

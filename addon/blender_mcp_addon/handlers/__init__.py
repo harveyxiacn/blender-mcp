@@ -77,12 +77,12 @@ def get_handler(name: str):
     """
     if name in _loaded_handlers:
         return _loaded_handlers[name]
-    
+
     module_file = HANDLER_MODULES.get(name)
     if not module_file:
         logger.warning(f"Unknown handler: {name}")
         return None
-    
+
     try:
         mod = importlib.import_module(f".{module_file}", package=__name__)
         _loaded_handlers[name] = mod

@@ -1,9 +1,7 @@
 """Node utilities shared by handlers."""
 
-from typing import Optional
 
-
-def find_principled_bsdf(nodes) -> Optional[object]:
+def find_principled_bsdf(nodes) -> object | None:
     """Find a Principled BSDF node in a node collection."""
     if not nodes:
         return None

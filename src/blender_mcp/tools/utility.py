@@ -4,10 +4,10 @@ Utility Tools
 Provides utility features such as script execution, screenshots, and file operations.
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -15,52 +15,62 @@ if TYPE_CHECKING:
 
 # ==================== Input Models ====================
 
+
 class ExecutePythonInput(BaseModel):
     """Execute Python code input"""
+
     code: str = Field(..., description="Python code")
     timeout: int = Field(default=30, description="Timeout in seconds", ge=1, le=300)
 
 
 class ViewportScreenshotInput(BaseModel):
     """Viewport screenshot input"""
-    output_path: Optional[str] = Field(default=None, description="Output path")
+
+    output_path: str | None = Field(default=None, description="Output path")
     width: int = Field(default=800, description="Image width", ge=100, le=4096)
     height: int = Field(default=600, description="Image height", ge=100, le=4096)
 
 
 class FileSaveInput(BaseModel):
     """Save file input"""
-    filepath: Optional[str] = Field(default=None, description="File path")
+
+    filepath: str | None = Field(default=None, description="File path")
     compress: bool = Field(default=True, description="Compress file")
 
 
 class FileOpenInput(BaseModel):
     """Open file input"""
+
     filepath: str = Field(..., description="File path")
     load_ui: bool = Field(default=False, description="Load UI layout")
 
 
 class GetBlenderInfoInput(BaseModel):
     """Get Blender info input"""
+
     pass
 
 
 class ConnectionStatusInput(BaseModel):
     """Connection status query input"""
+
     pass
 
 
 class UndoInput(BaseModel):
     """Undo input"""
+
     steps: int = Field(default=1, description="Number of undo steps", ge=1, le=100)
 
 
 class RedoInput(BaseModel):
     """Redo input"""
+
     steps: int = Field(default=1, description="Number of redo steps", ge=1, le=100)
 
 
 # ==================== Tool Registration ====================
+
 
 def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register utility tools"""
@@ -72,8 +82,8 @@ def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
-            "openWorldHint": True
-        }
+            "openWorldHint": True,
+        },
     )
     async def blender_execute_python(params: ExecutePythonInput) -> str:
         """Execute Python code in Blender.
@@ -87,13 +97,14 @@ def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Execution result
         """
         result = await server.execute_command(
-            "utility", "execute_python",
-            {"code": params.code, "timeout": params.timeout}
+            "utility", "execute_python", {"code": params.code, "timeout": params.timeout}
         )
 
         if result.get("success"):
             output = result.get("data", {}).get("output", "")
-            return f"Code executed successfully\n{output}" if output else "Code executed successfully"
+            return (
+                f"Code executed successfully\n{output}" if output else "Code executed successfully"
+            )
         else:
             return f"Execution failed: {result.get('error', {}).get('message', 'Unknown error')}"
 
@@ -104,8 +115,8 @@ def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": True
-        }
+            "openWorldHint": True,
+        },
     )
     async def blender_get_viewport_screenshot(params: ViewportScreenshotInput) -> str:
         """Get a screenshot of the current viewport.
@@ -117,12 +128,9 @@ def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Screenshot path
         """
         result = await server.execute_command(
-            "utility", "viewport_screenshot",
-            {
-                "output_path": params.output_path,
-                "width": params.width,
-                "height": params.height
-            }
+            "utility",
+            "viewport_screenshot",
+            {"output_path": params.output_path, "width": params.width, "height": params.height},
         )
 
         if result.get("success"):
@@ -138,8 +146,8 @@ def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": True
-        }
+            "openWorldHint": True,
+        },
     )
     async def blender_file_save(params: FileSaveInput) -> str:
         """Save the Blender file.
@@ -151,8 +159,7 @@ def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Save result
         """
         result = await server.execute_command(
-            "utility", "file_save",
-            {"filepath": params.filepath, "compress": params.compress}
+            "utility", "file_save", {"filepath": params.filepath, "compress": params.compress}
         )
 
         if result.get("success"):
@@ -168,8 +175,8 @@ def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
-            "openWorldHint": True
-        }
+            "openWorldHint": True,
+        },
     )
     async def blender_file_open(params: FileOpenInput) -> str:
         """Open a Blender file.
@@ -183,8 +190,7 @@ def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Open result
         """
         result = await server.execute_command(
-            "utility", "file_open",
-            {"filepath": params.filepath, "load_ui": params.load_ui}
+            "utility", "file_open", {"filepath": params.filepath, "load_ui": params.load_ui}
         )
 
         if result.get("success"):
@@ -199,8 +205,8 @@ def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_get_info(params: GetBlenderInfoInput) -> str:
         """Get Blender version and status information.
@@ -208,10 +214,7 @@ def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         Returns:
             Blender info
         """
-        result = await server.execute_command(
-            "utility", "get_info",
-            {}
-        )
+        result = await server.execute_command("utility", "get_info", {})
 
         if result.get("success"):
             data = result.get("data", {})
@@ -232,8 +235,8 @@ def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_undo(params: UndoInput) -> str:
         """Undo operations.
@@ -244,10 +247,7 @@ def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         Returns:
             Undo result
         """
-        result = await server.execute_command(
-            "utility", "undo",
-            {"steps": params.steps}
-        )
+        result = await server.execute_command("utility", "undo", {"steps": params.steps})
 
         if result.get("success"):
             return f"Undone {params.steps} step(s)"
@@ -261,8 +261,8 @@ def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_redo(params: RedoInput) -> str:
         """Redo operations.
@@ -273,10 +273,7 @@ def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         Returns:
             Redo result
         """
-        result = await server.execute_command(
-            "utility", "redo",
-            {"steps": params.steps}
-        )
+        result = await server.execute_command("utility", "redo", {"steps": params.steps})
 
         if result.get("success"):
             return f"Redone {params.steps} step(s)"
@@ -290,8 +287,8 @@ def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_connection_status(params: ConnectionStatusInput) -> str:
         """Query the current connection status and statistics with Blender.
@@ -312,7 +309,7 @@ def register_utility_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         lines.append(f"- **Reconnection Count**: {stats['reconnect_count']}")
         lines.append(f"- **Pending Requests**: {stats['pending_requests']}")
 
-        if stats['connected']:
+        if stats["connected"]:
             try:
                 info = await conn.get_blender_info()
                 lines.append("")

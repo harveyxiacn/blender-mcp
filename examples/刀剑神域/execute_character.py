@@ -1,29 +1,31 @@
 """
 执行单个角色建模脚本
 """
-import socket
-import json
-import time
-import sys
 
-def execute_character_script(script_path):
+import json
+import socket
+import sys
+import time
+
+
+def execute_character_script(script_path) -> bool | None:
     """执行角色建模脚本"""
     print(f"\nExecuting: {script_path}")
 
-    with open(script_path, 'r', encoding='utf-8') as f:
+    with open(script_path, encoding="utf-8") as f:
         code = f.read()
 
     try:
         s = socket.socket()
         s.settimeout(180)
-        s.connect(('127.0.0.1', 9876))
+        s.connect(("127.0.0.1", 9876))
 
         req = {
             "id": f"build_{int(time.time())}",
             "type": "command",
             "category": "utility",
             "action": "execute_python",
-            "params": {"code": code, "timeout": 180}
+            "params": {"code": code, "timeout": 180},
         }
 
         s.send((json.dumps(req, ensure_ascii=False) + "\n").encode("utf-8"))
@@ -33,7 +35,7 @@ def execute_character_script(script_path):
             d = s.recv(8192)
             if not d:
                 break
-            buf += d.decode("utf-8", errors='replace')
+            buf += d.decode("utf-8", errors="replace")
 
         s.close()
 
@@ -56,6 +58,7 @@ def execute_character_script(script_path):
     except Exception as e:
         print(f"ERROR: {e}")
         return False
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

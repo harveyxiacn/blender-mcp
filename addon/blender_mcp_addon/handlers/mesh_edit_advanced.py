@@ -5,28 +5,32 @@ Handles inset, bridge, spin, knife, fill, separate, symmetrize,
 edge marks, select by trait, vertex groups, vertex colors and other operations.
 """
 
-from typing import Any, Dict
-import bpy
-import bmesh
 import math
+from typing import Any
+
+import bmesh
+import bpy
 
 
-def handle_edit(params: Dict[str, Any]) -> Dict[str, Any]:
+def handle_edit(params: dict[str, Any]) -> dict[str, Any]:
     """Execute advanced mesh editing operations"""
     object_name = params.get("object_name")
     operation = params.get("operation")
     op_params = params.get("params", {})
 
     obj = bpy.data.objects.get(object_name)
-    if not obj or obj.type != 'MESH':
+    if not obj or obj.type != "MESH":
         return {
             "success": False,
-            "error": {"code": "INVALID_OBJECT", "message": f"Object does not exist or is not a mesh: {object_name}"}
+            "error": {
+                "code": "INVALID_OBJECT",
+                "message": f"Object does not exist or is not a mesh: {object_name}",
+            },
         }
 
     bpy.context.view_layer.objects.active = obj
-    if bpy.context.mode != 'EDIT_MESH':
-        bpy.ops.object.mode_set(mode='EDIT')
+    if bpy.context.mode != "EDIT_MESH":
+        bpy.ops.object.mode_set(mode="EDIT")
 
     try:
         if operation == "INSET_FACES":
@@ -120,19 +124,19 @@ def handle_edit(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             return {
                 "success": False,
-                "error": {"code": "UNKNOWN_OPERATION", "message": f"Unknown operation: {operation}"}
+                "error": {
+                    "code": "UNKNOWN_OPERATION",
+                    "message": f"Unknown operation: {operation}",
+                },
             }
 
     except Exception as e:
-        return {
-            "success": False,
-            "error": {"code": "OPERATION_FAILED", "message": str(e)}
-        }
+        return {"success": False, "error": {"code": "OPERATION_FAILED", "message": str(e)}}
 
     return {"success": True, "data": {}}
 
 
-def handle_edge_mark(params: Dict[str, Any]) -> Dict[str, Any]:
+def handle_edge_mark(params: dict[str, Any]) -> dict[str, Any]:
     """Set edge marks (crease/sharp/seam/bevel_weight)"""
     object_name = params.get("object_name")
     mark_type = params.get("mark_type")
@@ -140,24 +144,24 @@ def handle_edge_mark(params: Dict[str, Any]) -> Dict[str, Any]:
     clear = params.get("clear", False)
 
     obj = bpy.data.objects.get(object_name)
-    if not obj or obj.type != 'MESH':
+    if not obj or obj.type != "MESH":
         return {
             "success": False,
-            "error": {"code": "INVALID_OBJECT", "message": f"Object does not exist or is not a mesh: {object_name}"}
+            "error": {
+                "code": "INVALID_OBJECT",
+                "message": f"Object does not exist or is not a mesh: {object_name}",
+            },
         }
 
     bpy.context.view_layer.objects.active = obj
-    if bpy.context.mode != 'EDIT_MESH':
-        bpy.ops.object.mode_set(mode='EDIT')
+    if bpy.context.mode != "EDIT_MESH":
+        bpy.ops.object.mode_set(mode="EDIT")
 
     bm = bmesh.from_edit_mesh(obj.data)
     selected_edges = [e for e in bm.edges if e.select]
 
     if not selected_edges:
-        return {
-            "success": False,
-            "error": {"code": "NO_SELECTION", "message": "No selected edges"}
-        }
+        return {"success": False, "error": {"code": "NO_SELECTION", "message": "No selected edges"}}
 
     actual_value = 0.0 if clear else value
 
@@ -169,11 +173,11 @@ def handle_edge_mark(params: Dict[str, Any]) -> Dict[str, Any]:
 
         elif mark_type == "SHARP":
             for e in selected_edges:
-                e.smooth = (actual_value == 0.0)
+                e.smooth = actual_value == 0.0
 
         elif mark_type == "SEAM":
             for e in selected_edges:
-                e.seam = (actual_value > 0.0)
+                e.seam = actual_value > 0.0
 
         elif mark_type == "BEVEL_WEIGHT":
             bevel_layer = bm.edges.layers.bevel_weight.verify()
@@ -183,24 +187,21 @@ def handle_edge_mark(params: Dict[str, Any]) -> Dict[str, Any]:
         else:
             return {
                 "success": False,
-                "error": {"code": "UNKNOWN_MARK_TYPE", "message": f"Unknown mark type: {mark_type}"}
+                "error": {
+                    "code": "UNKNOWN_MARK_TYPE",
+                    "message": f"Unknown mark type: {mark_type}",
+                },
             }
 
         bmesh.update_edit_mesh(obj.data)
 
     except Exception as e:
-        return {
-            "success": False,
-            "error": {"code": "MARK_FAILED", "message": str(e)}
-        }
+        return {"success": False, "error": {"code": "MARK_FAILED", "message": str(e)}}
 
-    return {
-        "success": True,
-        "data": {"marked_edges": len(selected_edges), "value": actual_value}
-    }
+    return {"success": True, "data": {"marked_edges": len(selected_edges), "value": actual_value}}
 
 
-def handle_select_by_trait(params: Dict[str, Any]) -> Dict[str, Any]:
+def handle_select_by_trait(params: dict[str, Any]) -> dict[str, Any]:
     """Select mesh elements by trait"""
     object_name = params.get("object_name")
     select_mode = params.get("select_mode", "FACE")
@@ -208,30 +209,37 @@ def handle_select_by_trait(params: Dict[str, Any]) -> Dict[str, Any]:
     trait_params = params.get("params", {})
 
     obj = bpy.data.objects.get(object_name)
-    if not obj or obj.type != 'MESH':
+    if not obj or obj.type != "MESH":
         return {
             "success": False,
-            "error": {"code": "INVALID_OBJECT", "message": f"Object does not exist or is not a mesh: {object_name}"}
+            "error": {
+                "code": "INVALID_OBJECT",
+                "message": f"Object does not exist or is not a mesh: {object_name}",
+            },
         }
 
     bpy.context.view_layer.objects.active = obj
-    if bpy.context.mode != 'EDIT_MESH':
-        bpy.ops.object.mode_set(mode='EDIT')
+    if bpy.context.mode != "EDIT_MESH":
+        bpy.ops.object.mode_set(mode="EDIT")
 
     # Set selection mode
-    mode_map = {"VERT": (True, False, False), "EDGE": (False, True, False), "FACE": (False, False, True)}
+    mode_map = {
+        "VERT": (True, False, False),
+        "EDGE": (False, True, False),
+        "FACE": (False, False, True),
+    }
     mode_tuple = mode_map.get(select_mode, (False, False, True))
     bpy.context.tool_settings.mesh_select_mode = mode_tuple
 
     try:
         if trait == "ALL":
-            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.mesh.select_all(action="SELECT")
         elif trait == "NONE":
-            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.mesh.select_all(action="DESELECT")
         elif trait == "NON_MANIFOLD":
             extend = trait_params.get("extend", False)
             if not extend:
-                bpy.ops.mesh.select_all(action='DESELECT')
+                bpy.ops.mesh.select_all(action="DESELECT")
             bpy.ops.mesh.select_non_manifold(
                 use_wire=trait_params.get("use_wire", True),
                 use_boundary=trait_params.get("use_boundary", True),
@@ -242,7 +250,7 @@ def handle_select_by_trait(params: Dict[str, Any]) -> Dict[str, Any]:
         elif trait == "LOOSE":
             extend = trait_params.get("extend", False)
             if not extend:
-                bpy.ops.mesh.select_all(action='DESELECT')
+                bpy.ops.mesh.select_all(action="DESELECT")
             bpy.ops.mesh.select_loose()
         elif trait == "INTERIOR_FACES":
             bpy.ops.mesh.select_interior_faces()
@@ -264,21 +272,21 @@ def handle_select_by_trait(params: Dict[str, Any]) -> Dict[str, Any]:
             sharpness = trait_params.get("sharpness", 0.523)
             bpy.ops.mesh.edges_select_sharp(sharpness=sharpness)
         elif trait == "BOUNDARY":
-            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.mesh.select_all(action="DESELECT")
             bpy.ops.mesh.select_non_manifold(
-                use_wire=False, use_boundary=True,
-                use_multi_face=False, use_non_contiguous=False, use_verts=False,
+                use_wire=False,
+                use_boundary=True,
+                use_multi_face=False,
+                use_non_contiguous=False,
+                use_verts=False,
             )
         else:
             return {
                 "success": False,
-                "error": {"code": "UNKNOWN_TRAIT", "message": f"Unknown trait type: {trait}"}
+                "error": {"code": "UNKNOWN_TRAIT", "message": f"Unknown trait type: {trait}"},
             }
     except Exception as e:
-        return {
-            "success": False,
-            "error": {"code": "SELECT_FAILED", "message": str(e)}
-        }
+        return {"success": False, "error": {"code": "SELECT_FAILED", "message": str(e)}}
 
     # Count selected elements
     bm = bmesh.from_edit_mesh(obj.data)
@@ -292,7 +300,7 @@ def handle_select_by_trait(params: Dict[str, Any]) -> Dict[str, Any]:
     return {"success": True, "data": {"selected_count": count}}
 
 
-def handle_vertex_group(params: Dict[str, Any]) -> Dict[str, Any]:
+def handle_vertex_group(params: dict[str, Any]) -> dict[str, Any]:
     """Vertex group operations"""
     object_name = params.get("object_name")
     action = params.get("action")
@@ -301,72 +309,75 @@ def handle_vertex_group(params: Dict[str, Any]) -> Dict[str, Any]:
     vertex_indices = params.get("vertex_indices")
 
     obj = bpy.data.objects.get(object_name)
-    if not obj or obj.type != 'MESH':
+    if not obj or obj.type != "MESH":
         return {
             "success": False,
-            "error": {"code": "INVALID_OBJECT", "message": f"Object does not exist or is not a mesh: {object_name}"}
+            "error": {
+                "code": "INVALID_OBJECT",
+                "message": f"Object does not exist or is not a mesh: {object_name}",
+            },
         }
 
     try:
         if action == "CREATE":
             vg = obj.vertex_groups.new(name=group_name)
             if vertex_indices:
-                vg.add(vertex_indices, weight, 'REPLACE')
+                vg.add(vertex_indices, weight, "REPLACE")
             return {"success": True, "data": {"group_name": vg.name, "group_index": vg.index}}
 
         vg = obj.vertex_groups.get(group_name)
         if not vg:
             return {
                 "success": False,
-                "error": {"code": "GROUP_NOT_FOUND", "message": f"Vertex group not found: {group_name}"}
+                "error": {
+                    "code": "GROUP_NOT_FOUND",
+                    "message": f"Vertex group not found: {group_name}",
+                },
             }
 
         if action == "ASSIGN":
             if vertex_indices:
-                vg.add(vertex_indices, weight, 'REPLACE')
+                vg.add(vertex_indices, weight, "REPLACE")
             else:
                 # Use selection from edit mode
                 bpy.context.view_layer.objects.active = obj
-                if bpy.context.mode != 'EDIT_MESH':
-                    bpy.ops.object.mode_set(mode='EDIT')
+                if bpy.context.mode != "EDIT_MESH":
+                    bpy.ops.object.mode_set(mode="EDIT")
                 bm = bmesh.from_edit_mesh(obj.data)
                 indices = [v.index for v in bm.verts if v.select]
-                bpy.ops.object.mode_set(mode='OBJECT')
-                vg.add(indices, weight, 'REPLACE')
+                bpy.ops.object.mode_set(mode="OBJECT")
+                vg.add(indices, weight, "REPLACE")
 
         elif action == "REMOVE":
             obj.vertex_groups.remove(vg)
 
         elif action == "SELECT":
             bpy.context.view_layer.objects.active = obj
-            if bpy.context.mode != 'EDIT_MESH':
-                bpy.ops.object.mode_set(mode='EDIT')
+            if bpy.context.mode != "EDIT_MESH":
+                bpy.ops.object.mode_set(mode="EDIT")
             obj.vertex_groups.active = vg
             bpy.ops.object.vertex_group_select()
 
         elif action == "DESELECT":
             bpy.context.view_layer.objects.active = obj
-            if bpy.context.mode != 'EDIT_MESH':
-                bpy.ops.object.mode_set(mode='EDIT')
+            if bpy.context.mode != "EDIT_MESH":
+                bpy.ops.object.mode_set(mode="EDIT")
             obj.vertex_groups.active = vg
             bpy.ops.object.vertex_group_deselect()
 
         else:
             return {
                 "success": False,
-                "error": {"code": "UNKNOWN_ACTION", "message": f"Unknown action: {action}"}
+                "error": {"code": "UNKNOWN_ACTION", "message": f"Unknown action: {action}"},
             }
 
     except Exception as e:
-        return {
-            "success": False,
-            "error": {"code": "VERTEX_GROUP_FAILED", "message": str(e)}
-        }
+        return {"success": False, "error": {"code": "VERTEX_GROUP_FAILED", "message": str(e)}}
 
     return {"success": True, "data": {"group_name": group_name}}
 
 
-def handle_vertex_color(params: Dict[str, Any]) -> Dict[str, Any]:
+def handle_vertex_color(params: dict[str, Any]) -> dict[str, Any]:
     """Vertex color operations"""
     object_name = params.get("object_name")
     action = params.get("action", "CREATE")
@@ -375,10 +386,13 @@ def handle_vertex_color(params: Dict[str, Any]) -> Dict[str, Any]:
     face_indices = params.get("face_indices")
 
     obj = bpy.data.objects.get(object_name)
-    if not obj or obj.type != 'MESH':
+    if not obj or obj.type != "MESH":
         return {
             "success": False,
-            "error": {"code": "INVALID_OBJECT", "message": f"Object does not exist or is not a mesh: {object_name}"}
+            "error": {
+                "code": "INVALID_OBJECT",
+                "message": f"Object does not exist or is not a mesh: {object_name}",
+            },
         }
 
     mesh = obj.data
@@ -386,9 +400,9 @@ def handle_vertex_color(params: Dict[str, Any]) -> Dict[str, Any]:
     try:
         if action == "CREATE":
             # Create vertex color layer (Blender 3.2+ uses color_attributes)
-            if hasattr(mesh, 'color_attributes'):
+            if hasattr(mesh, "color_attributes"):
                 if layer_name not in [ca.name for ca in mesh.color_attributes]:
-                    mesh.color_attributes.new(name=layer_name, type='BYTE_COLOR', domain='CORNER')
+                    mesh.color_attributes.new(name=layer_name, type="BYTE_COLOR", domain="CORNER")
             else:
                 if layer_name not in [vc.name for vc in mesh.vertex_colors]:
                     mesh.vertex_colors.new(name=layer_name)
@@ -396,10 +410,12 @@ def handle_vertex_color(params: Dict[str, Any]) -> Dict[str, Any]:
 
         elif action == "FILL":
             # Fill all vertex colors
-            if hasattr(mesh, 'color_attributes'):
+            if hasattr(mesh, "color_attributes"):
                 ca = mesh.color_attributes.get(layer_name)
                 if not ca:
-                    ca = mesh.color_attributes.new(name=layer_name, type='BYTE_COLOR', domain='CORNER')
+                    ca = mesh.color_attributes.new(
+                        name=layer_name, type="BYTE_COLOR", domain="CORNER"
+                    )
                 for i in range(len(ca.data)):
                     ca.data[i].color = color[:4] if len(color) >= 4 else color + [1.0]
             else:
@@ -412,10 +428,12 @@ def handle_vertex_color(params: Dict[str, Any]) -> Dict[str, Any]:
 
         elif action == "PAINT":
             # Paint by face indices
-            if hasattr(mesh, 'color_attributes'):
+            if hasattr(mesh, "color_attributes"):
                 ca = mesh.color_attributes.get(layer_name)
                 if not ca:
-                    ca = mesh.color_attributes.new(name=layer_name, type='BYTE_COLOR', domain='CORNER')
+                    ca = mesh.color_attributes.new(
+                        name=layer_name, type="BYTE_COLOR", domain="CORNER"
+                    )
             else:
                 ca = mesh.vertex_colors.get(layer_name)
                 if not ca:
@@ -434,16 +452,19 @@ def handle_vertex_color(params: Dict[str, Any]) -> Dict[str, Any]:
                 for i in range(len(ca.data)):
                     ca.data[i].color = col
 
-            return {"success": True, "data": {"layer_name": layer_name, "painted_faces": len(face_indices) if face_indices else "all"}}
+            return {
+                "success": True,
+                "data": {
+                    "layer_name": layer_name,
+                    "painted_faces": len(face_indices) if face_indices else "all",
+                },
+            }
 
         else:
             return {
                 "success": False,
-                "error": {"code": "UNKNOWN_ACTION", "message": f"Unknown action: {action}"}
+                "error": {"code": "UNKNOWN_ACTION", "message": f"Unknown action: {action}"},
             }
 
     except Exception as e:
-        return {
-            "success": False,
-            "error": {"code": "VERTEX_COLOR_FAILED", "message": str(e)}
-        }
+        return {"success": False, "error": {"code": "VERTEX_COLOR_FAILED", "message": str(e)}}

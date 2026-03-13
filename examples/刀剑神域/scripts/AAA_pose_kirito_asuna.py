@@ -11,7 +11,6 @@ import math
 import bpy
 from mathutils import Euler, Vector
 
-
 OUTPUT_BLEND = r"E:\Projects\blender-mcp\examples\sao_kirito_asuna_action.blend"
 OUTPUT_STILL = r"E:\Projects\blender-mcp\examples\sao_kirito_asuna_action_f24.png"
 
@@ -87,7 +86,9 @@ def ensure_kirito_weapon(parts_col: bpy.types.Collection) -> list[str]:
     assign_material(grip, "M_KiritoBelt")
     move_to_collection(grip, parts_col)
 
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=0.013, location=(0.0, 0.0, -0.12))
+    bpy.ops.mesh.primitive_uv_sphere_add(
+        segments=12, ring_count=8, radius=0.013, location=(0.0, 0.0, -0.12)
+    )
     pommel = bpy.context.active_object
     pommel.name = "K_Elucidator_Pommel"
     assign_material(pommel, "M_MetalDark")
@@ -237,9 +238,15 @@ def main() -> None:
         parts_col=parts_col,
     )
 
-    a_parts = [n for n in ["LL_Blade", "LL_Guard", "LL_Grip", "LL_Pommel"] if bpy.data.objects.get(n) is not None]
+    a_parts = [
+        n
+        for n in ["LL_Blade", "LL_Guard", "LL_Grip", "LL_Pommel"]
+        if bpy.data.objects.get(n) is not None
+    ]
     if not a_parts:
-        raise RuntimeError("Asuna weapon parts not found (LL_Blade / LL_Guard / LL_Grip / LL_Pommel)")
+        raise RuntimeError(
+            "Asuna weapon parts not found (LL_Blade / LL_Guard / LL_Grip / LL_Pommel)"
+        )
     a_root = attach_weapon_to_hand(
         root_name="A_WeaponRoot",
         hand_name="A_HandR",

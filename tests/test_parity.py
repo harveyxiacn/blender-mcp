@@ -24,9 +24,7 @@ from blender_mcp.tools_config import MODULE_REGISTRY
 # ---------------------------------------------------------------------------
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
-_HANDLERS_INIT = (
-    _REPO_ROOT / "addon" / "blender_mcp_addon" / "handlers" / "__init__.py"
-)
+_HANDLERS_INIT = _REPO_ROOT / "addon" / "blender_mcp_addon" / "handlers" / "__init__.py"
 
 # ---------------------------------------------------------------------------
 # Known naming differences: server module name -> addon handler key
@@ -60,9 +58,7 @@ def _parse_handler_modules() -> dict[str, str]:
     This avoids importing the addon code (which depends on ``bpy``) and
     instead extracts the dictionary literal directly from the source file.
     """
-    assert _HANDLERS_INIT.exists(), (
-        f"Addon handlers __init__.py not found at {_HANDLERS_INIT}"
-    )
+    assert _HANDLERS_INIT.exists(), f"Addon handlers __init__.py not found at {_HANDLERS_INIT}"
     source = _HANDLERS_INIT.read_text(encoding="utf-8")
     tree = ast.parse(source, filename=str(_HANDLERS_INIT))
 
@@ -108,9 +104,7 @@ class TestServerToAddonParity:
             if addon_key not in HANDLER_MODULES:
                 missing.append(server_module)
 
-        assert not missing, (
-            f"Server modules without addon handler: {sorted(missing)}"
-        )
+        assert not missing, f"Server modules without addon handler: {sorted(missing)}"
 
     @pytest.mark.parametrize("module_name", sorted(KNOWN_SERVER_ONLY))
     def test_known_server_only_gaps_warn(self, module_name: str) -> None:
@@ -142,9 +136,7 @@ class TestAddonToServerParity:
     """Every addon handler should have a corresponding server module."""
 
     # Build the reverse alias map: addon key -> server module name
-    _ADDON_TO_SERVER: dict[str, str] = {
-        v: k for k, v in SERVER_TO_ADDON_ALIASES.items()
-    }
+    _ADDON_TO_SERVER: dict[str, str] = {v: k for k, v in SERVER_TO_ADDON_ALIASES.items()}
 
     def test_all_addon_handlers_have_server_module(self) -> None:
         """Each addon handler key should map to a MODULE_REGISTRY entry."""
@@ -155,9 +147,7 @@ class TestAddonToServerParity:
             if server_key not in MODULE_REGISTRY:
                 missing.append(addon_key)
 
-        assert not missing, (
-            f"Addon handlers without server module: {sorted(missing)}"
-        )
+        assert not missing, f"Addon handlers without server module: {sorted(missing)}"
 
 
 # ---------------------------------------------------------------------------
@@ -176,8 +166,7 @@ class TestServerModuleImports:
         mod = importlib.import_module(f"blender_mcp.tools.{module_name}")
         register_func_name = MODULE_REGISTRY[module_name]
         assert hasattr(mod, register_func_name), (
-            f"blender_mcp.tools.{module_name} does not export "
-            f"'{register_func_name}'"
+            f"blender_mcp.tools.{module_name} does not export " f"'{register_func_name}'"
         )
 
 
@@ -200,6 +189,5 @@ class TestAddonHandlerFilesExist:
         """Check that ``handlers/<filename>.py`` exists on disk."""
         handler_file = self._HANDLERS_DIR / f"{filename}.py"
         assert handler_file.exists(), (
-            f"Handler file missing for '{handler_key}': expected "
-            f"{handler_file}"
+            f"Handler file missing for '{handler_key}': expected " f"{handler_file}"
         )

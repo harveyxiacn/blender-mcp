@@ -4,15 +4,15 @@ import os
 from unittest.mock import patch
 
 
-def test_default_values():
+def test_default_values() -> None:
     from blender_mcp import config
 
-    assert config.BLENDER_HOST == os.environ.get("BLENDER_MCP_HOST", "127.0.0.1")
+    assert os.environ.get("BLENDER_MCP_HOST", "127.0.0.1") == config.BLENDER_HOST
     assert isinstance(config.BLENDER_PORT, int)
     assert isinstance(config.COMMAND_TIMEOUT, float)
 
 
-def test_env_override():
+def test_env_override() -> None:
     env = {
         "BLENDER_MCP_HOST": "192.168.1.100",
         "BLENDER_MCP_PORT": "5555",
@@ -21,6 +21,7 @@ def test_env_override():
     }
     with patch.dict(os.environ, env):
         import importlib
+
         from blender_mcp import config
 
         importlib.reload(config)

@@ -4,11 +4,11 @@ Animation Tools
 Provides keyframe animation and timeline control features.
 """
 
-from typing import TYPE_CHECKING, Optional, Any
 from enum import Enum
+from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 class InterpolationType(str, Enum):
     """Interpolation type"""
+
     CONSTANT = "CONSTANT"
     LINEAR = "LINEAR"
     BEZIER = "BEZIER"
@@ -33,44 +34,51 @@ class InterpolationType(str, Enum):
 
 # ==================== Input Models ====================
 
+
 class KeyframeInsertInput(BaseModel):
     """Insert keyframe input"""
+
     object_name: str = Field(..., description="Object name")
     data_path: str = Field(..., description="Data path (e.g. location, rotation_euler, scale)")
-    frame: Optional[int] = Field(default=None, description="Frame number, uses current frame if empty")
-    value: Optional[Any] = Field(default=None, description="Property value")
+    frame: int | None = Field(default=None, description="Frame number, uses current frame if empty")
+    value: Any | None = Field(default=None, description="Property value")
 
 
 class KeyframeDeleteInput(BaseModel):
     """Delete keyframe input"""
+
     object_name: str = Field(..., description="Object name")
     data_path: str = Field(..., description="Data path")
-    frame: Optional[int] = Field(default=None, description="Frame number")
+    frame: int | None = Field(default=None, description="Frame number")
 
 
 class AnimationSetInterpolationInput(BaseModel):
     """Set interpolation type input"""
+
     object_name: str = Field(..., description="Object name")
     interpolation: InterpolationType = Field(..., description="Interpolation type")
 
 
 class TimelineSetRangeInput(BaseModel):
     """Set timeline range input"""
-    frame_start: Optional[int] = Field(default=None, description="Start frame", ge=0)
-    frame_end: Optional[int] = Field(default=None, description="End frame", ge=1)
-    frame_current: Optional[int] = Field(default=None, description="Current frame", ge=0)
+
+    frame_start: int | None = Field(default=None, description="Start frame", ge=0)
+    frame_end: int | None = Field(default=None, description="End frame", ge=1)
+    frame_current: int | None = Field(default=None, description="Current frame", ge=0)
 
 
 class TimelineGotoFrameInput(BaseModel):
     """Go to frame input"""
+
     frame: int = Field(..., description="Target frame", ge=0)
 
 
 class AnimationBakeInput(BaseModel):
     """Bake animation input"""
+
     object_name: str = Field(..., description="Object name")
-    frame_start: Optional[int] = Field(default=None, description="Start frame")
-    frame_end: Optional[int] = Field(default=None, description="End frame")
+    frame_start: int | None = Field(default=None, description="Start frame")
+    frame_end: int | None = Field(default=None, description="End frame")
     step: int = Field(default=1, description="Frame step", ge=1)
     bake_location: bool = Field(default=True, description="Bake location")
     bake_rotation: bool = Field(default=True, description="Bake rotation")
@@ -79,6 +87,7 @@ class AnimationBakeInput(BaseModel):
 
 class ActionCreateInput(BaseModel):
     """Create action input"""
+
     armature_name: str = Field(..., description="Armature name")
     action_name: str = Field(default="Action", description="Action name")
     fake_user: bool = Field(default=True, description="Set fake user (prevent cleanup)")
@@ -86,42 +95,54 @@ class ActionCreateInput(BaseModel):
 
 class BoneKeyframe(BaseModel):
     """Bone keyframe data"""
+
     frame: int = Field(..., description="Frame number")
     bone: str = Field(..., description="Bone name")
-    location: Optional[list] = Field(default=None, description="Location [x, y, z]")
-    rotation: Optional[list] = Field(default=None, description="Euler rotation [x, y, z]")
-    rotation_quaternion: Optional[list] = Field(default=None, description="Quaternion rotation [w, x, y, z]")
-    scale: Optional[list] = Field(default=None, description="Scale [x, y, z]")
+    location: list | None = Field(default=None, description="Location [x, y, z]")
+    rotation: list | None = Field(default=None, description="Euler rotation [x, y, z]")
+    rotation_quaternion: list | None = Field(
+        default=None, description="Quaternion rotation [w, x, y, z]"
+    )
+    scale: list | None = Field(default=None, description="Scale [x, y, z]")
 
 
 class ActionCreateFromPosesInput(BaseModel):
     """Create action from poses input"""
+
     armature_name: str = Field(..., description="Armature name")
     action_name: str = Field(default="Action", description="Action name")
-    keyframes: list = Field(..., description="Keyframe data list [{frame, bone, location, rotation, scale}, ...]")
+    keyframes: list = Field(
+        ..., description="Keyframe data list [{frame, bone, location, rotation, scale}, ...]"
+    )
     fake_user: bool = Field(default=True, description="Set fake user")
 
 
 class ActionListInput(BaseModel):
     """List actions input"""
-    armature_name: Optional[str] = Field(default=None, description="Armature name (optional)")
+
+    armature_name: str | None = Field(default=None, description="Armature name (optional)")
 
 
 class ActionAssignInput(BaseModel):
     """Assign action input"""
+
     armature_name: str = Field(..., description="Armature name")
     action_name: str = Field(..., description="Action name")
 
 
 class NLAPushActionInput(BaseModel):
     """Push action to NLA input"""
+
     armature_name: str = Field(..., description="Armature name")
-    action_name: Optional[str] = Field(default=None, description="Action name (uses current action if empty)")
+    action_name: str | None = Field(
+        default=None, description="Action name (uses current action if empty)"
+    )
     track_name: str = Field(default="NLATrack", description="NLA track name")
     start_frame: int = Field(default=1, description="Start frame")
 
 
 # ==================== Tool Registration ====================
+
 
 def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register animation tools"""
@@ -133,8 +154,8 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_keyframe_insert(params: KeyframeInsertInput) -> str:
         """Insert a keyframe.
@@ -154,18 +175,21 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Insertion result
         """
         result = await server.execute_command(
-            "animation", "keyframe_insert",
+            "animation",
+            "keyframe_insert",
             {
                 "object_name": params.object_name,
                 "data_path": params.data_path,
                 "frame": params.frame,
-                "value": params.value
-            }
+                "value": params.value,
+            },
         )
 
         if result.get("success"):
             frame = params.frame or result.get("data", {}).get("frame", "current")
-            return f"Inserted keyframe for '{params.object_name}' {params.data_path} at frame {frame}"
+            return (
+                f"Inserted keyframe for '{params.object_name}' {params.data_path} at frame {frame}"
+            )
         else:
             return f"Failed to insert keyframe: {result.get('error', {}).get('message', 'unknown error')}"
 
@@ -176,8 +200,8 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_keyframe_delete(params: KeyframeDeleteInput) -> str:
         """Delete a keyframe.
@@ -189,16 +213,17 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Deletion result
         """
         result = await server.execute_command(
-            "animation", "keyframe_delete",
+            "animation",
+            "keyframe_delete",
             {
                 "object_name": params.object_name,
                 "data_path": params.data_path,
-                "frame": params.frame
-            }
+                "frame": params.frame,
+            },
         )
 
         if result.get("success"):
-            return f"Keyframe deleted"
+            return "Keyframe deleted"
         else:
             return f"Failed to delete keyframe: {result.get('error', {}).get('message', 'unknown error')}"
 
@@ -209,8 +234,8 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_animation_set_interpolation(params: AnimationSetInterpolationInput) -> str:
         """Set the interpolation type for keyframes.
@@ -224,15 +249,15 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Setting result
         """
         result = await server.execute_command(
-            "animation", "set_interpolation",
-            {
-                "object_name": params.object_name,
-                "interpolation": params.interpolation.value
-            }
+            "animation",
+            "set_interpolation",
+            {"object_name": params.object_name, "interpolation": params.interpolation.value},
         )
 
         if result.get("success"):
-            return f"Set interpolation type for '{params.object_name}' to {params.interpolation.value}"
+            return (
+                f"Set interpolation type for '{params.object_name}' to {params.interpolation.value}"
+            )
         else:
             return f"Failed to set interpolation: {result.get('error', {}).get('message', 'unknown error')}"
 
@@ -243,8 +268,8 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_timeline_set_range(params: TimelineSetRangeInput) -> str:
         """Set the timeline range.
@@ -268,15 +293,14 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         if not settings:
             return "No settings specified"
 
-        result = await server.execute_command(
-            "animation", "timeline_set_range",
-            settings
-        )
+        result = await server.execute_command("animation", "timeline_set_range", settings)
 
         if result.get("success"):
-            return f"Timeline range updated"
+            return "Timeline range updated"
         else:
-            return f"Failed to set timeline: {result.get('error', {}).get('message', 'unknown error')}"
+            return (
+                f"Failed to set timeline: {result.get('error', {}).get('message', 'unknown error')}"
+            )
 
     @mcp.tool(
         name="blender_timeline_goto_frame",
@@ -285,8 +309,8 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_timeline_goto_frame(params: TimelineGotoFrameInput) -> str:
         """Go to the specified frame.
@@ -297,10 +321,7 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         Returns:
             Operation result
         """
-        result = await server.execute_command(
-            "animation", "goto_frame",
-            {"frame": params.frame}
-        )
+        result = await server.execute_command("animation", "goto_frame", {"frame": params.frame})
 
         if result.get("success"):
             return f"Jumped to frame {params.frame}"
@@ -314,8 +335,8 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_animation_bake(params: AnimationBakeInput) -> str:
         """Bake animation.
@@ -329,7 +350,8 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Bake result
         """
         result = await server.execute_command(
-            "animation", "bake",
+            "animation",
+            "bake",
             {
                 "object_name": params.object_name,
                 "frame_start": params.frame_start,
@@ -337,8 +359,8 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "step": params.step,
                 "bake_location": params.bake_location,
                 "bake_rotation": params.bake_rotation,
-                "bake_scale": params.bake_scale
-            }
+                "bake_scale": params.bake_scale,
+            },
         )
 
         if result.get("success"):
@@ -355,8 +377,8 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_action_create(params: ActionCreateInput) -> str:
         """Create a new animation action.
@@ -370,12 +392,13 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Creation result
         """
         result = await server.execute_command(
-            "animation", "action_create",
+            "animation",
+            "action_create",
             {
                 "armature_name": params.armature_name,
                 "action_name": params.action_name,
-                "fake_user": params.fake_user
-            }
+                "fake_user": params.fake_user,
+            },
         )
 
         if result.get("success"):
@@ -391,8 +414,8 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_action_create_from_poses(params: ActionCreateFromPosesInput) -> str:
         """Batch create animation keyframes from a list of poses.
@@ -416,13 +439,14 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Creation result
         """
         result = await server.execute_command(
-            "animation", "action_create_from_poses",
+            "animation",
+            "action_create_from_poses",
             {
                 "armature_name": params.armature_name,
                 "action_name": params.action_name,
                 "keyframes": params.keyframes,
-                "fake_user": params.fake_user
-            }
+                "fake_user": params.fake_user,
+            },
         )
 
         if result.get("success"):
@@ -439,8 +463,8 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_action_list(params: ActionListInput) -> str:
         """List all animation actions.
@@ -452,8 +476,7 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Action list
         """
         result = await server.execute_command(
-            "animation", "action_list",
-            {"armature_name": params.armature_name}
+            "animation", "action_list", {"armature_name": params.armature_name}
         )
 
         if result.get("success"):
@@ -466,7 +489,9 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             lines = ["# Animation Action List", ""]
             for action in actions:
                 status = "📌" if action.get("fake_user") else "  "
-                lines.append(f"{status} **{action['name']}** (frames: {action['frame_start']:.0f}-{action['frame_end']:.0f})")
+                lines.append(
+                    f"{status} **{action['name']}** (frames: {action['frame_start']:.0f}-{action['frame_end']:.0f})"
+                )
 
             return "\n".join(lines)
         else:
@@ -479,8 +504,8 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_action_assign(params: ActionAssignInput) -> str:
         """Assign an animation action to an armature.
@@ -492,11 +517,9 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Assignment result
         """
         result = await server.execute_command(
-            "animation", "action_assign",
-            {
-                "armature_name": params.armature_name,
-                "action_name": params.action_name
-            }
+            "animation",
+            "action_assign",
+            {"armature_name": params.armature_name, "action_name": params.action_name},
         )
 
         if result.get("success"):
@@ -511,8 +534,8 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_nla_push_action(params: NLAPushActionInput) -> str:
         """Push an action to an NLA track.
@@ -526,17 +549,20 @@ def register_animation_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Push result
         """
         result = await server.execute_command(
-            "animation", "nla_push_action",
+            "animation",
+            "nla_push_action",
             {
                 "armature_name": params.armature_name,
                 "action_name": params.action_name,
                 "track_name": params.track_name,
-                "start_frame": params.start_frame
-            }
+                "start_frame": params.start_frame,
+            },
         )
 
         if result.get("success"):
             data = result.get("data", {})
             return f"Pushed action '{data.get('action_name', 'N/A')}' to NLA track '{data.get('track_name', params.track_name)}'"
         else:
-            return f"Failed to push action: {result.get('error', {}).get('message', 'unknown error')}"
+            return (
+                f"Failed to push action: {result.get('error', {}).get('message', 'unknown error')}"
+            )

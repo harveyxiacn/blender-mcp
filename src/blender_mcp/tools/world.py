@@ -4,28 +4,32 @@ World/Environment Tools
 Provides MCP tools for Blender world and environment settings.
 """
 
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
-from mcp.server.fastmcp import FastMCP
+from typing import Any
 
+from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 # ============ Pydantic Models ============
 
+
 class WorldCreateInput(BaseModel):
     """Create world"""
+
     name: str = Field("World", description="World name")
     use_nodes: bool = Field(True, description="Use nodes")
 
 
 class WorldBackgroundInput(BaseModel):
     """Set background"""
-    color: Optional[List[float]] = Field(None, description="Background color [R, G, B]")
+
+    color: list[float] | None = Field(None, description="Background color [R, G, B]")
     strength: float = Field(1.0, description="Strength")
     use_sky_texture: bool = Field(False, description="Use sky texture")
 
 
 class WorldHDRIInput(BaseModel):
     """Set HDRI environment"""
+
     hdri_path: str = Field(..., description="HDRI file path")
     strength: float = Field(1.0, description="Strength")
     rotation: float = Field(0.0, description="Rotation angle (radians)")
@@ -33,6 +37,7 @@ class WorldHDRIInput(BaseModel):
 
 class WorldSkyInput(BaseModel):
     """Set procedural sky"""
+
     sky_type: str = Field("NISHITA", description="Sky type: PREETHAM, HOSEK_WILKIE, NISHITA")
     sun_elevation: float = Field(0.785, description="Sun elevation (radians)")
     sun_rotation: float = Field(0.0, description="Sun rotation (radians)")
@@ -43,14 +48,16 @@ class WorldSkyInput(BaseModel):
 
 class WorldFogInput(BaseModel):
     """Set volumetric fog"""
+
     use_fog: bool = Field(True, description="Enable fog")
     density: float = Field(0.01, description="Density")
-    color: List[float] = Field([0.5, 0.6, 0.7], description="Color")
+    color: list[float] = Field([0.5, 0.6, 0.7], description="Color")
     anisotropy: float = Field(0.0, description="Anisotropy")
 
 
 class WorldAmbientOcclusionInput(BaseModel):
     """Set ambient occlusion"""
+
     use_ao: bool = Field(True, description="Enable AO")
     distance: float = Field(1.0, description="Distance")
     factor: float = Field(1.0, description="Factor")
@@ -58,14 +65,12 @@ class WorldAmbientOcclusionInput(BaseModel):
 
 # ============ Tool Registration ============
 
-def register_world_tools(mcp: FastMCP, server):
+
+def register_world_tools(mcp: FastMCP, server) -> None:
     """Register world/environment tools"""
 
     @mcp.tool()
-    async def blender_world_create(
-        name: str = "World",
-        use_nodes: bool = True
-    ) -> Dict[str, Any]:
+    async def blender_world_create(name: str = "World", use_nodes: bool = True) -> dict[str, Any]:
         """
         Create a new world
 
@@ -78,10 +83,8 @@ def register_world_tools(mcp: FastMCP, server):
 
     @mcp.tool()
     async def blender_world_background(
-        color: Optional[List[float]] = None,
-        strength: float = 1.0,
-        use_sky_texture: bool = False
-    ) -> Dict[str, Any]:
+        color: list[float] | None = None, strength: float = 1.0, use_sky_texture: bool = False
+    ) -> dict[str, Any]:
         """
         Set world background
 
@@ -91,18 +94,14 @@ def register_world_tools(mcp: FastMCP, server):
             use_sky_texture: Use sky texture
         """
         params = WorldBackgroundInput(
-            color=color,
-            strength=strength,
-            use_sky_texture=use_sky_texture
+            color=color, strength=strength, use_sky_texture=use_sky_texture
         )
         return await server.send_command("world", "background", params.model_dump())
 
     @mcp.tool()
     async def blender_world_hdri(
-        hdri_path: str,
-        strength: float = 1.0,
-        rotation: float = 0.0
-    ) -> Dict[str, Any]:
+        hdri_path: str, strength: float = 1.0, rotation: float = 0.0
+    ) -> dict[str, Any]:
         """
         Set HDRI environment map
 
@@ -111,11 +110,7 @@ def register_world_tools(mcp: FastMCP, server):
             strength: Environment light strength
             rotation: Rotation angle (radians)
         """
-        params = WorldHDRIInput(
-            hdri_path=hdri_path,
-            strength=strength,
-            rotation=rotation
-        )
+        params = WorldHDRIInput(hdri_path=hdri_path, strength=strength, rotation=rotation)
         return await server.send_command("world", "hdri", params.model_dump())
 
     @mcp.tool()
@@ -125,8 +120,8 @@ def register_world_tools(mcp: FastMCP, server):
         sun_rotation: float = 0.0,
         air_density: float = 1.0,
         dust_density: float = 0.0,
-        ozone_density: float = 1.0
-    ) -> Dict[str, Any]:
+        ozone_density: float = 1.0,
+    ) -> dict[str, Any]:
         """
         Set procedural sky
 
@@ -144,7 +139,7 @@ def register_world_tools(mcp: FastMCP, server):
             sun_rotation=sun_rotation,
             air_density=air_density,
             dust_density=dust_density,
-            ozone_density=ozone_density
+            ozone_density=ozone_density,
         )
         return await server.send_command("world", "sky", params.model_dump())
 
@@ -152,9 +147,9 @@ def register_world_tools(mcp: FastMCP, server):
     async def blender_world_fog(
         use_fog: bool = True,
         density: float = 0.01,
-        color: List[float] = [0.5, 0.6, 0.7],
-        anisotropy: float = 0.0
-    ) -> Dict[str, Any]:
+        color: list[float] = None,
+        anisotropy: float = 0.0,
+    ) -> dict[str, Any]:
         """
         Set volumetric fog
 
@@ -164,20 +159,15 @@ def register_world_tools(mcp: FastMCP, server):
             color: Fog color [R, G, B]
             anisotropy: Anisotropy
         """
-        params = WorldFogInput(
-            use_fog=use_fog,
-            density=density,
-            color=color,
-            anisotropy=anisotropy
-        )
+        if color is None:
+            color = [0.5, 0.6, 0.7]
+        params = WorldFogInput(use_fog=use_fog, density=density, color=color, anisotropy=anisotropy)
         return await server.send_command("world", "fog", params.model_dump())
 
     @mcp.tool()
     async def blender_world_ambient_occlusion(
-        use_ao: bool = True,
-        distance: float = 1.0,
-        factor: float = 1.0
-    ) -> Dict[str, Any]:
+        use_ao: bool = True, distance: float = 1.0, factor: float = 1.0
+    ) -> dict[str, Any]:
         """
         Set ambient occlusion
 
@@ -186,9 +176,5 @@ def register_world_tools(mcp: FastMCP, server):
             distance: AO distance
             factor: AO factor
         """
-        params = WorldAmbientOcclusionInput(
-            use_ao=use_ao,
-            distance=distance,
-            factor=factor
-        )
+        params = WorldAmbientOcclusionInput(use_ao=use_ao, distance=distance, factor=factor)
         return await server.send_command("world", "ambient_occlusion", params.model_dump())

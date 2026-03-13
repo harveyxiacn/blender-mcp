@@ -6,24 +6,25 @@ SAO 模型精细化 - 通过 utility.execute_python 添加:
   4. Solidify描边
   5. TOON渲染设置
 """
-import socket
+
 import json
-import time
+import socket
+
 
 class BlenderExec:
-    def __init__(self, host="127.0.0.1", port=9876):
+    def __init__(self, host="127.0.0.1", port=9876) -> None:
         self.host = host
         self.port = port
         self._id = 0
-    
-    def run(self, code, timeout=30):
+
+    def run(self, code, timeout=30) -> bool | None:
         self._id += 1
         request = {
             "id": f"ref_{self._id}",
             "type": "command",
             "category": "utility",
             "action": "execute_python",
-            "params": {"code": code, "timeout": timeout}
+            "params": {"code": code, "timeout": timeout},
         }
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(timeout + 5)
@@ -33,7 +34,8 @@ class BlenderExec:
             buf = ""
             while "\n" not in buf:
                 d = sock.recv(8192)
-                if not d: break
+                if not d:
+                    break
                 buf += d.decode("utf-8")
             resp = json.loads(buf.strip()) if buf.strip() else {}
             if resp.get("success"):
@@ -51,11 +53,12 @@ class BlenderExec:
         finally:
             sock.close()
 
+
 B = BlenderExec()
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("  SAO 模型精细化")
-print("="*60)
+print("=" * 60)
 
 # ============================================================
 # Step 1: 平滑着色
@@ -126,27 +129,27 @@ def upgrade_to_toon(mat_name, base_rgb, shadow_mult=(0.6,0.55,0.65), ramp_pos=0.
     mat = bpy.data.materials.get(mat_name)
     if not mat or not mat.use_nodes:
         return False
-    
+
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
-    
+
     # 检查是否已经是toon(有ShaderToRGB节点)
     if any(n.type == 'SHADERTORGB' for n in nodes):
         return False
-    
+
     nodes.clear()
-    
+
     output = nodes.new('ShaderNodeOutputMaterial')
     output.location = (600, 0)
-    
+
     diffuse = nodes.new('ShaderNodeBsdfDiffuse')
     diffuse.inputs['Color'].default_value = (*base_rgb, 1.0)
     diffuse.location = (-200, 0)
-    
+
     s2rgb = nodes.new('ShaderNodeShaderToRGB')
     s2rgb.location = (0, 0)
     links.new(diffuse.outputs['BSDF'], s2rgb.inputs['Shader'])
-    
+
     ramp = nodes.new('ShaderNodeValToRGB')
     ramp.location = (200, 0)
     ramp.color_ramp.interpolation = 'CONSTANT'
@@ -190,23 +193,23 @@ def create_metallic_toon(mat_name, base_rgb, metallic_strength=0.8):
     mat = bpy.data.materials.get(mat_name)
     if not mat: return False
     if any(n.type == 'SHADERTORGB' for n in mat.node_tree.nodes): return False
-    
+
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
     nodes.clear()
-    
+
     output = nodes.new('ShaderNodeOutputMaterial')
     output.location = (800, 0)
-    
+
     glossy = nodes.new('ShaderNodeBsdfGlossy')
     glossy.inputs['Color'].default_value = (*base_rgb, 1.0)
     glossy.inputs['Roughness'].default_value = 0.15
     glossy.location = (-200, 0)
-    
+
     s2rgb = nodes.new('ShaderNodeShaderToRGB')
     s2rgb.location = (0, 0)
     links.new(glossy.outputs['BSDF'], s2rgb.inputs['Shader'])
-    
+
     ramp = nodes.new('ShaderNodeValToRGB')
     ramp.location = (200, 0)
     ramp.color_ramp.interpolation = 'CONSTANT'
@@ -214,11 +217,11 @@ def create_metallic_toon(mat_name, base_rgb, metallic_strength=0.8):
     ramp.color_ramp.elements[0].color = dark
     ramp.color_ramp.elements[1].color = (*base_rgb, 1.0)
     ramp.color_ramp.elements[1].position = 0.4
-    
+
     # 高光层
     highlight = ramp.color_ramp.elements.new(0.85)
     highlight.color = (min(1,base_rgb[0]+0.3), min(1,base_rgb[1]+0.3), min(1,base_rgb[2]+0.3), 1.0)
-    
+
     links.new(s2rgb.outputs['Color'], ramp.inputs['Fac'])
     links.new(ramp.outputs['Color'], output.inputs['Surface'])
     return True
@@ -319,7 +322,7 @@ for name in ['SAO_KeyLight','SAO_FillLight','SAO_RimLight']:
     obj = bpy.data.objects.get(name)
     if obj and obj.type == 'LIGHT':
         obj.data.type = 'SUN'
-        
+
 key = bpy.data.objects.get('SAO_KeyLight')
 if key: key.data.energy = 3.0; key.data.color = (1.0, 0.95, 0.9)
 
@@ -353,13 +356,13 @@ else:
     print("No filepath set, save manually")
 """)
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("  精细化完成!")
-print("="*60)
+print("=" * 60)
 print("  ✓ 平滑着色")
 print("  ✓ SubSurf修改器 (身体/头部Lv2, 四肢Lv1)")
 print("  ✓ 赛璐璐材质 (Shader→RGB + ColorRamp)")
 print("  ✓ 金属卡通材质 (Glossy + 3阶色阶)")
 print("  ✓ Solidify描边 (25个对象)")
 print("  ✓ EEVEE渲染优化")
-print("="*60)
+print("=" * 60)

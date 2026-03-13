@@ -5,13 +5,12 @@ Provides tool interfaces for accessing the training system via MCP protocol.
 Supports course browsing, exercise execution, and progress management.
 """
 
-import sys
 import os
-from typing import TYPE_CHECKING, Optional, List
-from enum import Enum
+import sys
+from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -26,58 +25,72 @@ if _project_root not in sys.path:
 # Input Model Definitions
 # ============================================================
 
+
 class TrainingOverviewInput(BaseModel):
     """Get training overview"""
+
     pass
 
 
 class ListStagesInput(BaseModel):
     """List training stages"""
+
     pass
 
 
 class ListModulesInput(BaseModel):
     """List modules"""
+
     stage_id: str = Field(description="Stage ID, e.g. S1, S2, S3, S4, S5, S6")
 
 
 class ListExercisesInput(BaseModel):
     """List exercises"""
+
     module_id: str = Field(description="Module ID, e.g. S1M1, S2M1, etc.")
 
 
 class ExerciseDetailInput(BaseModel):
     """Get exercise details"""
+
     exercise_id: str = Field(description="Exercise ID, e.g. S1M1E1, S2M1E1, etc.")
 
 
 class StartExerciseInput(BaseModel):
     """Start an exercise"""
+
     exercise_id: str = Field(description="Exercise ID")
 
 
 class NextStepInput(BaseModel):
     """Proceed to next step"""
+
     exercise_id: str = Field(description="Exercise ID")
 
 
 class CompleteExerciseInput(BaseModel):
     """Complete an exercise"""
+
     exercise_id: str = Field(description="Exercise ID")
 
 
 class ProjectExercisesInput(BaseModel):
     """View project-specific exercises"""
-    project: str = Field(description="Project tag: penglai (Penglai Nine Chapters) or fanzhendong (Chibi Fan Zhendong)")
+
+    project: str = Field(
+        description="Project tag: penglai (Penglai Nine Chapters) or fanzhendong (Chibi Fan Zhendong)"
+    )
 
 
 class ResetProgressInput(BaseModel):
     """Reset progress"""
+
     confirm: bool = Field(default=False, description="Confirm reset (true=confirm)")
 
 
 class RunExerciseCommandInput(BaseModel):
     """Execute an MCP command from an exercise"""
+
     exercise_id: str = Field(description="Exercise ID")
     command_index: int = Field(default=0, description="Command index (starting from 0)")
 
@@ -86,21 +99,23 @@ class RunExerciseCommandInput(BaseModel):
 # Tool Registration
 # ============================================================
 
-def register_training_tools(mcp: FastMCP, server: "BlenderMCPServer"):
+
+def register_training_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register training system tools"""
 
     # Lazy initialization - avoid blocking during Skill activation
     _runner_cache = {}
 
-    def _get_runner():
+    def _get_runner() -> Any:
         if "instance" not in _runner_cache:
             from blender_training.runner import TrainingRunner
+
             _runner_cache["instance"] = TrainingRunner()
         return _runner_cache["instance"]
 
     # Backward compatibility wrapper
     class _LazyRunner:
-        def __getattr__(self, name):
+        def __getattr__(self, name: str) -> Any:
             return getattr(_get_runner(), name)
 
     runner = _LazyRunner()
@@ -108,7 +123,7 @@ def register_training_tools(mcp: FastMCP, server: "BlenderMCPServer"):
     @mcp.tool(
         name="blender_training_overview",
         description="Get an overview of the Blender training system. Displays course structure, learning progress, and statistics. "
-                    "Training is based on 8 professional books, incorporating Penglai Nine Chapters and Chibi Fan Zhendong project practice."
+        "Training is based on 8 professional books, incorporating Penglai Nine Chapters and Chibi Fan Zhendong project practice.",
     )
     async def training_overview(params: TrainingOverviewInput) -> str:
         overview = runner.get_overview()
@@ -129,21 +144,25 @@ def register_training_tools(mcp: FastMCP, server: "BlenderMCPServer"):
             "## Course Structure",
         ]
         for s in overview["stages_detail"]:
-            lines.append(f"- **{s['id']}** {s['title']} ({s['modules']} modules, {s['exercises']} exercises)")
+            lines.append(
+                f"- **{s['id']}** {s['title']} ({s['modules']} modules, {s['exercises']} exercises)"
+            )
 
-        lines.extend([
-            "",
-            "## Project Practice",
-            "- **Penglai Nine Chapters**: NPR Chinese-style cel-shaded game scene (Misty Forest level)",
-            "- **Chibi Fan Zhendong**: Paris Olympics table tennis chibi character scene",
-            "",
-            "Use `blender_training_list_stages` to view all stage details",
-        ])
+        lines.extend(
+            [
+                "",
+                "## Project Practice",
+                "- **Penglai Nine Chapters**: NPR Chinese-style cel-shaded game scene (Misty Forest level)",
+                "- **Chibi Fan Zhendong**: Paris Olympics table tennis chibi character scene",
+                "",
+                "Use `blender_training_list_stages` to view all stage details",
+            ]
+        )
         return "\n".join(lines)
 
     @mcp.tool(
         name="blender_training_list_stages",
-        description="List all stages of the training system. Each stage contains multiple modules, progressing from beginner to expert."
+        description="List all stages of the training system. Each stage contains multiple modules, progressing from beginner to expert.",
     )
     async def training_list_stages(params: ListStagesInput) -> str:
         stages = runner.list_stages()
@@ -159,7 +178,7 @@ def register_training_tools(mcp: FastMCP, server: "BlenderMCPServer"):
 
     @mcp.tool(
         name="blender_training_list_modules",
-        description="List all course modules for a specified stage. Each module contains learning objectives and multiple exercises."
+        description="List all course modules for a specified stage. Each module contains learning objectives and multiple exercises.",
     )
     async def training_list_modules(params: ListModulesInput) -> str:
         modules = runner.list_modules(params.stage_id)
@@ -171,7 +190,7 @@ def register_training_tools(mcp: FastMCP, server: "BlenderMCPServer"):
             lines.append(f"{marker} **{m['id']}** {m['title']} [{m['difficulty']}]")
             lines.append(f"  {m['description']}")
             lines.append(f"  Exercises: {m['completed']}/{m['exercises']} completed")
-            lines.append(f"  Learning Objectives:")
+            lines.append("  Learning Objectives:")
             for obj in m["objectives"]:
                 lines.append(f"    - {obj}")
             lines.append("")
@@ -180,7 +199,7 @@ def register_training_tools(mcp: FastMCP, server: "BlenderMCPServer"):
 
     @mcp.tool(
         name="blender_training_list_exercises",
-        description="List all exercises for a specified module. Each exercise includes step-by-step guidance."
+        description="List all exercises for a specified module. Each exercise includes step-by-step guidance.",
     )
     async def training_list_exercises(params: ListExercisesInput) -> str:
         exercises = runner.list_exercises(params.module_id)
@@ -188,18 +207,25 @@ def register_training_tools(mcp: FastMCP, server: "BlenderMCPServer"):
             return f"Module {params.module_id} not found"
         lines = [f"# Exercise List for Module {params.module_id}", ""]
         for ex in exercises:
-            status_icon = {"not_started": "⬜", "in_progress": "🔄", "completed": "✅", "skipped": "⏭"}.get(ex["status"], "⬜")
+            status_icon = {
+                "not_started": "⬜",
+                "in_progress": "🔄",
+                "completed": "✅",
+                "skipped": "⏭",
+            }.get(ex["status"], "⬜")
             tag = f" [{ex['project_tag']}]" if ex["project_tag"] else ""
             lines.append(f"{status_icon} **{ex['id']}** {ex['title']}{tag}")
             lines.append(f"  {ex['description']}")
-            lines.append(f"  Difficulty: {ex['difficulty']} | Estimated: {ex['time_estimate']} | Steps: {ex['total_steps']}")
+            lines.append(
+                f"  Difficulty: {ex['difficulty']} | Estimated: {ex['time_estimate']} | Steps: {ex['total_steps']}"
+            )
             lines.append("")
         lines.append("Use `blender_training_exercise_detail(exercise_id)` to view exercise details")
         return "\n".join(lines)
 
     @mcp.tool(
         name="blender_training_exercise_detail",
-        description="Get full details of an exercise, including step guidance, MCP commands, expected results, and tips."
+        description="Get full details of an exercise, including step guidance, MCP commands, expected results, and tips.",
     )
     async def training_exercise_detail(params: ExerciseDetailInput) -> str:
         detail = runner.get_exercise_detail(params.exercise_id)
@@ -215,9 +241,12 @@ def register_training_tools(mcp: FastMCP, server: "BlenderMCPServer"):
             f"**Status**: {detail['status']}",
         ]
         if detail["project_tag"]:
-            tag_name = {"penglai": "Penglai Nine Chapters", "fanzhendong": "Chibi Fan Zhendong"}.get(detail["project_tag"], detail["project_tag"])
+            tag_name = {
+                "penglai": "Penglai Nine Chapters",
+                "fanzhendong": "Chibi Fan Zhendong",
+            }.get(detail["project_tag"], detail["project_tag"])
             lines.append(f"**Project**: {tag_name}")
-        lines.extend(["", f"## Description", detail["description"], "", "## Steps"])
+        lines.extend(["", "## Description", detail["description"], "", "## Steps"])
         for step in detail["steps"]:
             lines.append(f"  {step['index']}. {step['instruction']}")
         if detail["expected_objects"]:
@@ -237,7 +266,7 @@ def register_training_tools(mcp: FastMCP, server: "BlenderMCPServer"):
 
     @mcp.tool(
         name="blender_training_start_exercise",
-        description="Start an exercise. Returns first step guidance and available MCP commands."
+        description="Start an exercise. Returns first step guidance and available MCP commands.",
     )
     async def training_start_exercise(params: StartExerciseInput) -> str:
         result = runner.start_exercise(params.exercise_id)
@@ -248,7 +277,7 @@ def register_training_tools(mcp: FastMCP, server: "BlenderMCPServer"):
             "",
             f"Total {result['total_steps']} steps",
             "",
-            f"## Step 1",
+            "## Step 1",
             result["first_step"],
         ]
         if result.get("tips"):
@@ -264,7 +293,7 @@ def register_training_tools(mcp: FastMCP, server: "BlenderMCPServer"):
 
     @mcp.tool(
         name="blender_training_next_step",
-        description="Proceed to the next step of an exercise. Call this tool after completing the current step to get next step guidance."
+        description="Proceed to the next step of an exercise. Call this tool after completing the current step to get next step guidance.",
     )
     async def training_next_step(params: NextStepInput) -> str:
         result = runner.next_step(params.exercise_id)
@@ -279,12 +308,13 @@ def register_training_tools(mcp: FastMCP, server: "BlenderMCPServer"):
         ]
         if result.get("mcp_command"):
             cmd = result["mcp_command"]
-            lines.extend(["", "Reference Command:", f"  `{cmd.get('tool', '')}` → {cmd.get('params', {})}"])
+            lines.extend(
+                ["", "Reference Command:", f"  `{cmd.get('tool', '')}` → {cmd.get('params', {})}"]
+            )
         return "\n".join(lines)
 
     @mcp.tool(
-        name="blender_training_complete_exercise",
-        description="Mark an exercise as completed."
+        name="blender_training_complete_exercise", description="Mark an exercise as completed."
     )
     async def training_complete_exercise(params: CompleteExerciseInput) -> str:
         result = runner.complete_exercise(params.exercise_id)
@@ -294,22 +324,29 @@ def register_training_tools(mcp: FastMCP, server: "BlenderMCPServer"):
 
     @mcp.tool(
         name="blender_training_project_exercises",
-        description="View all exercises for a specified project. Supports penglai (Penglai Nine Chapters) and fanzhendong (Chibi Fan Zhendong) projects."
+        description="View all exercises for a specified project. Supports penglai (Penglai Nine Chapters) and fanzhendong (Chibi Fan Zhendong) projects.",
     )
     async def training_project_exercises(params: ProjectExercisesInput) -> str:
         exercises = runner.list_project_exercises(params.project)
         if not exercises:
             return f"No exercises found for project {params.project}"
-        project_name = {"penglai": "Penglai Nine Chapters", "fanzhendong": "Chibi Fan Zhendong"}.get(params.project, params.project)
+        project_name = {
+            "penglai": "Penglai Nine Chapters",
+            "fanzhendong": "Chibi Fan Zhendong",
+        }.get(params.project, params.project)
         lines = [f"# {project_name} Project Exercises", ""]
         for ex in exercises:
-            status_icon = {"not_started": "⬜", "in_progress": "🔄", "completed": "✅"}.get(ex["status"], "⬜")
-            lines.append(f"{status_icon} **{ex['id']}** {ex['title']} [{ex['difficulty']}] ~{ex['time_estimate']}")
+            status_icon = {"not_started": "⬜", "in_progress": "🔄", "completed": "✅"}.get(
+                ex["status"], "⬜"
+            )
+            lines.append(
+                f"{status_icon} **{ex['id']}** {ex['title']} [{ex['difficulty']}] ~{ex['time_estimate']}"
+            )
         return "\n".join(lines)
 
     @mcp.tool(
         name="blender_training_run_command",
-        description="Execute a predefined MCP command from an exercise. Directly performs operations in Blender to help learners understand tool usage."
+        description="Execute a predefined MCP command from an exercise. Directly performs operations in Blender to help learners understand tool usage.",
     )
     async def training_run_command(params: RunExerciseCommandInput) -> str:
         detail = runner.get_exercise_detail(params.exercise_id)
@@ -341,7 +378,7 @@ def register_training_tools(mcp: FastMCP, server: "BlenderMCPServer"):
 
     @mcp.tool(
         name="blender_training_reset",
-        description="Reset all training progress. Requires confirm=true to confirm."
+        description="Reset all training progress. Requires confirm=true to confirm.",
     )
     async def training_reset(params: ResetProgressInput) -> str:
         if not params.confirm:

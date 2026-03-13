@@ -4,10 +4,10 @@ Export Tools
 Provides model and animation export features, supporting Unity, Web, and other platforms.
 """
 
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -15,8 +15,10 @@ if TYPE_CHECKING:
 
 # ==================== Input Models ====================
 
+
 class ExportFBXInput(BaseModel):
     """FBX export input"""
+
     filepath: str = Field(..., description="Export file path (.fbx)")
     selected_only: bool = Field(default=False, description="Export selected objects only")
     apply_modifiers: bool = Field(default=True, description="Apply modifiers")
@@ -32,6 +34,7 @@ class ExportFBXInput(BaseModel):
 
 class ExportGLTFInput(BaseModel):
     """glTF export input"""
+
     filepath: str = Field(..., description="Export file path (.glb or .gltf)")
     selected_only: bool = Field(default=False, description="Export selected objects only")
     include_animation: bool = Field(default=True, description="Include animation")
@@ -42,6 +45,7 @@ class ExportGLTFInput(BaseModel):
 
 class ExportOBJInput(BaseModel):
     """OBJ export input"""
+
     filepath: str = Field(..., description="Export file path (.obj)")
     selected_only: bool = Field(default=False, description="Export selected objects only")
     apply_modifiers: bool = Field(default=True, description="Apply modifiers")
@@ -50,14 +54,16 @@ class ExportOBJInput(BaseModel):
 
 class ExportUnityPackageInput(BaseModel):
     """Unity package export input"""
+
     filepath: str = Field(..., description="Export file path")
-    objects: Optional[List[str]] = Field(default=None, description="List of objects to export")
+    objects: list[str] | None = Field(default=None, description="List of objects to export")
     include_animations: bool = Field(default=True, description="Include animations")
     setup_humanoid: bool = Field(default=False, description="Set up as Humanoid type")
     generate_lod: bool = Field(default=False, description="Generate LOD")
 
 
 # ==================== Tool Registration ====================
+
 
 def register_export_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register export tools"""
@@ -69,8 +75,8 @@ def register_export_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": True
-        }
+            "openWorldHint": True,
+        },
     )
     async def blender_export_fbx(params: ExportFBXInput) -> str:
         """Export as FBX format (suitable for Unity, Unreal, etc.).
@@ -82,7 +88,8 @@ def register_export_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Export result
         """
         result = await server.execute_command(
-            "export", "fbx",
+            "export",
+            "fbx",
             {
                 "filepath": params.filepath,
                 "selected_only": params.selected_only,
@@ -94,8 +101,8 @@ def register_export_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "add_leaf_bones": params.add_leaf_bones,
                 "primary_bone_axis": params.primary_bone_axis,
                 "secondary_bone_axis": params.secondary_bone_axis,
-                "apply_scale": params.apply_scale
-            }
+                "apply_scale": params.apply_scale,
+            },
         )
 
         if result.get("success"):
@@ -110,8 +117,8 @@ def register_export_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": True
-        }
+            "openWorldHint": True,
+        },
     )
     async def blender_export_gltf(params: ExportGLTFInput) -> str:
         """Export as glTF format (suitable for Web, Three.js, etc.).
@@ -123,15 +130,16 @@ def register_export_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Export result
         """
         result = await server.execute_command(
-            "export", "gltf",
+            "export",
+            "gltf",
             {
                 "filepath": params.filepath,
                 "selected_only": params.selected_only,
                 "include_animation": params.include_animation,
                 "export_format": params.export_format,
                 "export_textures": params.export_textures,
-                "export_draco": params.export_draco
-            }
+                "export_draco": params.export_draco,
+            },
         )
 
         if result.get("success"):
@@ -146,8 +154,8 @@ def register_export_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": True
-        }
+            "openWorldHint": True,
+        },
     )
     async def blender_export_obj(params: ExportOBJInput) -> str:
         """Export as OBJ format.
@@ -159,13 +167,14 @@ def register_export_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Export result
         """
         result = await server.execute_command(
-            "export", "obj",
+            "export",
+            "obj",
             {
                 "filepath": params.filepath,
                 "selected_only": params.selected_only,
                 "apply_modifiers": params.apply_modifiers,
-                "export_materials": params.export_materials
-            }
+                "export_materials": params.export_materials,
+            },
         )
 
         if result.get("success"):

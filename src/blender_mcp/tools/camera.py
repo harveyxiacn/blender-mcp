@@ -4,10 +4,10 @@ Camera Tools
 Provides camera creation and configuration features.
 """
 
-from typing import TYPE_CHECKING, Optional, List, Union
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -15,11 +15,13 @@ if TYPE_CHECKING:
 
 # ==================== Input Models ====================
 
+
 class CameraCreateInput(BaseModel):
     """Create camera input"""
-    name: Optional[str] = Field(default="Camera", description="Camera name")
-    location: Optional[List[float]] = Field(default=None, description="Location")
-    rotation: Optional[List[float]] = Field(default=None, description="Rotation")
+
+    name: str | None = Field(default="Camera", description="Camera name")
+    location: list[float] | None = Field(default=None, description="Location")
+    rotation: list[float] | None = Field(default=None, description="Rotation")
     lens: float = Field(default=50.0, description="Focal length (mm)", ge=1, le=500)
     sensor_width: float = Field(default=36.0, description="Sensor width (mm)", ge=1)
     set_active: bool = Field(default=True, description="Set as active camera")
@@ -27,29 +29,33 @@ class CameraCreateInput(BaseModel):
 
 class CameraSetPropertiesInput(BaseModel):
     """Set camera properties input"""
+
     camera_name: str = Field(..., description="Camera name")
-    lens: Optional[float] = Field(default=None, description="Focal length", ge=1, le=500)
-    sensor_width: Optional[float] = Field(default=None, description="Sensor width", ge=1)
-    clip_start: Optional[float] = Field(default=None, description="Near clip", gt=0)
-    clip_end: Optional[float] = Field(default=None, description="Far clip", gt=0)
-    dof_focus_object: Optional[str] = Field(default=None, description="DOF focus object")
-    dof_focus_distance: Optional[float] = Field(default=None, description="DOF focus distance", ge=0)
-    dof_aperture_fstop: Optional[float] = Field(default=None, description="Aperture f-stop", gt=0)
+    lens: float | None = Field(default=None, description="Focal length", ge=1, le=500)
+    sensor_width: float | None = Field(default=None, description="Sensor width", ge=1)
+    clip_start: float | None = Field(default=None, description="Near clip", gt=0)
+    clip_end: float | None = Field(default=None, description="Far clip", gt=0)
+    dof_focus_object: str | None = Field(default=None, description="DOF focus object")
+    dof_focus_distance: float | None = Field(default=None, description="DOF focus distance", ge=0)
+    dof_aperture_fstop: float | None = Field(default=None, description="Aperture f-stop", gt=0)
 
 
 class CameraLookAtInput(BaseModel):
     """Camera look at target input"""
+
     camera_name: str = Field(..., description="Camera name")
-    target: Union[str, List[float]] = Field(..., description="Target object name or position coordinates")
+    target: str | list[float] = Field(..., description="Target object name or position coordinates")
     use_constraint: bool = Field(default=False, description="Use constraint (continuous tracking)")
 
 
 class CameraSetActiveInput(BaseModel):
     """Set active camera input"""
+
     camera_name: str = Field(..., description="Camera name")
 
 
 # ==================== Tool Registration ====================
+
 
 def register_camera_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register camera tools"""
@@ -61,8 +67,8 @@ def register_camera_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_camera_create(params: CameraCreateInput) -> str:
         """Create a camera.
@@ -74,15 +80,16 @@ def register_camera_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Creation result
         """
         result = await server.execute_command(
-            "camera", "create",
+            "camera",
+            "create",
             {
                 "name": params.name,
                 "location": params.location or [0, -10, 5],
                 "rotation": params.rotation or [1.1, 0, 0],
                 "lens": params.lens,
                 "sensor_width": params.sensor_width,
-                "set_active": params.set_active
-            }
+                "set_active": params.set_active,
+            },
         )
 
         if result.get("success"):
@@ -98,8 +105,8 @@ def register_camera_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_camera_set_properties(params: CameraSetPropertiesInput) -> str:
         """Set camera properties.
@@ -132,8 +139,9 @@ def register_camera_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             return "No properties specified"
 
         result = await server.execute_command(
-            "camera", "set_properties",
-            {"camera_name": params.camera_name, "properties": properties}
+            "camera",
+            "set_properties",
+            {"camera_name": params.camera_name, "properties": properties},
         )
 
         if result.get("success"):
@@ -148,8 +156,8 @@ def register_camera_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_camera_look_at(params: CameraLookAtInput) -> str:
         """Point the camera at a specified target.
@@ -163,16 +171,19 @@ def register_camera_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Operation result
         """
         result = await server.execute_command(
-            "camera", "look_at",
+            "camera",
+            "look_at",
             {
                 "camera_name": params.camera_name,
                 "target": params.target,
-                "use_constraint": params.use_constraint
-            }
+                "use_constraint": params.use_constraint,
+            },
         )
 
         if result.get("success"):
-            target_str = params.target if isinstance(params.target, str) else f"coordinates {params.target}"
+            target_str = (
+                params.target if isinstance(params.target, str) else f"coordinates {params.target}"
+            )
             return f"Camera '{params.camera_name}' is now pointing at {target_str}"
         else:
             return f"Operation failed: {result.get('error', {}).get('message', 'unknown error')}"
@@ -184,8 +195,8 @@ def register_camera_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_camera_set_active(params: CameraSetActiveInput) -> str:
         """Set the active camera.
@@ -197,8 +208,7 @@ def register_camera_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Operation result
         """
         result = await server.execute_command(
-            "camera", "set_active",
-            {"camera_name": params.camera_name}
+            "camera", "set_active", {"camera_name": params.camera_name}
         )
 
         if result.get("success"):

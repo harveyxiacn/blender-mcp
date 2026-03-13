@@ -8,11 +8,12 @@ Provides MCP tools for on-demand loading/unloading of tool groups:
 """
 
 import asyncio
+import contextlib
 import logging
 from typing import TYPE_CHECKING
 
+from mcp.server.fastmcp import Context, FastMCP
 from pydantic import BaseModel, Field
-from mcp.server.fastmcp import FastMCP, Context
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -22,20 +23,19 @@ logger = logging.getLogger(__name__)
 
 # ==================== Input Models ====================
 
+
 class ActivateSkillInput(BaseModel):
     """Activate skill input"""
+
     skill_name: str = Field(
-        ...,
-        description="Skill name to activate. Use list_skills to see available options."
+        ..., description="Skill name to activate. Use list_skills to see available options."
     )
 
 
 class DeactivateSkillInput(BaseModel):
     """Deactivate skill input"""
-    skill_name: str = Field(
-        ...,
-        description="Skill name to deactivate."
-    )
+
+    skill_name: str = Field(..., description="Skill name to deactivate.")
 
 
 # Debounce: keep track of the last pending notification task, cancel old one when new arrives
@@ -57,25 +57,21 @@ def _schedule_notify(ctx: Context) -> None:
     if _pending_notify_task and not _pending_notify_task.done():
         _pending_notify_task.cancel()
 
-    async def _delayed_notify():
+    async def _delayed_notify() -> None:
         await asyncio.sleep(0.5)
         try:
-            await asyncio.wait_for(
-                ctx.session.send_tool_list_changed(),
-                timeout=3.0
-            )
+            await asyncio.wait_for(ctx.session.send_tool_list_changed(), timeout=3.0)
         except asyncio.CancelledError:
             pass  # Cancelled by new notification, normal behavior
         except Exception as e:
             logger.debug(f"tool_list_changed notification skipped: {e}")
 
-    try:
+    with contextlib.suppress(Exception):
         _pending_notify_task = asyncio.get_event_loop().create_task(_delayed_notify())
-    except Exception:
-        pass
 
 
 # ==================== Registration Function ====================
+
 
 def register_skill_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register skill management tools"""
@@ -115,6 +111,7 @@ def register_skill_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
 
         # Get workflow guide
         from blender_mcp.skill_manager import SKILL_DEFINITIONS
+
         skill_info = SKILL_DEFINITIONS.get(skill_name)
         workflow = skill_info.workflow_guide if skill_info else ""
 

@@ -4,12 +4,11 @@ Material Tools
 Provides material creation, assignment, property setting, and other features.
 """
 
-from typing import TYPE_CHECKING, Optional, List
 from enum import Enum
-import json
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field, ConfigDict, field_validator
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -17,6 +16,7 @@ if TYPE_CHECKING:
 
 class BlendMode(str, Enum):
     """Blend mode"""
+
     OPAQUE = "OPAQUE"
     CLIP = "CLIP"
     HASHED = "HASHED"
@@ -25,6 +25,7 @@ class BlendMode(str, Enum):
 
 class TextureType(str, Enum):
     """Texture type"""
+
     COLOR = "COLOR"
     NORMAL = "NORMAL"
     ROUGHNESS = "ROUGHNESS"
@@ -34,6 +35,7 @@ class TextureType(str, Enum):
 
 class TextureMapping(str, Enum):
     """Texture mapping method"""
+
     UV = "UV"
     BOX = "BOX"
     SPHERE = "SPHERE"
@@ -42,17 +44,18 @@ class TextureMapping(str, Enum):
 
 # ==================== Input Models ====================
 
+
 class MaterialCreateInput(BaseModel):
     """Create material input"""
+
     model_config = ConfigDict(str_strip_whitespace=True)
 
     name: str = Field(..., description="Material name", min_length=1, max_length=100)
-    color: Optional[List[float]] = Field(
-        default=None,
-        description="RGBA color [r, g, b, a], value range 0-1"
+    color: list[float] | None = Field(
+        default=None, description="RGBA color [r, g, b, a], value range 0-1"
     )
-    metallic: Optional[float] = Field(default=None, description="Metallic", ge=0, le=1)
-    roughness: Optional[float] = Field(default=None, description="Roughness", ge=0, le=1)
+    metallic: float | None = Field(default=None, description="Metallic", ge=0, le=1)
+    roughness: float | None = Field(default=None, description="Roughness", ge=0, le=1)
     use_nodes: bool = Field(default=True, description="Use node-based material")
 
     @field_validator("color")
@@ -68,6 +71,7 @@ class MaterialCreateInput(BaseModel):
 
 class MaterialAssignInput(BaseModel):
     """Assign material input"""
+
     object_name: str = Field(..., description="Object name")
     material_name: str = Field(..., description="Material name")
     slot_index: int = Field(default=0, description="Material slot index", ge=0)
@@ -75,21 +79,23 @@ class MaterialAssignInput(BaseModel):
 
 class MaterialSetPropertiesInput(BaseModel):
     """Set material properties input"""
+
     model_config = ConfigDict(str_strip_whitespace=True)
 
     material_name: str = Field(..., description="Material name")
-    color: Optional[List[float]] = Field(default=None, description="RGBA color")
-    metallic: Optional[float] = Field(default=None, description="Metallic", ge=0, le=1)
-    roughness: Optional[float] = Field(default=None, description="Roughness", ge=0, le=1)
-    specular: Optional[float] = Field(default=None, description="Specular intensity", ge=0, le=1)
-    emission_color: Optional[List[float]] = Field(default=None, description="Emission color")
-    emission_strength: Optional[float] = Field(default=None, description="Emission strength", ge=0)
-    alpha: Optional[float] = Field(default=None, description="Alpha (opacity)", ge=0, le=1)
-    blend_mode: Optional[BlendMode] = Field(default=None, description="Blend mode")
+    color: list[float] | None = Field(default=None, description="RGBA color")
+    metallic: float | None = Field(default=None, description="Metallic", ge=0, le=1)
+    roughness: float | None = Field(default=None, description="Roughness", ge=0, le=1)
+    specular: float | None = Field(default=None, description="Specular intensity", ge=0, le=1)
+    emission_color: list[float] | None = Field(default=None, description="Emission color")
+    emission_strength: float | None = Field(default=None, description="Emission strength", ge=0)
+    alpha: float | None = Field(default=None, description="Alpha (opacity)", ge=0, le=1)
+    blend_mode: BlendMode | None = Field(default=None, description="Blend mode")
 
 
 class MaterialAddTextureInput(BaseModel):
     """Add texture input"""
+
     material_name: str = Field(..., description="Material name")
     texture_path: str = Field(..., description="Texture file path")
     texture_type: TextureType = Field(default=TextureType.COLOR, description="Texture type")
@@ -98,43 +104,47 @@ class MaterialAddTextureInput(BaseModel):
 
 class MaterialListInput(BaseModel):
     """List materials input"""
+
     limit: int = Field(default=50, description="Return count limit", ge=1, le=500)
 
 
 class MaterialDeleteInput(BaseModel):
     """Delete material input"""
+
     material_name: str = Field(..., description="Material name")
 
 
 class NodeType(str, Enum):
     """Node type"""
-    SSS = "SSS"                     # Subsurface scattering configuration
-    EMISSION = "EMISSION"           # Emission configuration
-    MIX_RGB = "MIX_RGB"             # Mix RGB
-    COLOR_RAMP = "COLOR_RAMP"       # Color ramp
-    NOISE_TEXTURE = "NOISE_TEXTURE" # Noise texture
-    IMAGE_TEXTURE = "IMAGE_TEXTURE" # Image texture
-    NORMAL_MAP = "NORMAL_MAP"       # Normal map
-    BUMP = "BUMP"                   # Bump map
+
+    SSS = "SSS"  # Subsurface scattering configuration
+    EMISSION = "EMISSION"  # Emission configuration
+    MIX_RGB = "MIX_RGB"  # Mix RGB
+    COLOR_RAMP = "COLOR_RAMP"  # Color ramp
+    NOISE_TEXTURE = "NOISE_TEXTURE"  # Noise texture
+    IMAGE_TEXTURE = "IMAGE_TEXTURE"  # Image texture
+    NORMAL_MAP = "NORMAL_MAP"  # Normal map
+    BUMP = "BUMP"  # Bump map
 
 
 class MaterialNodeAddInput(BaseModel):
     """Add material node input"""
+
     material_name: str = Field(..., description="Material name")
     node_type: NodeType = Field(..., description="Node type")
-    settings: Optional[dict] = Field(
+    settings: dict | None = Field(
         default=None,
-        description="Node settings (e.g. SSS: {subsurface: 0.3}, EMISSION: {color: [1,1,1], strength: 1.0})"
+        description="Node settings (e.g. SSS: {subsurface: 0.3}, EMISSION: {color: [1,1,1], strength: 1.0})",
     )
-    connect_to: Optional[dict] = Field(
-        default=None,
-        description="Connection config {input: 'Base Color', output: 'Color'}"
+    connect_to: dict | None = Field(
+        default=None, description="Connection config {input: 'Base Color', output: 'Color'}"
     )
-    location: Optional[List[float]] = Field(default=None, description="Node position [x, y]")
+    location: list[float] | None = Field(default=None, description="Node position [x, y]")
 
 
 class TextureApplyInput(BaseModel):
     """Apply texture map input"""
+
     material_name: str = Field(..., description="Material name")
     image_path: str = Field(..., description="Image file path")
     mapping_type: TextureMapping = Field(default=TextureMapping.UV, description="Mapping type")
@@ -143,49 +153,55 @@ class TextureApplyInput(BaseModel):
 
 class SkinTone(str, Enum):
     """Skin tone type"""
-    LIGHT = "LIGHT"     # Light skin tone
-    MEDIUM = "MEDIUM"   # Medium skin tone
-    DARK = "DARK"       # Dark skin tone
-    CUSTOM = "CUSTOM"   # Custom
+
+    LIGHT = "LIGHT"  # Light skin tone
+    MEDIUM = "MEDIUM"  # Medium skin tone
+    DARK = "DARK"  # Dark skin tone
+    CUSTOM = "CUSTOM"  # Custom
 
 
 class CreateSkinMaterialInput(BaseModel):
     """Create skin material input"""
+
     name: str = Field(default="SkinMaterial", description="Material name")
     skin_tone: SkinTone = Field(default=SkinTone.MEDIUM, description="Skin tone type")
-    custom_color: Optional[List[float]] = Field(
-        default=None,
-        description="Custom color (used when skin_tone is CUSTOM)"
+    custom_color: list[float] | None = Field(
+        default=None, description="Custom color (used when skin_tone is CUSTOM)"
     )
 
 
 class CreateToonMaterialInput(BaseModel):
     """Create toon material input"""
+
     name: str = Field(default="ToonMaterial", description="Material name")
-    color: List[float] = Field(default=[0.8, 0.8, 0.8, 1.0], description="Base color")
-    shadow_color: Optional[List[float]] = Field(default=None, description="Shadow color")
+    color: list[float] = Field(default=[0.8, 0.8, 0.8, 1.0], description="Base color")
+    shadow_color: list[float] | None = Field(default=None, description="Shadow color")
     outline: bool = Field(default=False, description="Whether to add outline effect")
 
 
 # ==================== Production Standard Optimization Input Models ====================
 
+
 class GameEngine(str, Enum):
     """Target game engine"""
-    UNITY = "UNITY"                 # Unity engine
-    UNREAL = "UNREAL"               # Unreal engine
-    GODOT = "GODOT"                 # Godot engine
-    GENERIC = "GENERIC"             # Generic glTF
-    BLENDER = "BLENDER"             # Blender Eevee/Cycles
+
+    UNITY = "UNITY"  # Unity engine
+    UNREAL = "UNREAL"  # Unreal engine
+    GODOT = "GODOT"  # Godot engine
+    GENERIC = "GENERIC"  # Generic glTF
+    BLENDER = "BLENDER"  # Blender Eevee/Cycles
 
 
 class MaterialAnalyzeInput(BaseModel):
     """Material analysis input"""
+
     material_name: str = Field(..., description="Material name")
     target_engine: GameEngine = Field(default=GameEngine.GENERIC, description="Target game engine")
 
 
 class MaterialOptimizeInput(BaseModel):
     """Material optimization input"""
+
     material_name: str = Field(..., description="Material name")
     target_engine: GameEngine = Field(default=GameEngine.GENERIC, description="Target game engine")
     fix_metallic: bool = Field(default=True, description="Fix metallic value (ensure 0 or 1)")
@@ -195,26 +211,28 @@ class MaterialOptimizeInput(BaseModel):
 
 class PBRMaterialCreateInput(BaseModel):
     """Create standard PBR material input"""
+
     model_config = ConfigDict(str_strip_whitespace=True)
 
     name: str = Field(..., description="Material name", min_length=1, max_length=100)
     target_engine: GameEngine = Field(default=GameEngine.GENERIC, description="Target game engine")
 
     # PBR base properties
-    base_color: Optional[List[float]] = Field(
-        default=None,
-        description="Base color [r, g, b, a], value range 0-1"
+    base_color: list[float] | None = Field(
+        default=None, description="Base color [r, g, b, a], value range 0-1"
     )
-    metallic: float = Field(default=0.0, description="Metallic (production standard: 0=non-metal, 1=metal)", ge=0, le=1)
+    metallic: float = Field(
+        default=0.0, description="Metallic (production standard: 0=non-metal, 1=metal)", ge=0, le=1
+    )
     roughness: float = Field(default=0.5, description="Roughness", ge=0, le=1)
 
     # Texture paths (optional)
-    base_color_texture: Optional[str] = Field(default=None, description="Base color texture path")
-    normal_texture: Optional[str] = Field(default=None, description="Normal map path")
-    metallic_texture: Optional[str] = Field(default=None, description="Metallic map path")
-    roughness_texture: Optional[str] = Field(default=None, description="Roughness map path")
-    ao_texture: Optional[str] = Field(default=None, description="Ambient occlusion map path")
-    emission_texture: Optional[str] = Field(default=None, description="Emission map path")
+    base_color_texture: str | None = Field(default=None, description="Base color texture path")
+    normal_texture: str | None = Field(default=None, description="Normal map path")
+    metallic_texture: str | None = Field(default=None, description="Metallic map path")
+    roughness_texture: str | None = Field(default=None, description="Roughness map path")
+    ao_texture: str | None = Field(default=None, description="Ambient occlusion map path")
+    emission_texture: str | None = Field(default=None, description="Emission map path")
 
     # Additional settings
     emission_strength: float = Field(default=0.0, description="Emission strength", ge=0)
@@ -234,22 +252,25 @@ class PBRMaterialCreateInput(BaseModel):
 
 class TextureColorSpaceInput(BaseModel):
     """Texture color space setting input"""
+
     material_name: str = Field(..., description="Material name")
     auto_detect: bool = Field(default=True, description="Auto-detect and fix color space")
 
 
 class MaterialBakeTexturesInput(BaseModel):
     """Bake material textures input"""
+
     material_name: str = Field(..., description="Material name")
     output_directory: str = Field(..., description="Output directory path")
     resolution: int = Field(default=1024, description="Texture resolution", ge=64, le=8192)
-    bake_types: List[str] = Field(
+    bake_types: list[str] = Field(
         default=["DIFFUSE", "ROUGHNESS", "NORMAL"],
-        description="Bake type list: DIFFUSE, ROUGHNESS, METALLIC, NORMAL, AO, EMISSION"
+        description="Bake type list: DIFFUSE, ROUGHNESS, METALLIC, NORMAL, AO, EMISSION",
     )
 
 
 # ==================== Tool Registration ====================
+
 
 def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register material tools"""
@@ -261,8 +282,8 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_material_create(params: MaterialCreateInput) -> str:
         """Create a new material.
@@ -276,14 +297,15 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Creation result
         """
         result = await server.execute_command(
-            "material", "create",
+            "material",
+            "create",
             {
                 "name": params.name,
                 "color": params.color or [0.8, 0.8, 0.8, 1.0],
                 "metallic": params.metallic if params.metallic is not None else 0.0,
                 "roughness": params.roughness if params.roughness is not None else 0.5,
-                "use_nodes": params.use_nodes
-            }
+                "use_nodes": params.use_nodes,
+            },
         )
 
         if result.get("success"):
@@ -298,8 +320,8 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_material_assign(params: MaterialAssignInput) -> str:
         """Assign a material to an object.
@@ -311,12 +333,13 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Assignment result
         """
         result = await server.execute_command(
-            "material", "assign",
+            "material",
+            "assign",
             {
                 "object_name": params.object_name,
                 "material_name": params.material_name,
-                "slot_index": params.slot_index
-            }
+                "slot_index": params.slot_index,
+            },
         )
 
         if result.get("success"):
@@ -331,8 +354,8 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_material_set_properties(params: MaterialSetPropertiesInput) -> str:
         """Set material properties.
@@ -367,8 +390,9 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             return "No properties specified"
 
         result = await server.execute_command(
-            "material", "set_properties",
-            {"material_name": params.material_name, "properties": properties}
+            "material",
+            "set_properties",
+            {"material_name": params.material_name, "properties": properties},
         )
 
         if result.get("success"):
@@ -383,8 +407,8 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": True
-        }
+            "openWorldHint": True,
+        },
     )
     async def blender_material_add_texture(params: MaterialAddTextureInput) -> str:
         """Add a texture to a material.
@@ -398,19 +422,22 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Addition result
         """
         result = await server.execute_command(
-            "material", "add_texture",
+            "material",
+            "add_texture",
             {
                 "material_name": params.material_name,
                 "texture_path": params.texture_path,
                 "texture_type": params.texture_type.value,
-                "mapping": params.mapping.value
-            }
+                "mapping": params.mapping.value,
+            },
         )
 
         if result.get("success"):
             return f"Added {params.texture_type.value} texture to material '{params.material_name}'"
         else:
-            return f"Failed to add texture: {result.get('error', {}).get('message', 'Unknown error')}"
+            return (
+                f"Failed to add texture: {result.get('error', {}).get('message', 'Unknown error')}"
+            )
 
     @mcp.tool(
         name="blender_material_list",
@@ -419,8 +446,8 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_material_list(params: MaterialListInput) -> str:
         """List all materials.
@@ -431,10 +458,7 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
         Returns:
             Material list
         """
-        result = await server.execute_command(
-            "material", "list",
-            {"limit": params.limit}
-        )
+        result = await server.execute_command("material", "list", {"limit": params.limit})
 
         if not result.get("success"):
             return f"Failed to get material list: {result.get('error', {}).get('message', 'Unknown error')}"
@@ -465,8 +489,8 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_material_delete(params: MaterialDeleteInput) -> str:
         """Delete a material.
@@ -478,8 +502,7 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Deletion result
         """
         result = await server.execute_command(
-            "material", "delete",
-            {"material_name": params.material_name}
+            "material", "delete", {"material_name": params.material_name}
         )
 
         if result.get("success"):
@@ -494,8 +517,8 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_material_node_add(params: MaterialNodeAddInput) -> str:
         """Add an advanced material node.
@@ -510,18 +533,19 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Addition result
         """
         result = await server.execute_command(
-            "material", "node_add",
+            "material",
+            "node_add",
             {
                 "material_name": params.material_name,
                 "node_type": params.node_type.value,
                 "settings": params.settings or {},
                 "connect_to": params.connect_to,
-                "location": params.location or [-300, 0]
-            }
+                "location": params.location or [-300, 0],
+            },
         )
 
         if result.get("success"):
-            data = result.get("data", {})
+            result.get("data", {})
             return f"Added {params.node_type.value} node to material '{params.material_name}'"
         else:
             return f"Failed to add node: {result.get('error', {}).get('message', 'Unknown error')}"
@@ -533,8 +557,8 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": True
-        }
+            "openWorldHint": True,
+        },
     )
     async def blender_texture_apply(params: TextureApplyInput) -> str:
         """Apply a texture map to a material.
@@ -548,13 +572,14 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Apply result
         """
         result = await server.execute_command(
-            "material", "texture_apply",
+            "material",
+            "texture_apply",
             {
                 "material_name": params.material_name,
                 "image_path": params.image_path,
                 "mapping_type": params.mapping_type.value,
-                "texture_type": params.texture_type.value
-            }
+                "texture_type": params.texture_type.value,
+            },
         )
 
         if result.get("success"):
@@ -570,8 +595,8 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_create_skin_material(params: CreateSkinMaterialInput) -> str:
         """Create a preset skin material.
@@ -585,22 +610,18 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Creation result
         """
         result = await server.execute_command(
-            "material", "create_skin_material",
+            "material",
+            "create_skin_material",
             {
                 "name": params.name,
                 "skin_tone": params.skin_tone.value,
-                "custom_color": params.custom_color
-            }
+                "custom_color": params.custom_color,
+            },
         )
 
         if result.get("success"):
             data = result.get("data", {})
-            tone_names = {
-                "LIGHT": "light",
-                "MEDIUM": "medium",
-                "DARK": "dark",
-                "CUSTOM": "custom"
-            }
+            tone_names = {"LIGHT": "light", "MEDIUM": "medium", "DARK": "dark", "CUSTOM": "custom"}
             return f"Created {tone_names.get(params.skin_tone.value)} skin material '{data.get('material_name', params.name)}'"
         else:
             return f"Failed to create skin material: {result.get('error', {}).get('message', 'Unknown error')}"
@@ -612,8 +633,8 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_create_toon_material(params: CreateToonMaterialInput) -> str:
         """Create a toon-style material.
@@ -627,13 +648,14 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Creation result
         """
         result = await server.execute_command(
-            "material", "create_toon_material",
+            "material",
+            "create_toon_material",
             {
                 "name": params.name,
                 "color": params.color,
                 "shadow_color": params.shadow_color,
-                "outline": params.outline
-            }
+                "outline": params.outline,
+            },
         )
 
         if result.get("success"):
@@ -651,8 +673,8 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_material_analyze(params: MaterialAnalyzeInput) -> str:
         """Analyze whether a material meets PBR production standards.
@@ -670,11 +692,9 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Detailed material analysis report
         """
         result = await server.execute_command(
-            "material", "analyze",
-            {
-                "material_name": params.material_name,
-                "target_engine": params.target_engine.value
-            }
+            "material",
+            "analyze",
+            {"material_name": params.material_name, "target_engine": params.target_engine.value},
         )
 
         if result.get("success"):
@@ -704,7 +724,7 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                     lines.append(f"- {tex.get('name', 'Unknown')}")
                     lines.append(f"  - Type: {tex.get('type', 'N/A')}")
                     lines.append(f"  - Color space: {tex.get('colorspace', 'N/A')}")
-                    correct = tex.get('colorspace_correct', True)
+                    correct = tex.get("colorspace_correct", True)
                     lines.append(f"  - Color space correct: {'Yes' if correct else 'No ⚠️'}")
                 lines.append("")
 
@@ -738,8 +758,8 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_material_optimize(params: MaterialOptimizeInput) -> str:
         """Optimize material to meet game engine PBR standards.
@@ -756,14 +776,15 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Optimization result
         """
         result = await server.execute_command(
-            "material", "optimize",
+            "material",
+            "optimize",
             {
                 "material_name": params.material_name,
                 "target_engine": params.target_engine.value,
                 "fix_metallic": params.fix_metallic,
                 "fix_color_space": params.fix_color_space,
-                "combine_textures": params.combine_textures
-            }
+                "combine_textures": params.combine_textures,
+            },
         )
 
         if result.get("success"):
@@ -790,8 +811,8 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": True
-        }
+            "openWorldHint": True,
+        },
     )
     async def blender_pbr_material_create(params: PBRMaterialCreateInput) -> str:
         """Create a production-standard PBR material.
@@ -808,7 +829,8 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Creation result
         """
         result = await server.execute_command(
-            "material", "create_pbr",
+            "material",
+            "create_pbr",
             {
                 "name": params.name,
                 "target_engine": params.target_engine.value,
@@ -823,8 +845,8 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "emission_texture": params.emission_texture,
                 "emission_strength": params.emission_strength,
                 "alpha_mode": params.alpha_mode.value,
-                "double_sided": params.double_sided
-            }
+                "double_sided": params.double_sided,
+            },
         )
 
         if result.get("success"):
@@ -853,8 +875,8 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_texture_colorspace_fix(params: TextureColorSpaceInput) -> str:
         """Automatically fix texture color space settings in a material.
@@ -870,11 +892,9 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Fix result
         """
         result = await server.execute_command(
-            "material", "fix_colorspace",
-            {
-                "material_name": params.material_name,
-                "auto_detect": params.auto_detect
-            }
+            "material",
+            "fix_colorspace",
+            {"material_name": params.material_name, "auto_detect": params.auto_detect},
         )
 
         if result.get("success"):
@@ -884,7 +904,9 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             if fixed:
                 lines = ["Fixed color space for the following textures:"]
                 for tex in fixed:
-                    lines.append(f"- {tex.get('name')}: {tex.get('old_space')} -> {tex.get('new_space')}")
+                    lines.append(
+                        f"- {tex.get('name')}: {tex.get('old_space')} -> {tex.get('new_space')}"
+                    )
                 return "\n".join(lines)
             else:
                 return "All texture color spaces are already correct, no fixes needed."
@@ -898,8 +920,8 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": True
-        }
+            "openWorldHint": True,
+        },
     )
     async def blender_material_bake_textures(params: MaterialBakeTexturesInput) -> str:
         """Bake procedural material to texture images.
@@ -914,13 +936,14 @@ def register_material_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Bake result
         """
         result = await server.execute_command(
-            "material", "bake_textures",
+            "material",
+            "bake_textures",
             {
                 "material_name": params.material_name,
                 "output_directory": params.output_directory,
                 "resolution": params.resolution,
-                "bake_types": params.bake_types
-            }
+                "bake_types": params.bake_types,
+            },
         )
 
         if result.get("success"):

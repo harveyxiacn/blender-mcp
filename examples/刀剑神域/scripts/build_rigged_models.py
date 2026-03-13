@@ -14,10 +14,11 @@ from pathlib import Path
 import bpy
 from mathutils import Vector
 
-
 OUT_BLEND = Path(r"E:\Projects\blender-mcp\examples\sao_kirito_asuna_rigged.blend")
 OUT_PREVIEW = Path(r"E:\Projects\blender-mcp\examples\sao_kirito_asuna_rigged_preview.png")
-OUT_PREVIEW_NEUTRAL = Path(r"E:\Projects\blender-mcp\examples\sao_kirito_asuna_rigged_preview_f1.png")
+OUT_PREVIEW_NEUTRAL = Path(
+    r"E:\Projects\blender-mcp\examples\sao_kirito_asuna_rigged_preview_f1.png"
+)
 
 
 def ensure_collection(name: str) -> bpy.types.Collection:
@@ -62,7 +63,9 @@ def deselect_all() -> None:
         obj.select_set(False)
 
 
-def create_bridge_cylinder(name: str, p0: Vector, p1: Vector, radius: float, material: bpy.types.Material | None) -> bpy.types.Object:
+def create_bridge_cylinder(
+    name: str, p0: Vector, p1: Vector, radius: float, material: bpy.types.Material | None
+) -> bpy.types.Object:
     direction = p1 - p0
     depth = max(0.01, direction.length)
     mid = (p0 + p1) * 0.5
@@ -127,15 +130,18 @@ def join_character_mesh(
 
     # Shoulder/hip bridge points in world space (before join).
     shoulder_z = tmin.z + (tmax.z - tmin.z) * 0.72
-    hip_z = tmin.z + (tmax.z - tmin.z) * 0.42
+    tmin.z + (tmax.z - tmin.z) * 0.42
     p_torso_sh_l = Vector((tmax.x, tc.y, shoulder_z))
     p_torso_sh_r = Vector((tmin.x, tc.y, shoulder_z))
     p_arm_l = Vector((amin_l.x, (amin_l.y + amax_l.y) * 0.5, point_lerp(amin_l, amax_l, 0.82).z))
     p_arm_r = Vector((amax_r.x, (amin_r.y + amax_r.y) * 0.5, point_lerp(amin_r, amax_r, 0.82).z))
 
     meshes = [
-        o for o in bpy.data.objects
-        if o.type == "MESH" and o.name.startswith(prefix) and not o.name.startswith(("LL_", "K_Elucidator"))
+        o
+        for o in bpy.data.objects
+        if o.type == "MESH"
+        and o.name.startswith(prefix)
+        and not o.name.startswith(("LL_", "K_Elucidator"))
     ]
     if not meshes:
         raise RuntimeError(f"No meshes found for prefix: {prefix}")
@@ -166,7 +172,7 @@ def join_character_mesh(
     # Use torso first material for connectors so visual seams are less obvious.
     mat = merged.data.materials[0] if merged.data.materials else None
     radius_sh = h * 0.035
-    radius_hip = h * 0.040
+    h * 0.040
     connectors = [
         create_bridge_cylinder(f"{prefix}Bridge_ShL", p_torso_sh_l, p_arm_l, radius_sh, mat),
         create_bridge_cylinder(f"{prefix}Bridge_ShR", p_torso_sh_r, p_arm_r, radius_sh, mat),
@@ -192,7 +198,7 @@ def create_basic_humanoid_rig(name: str, mesh_obj: bpy.types.Object) -> bpy.type
     pelvis_z = min_v.z + h * 0.50
     chest_z = min_v.z + h * 0.68
     neck_z = min_v.z + h * 0.81
-    head_z = min_v.z + h * 0.88
+    min_v.z + h * 0.88
     head_top_z = min_v.z + h * 0.98
     knee_z = min_v.z + h * 0.23
     ankle_z = min_v.z + h * 0.07
@@ -343,7 +349,15 @@ def point_segment_distance(p: Vector, a: Vector, b: Vector) -> float:
 
 
 def ensure_kirito_weapon() -> list[bpy.types.Object]:
-    objs = [bpy.data.objects.get(n) for n in ("K_Elucidator_Blade", "K_Elucidator_Guard", "K_Elucidator_Grip", "K_Elucidator_Pommel")]
+    objs = [
+        bpy.data.objects.get(n)
+        for n in (
+            "K_Elucidator_Blade",
+            "K_Elucidator_Guard",
+            "K_Elucidator_Grip",
+            "K_Elucidator_Pommel",
+        )
+    ]
     if all(objs):
         return [o for o in objs if o is not None]
 
@@ -365,7 +379,9 @@ def ensure_kirito_weapon() -> list[bpy.types.Object]:
     grip.name = "K_Elucidator_Grip"
     created.append(grip)
 
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=0.014, location=(0.10, -0.18, 0.36))
+    bpy.ops.mesh.primitive_uv_sphere_add(
+        segments=12, ring_count=8, radius=0.014, location=(0.10, -0.18, 0.36)
+    )
     pommel = bpy.context.view_layer.objects.active
     pommel.name = "K_Elucidator_Pommel"
     created.append(pommel)
@@ -379,7 +395,9 @@ def ensure_kirito_weapon() -> list[bpy.types.Object]:
     return created
 
 
-def parent_weapon_to_bone(weapon_objs: list[bpy.types.Object], arm_obj: bpy.types.Object, bone_name: str) -> None:
+def parent_weapon_to_bone(
+    weapon_objs: list[bpy.types.Object], arm_obj: bpy.types.Object, bone_name: str
+) -> None:
     for obj in weapon_objs:
         if obj is None:
             continue
@@ -416,13 +434,39 @@ def add_simple_action(arm_obj: bpy.types.Object, name: str) -> None:
             bone.keyframe_insert(data_path="rotation_euler", frame=frame)
 
     if "Kirito" in name:
-        key_pose(1, {"upper_arm.R": (-12, 0, -18), "forearm.R": (-20, 0, -20), "upper_arm.L": (-8, 0, 10)})
-        key_pose(18, {"upper_arm.R": (-48, 5, -60), "forearm.R": (-35, 5, -30), "upper_arm.L": (-12, 0, 20), "spine": (0, 0, 10)})
-        key_pose(36, {"upper_arm.R": (-12, 0, -18), "forearm.R": (-20, 0, -20), "upper_arm.L": (-8, 0, 10)})
+        key_pose(
+            1,
+            {"upper_arm.R": (-12, 0, -18), "forearm.R": (-20, 0, -20), "upper_arm.L": (-8, 0, 10)},
+        )
+        key_pose(
+            18,
+            {
+                "upper_arm.R": (-48, 5, -60),
+                "forearm.R": (-35, 5, -30),
+                "upper_arm.L": (-12, 0, 20),
+                "spine": (0, 0, 10),
+            },
+        )
+        key_pose(
+            36,
+            {"upper_arm.R": (-12, 0, -18), "forearm.R": (-20, 0, -20), "upper_arm.L": (-8, 0, 10)},
+        )
     else:
-        key_pose(1, {"upper_arm.R": (-10, 0, 24), "forearm.R": (-18, 0, 22), "upper_arm.L": (8, 0, -12)})
-        key_pose(18, {"upper_arm.R": (-42, 0, 50), "forearm.R": (-30, 0, 28), "upper_arm.L": (16, 0, -22), "spine": (0, 0, -8)})
-        key_pose(36, {"upper_arm.R": (-10, 0, 24), "forearm.R": (-18, 0, 22), "upper_arm.L": (8, 0, -12)})
+        key_pose(
+            1, {"upper_arm.R": (-10, 0, 24), "forearm.R": (-18, 0, 22), "upper_arm.L": (8, 0, -12)}
+        )
+        key_pose(
+            18,
+            {
+                "upper_arm.R": (-42, 0, 50),
+                "forearm.R": (-30, 0, 28),
+                "upper_arm.L": (16, 0, -22),
+                "spine": (0, 0, -8),
+            },
+        )
+        key_pose(
+            36, {"upper_arm.R": (-10, 0, 24), "forearm.R": (-18, 0, 22), "upper_arm.L": (8, 0, -12)}
+        )
 
     bpy.ops.object.mode_set(mode="OBJECT")
 
@@ -501,7 +545,11 @@ def run() -> None:
 
     # Weapons -> hand.R bones
     k_weapons = ensure_kirito_weapon()
-    a_weapons = [bpy.data.objects.get(n) for n in ("LL_Blade", "LL_Guard", "LL_Grip", "LL_Pommel") if bpy.data.objects.get(n) is not None]
+    a_weapons = [
+        bpy.data.objects.get(n)
+        for n in ("LL_Blade", "LL_Guard", "LL_Grip", "LL_Pommel")
+        if bpy.data.objects.get(n) is not None
+    ]
     parent_weapon_to_bone(k_weapons, kirito_rig, "hand.R")
     parent_weapon_to_bone(a_weapons, asuna_rig, "hand.R")
     for w in k_weapons + a_weapons:

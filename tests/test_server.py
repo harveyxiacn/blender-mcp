@@ -8,7 +8,7 @@ from blender_mcp.server import BlenderMCPServer
 
 
 @pytest.mark.asyncio
-async def test_send_command_alias_calls_execute_command():
+async def test_send_command_alias_calls_execute_command() -> None:
     server = BlenderMCPServer.__new__(BlenderMCPServer)
     server.execute_command = AsyncMock(return_value={"success": True, "data": {"ok": 1}})
 

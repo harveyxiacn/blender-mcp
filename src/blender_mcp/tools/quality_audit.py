@@ -2,7 +2,7 @@
 
 import json
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel, Field
@@ -19,24 +19,34 @@ class TargetPlatform(str, Enum):
 
 
 class TopologyAuditInput(BaseModel):
-    object_names: Optional[list[str]] = Field(default=None, description="Object list, scans all meshes if empty")
+    object_names: list[str] | None = Field(
+        default=None, description="Object list, scans all meshes if empty"
+    )
     include_hidden: bool = Field(default=False, description="Whether to include hidden objects")
 
 
 class UVAuditInput(BaseModel):
-    object_names: Optional[list[str]] = Field(default=None, description="Object list, scans all meshes if empty")
-    texture_resolution: int = Field(default=2048, ge=256, le=8192, description="Target texture resolution")
+    object_names: list[str] | None = Field(
+        default=None, description="Object list, scans all meshes if empty"
+    )
+    texture_resolution: int = Field(
+        default=2048, ge=256, le=8192, description="Target texture resolution"
+    )
 
 
 class PerformanceAuditInput(BaseModel):
-    target_platform: TargetPlatform = Field(default=TargetPlatform.DESKTOP, description="Target platform budget")
-    object_names: Optional[list[str]] = Field(default=None, description="Object list, scans all meshes if empty")
+    target_platform: TargetPlatform = Field(
+        default=TargetPlatform.DESKTOP, description="Target platform budget"
+    )
+    object_names: list[str] | None = Field(
+        default=None, description="Object list, scans all meshes if empty"
+    )
 
 
 class FullAuditInput(BaseModel):
     target_platform: TargetPlatform = Field(default=TargetPlatform.DESKTOP)
     texture_resolution: int = Field(default=2048, ge=256, le=8192)
-    object_names: Optional[list[str]] = Field(default=None)
+    object_names: list[str] | None = Field(default=None)
 
 
 def _parse_json_from_output(output: str) -> dict[str, Any]:
@@ -51,7 +61,7 @@ def _parse_json_from_output(output: str) -> dict[str, Any]:
 
 async def _list_mesh_objects(
     server: "BlenderMCPServer",
-    object_names: Optional[list[str]],
+    object_names: list[str] | None,
 ) -> list[str]:
     if object_names:
         return object_names
@@ -159,7 +169,10 @@ print(json.dumps(report, ensure_ascii=False))
 
         result = await server.execute_command("utility", "execute_python", {"code": code})
         if not result.get("success"):
-            return {"success": False, "error": result.get("error", {}).get("message", "Topology analysis failed")}
+            return {
+                "success": False,
+                "error": result.get("error", {}).get("message", "Topology analysis failed"),
+            }
 
         output = result.get("data", {}).get("output", "")
         report = _parse_json_from_output(output)
@@ -201,7 +214,11 @@ print(json.dumps(report, ensure_ascii=False))
             )
             if not result.get("success"):
                 object_reports.append(
-                    {"name": name, "ok": False, "error": result.get("error", {}).get("message", "UV analysis failed")}
+                    {
+                        "name": name,
+                        "ok": False,
+                        "error": result.get("error", {}).get("message", "UV analysis failed"),
+                    }
                 )
                 continue
             data = result.get("data", {})
@@ -259,7 +276,13 @@ print(json.dumps(report, ensure_ascii=False))
                 },
             )
             if not info.get("success"):
-                object_reports.append({"name": name, "ok": False, "error": info.get("error", {}).get("message", "Failed to get object info")})
+                object_reports.append(
+                    {
+                        "name": name,
+                        "ok": False,
+                        "error": info.get("error", {}).get("message", "Failed to get object info"),
+                    }
+                )
                 continue
 
             data = info.get("data", {})
@@ -292,9 +315,13 @@ print(json.dumps(report, ensure_ascii=False))
 
         issues = []
         if tri_ratio > 100:
-            issues.append(f"Triangle budget exceeded: {totals['triangles']} / {budget['triangles']}")
+            issues.append(
+                f"Triangle budget exceeded: {totals['triangles']} / {budget['triangles']}"
+            )
         if draw_ratio > 100:
-            issues.append(f"Draw-call budget exceeded: {totals['draw_calls_est']} / {budget['draw_calls']}")
+            issues.append(
+                f"Draw-call budget exceeded: {totals['draw_calls_est']} / {budget['draw_calls']}"
+            )
 
         score = 100
         score -= min(60, max(0, tri_ratio - 100) * 0.6)
@@ -331,10 +358,14 @@ print(json.dumps(report, ensure_ascii=False))
             TopologyAuditInput(object_names=params.object_names, include_hidden=False)
         )
         uv = await blender_quality_audit_uv(
-            UVAuditInput(object_names=params.object_names, texture_resolution=params.texture_resolution)
+            UVAuditInput(
+                object_names=params.object_names, texture_resolution=params.texture_resolution
+            )
         )
         perf = await blender_quality_audit_performance(
-            PerformanceAuditInput(object_names=params.object_names, target_platform=params.target_platform)
+            PerformanceAuditInput(
+                object_names=params.object_names, target_platform=params.target_platform
+            )
         )
 
         if not topo.get("success") or not uv.get("success") or not perf.get("success"):
@@ -358,5 +389,9 @@ print(json.dumps(report, ensure_ascii=False))
             "topology": topo,
             "uv": uv,
             "performance": perf,
-            "grade": "A" if final_score >= 90 else "B" if final_score >= 75 else "C" if final_score >= 60 else "D",
+            "grade": (
+                "A"
+                if final_score >= 90
+                else "B" if final_score >= 75 else "C" if final_score >= 60 else "D"
+            ),
         }

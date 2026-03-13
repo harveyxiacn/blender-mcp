@@ -3,12 +3,12 @@ Reference-driven refinement pass for SAO trio (Kirito, Asuna, Sachi).
 Run after AAA_v2_kirito.py + AAA_v2_asuna.py + AAA_v2_sachi.py.
 """
 
-import bpy
-import bmesh
 import math
-from mathutils import Vector
 from pathlib import Path
 
+import bmesh
+import bpy
+from mathutils import Vector
 
 BASE_DIR = Path(r"E:\Projects\blender-mcp\examples\刀剑神域")
 
@@ -38,7 +38,7 @@ def world_bbox(objs):
     return min_v, max_v
 
 
-def scale_move_character(prefix, target_height, target_x):
+def scale_move_character(prefix, target_height, target_x) -> None:
     objs = list(iter_meshes(prefix))
     bb = world_bbox(objs)
     if not bb:
@@ -66,7 +66,7 @@ def scale_move_character(prefix, target_height, target_x):
         obj.location.z += dz
 
 
-def taper_mesh_xy(obj, top_scale=1.0, bottom_scale=1.0):
+def taper_mesh_xy(obj, top_scale=1.0, bottom_scale=1.0) -> None:
     if obj.type != "MESH":
         return
 
@@ -95,7 +95,7 @@ def taper_mesh_xy(obj, top_scale=1.0, bottom_scale=1.0):
     mesh.update()
 
 
-def recalc_normals_all():
+def recalc_normals_all() -> None:
     for obj in bpy.data.objects:
         if obj.type != "MESH":
             continue
@@ -108,7 +108,7 @@ def recalc_normals_all():
         obj.data.update()
 
 
-def set_auto_smooth_all(angle_deg=35.0):
+def set_auto_smooth_all(angle_deg=35.0) -> None:
     angle = math.radians(angle_deg)
     for obj in bpy.data.objects:
         if obj.type != "MESH":
@@ -120,7 +120,7 @@ def set_auto_smooth_all(angle_deg=35.0):
             mesh.auto_smooth_angle = angle
 
 
-def scale_if_exists(name, sx=1.0, sy=1.0, sz=1.0):
+def scale_if_exists(name, sx=1.0, sy=1.0, sz=1.0) -> None:
     obj = bpy.data.objects.get(name)
     if not obj:
         return
@@ -129,7 +129,7 @@ def scale_if_exists(name, sx=1.0, sy=1.0, sz=1.0):
     obj.scale.z *= sz
 
 
-def add_reference_images():
+def add_reference_images() -> None:
     ref_col = bpy.data.collections.get("SAO_Refs")
     if not ref_col:
         ref_col = bpy.data.collections.new("SAO_Refs")
@@ -162,7 +162,7 @@ def add_reference_images():
         ref_col.objects.link(obj)
 
 
-def refine_material_colors():
+def refine_material_colors() -> None:
     # Lift very dark values so silhouettes retain anime detail under toon lighting.
     remap = {
         "M_KiritoBlack": (0.08, 0.09, 0.12),
@@ -184,7 +184,7 @@ def refine_material_colors():
                 n.inputs["Color"].default_value = (*rgb, 1.0)
 
 
-def setup_lighting_camera_world():
+def setup_lighting_camera_world() -> None:
     scene = bpy.context.scene
     scene.render.engine = "BLENDER_EEVEE"
     scene.render.film_transparent = False
@@ -221,9 +221,19 @@ def setup_lighting_camera_world():
     scene.camera = cam
 
 
-def hide_noise_objects():
+def hide_noise_objects() -> None:
     # Keep trio and their swords; hide helper/noise if present.
-    keep_prefix = ("K_", "A_", "SA_", "E_", "LL_", "MainCamera", "KeyLight", "FillLight", "RimLight")
+    keep_prefix = (
+        "K_",
+        "A_",
+        "SA_",
+        "E_",
+        "LL_",
+        "MainCamera",
+        "KeyLight",
+        "FillLight",
+        "RimLight",
+    )
     for obj in bpy.data.objects:
         if obj.name.startswith("REF_"):
             obj.hide_render = True
@@ -231,7 +241,12 @@ def hide_noise_objects():
         if obj.name in ("Camera",):
             obj.hide_render = True
             continue
-        if any(obj.name.startswith(p) for p in keep_prefix if p.endswith("_")) or obj.name in ("MainCamera", "KeyLight", "FillLight", "RimLight"):
+        if any(obj.name.startswith(p) for p in keep_prefix if p.endswith("_")) or obj.name in (
+            "MainCamera",
+            "KeyLight",
+            "FillLight",
+            "RimLight",
+        ):
             obj.hide_render = False
         else:
             # Keep scene clean for character turntable output.
@@ -239,7 +254,7 @@ def hide_noise_objects():
                 obj.hide_render = True
 
 
-def run():
+def run() -> None:
     # 1) Add refs for alignment.
     add_reference_images()
 

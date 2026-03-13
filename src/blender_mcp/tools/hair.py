@@ -4,15 +4,17 @@ Hair System Tools
 Provides MCP tools for hair creation and editing.
 """
 
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
-from mcp.server.fastmcp import FastMCP
+from typing import Any
 
+from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 # ============ Pydantic Models ============
 
+
 class HairSystemInput(BaseModel):
     """Add hair system"""
+
     object_name: str = Field(..., description="Object name")
     name: str = Field("Hair", description="Hair system name")
     hair_length: float = Field(0.1, description="Hair length")
@@ -22,17 +24,19 @@ class HairSystemInput(BaseModel):
 
 class HairSettingsInput(BaseModel):
     """Hair settings"""
+
     object_name: str = Field(..., description="Object name")
-    system_name: Optional[str] = Field(None, description="Hair system name")
-    hair_length: Optional[float] = Field(None, description="Hair length")
-    root_radius: Optional[float] = Field(None, description="Root radius")
-    tip_radius: Optional[float] = Field(None, description="Tip radius")
-    random_length: Optional[float] = Field(None, description="Random length")
-    random_rotation: Optional[float] = Field(None, description="Random rotation")
+    system_name: str | None = Field(None, description="Hair system name")
+    hair_length: float | None = Field(None, description="Hair length")
+    root_radius: float | None = Field(None, description="Root radius")
+    tip_radius: float | None = Field(None, description="Tip radius")
+    random_length: float | None = Field(None, description="Random length")
+    random_rotation: float | None = Field(None, description="Random rotation")
 
 
 class HairDynamicsInput(BaseModel):
     """Hair dynamics"""
+
     object_name: str = Field(..., description="Object name")
     enable: bool = Field(True, description="Enable dynamics")
     stiffness: float = Field(0.5, description="Stiffness")
@@ -42,14 +46,16 @@ class HairDynamicsInput(BaseModel):
 
 class HairMaterialInput(BaseModel):
     """Hair material"""
+
     object_name: str = Field(..., description="Object name")
-    color: List[float] = Field([0.1, 0.05, 0.02, 1.0], description="Color")
+    color: list[float] = Field([0.1, 0.05, 0.02, 1.0], description="Color")
     roughness: float = Field(0.4, description="Roughness")
     use_hair_bsdf: bool = Field(True, description="Use Hair BSDF")
 
 
 class HairChildrenInput(BaseModel):
     """Hair children"""
+
     object_name: str = Field(..., description="Object name")
     child_type: str = Field("INTERPOLATED", description="Type: NONE, SIMPLE, INTERPOLATED")
     child_count: int = Field(10, description="Child count")
@@ -59,6 +65,7 @@ class HairChildrenInput(BaseModel):
 
 class HairGroomInput(BaseModel):
     """Hair grooming"""
+
     object_name: str = Field(..., description="Object name")
     action: str = Field("COMB", description="Action: COMB, CUT, LENGTH, PUFF, SMOOTH")
     strength: float = Field(0.5, description="Strength")
@@ -66,7 +73,8 @@ class HairGroomInput(BaseModel):
 
 # ============ Tool Registration ============
 
-def register_hair_tools(mcp: FastMCP, server):
+
+def register_hair_tools(mcp: FastMCP, server) -> None:
     """Register hair tools"""
 
     @mcp.tool()
@@ -75,8 +83,8 @@ def register_hair_tools(mcp: FastMCP, server):
         name: str = "Hair",
         hair_length: float = 0.1,
         hair_count: int = 1000,
-        segments: int = 5
-    ) -> Dict[str, Any]:
+        segments: int = 5,
+    ) -> dict[str, Any]:
         """
         Add a hair system
 
@@ -92,20 +100,20 @@ def register_hair_tools(mcp: FastMCP, server):
             name=name,
             hair_length=hair_length,
             hair_count=hair_count,
-            segments=segments
+            segments=segments,
         )
         return await server.send_command("hair", "add", params.model_dump())
 
     @mcp.tool()
     async def blender_hair_settings(
         object_name: str,
-        system_name: Optional[str] = None,
-        hair_length: Optional[float] = None,
-        root_radius: Optional[float] = None,
-        tip_radius: Optional[float] = None,
-        random_length: Optional[float] = None,
-        random_rotation: Optional[float] = None
-    ) -> Dict[str, Any]:
+        system_name: str | None = None,
+        hair_length: float | None = None,
+        root_radius: float | None = None,
+        tip_radius: float | None = None,
+        random_length: float | None = None,
+        random_rotation: float | None = None,
+    ) -> dict[str, Any]:
         """
         Set hair properties
 
@@ -125,7 +133,7 @@ def register_hair_tools(mcp: FastMCP, server):
             root_radius=root_radius,
             tip_radius=tip_radius,
             random_length=random_length,
-            random_rotation=random_rotation
+            random_rotation=random_rotation,
         )
         return await server.send_command("hair", "settings", params.model_dump())
 
@@ -135,8 +143,8 @@ def register_hair_tools(mcp: FastMCP, server):
         enable: bool = True,
         stiffness: float = 0.5,
         damping: float = 0.1,
-        gravity: float = 1.0
-    ) -> Dict[str, Any]:
+        gravity: float = 1.0,
+    ) -> dict[str, Any]:
         """
         Set hair dynamics
 
@@ -152,17 +160,17 @@ def register_hair_tools(mcp: FastMCP, server):
             enable=enable,
             stiffness=stiffness,
             damping=damping,
-            gravity=gravity
+            gravity=gravity,
         )
         return await server.send_command("hair", "dynamics", params.model_dump())
 
     @mcp.tool()
     async def blender_hair_material(
         object_name: str,
-        color: List[float] = [0.1, 0.05, 0.02, 1.0],
+        color: list[float] = None,
         roughness: float = 0.4,
-        use_hair_bsdf: bool = True
-    ) -> Dict[str, Any]:
+        use_hair_bsdf: bool = True,
+    ) -> dict[str, Any]:
         """
         Set hair material
 
@@ -172,11 +180,10 @@ def register_hair_tools(mcp: FastMCP, server):
             roughness: Roughness
             use_hair_bsdf: Use Hair BSDF shader
         """
+        if color is None:
+            color = [0.1, 0.05, 0.02, 1.0]
         params = HairMaterialInput(
-            object_name=object_name,
-            color=color,
-            roughness=roughness,
-            use_hair_bsdf=use_hair_bsdf
+            object_name=object_name, color=color, roughness=roughness, use_hair_bsdf=use_hair_bsdf
         )
         return await server.send_command("hair", "material", params.model_dump())
 
@@ -186,8 +193,8 @@ def register_hair_tools(mcp: FastMCP, server):
         child_type: str = "INTERPOLATED",
         child_count: int = 10,
         clump: float = 0.0,
-        roughness: float = 0.0
-    ) -> Dict[str, Any]:
+        roughness: float = 0.0,
+    ) -> dict[str, Any]:
         """
         Set hair children
 
@@ -203,16 +210,14 @@ def register_hair_tools(mcp: FastMCP, server):
             child_type=child_type,
             child_count=child_count,
             clump=clump,
-            roughness=roughness
+            roughness=roughness,
         )
         return await server.send_command("hair", "children", params.model_dump())
 
     @mcp.tool()
     async def blender_hair_groom(
-        object_name: str,
-        action: str = "COMB",
-        strength: float = 0.5
-    ) -> Dict[str, Any]:
+        object_name: str, action: str = "COMB", strength: float = 0.5
+    ) -> dict[str, Any]:
         """
         Hair grooming operations
 
@@ -221,9 +226,5 @@ def register_hair_tools(mcp: FastMCP, server):
             action: Grooming action (COMB, CUT, LENGTH, PUFF, SMOOTH)
             strength: Action strength
         """
-        params = HairGroomInput(
-            object_name=object_name,
-            action=action,
-            strength=strength
-        )
+        params = HairGroomInput(object_name=object_name, action=action, strength=strength)
         return await server.send_command("hair", "groom", params.model_dump())

@@ -4,12 +4,12 @@ Object Operation Tools
 Provides object creation, deletion, transformation, selection, and other features.
 """
 
-from typing import TYPE_CHECKING, Optional, List, Union
-from enum import Enum
 import json
+from enum import Enum
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field, ConfigDict, field_validator
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 class ObjectType(str, Enum):
     """Object type"""
+
     # Mesh
     CUBE = "CUBE"
     SPHERE = "SPHERE"
@@ -45,53 +46,50 @@ class ObjectType(str, Enum):
 
 class ResponseFormat(str, Enum):
     """Response format"""
+
     MARKDOWN = "markdown"
     JSON = "json"
 
 
 # ==================== Input Models ====================
 
+
 class Vector3(BaseModel):
     """3D vector"""
+
     x: float = Field(default=0.0)
     y: float = Field(default=0.0)
     z: float = Field(default=0.0)
 
-    def to_list(self) -> List[float]:
+    def to_list(self) -> list[float]:
         return [self.x, self.y, self.z]
 
 
 class ObjectCreateInput(BaseModel):
     """Create object input"""
+
     model_config = ConfigDict(str_strip_whitespace=True)
 
     type: ObjectType = Field(..., description="Object type")
-    name: Optional[str] = Field(default=None, description="Object name", max_length=100)
-    location: Optional[List[float]] = Field(
-        default=None,
-        description="Position coordinates [x, y, z]"
+    name: str | None = Field(default=None, description="Object name", max_length=100)
+    location: list[float] | None = Field(default=None, description="Position coordinates [x, y, z]")
+    rotation: list[float] | None = Field(
+        default=None, description="Rotation angles (radians) [x, y, z]"
     )
-    rotation: Optional[List[float]] = Field(
-        default=None,
-        description="Rotation angles (radians) [x, y, z]"
-    )
-    scale: Optional[List[float]] = Field(
-        default=None,
-        description="Scale [x, y, z]"
-    )
-    mesh_params: Optional[dict] = Field(
+    scale: list[float] | None = Field(default=None, description="Scale [x, y, z]")
+    mesh_params: dict | None = Field(
         default=None,
         description="Mesh creation parameters (optional). Available parameters depend on type: "
-                    "SPHERE/UV_SPHERE: segments(int,default 32), ring_count(int,default 16), radius(float,default 1); "
-                    "ICO_SPHERE: subdivisions(int,default 2), radius(float,default 1); "
-                    "CYLINDER: vertices(int,default 32), radius(float,default 1), depth(float,default 2), fill_type(str: NGON/TRIS/NOTHING); "
-                    "CONE: vertices(int,default 32), radius1(float,default 1), radius2(float,default 0), depth(float,default 2), fill_type(str); "
-                    "TORUS: major_segments(int,default 48), minor_segments(int,default 12), major_radius(float,default 1), minor_radius(float,default 0.25); "
-                    "CIRCLE: vertices(int,default 32), radius(float,default 1), fill_type(str: NGON/TRIS/NOTHING); "
-                    "GRID: x_subdivisions(int,default 10), y_subdivisions(int,default 10), size(float,default 2); "
-                    "CUBE: size(float,default 2); "
-                    "PLANE: size(float,default 2). "
-                    "Low Poly style suggestion: segments=6~12, subdivisions=1~2"
+        "SPHERE/UV_SPHERE: segments(int,default 32), ring_count(int,default 16), radius(float,default 1); "
+        "ICO_SPHERE: subdivisions(int,default 2), radius(float,default 1); "
+        "CYLINDER: vertices(int,default 32), radius(float,default 1), depth(float,default 2), fill_type(str: NGON/TRIS/NOTHING); "
+        "CONE: vertices(int,default 32), radius1(float,default 1), radius2(float,default 0), depth(float,default 2), fill_type(str); "
+        "TORUS: major_segments(int,default 48), minor_segments(int,default 12), major_radius(float,default 1), minor_radius(float,default 0.25); "
+        "CIRCLE: vertices(int,default 32), radius(float,default 1), fill_type(str: NGON/TRIS/NOTHING); "
+        "GRID: x_subdivisions(int,default 10), y_subdivisions(int,default 10), size(float,default 2); "
+        "CUBE: size(float,default 2); "
+        "PLANE: size(float,default 2). "
+        "Low Poly style suggestion: segments=6~12, subdivisions=1~2",
     )
 
     @field_validator("location", "rotation", "scale")
@@ -104,47 +102,53 @@ class ObjectCreateInput(BaseModel):
 
 class ObjectDeleteInput(BaseModel):
     """Delete object input"""
+
     name: str = Field(..., description="Object name")
     delete_data: bool = Field(default=True, description="Whether to also delete object data")
 
 
 class ObjectDuplicateInput(BaseModel):
     """Duplicate object input"""
+
     name: str = Field(..., description="Source object name")
-    new_name: Optional[str] = Field(default=None, description="New object name")
+    new_name: str | None = Field(default=None, description="New object name")
     linked: bool = Field(default=False, description="Whether to create a linked duplicate")
-    offset: Optional[List[float]] = Field(default=None, description="Position offset [x, y, z]")
+    offset: list[float] | None = Field(default=None, description="Position offset [x, y, z]")
 
 
 class ObjectTransformInput(BaseModel):
     """Transform object input"""
+
     name: str = Field(..., description="Object name")
-    location: Optional[List[float]] = Field(default=None, description="New location (absolute)")
-    rotation: Optional[List[float]] = Field(default=None, description="New rotation (radians)")
-    scale: Optional[List[float]] = Field(default=None, description="New scale")
-    delta_location: Optional[List[float]] = Field(default=None, description="Location delta")
-    delta_rotation: Optional[List[float]] = Field(default=None, description="Rotation delta")
-    delta_scale: Optional[List[float]] = Field(default=None, description="Scale delta")
+    location: list[float] | None = Field(default=None, description="New location (absolute)")
+    rotation: list[float] | None = Field(default=None, description="New rotation (radians)")
+    scale: list[float] | None = Field(default=None, description="New scale")
+    delta_location: list[float] | None = Field(default=None, description="Location delta")
+    delta_rotation: list[float] | None = Field(default=None, description="Rotation delta")
+    delta_scale: list[float] | None = Field(default=None, description="Scale delta")
 
 
 class ObjectSelectInput(BaseModel):
     """Select object input"""
-    names: Optional[List[str]] = Field(default=None, description="List of object names to select")
-    pattern: Optional[str] = Field(default=None, description="Selection pattern (supports wildcards)")
+
+    names: list[str] | None = Field(default=None, description="List of object names to select")
+    pattern: str | None = Field(default=None, description="Selection pattern (supports wildcards)")
     deselect_all: bool = Field(default=True, description="Whether to deselect all first")
-    set_active: Optional[str] = Field(default=None, description="Set active object")
+    set_active: str | None = Field(default=None, description="Set active object")
 
 
 class ObjectListInput(BaseModel):
     """List objects input"""
-    type_filter: Optional[str] = Field(default=None, description="Filter by object type")
-    name_pattern: Optional[str] = Field(default=None, description="Name matching pattern")
+
+    type_filter: str | None = Field(default=None, description="Filter by object type")
+    name_pattern: str | None = Field(default=None, description="Name matching pattern")
     limit: int = Field(default=50, description="Return count limit", ge=1, le=500)
     response_format: ResponseFormat = Field(default=ResponseFormat.MARKDOWN)
 
 
 class ObjectGetInfoInput(BaseModel):
     """Get object info input"""
+
     name: str = Field(..., description="Object name")
     include_mesh_stats: bool = Field(default=True, description="Include mesh statistics")
     include_modifiers: bool = Field(default=True, description="Include modifier info")
@@ -153,44 +157,54 @@ class ObjectGetInfoInput(BaseModel):
 
 class ObjectRenameInput(BaseModel):
     """Rename object input"""
+
     name: str = Field(..., description="Current object name")
     new_name: str = Field(..., description="New name", min_length=1, max_length=100)
 
 
 class ObjectParentInput(BaseModel):
     """Set parent-child relationship input"""
+
     child_name: str = Field(..., description="Child object name")
-    parent_name: Optional[str] = Field(default=None, description="Parent object name (empty to clear parent)")
+    parent_name: str | None = Field(
+        default=None, description="Parent object name (empty to clear parent)"
+    )
     keep_transform: bool = Field(default=True, description="Keep world transform")
 
 
 class ObjectJoinInput(BaseModel):
     """Join objects input"""
-    objects: List[str] = Field(..., description="List of object names to join", min_length=2)
-    target: Optional[str] = Field(default=None, description="Target object (join into this object)")
+
+    objects: list[str] = Field(..., description="List of object names to join", min_length=2)
+    target: str | None = Field(default=None, description="Target object (join into this object)")
 
 
 class OriginType(str, Enum):
     """Origin type"""
-    GEOMETRY = "GEOMETRY"           # Origin to geometry center
-    CURSOR = "CURSOR"               # Origin to 3D cursor
-    BOTTOM = "BOTTOM"               # Origin to bottom center (feet)
-    CENTER_OF_MASS = "CENTER_OF_MASS"       # Origin to center of mass
-    CENTER_OF_VOLUME = "CENTER_OF_VOLUME"   # Origin to center of volume
+
+    GEOMETRY = "GEOMETRY"  # Origin to geometry center
+    CURSOR = "CURSOR"  # Origin to 3D cursor
+    BOTTOM = "BOTTOM"  # Origin to bottom center (feet)
+    CENTER_OF_MASS = "CENTER_OF_MASS"  # Origin to center of mass
+    CENTER_OF_VOLUME = "CENTER_OF_VOLUME"  # Origin to center of volume
 
 
 class ObjectSetOriginInput(BaseModel):
     """Set origin input"""
+
     name: str = Field(..., description="Object name")
     origin_type: OriginType = Field(
         default=OriginType.GEOMETRY,
-        description="Origin type: GEOMETRY(geometry center), CURSOR(3D cursor), BOTTOM(bottom center/feet), CENTER_OF_MASS(center of mass), CENTER_OF_VOLUME(center of volume)"
+        description="Origin type: GEOMETRY(geometry center), CURSOR(3D cursor), BOTTOM(bottom center/feet), CENTER_OF_MASS(center of mass), CENTER_OF_VOLUME(center of volume)",
     )
-    center: str = Field(default="MEDIAN", description="Geometry center calculation method: MEDIAN or BOUNDS")
+    center: str = Field(
+        default="MEDIAN", description="Geometry center calculation method: MEDIAN or BOUNDS"
+    )
 
 
 class ObjectApplyTransformInput(BaseModel):
     """Apply transform input"""
+
     name: str = Field(..., description="Object name")
     location: bool = Field(default=False, description="Apply location")
     rotation: bool = Field(default=False, description="Apply rotation")
@@ -198,6 +212,7 @@ class ObjectApplyTransformInput(BaseModel):
 
 
 # ==================== Tool Registration ====================
+
 
 def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register object operation tools"""
@@ -209,8 +224,8 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_object_create(params: ObjectCreateInput) -> str:
         """Create a new object in Blender.
@@ -224,15 +239,16 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Creation result
         """
         result = await server.execute_command(
-            "object", "create",
+            "object",
+            "create",
             {
                 "type": params.type.value,
                 "name": params.name,
                 "location": params.location or [0, 0, 0],
                 "rotation": params.rotation or [0, 0, 0],
                 "scale": params.scale or [1, 1, 1],
-                "mesh_params": params.mesh_params or {}
-            }
+                "mesh_params": params.mesh_params or {},
+            },
         )
 
         if result.get("success"):
@@ -249,8 +265,8 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_object_delete(params: ObjectDeleteInput) -> str:
         """Delete the specified object.
@@ -262,8 +278,7 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Deletion result
         """
         result = await server.execute_command(
-            "object", "delete",
-            {"name": params.name, "delete_data": params.delete_data}
+            "object", "delete", {"name": params.name, "delete_data": params.delete_data}
         )
 
         if result.get("success"):
@@ -278,8 +293,8 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_object_duplicate(params: ObjectDuplicateInput) -> str:
         """Duplicate an object.
@@ -293,13 +308,14 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Duplication result
         """
         result = await server.execute_command(
-            "object", "duplicate",
+            "object",
+            "duplicate",
             {
                 "name": params.name,
                 "new_name": params.new_name,
                 "linked": params.linked,
-                "offset": params.offset or [0, 0, 0]
-            }
+                "offset": params.offset or [0, 0, 0],
+            },
         )
 
         if result.get("success"):
@@ -315,8 +331,8 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_object_transform(params: ObjectTransformInput) -> str:
         """Transform an object (location, rotation, scale).
@@ -347,8 +363,7 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             return "No transform parameters specified"
 
         result = await server.execute_command(
-            "object", "transform",
-            {"name": params.name, **transform}
+            "object", "transform", {"name": params.name, **transform}
         )
 
         if result.get("success"):
@@ -363,8 +378,8 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_object_select(params: ObjectSelectInput) -> str:
         """Select objects.
@@ -378,13 +393,14 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Selection result
         """
         result = await server.execute_command(
-            "object", "select",
+            "object",
+            "select",
             {
                 "names": params.names,
                 "pattern": params.pattern,
                 "deselect_all": params.deselect_all,
-                "set_active": params.set_active
-            }
+                "set_active": params.set_active,
+            },
         )
 
         if result.get("success"):
@@ -400,8 +416,8 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_object_list(params: ObjectListInput) -> str:
         """List objects in the scene.
@@ -415,12 +431,13 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Object list
         """
         result = await server.execute_command(
-            "object", "list",
+            "object",
+            "list",
             {
                 "type_filter": params.type_filter,
                 "name_pattern": params.name_pattern,
-                "limit": params.limit
-            }
+                "limit": params.limit,
+            },
         )
 
         if not result.get("success"):
@@ -434,7 +451,10 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
 
         # Markdown format
         lines = ["# Object List", ""]
-        lines.append(f"Total: {total} object(s)" + (f" (showing {len(objects)})" if len(objects) < total else ""))
+        lines.append(
+            f"Total: {total} object(s)"
+            + (f" (showing {len(objects)})" if len(objects) < total else "")
+        )
         lines.append("")
 
         for obj in objects:
@@ -453,8 +473,8 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_object_get_info(params: ObjectGetInfoInput) -> str:
         """Get detailed information about an object.
@@ -468,13 +488,14 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Detailed object information
         """
         result = await server.execute_command(
-            "object", "get_info",
+            "object",
+            "get_info",
             {
                 "name": params.name,
                 "include_mesh_stats": params.include_mesh_stats,
                 "include_modifiers": params.include_modifiers,
-                "include_materials": params.include_materials
-            }
+                "include_materials": params.include_materials,
+            },
         )
 
         if not result.get("success"):
@@ -523,8 +544,8 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_object_rename(params: ObjectRenameInput) -> str:
         """Rename an object.
@@ -536,8 +557,7 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Rename result
         """
         result = await server.execute_command(
-            "object", "rename",
-            {"name": params.name, "new_name": params.new_name}
+            "object", "rename", {"name": params.name, "new_name": params.new_name}
         )
 
         if result.get("success"):
@@ -552,8 +572,8 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_object_parent(params: ObjectParentInput) -> str:
         """Set the parent-child relationship for objects.
@@ -565,12 +585,13 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Setting result
         """
         result = await server.execute_command(
-            "object", "set_parent",
+            "object",
+            "set_parent",
             {
                 "child_name": params.child_name,
                 "parent_name": params.parent_name,
-                "keep_transform": params.keep_transform
-            }
+                "keep_transform": params.keep_transform,
+            },
         )
 
         if result.get("success"):
@@ -588,8 +609,8 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": True,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_object_join(params: ObjectJoinInput) -> str:
         """Join multiple objects into one.
@@ -601,8 +622,7 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Join result
         """
         result = await server.execute_command(
-            "object", "join",
-            {"objects": params.objects, "target": params.target}
+            "object", "join", {"objects": params.objects, "target": params.target}
         )
 
         if result.get("success"):
@@ -618,8 +638,8 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_object_set_origin(params: ObjectSetOriginInput) -> str:
         """Set the origin point of an object.
@@ -633,19 +653,18 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Setting result
         """
         result = await server.execute_command(
-            "object", "set_origin",
-            {
-                "name": params.name,
-                "origin_type": params.origin_type.value,
-                "center": params.center
-            }
+            "object",
+            "set_origin",
+            {"name": params.name, "origin_type": params.origin_type.value, "center": params.center},
         )
 
         if result.get("success"):
             data = result.get("data", {})
             return f"Set origin of '{params.name}' to {params.origin_type.value}, new origin location: {data.get('new_origin', 'N/A')}"
         else:
-            return f"Failed to set origin: {result.get('error', {}).get('message', 'Unknown error')}"
+            return (
+                f"Failed to set origin: {result.get('error', {}).get('message', 'Unknown error')}"
+            )
 
     @mcp.tool(
         name="blender_object_apply_transform",
@@ -654,8 +673,8 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_object_apply_transform(params: ObjectApplyTransformInput) -> str:
         """Apply object transforms (location, rotation, scale).
@@ -669,13 +688,14 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Apply result
         """
         result = await server.execute_command(
-            "object", "apply_transform",
+            "object",
+            "apply_transform",
             {
                 "name": params.name,
                 "location": params.location,
                 "rotation": params.rotation,
-                "scale": params.scale
-            }
+                "scale": params.scale,
+            },
         )
 
         if result.get("success"):

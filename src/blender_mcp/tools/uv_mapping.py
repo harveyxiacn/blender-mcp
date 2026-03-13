@@ -4,10 +4,11 @@ UV Mapping Tools
 Provides UV unwrapping, projection, editing, and related functionality.
 """
 
-from typing import TYPE_CHECKING, Optional, List
+from enum import Enum
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from blender_mcp.server import BlenderMCPServer
@@ -15,29 +16,29 @@ if TYPE_CHECKING:
 
 # ==================== Input Models ====================
 
+
 class UVUnwrapInput(BaseModel):
     """UV unwrap input"""
+
     object_name: str = Field(..., description="Object name")
-    method: str = Field(
-        default="ANGLE_BASED",
-        description="Unwrap method: ANGLE_BASED, CONFORMAL"
-    )
+    method: str = Field(default="ANGLE_BASED", description="Unwrap method: ANGLE_BASED, CONFORMAL")
     fill_holes: bool = Field(default=True, description="Fill holes")
     correct_aspect: bool = Field(default=True, description="Correct aspect ratio")
 
 
 class UVProjectInput(BaseModel):
     """UV projection input"""
+
     object_name: str = Field(..., description="Object name")
     projection_type: str = Field(
-        default="CUBE",
-        description="Projection type: CUBE, CYLINDER, SPHERE, VIEW"
+        default="CUBE", description="Projection type: CUBE, CYLINDER, SPHERE, VIEW"
     )
     scale_to_bounds: bool = Field(default=True, description="Scale to bounds")
 
 
 class UVSmartProjectInput(BaseModel):
     """Smart UV projection input"""
+
     object_name: str = Field(..., description="Object name")
     angle_limit: float = Field(default=66.0, description="Angle limit (degrees)", ge=0, le=89)
     island_margin: float = Field(default=0.0, description="Island margin", ge=0, le=1)
@@ -46,6 +47,7 @@ class UVSmartProjectInput(BaseModel):
 
 class UVPackInput(BaseModel):
     """UV pack input"""
+
     object_name: str = Field(..., description="Object name")
     margin: float = Field(default=0.001, description="Margin", ge=0, le=1)
     rotate: bool = Field(default=True, description="Allow rotation")
@@ -53,27 +55,28 @@ class UVPackInput(BaseModel):
 
 class UVSeamInput(BaseModel):
     """UV seam input"""
+
     object_name: str = Field(..., description="Object name")
     action: str = Field(default="mark", description="Action: mark, clear")
-    edge_indices: Optional[List[int]] = Field(default=None, description="Edge index list")
+    edge_indices: list[int] | None = Field(default=None, description="Edge index list")
     from_sharp: bool = Field(default=False, description="Mark from sharp edges")
 
 
 class UVTransformInput(BaseModel):
     """UV transform input"""
+
     object_name: str = Field(..., description="Object name")
-    translate: Optional[List[float]] = Field(default=None, description="Translation [U, V]")
-    rotate: Optional[float] = Field(default=None, description="Rotation (degrees)")
-    scale: Optional[List[float]] = Field(default=None, description="Scale [U, V]")
+    translate: list[float] | None = Field(default=None, description="Translation [U, V]")
+    rotate: float | None = Field(default=None, description="Rotation (degrees)")
+    scale: list[float] | None = Field(default=None, description="Scale [U, V]")
 
 
 # ==================== Production-Standard Optimization Input Models ====================
 
-from enum import Enum
-
 
 class TextureResolution(str, Enum):
     """Texture resolution"""
+
     RES_256 = "256"
     RES_512 = "512"
     RES_1024 = "1024"
@@ -83,15 +86,17 @@ class TextureResolution(str, Enum):
 
 class UVAnalyzeInput(BaseModel):
     """UV analysis input"""
+
     object_name: str = Field(..., description="Object name")
     texture_resolution: TextureResolution = Field(
         default=TextureResolution.RES_1024,
-        description="Target texture resolution (used for pixel density calculation)"
+        description="Target texture resolution (used for pixel density calculation)",
     )
 
 
 class UVOptimizeInput(BaseModel):
     """UV optimization input"""
+
     object_name: str = Field(..., description="Object name")
     target_margin: float = Field(default=0.01, description="Target margin", ge=0, le=0.1)
     straighten_uvs: bool = Field(default=True, description="Attempt to straighten UVs")
@@ -101,43 +106,49 @@ class UVOptimizeInput(BaseModel):
 
 class UVDensityInput(BaseModel):
     """UV density normalization input"""
+
     object_name: str = Field(..., description="Object name")
-    target_density: Optional[float] = Field(
-        default=None,
-        description="Target density (pixels/unit), None uses average density"
+    target_density: float | None = Field(
+        default=None, description="Target density (pixels/unit), None uses average density"
     )
     texture_resolution: TextureResolution = Field(
-        default=TextureResolution.RES_1024,
-        description="Target texture resolution"
+        default=TextureResolution.RES_1024, description="Target texture resolution"
     )
 
 
 class TextureAtlasCreateInput(BaseModel):
     """Create texture atlas input"""
-    object_names: List[str] = Field(..., description="Object name list")
+
+    object_names: list[str] = Field(..., description="Object name list")
     atlas_name: str = Field(default="TextureAtlas", description="Atlas name")
     resolution: TextureResolution = Field(
-        default=TextureResolution.RES_2048,
-        description="Atlas resolution"
+        default=TextureResolution.RES_2048, description="Atlas resolution"
     )
     margin: float = Field(default=0.01, description="UV island margin", ge=0, le=0.1)
 
 
 class UVAutoSeamInput(BaseModel):
     """Auto seam input"""
+
     object_name: str = Field(..., description="Object name")
-    angle_threshold: float = Field(default=30.0, description="Angle threshold (degrees)", ge=0, le=90)
+    angle_threshold: float = Field(
+        default=30.0, description="Angle threshold (degrees)", ge=0, le=90
+    )
     use_hard_edges: bool = Field(default=True, description="Use hard edges as seams")
-    optimize_for_deformation: bool = Field(default=False, description="Optimize for deformation areas")
+    optimize_for_deformation: bool = Field(
+        default=False, description="Optimize for deformation areas"
+    )
 
 
 class UVGridCheckInput(BaseModel):
     """UV checker grid input"""
+
     object_name: str = Field(..., description="Object name")
     grid_size: int = Field(default=8, description="Checker grid count", ge=2, le=64)
 
 
 # ==================== Tool Registration ====================
+
 
 def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
     """Register UV mapping tools"""
@@ -149,8 +160,8 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_uv_unwrap(params: UVUnwrapInput) -> str:
         """Automatic UV unwrap.
@@ -162,13 +173,14 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Unwrap result
         """
         result = await server.execute_command(
-            "uv", "unwrap",
+            "uv",
+            "unwrap",
             {
                 "object_name": params.object_name,
                 "method": params.method,
                 "fill_holes": params.fill_holes,
-                "correct_aspect": params.correct_aspect
-            }
+                "correct_aspect": params.correct_aspect,
+            },
         )
 
         if result.get("success"):
@@ -183,8 +195,8 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_uv_project(params: UVProjectInput) -> str:
         """UV projection mapping (cube, cylinder, sphere).
@@ -196,12 +208,13 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Projection result
         """
         result = await server.execute_command(
-            "uv", "project",
+            "uv",
+            "project",
             {
                 "object_name": params.object_name,
                 "projection_type": params.projection_type,
-                "scale_to_bounds": params.scale_to_bounds
-            }
+                "scale_to_bounds": params.scale_to_bounds,
+            },
         )
 
         if result.get("success"):
@@ -216,8 +229,8 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_uv_smart_project(params: UVSmartProjectInput) -> str:
         """Smart UV projection (automatic island splitting).
@@ -229,13 +242,14 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Projection result
         """
         result = await server.execute_command(
-            "uv", "smart_project",
+            "uv",
+            "smart_project",
             {
                 "object_name": params.object_name,
                 "angle_limit": params.angle_limit,
                 "island_margin": params.island_margin,
-                "area_weight": params.area_weight
-            }
+                "area_weight": params.area_weight,
+            },
         )
 
         if result.get("success"):
@@ -250,8 +264,8 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_uv_pack(params: UVPackInput) -> str:
         """Optimize UV island layout.
@@ -263,12 +277,9 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Pack result
         """
         result = await server.execute_command(
-            "uv", "pack",
-            {
-                "object_name": params.object_name,
-                "margin": params.margin,
-                "rotate": params.rotate
-            }
+            "uv",
+            "pack",
+            {"object_name": params.object_name, "margin": params.margin, "rotate": params.rotate},
         )
 
         if result.get("success"):
@@ -283,8 +294,8 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_uv_seam(params: UVSeamInput) -> str:
         """Mark or clear UV seams.
@@ -296,13 +307,14 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Operation result
         """
         result = await server.execute_command(
-            "uv", "seam",
+            "uv",
+            "seam",
             {
                 "object_name": params.object_name,
                 "action": params.action,
                 "edge_indices": params.edge_indices,
-                "from_sharp": params.from_sharp
-            }
+                "from_sharp": params.from_sharp,
+            },
         )
 
         if result.get("success"):
@@ -317,8 +329,8 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_uv_transform(params: UVTransformInput) -> str:
         """Transform UV coordinates.
@@ -330,13 +342,14 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Transform result
         """
         result = await server.execute_command(
-            "uv", "transform",
+            "uv",
+            "transform",
             {
                 "object_name": params.object_name,
                 "translate": params.translate,
                 "rotate": params.rotate,
-                "scale": params.scale
-            }
+                "scale": params.scale,
+            },
         )
 
         if result.get("success"):
@@ -353,8 +366,8 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": True,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_uv_analyze(params: UVAnalyzeInput) -> str:
         """Analyze UV mapping quality.
@@ -373,11 +386,12 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Detailed UV analysis report
         """
         result = await server.execute_command(
-            "uv", "analyze",
+            "uv",
+            "analyze",
             {
                 "object_name": params.object_name,
-                "texture_resolution": int(params.texture_resolution.value)
-            }
+                "texture_resolution": int(params.texture_resolution.value),
+            },
         )
 
         if result.get("success"):
@@ -401,9 +415,9 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
 
             # Pixel density
             density = data.get("pixel_density", {})
-            lines.append("## Pixel Density (based on {}x{} texture)".format(
-                params.texture_resolution.value, params.texture_resolution.value
-            ))
+            lines.append(
+                f"## Pixel Density (based on {params.texture_resolution.value}x{params.texture_resolution.value} texture)"
+            )
             lines.append(f"- Average Density: {density.get('average', 0):.1f} pixels/unit")
             lines.append(f"- Minimum Density: {density.get('min', 0):.1f} pixels/unit")
             lines.append(f"- Maximum Density: {density.get('max', 0):.1f} pixels/unit")
@@ -433,8 +447,8 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_uv_optimize(params: UVOptimizeInput) -> str:
         """Optimize UV layout to meet production standards.
@@ -452,22 +466,27 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Optimization result
         """
         result = await server.execute_command(
-            "uv", "optimize",
+            "uv",
+            "optimize",
             {
                 "object_name": params.object_name,
                 "target_margin": params.target_margin,
                 "straighten_uvs": params.straighten_uvs,
                 "minimize_stretch": params.minimize_stretch,
-                "pack_efficiently": params.pack_efficiently
-            }
+                "pack_efficiently": params.pack_efficiently,
+            },
         )
 
         if result.get("success"):
             data = result.get("data", {})
 
             lines = [f"UV optimization complete: {params.object_name}", ""]
-            lines.append(f"- Space Utilization: {data.get('old_usage', 0):.1f}% -> {data.get('new_usage', 0):.1f}%")
-            lines.append(f"- Average Stretch: {data.get('old_stretch', 0):.3f} -> {data.get('new_stretch', 0):.3f}")
+            lines.append(
+                f"- Space Utilization: {data.get('old_usage', 0):.1f}% -> {data.get('new_usage', 0):.1f}%"
+            )
+            lines.append(
+                f"- Average Stretch: {data.get('old_stretch', 0):.3f} -> {data.get('new_stretch', 0):.3f}"
+            )
 
             return "\n".join(lines)
         else:
@@ -480,8 +499,8 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_uv_density_normalize(params: UVDensityInput) -> str:
         """Normalize UV pixel density.
@@ -498,12 +517,13 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Normalization result
         """
         result = await server.execute_command(
-            "uv", "density_normalize",
+            "uv",
+            "density_normalize",
             {
                 "object_name": params.object_name,
                 "target_density": params.target_density,
-                "texture_resolution": int(params.texture_resolution.value)
-            }
+                "texture_resolution": int(params.texture_resolution.value),
+            },
         )
 
         if result.get("success"):
@@ -515,7 +535,9 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
 
             return "\n".join(lines)
         else:
-            return f"Normalization failed: {result.get('error', {}).get('message', 'Unknown error')}"
+            return (
+                f"Normalization failed: {result.get('error', {}).get('message', 'Unknown error')}"
+            )
 
     @mcp.tool(
         name="blender_texture_atlas_create",
@@ -524,8 +546,8 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_texture_atlas_create(params: TextureAtlasCreateInput) -> str:
         """Create a texture atlas for multiple objects.
@@ -542,13 +564,14 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Creation result
         """
         result = await server.execute_command(
-            "uv", "create_atlas",
+            "uv",
+            "create_atlas",
             {
                 "object_names": params.object_names,
                 "atlas_name": params.atlas_name,
                 "resolution": int(params.resolution.value),
-                "margin": params.margin
-            }
+                "margin": params.margin,
+            },
         )
 
         if result.get("success"):
@@ -561,7 +584,9 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
 
             return "\n".join(lines)
         else:
-            return f"Atlas creation failed: {result.get('error', {}).get('message', 'Unknown error')}"
+            return (
+                f"Atlas creation failed: {result.get('error', {}).get('message', 'Unknown error')}"
+            )
 
     @mcp.tool(
         name="blender_uv_auto_seam",
@@ -570,8 +595,8 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_uv_auto_seam(params: UVAutoSeamInput) -> str:
         """Intelligent automatic UV seam marking.
@@ -588,13 +613,14 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Seam marking result
         """
         result = await server.execute_command(
-            "uv", "auto_seam",
+            "uv",
+            "auto_seam",
             {
                 "object_name": params.object_name,
                 "angle_threshold": params.angle_threshold,
                 "use_hard_edges": params.use_hard_edges,
-                "optimize_for_deformation": params.optimize_for_deformation
-            }
+                "optimize_for_deformation": params.optimize_for_deformation,
+            },
         )
 
         if result.get("success"):
@@ -615,8 +641,8 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": True,
-            "openWorldHint": False
-        }
+            "openWorldHint": False,
+        },
     )
     async def blender_uv_grid_check(params: UVGridCheckInput) -> str:
         """Apply checker grid texture for UV quality inspection.
@@ -633,11 +659,7 @@ def register_uv_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             Check result
         """
         result = await server.execute_command(
-            "uv", "grid_check",
-            {
-                "object_name": params.object_name,
-                "grid_size": params.grid_size
-            }
+            "uv", "grid_check", {"object_name": params.object_name, "grid_size": params.grid_size}
         )
 
         if result.get("success"):

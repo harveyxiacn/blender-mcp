@@ -4,21 +4,24 @@ Preferences tools
 Provides MCP tools for Blender preferences management.
 """
 
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
-from mcp.server.fastmcp import FastMCP
+from typing import Any
 
+from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
 # ============ Pydantic Models ============
 
+
 class PrefGetInput(BaseModel):
     """Get preference input"""
+
     category: str = Field(..., description="Preference category")
     key: str = Field(..., description="Preference key")
 
 
 class PrefSetInput(BaseModel):
     """Set preference input"""
+
     category: str = Field(..., description="Preference category")
     key: str = Field(..., description="Preference key")
     value: Any = Field(..., description="Preference value")
@@ -26,38 +29,39 @@ class PrefSetInput(BaseModel):
 
 class PrefThemeInput(BaseModel):
     """Theme settings input"""
-    preset: Optional[str] = Field(None, description="Preset theme name")
-    custom_colors: Optional[Dict[str, List[float]]] = Field(None, description="Custom colors")
+
+    preset: str | None = Field(None, description="Preset theme name")
+    custom_colors: dict[str, list[float]] | None = Field(None, description="Custom colors")
 
 
 class PrefViewportInput(BaseModel):
     """Viewport settings input"""
-    show_gizmo: Optional[bool] = Field(None, description="Show gizmos")
-    show_floor: Optional[bool] = Field(None, description="Show floor grid")
-    show_axis_x: Optional[bool] = Field(None, description="Show X axis")
-    show_axis_y: Optional[bool] = Field(None, description="Show Y axis")
-    show_axis_z: Optional[bool] = Field(None, description="Show Z axis")
-    clip_start: Optional[float] = Field(None, description="Near clipping distance")
-    clip_end: Optional[float] = Field(None, description="Far clipping distance")
+
+    show_gizmo: bool | None = Field(None, description="Show gizmos")
+    show_floor: bool | None = Field(None, description="Show floor grid")
+    show_axis_x: bool | None = Field(None, description="Show X axis")
+    show_axis_y: bool | None = Field(None, description="Show Y axis")
+    show_axis_z: bool | None = Field(None, description="Show Z axis")
+    clip_start: float | None = Field(None, description="Near clipping distance")
+    clip_end: float | None = Field(None, description="Far clipping distance")
 
 
 class PrefSystemInput(BaseModel):
     """System settings input"""
-    memory_cache_limit: Optional[int] = Field(None, description="Memory cache limit (MB)")
-    undo_steps: Optional[int] = Field(None, description="Undo steps")
-    use_gpu_subdivision: Optional[bool] = Field(None, description="GPU subdivision")
+
+    memory_cache_limit: int | None = Field(None, description="Memory cache limit (MB)")
+    undo_steps: int | None = Field(None, description="Undo steps")
+    use_gpu_subdivision: bool | None = Field(None, description="GPU subdivision")
 
 
 # ============ Tool Registration ============
 
-def register_preferences_tools(mcp: FastMCP, server):
+
+def register_preferences_tools(mcp: FastMCP, server) -> None:
     """Register preferences tools"""
 
     @mcp.tool()
-    async def blender_pref_get(
-        category: str,
-        key: str
-    ) -> Dict[str, Any]:
+    async def blender_pref_get(category: str, key: str) -> dict[str, Any]:
         """
         Get Blender preference settings
 
@@ -69,11 +73,7 @@ def register_preferences_tools(mcp: FastMCP, server):
         return await server.send_command("preferences", "get", params.model_dump())
 
     @mcp.tool()
-    async def blender_pref_set(
-        category: str,
-        key: str,
-        value: Any
-    ) -> Dict[str, Any]:
+    async def blender_pref_set(category: str, key: str, value: Any) -> dict[str, Any]:
         """
         Set Blender preference
 
@@ -87,9 +87,8 @@ def register_preferences_tools(mcp: FastMCP, server):
 
     @mcp.tool()
     async def blender_pref_theme(
-        preset: Optional[str] = None,
-        custom_colors: Optional[Dict[str, List[float]]] = None
-    ) -> Dict[str, Any]:
+        preset: str | None = None, custom_colors: dict[str, list[float]] | None = None
+    ) -> dict[str, Any]:
         """
         Set theme
 
@@ -102,14 +101,14 @@ def register_preferences_tools(mcp: FastMCP, server):
 
     @mcp.tool()
     async def blender_pref_viewport(
-        show_gizmo: Optional[bool] = None,
-        show_floor: Optional[bool] = None,
-        show_axis_x: Optional[bool] = None,
-        show_axis_y: Optional[bool] = None,
-        show_axis_z: Optional[bool] = None,
-        clip_start: Optional[float] = None,
-        clip_end: Optional[float] = None
-    ) -> Dict[str, Any]:
+        show_gizmo: bool | None = None,
+        show_floor: bool | None = None,
+        show_axis_x: bool | None = None,
+        show_axis_y: bool | None = None,
+        show_axis_z: bool | None = None,
+        clip_start: float | None = None,
+        clip_end: float | None = None,
+    ) -> dict[str, Any]:
         """
         Set viewport preferences
 
@@ -127,16 +126,16 @@ def register_preferences_tools(mcp: FastMCP, server):
             show_axis_y=show_axis_y,
             show_axis_z=show_axis_z,
             clip_start=clip_start,
-            clip_end=clip_end
+            clip_end=clip_end,
         )
         return await server.send_command("preferences", "viewport", params.model_dump())
 
     @mcp.tool()
     async def blender_pref_system(
-        memory_cache_limit: Optional[int] = None,
-        undo_steps: Optional[int] = None,
-        use_gpu_subdivision: Optional[bool] = None
-    ) -> Dict[str, Any]:
+        memory_cache_limit: int | None = None,
+        undo_steps: int | None = None,
+        use_gpu_subdivision: bool | None = None,
+    ) -> dict[str, Any]:
         """
         Set system preferences
 
@@ -148,19 +147,19 @@ def register_preferences_tools(mcp: FastMCP, server):
         params = PrefSystemInput(
             memory_cache_limit=memory_cache_limit,
             undo_steps=undo_steps,
-            use_gpu_subdivision=use_gpu_subdivision
+            use_gpu_subdivision=use_gpu_subdivision,
         )
         return await server.send_command("preferences", "system", params.model_dump())
 
     @mcp.tool()
-    async def blender_pref_save() -> Dict[str, Any]:
+    async def blender_pref_save() -> dict[str, Any]:
         """
         Save preferences
         """
         return await server.send_command("preferences", "save", {})
 
     @mcp.tool()
-    async def blender_pref_load_factory() -> Dict[str, Any]:
+    async def blender_pref_load_factory() -> dict[str, Any]:
         """
         Load factory settings
         """
