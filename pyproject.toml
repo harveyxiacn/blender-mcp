@@ -74,7 +74,7 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "ANN", "B", "C4", "SIM"]
 ignore = [
-    "ANN101", "ANN102", "ANN401",
+    "ANN401",
     "E501",   # line too long - handled by formatter
     "ANN001", # missing arg type annotations - too pervasive to fix now
     "ANN206", # missing classmethod return type
@@ -124,4 +124,6 @@ disable_error_code = ["arg-type", "assignment"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = ["live: requires running Blender instance"]
+addopts = "--ignore=tests/run_live_test.py --ignore=tests/test_blender_live.py"
 
