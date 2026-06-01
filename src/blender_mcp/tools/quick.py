@@ -51,16 +51,12 @@ class QuickProductShotInput(BaseModel):
     target_object: str | None = Field(
         default=None, description="Object name to focus on (uses active object if omitted)"
     )
-    style: LightingStyle = Field(
-        default=LightingStyle.STUDIO, description="Lighting style"
-    )
+    style: LightingStyle = Field(default=LightingStyle.STUDIO, description="Lighting style")
     background_color: list[float] | None = Field(
         default=None, description="Background RGB values [0-1, 0-1, 0-1]"
     )
     render_width: int = Field(default=1920, description="Render width in pixels", ge=320, le=7680)
-    render_height: int = Field(
-        default=1080, description="Render height in pixels", ge=240, le=4320
-    )
+    render_height: int = Field(default=1080, description="Render height in pixels", ge=240, le=4320)
 
     @field_validator("background_color")
     @classmethod

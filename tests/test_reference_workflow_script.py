@@ -8,9 +8,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_sao_reference_workflow_script_uses_reference_pipeline() -> None:
-    script_path = (
-        REPO_ROOT / "examples" / "刀剑神域" / "scripts" / "run_reference_workflow.py"
-    )
+    script_path = REPO_ROOT / "examples" / "刀剑神域" / "scripts" / "run_reference_workflow.py"
     source = script_path.read_text(encoding="utf-8")
 
     assert "inspect_reference_pack_data" in source

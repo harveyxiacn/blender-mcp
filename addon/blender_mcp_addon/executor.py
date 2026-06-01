@@ -43,38 +43,44 @@ class CommandExecutor:
                 method_name = f"handle_{action}"
                 method = getattr(self, method_name, None)
                 if method is None:
-                    return enrich_error({
-                        "success": False,
-                        "error": {
-                            "code": "UNKNOWN_ACTION",
-                            "message": f"Unknown action: system.{action}",
-                        },
-                    })
+                    return enrich_error(
+                        {
+                            "success": False,
+                            "error": {
+                                "code": "UNKNOWN_ACTION",
+                                "message": f"Unknown action: system.{action}",
+                            },
+                        }
+                    )
                 return enrich_error(method(params))
 
             # Lazy load the handler
             handler = get_handler(category)
             if handler is None:
-                return enrich_error({
-                    "success": False,
-                    "error": {
-                        "code": "UNKNOWN_CATEGORY",
-                        "message": f"Unknown command category: {category}",
-                    },
-                })
+                return enrich_error(
+                    {
+                        "success": False,
+                        "error": {
+                            "code": "UNKNOWN_CATEGORY",
+                            "message": f"Unknown command category: {category}",
+                        },
+                    }
+                )
 
             # Get the action method
             method_name = f"handle_{action}"
             method = getattr(handler, method_name, None)
 
             if method is None:
-                return enrich_error({
-                    "success": False,
-                    "error": {
-                        "code": "UNKNOWN_ACTION",
-                        "message": f"Unknown action: {category}.{action}",
-                    },
-                })
+                return enrich_error(
+                    {
+                        "success": False,
+                        "error": {
+                            "code": "UNKNOWN_ACTION",
+                            "message": f"Unknown action: {category}.{action}",
+                        },
+                    }
+                )
 
             # Execute the action and enrich errors with suggestions
             result = method(params)

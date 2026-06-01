@@ -61,7 +61,7 @@ async def run_py(conn, name, code):
 # 材质系统 (Toon Material System)
 # ============================================================
 
-MATERIAL_SETUP_CODE = '''
+MATERIAL_SETUP_CODE = """
 import bpy, math
 
 # ---------- toon_mat ----------
@@ -183,13 +183,13 @@ metal_mat("M_Elucidator", (0.025, 0.025, 0.03))
 metal_mat("M_LambentLight", (0.90, 0.90, 0.93))
 
 result = f"Created {len(bpy.data.materials)} materials"
-'''
+"""
 
 # ============================================================
 # 工具函数 (Helper functions injected into Blender)
 # ============================================================
 
-HELPER_FUNCS_CODE = '''
+HELPER_FUNCS_CODE = """
 import bpy, bmesh, math
 
 def loft(name, profiles, ns=16, cap_top=False, cap_bot=False):
@@ -262,13 +262,13 @@ bpy.app.driver_namespace["setup"] = setup
 bpy.app.driver_namespace["hair_strip"] = hair_strip
 
 result = "Helper functions registered"
-'''
+"""
 
 # ============================================================
 # 桐人 (Kirito) - Black Swordsman
 # ============================================================
 
-KIRITO_CODE = '''
+KIRITO_CODE = """
 import bpy, bmesh, math
 loft = bpy.app.driver_namespace["loft"]
 setup = bpy.app.driver_namespace["setup"]
@@ -423,13 +423,13 @@ for i, (ox, oy, oz, rx, ry, rz, l, bw) in enumerate([
     hair_strip(f"K_Hair_Bang_{i}", (kx+ox, oy, oz), (rx,ry,rz), l, bw, 0.005)
 
 result = "Kirito complete"
-'''
+"""
 
 # ============================================================
 # 亚丝娜 (Asuna) - Knight of Blood
 # ============================================================
 
-ASUNA_CODE = '''
+ASUNA_CODE = """
 import bpy, bmesh, math
 loft = bpy.app.driver_namespace["loft"]
 setup = bpy.app.driver_namespace["setup"]
@@ -606,13 +606,13 @@ hband.rotation_euler = (math.radians(15), 0, 0)
 setup(hband, "M_AsunaWhite", ss=1, outline=0)
 
 result = "Asuna complete"
-'''
+"""
 
 # ============================================================
 # 克莱因 (Klein)
 # ============================================================
 
-KLEIN_CODE = '''
+KLEIN_CODE = """
 import bpy, bmesh, math
 loft = bpy.app.driver_namespace["loft"]
 setup = bpy.app.driver_namespace["setup"]
@@ -728,13 +728,13 @@ band.scale = (1.0, 0.88, 0.5)
 setup(band, "M_KleinRed", ss=1, outline=0)
 
 result = "Klein complete"
-'''
+"""
 
 # ============================================================
 # 场景灯光和摄像机
 # ============================================================
 
-SCENE_SETUP_CODE = '''
+SCENE_SETUP_CODE = """
 import bpy, math
 
 # --- EEVEE anime render settings ---
@@ -794,13 +794,13 @@ scene.frame_start = 1
 scene.frame_end = 250
 
 result = "Scene setup complete"
-'''
+"""
 
 # ============================================================
 # Ground plane
 # ============================================================
 
-GROUND_CODE = '''
+GROUND_CODE = """
 import bpy
 
 # Simple ground plane
@@ -818,7 +818,7 @@ if bsdf:
 ground.data.materials.append(mat)
 
 result = "Ground created"
-'''
+"""
 
 
 async def main():
@@ -841,13 +841,17 @@ async def main():
     await test(conn, "scene.switch", "scene", "switch", {"scene_name": "SAO_FanArt"})
 
     # Clear default objects
-    await run_py(conn, "clear_defaults", '''
+    await run_py(
+        conn,
+        "clear_defaults",
+        """
 import bpy
 for obj in list(bpy.data.objects):
     if obj.users_scene and bpy.context.scene.name in [s.name for s in obj.users_scene]:
         bpy.data.objects.remove(obj, do_unlink=True)
 result = "Scene cleared"
-''')
+""",
+    )
 
     # Step 2: Material system
     print("\n--- Step 2: 创建 Toon 着色材质系统 ---")
@@ -879,10 +883,16 @@ result = "Scene cleared"
 
     # Step 9: Save checkpoint
     print("\n--- Step 9: 保存检查点 ---")
-    await test(conn, "checkpoint.save", "checkpoint", "save", {
-        "name": "sao_fan_art_complete",
-        "description": "SAO fan art with Kirito, Asuna, Klein - toon shaded"
-    })
+    await test(
+        conn,
+        "checkpoint.save",
+        "checkpoint",
+        "save",
+        {
+            "name": "sao_fan_art_complete",
+            "description": "SAO fan art with Kirito, Asuna, Klein - toon shaded",
+        },
+    )
 
     # Step 10: Describe scene
     print("\n--- Step 10: 场景描述 ---")
@@ -901,11 +911,15 @@ result = "Scene cleared"
 
     # Step 12: Take snapshots
     print("\n--- Step 11: 截图 ---")
-    result = await test(conn, "snapshot.viewport", "snapshot", "viewport", {"width": 1920, "height": 1080})
+    result = await test(
+        conn, "snapshot.viewport", "snapshot", "viewport", {"width": 1920, "height": 1080}
+    )
     if result.get("success"):
         print(f"  视口截图: {result.get('data', {}).get('path', '?')}")
 
-    result = await test(conn, "snapshot.render", "snapshot", "render_preview", {"width": 960, "samples": 32})
+    result = await test(
+        conn, "snapshot.render", "snapshot", "render_preview", {"width": 960, "samples": 32}
+    )
     if result.get("success"):
         print(f"  渲染预览: {result.get('data', {}).get('path', '?')}")
 

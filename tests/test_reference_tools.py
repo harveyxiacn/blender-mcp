@@ -136,8 +136,12 @@ def test_build_reference_brief_without_provider_uses_heuristics(tmp_path: Path) 
 
 
 class _NoopServer:
-    async def execute_command(self, category: str, action: str, params: dict[str, object]) -> dict[str, object]:
-        raise AssertionError(f"Unexpected Blender command during fallback audit: {category}.{action}")
+    async def execute_command(
+        self, category: str, action: str, params: dict[str, object]
+    ) -> dict[str, object]:
+        raise AssertionError(
+            f"Unexpected Blender command during fallback audit: {category}.{action}"
+        )
 
 
 async def test_build_reference_model_audit_without_provider_uses_checklist(tmp_path: Path) -> None:

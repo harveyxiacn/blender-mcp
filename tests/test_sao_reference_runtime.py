@@ -53,7 +53,10 @@ def test_get_reference_tuning_uses_brief_keywords(tmp_path: Path, monkeypatch) -
 
     assert tuning["brief_path"] == str(brief_path.resolve())
     assert tuning["eye_scale"] > runtime.CHARACTER_DEFAULTS["asuna"]["eye_scale"]
-    assert tuning["back_hair_length_scale"] > runtime.CHARACTER_DEFAULTS["asuna"]["back_hair_length_scale"]
+    assert (
+        tuning["back_hair_length_scale"]
+        > runtime.CHARACTER_DEFAULTS["asuna"]["back_hair_length_scale"]
+    )
     assert tuning["armor_width_scale"] > runtime.CHARACTER_DEFAULTS["asuna"]["armor_width_scale"]
     assert tuning["skirt_flare_scale"] > runtime.CHARACTER_DEFAULTS["asuna"]["skirt_flare_scale"]
     assert tuning["torso_width_scale"] < runtime.CHARACTER_DEFAULTS["asuna"]["torso_width_scale"]

@@ -96,9 +96,7 @@ def register_checkpoint_tools(mcp: FastMCP, server: BlenderMCPServer) -> None:
 
         Example: Restore checkpoint 'before_rigging' to undo the armature changes.
         """
-        result = await server.execute_command(
-            "checkpoint", "restore", {"name": params.name}
-        )
+        result = await server.execute_command("checkpoint", "restore", {"name": params.name})
 
         if result.get("success"):
             data = result.get("data", {})
@@ -165,9 +163,7 @@ def register_checkpoint_tools(mcp: FastMCP, server: BlenderMCPServer) -> None:
 
         Example: Delete checkpoint 'old_backup' that is no longer needed.
         """
-        result = await server.execute_command(
-            "checkpoint", "delete", {"name": params.name}
-        )
+        result = await server.execute_command("checkpoint", "delete", {"name": params.name})
 
         if result.get("success"):
             return f"Checkpoint '{params.name}' deleted."

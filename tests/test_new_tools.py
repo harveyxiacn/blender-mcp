@@ -58,9 +58,9 @@ class TestNewToolModuleImports:
         """Import the tool module and verify the register function exists."""
         info = NEW_MODULES[module_name]
         mod = importlib.import_module(f"blender_mcp.tools.{module_name}")
-        assert hasattr(mod, info["register_func"]), (
-            f"blender_mcp.tools.{module_name} does not export '{info['register_func']}'"
-        )
+        assert hasattr(
+            mod, info["register_func"]
+        ), f"blender_mcp.tools.{module_name} does not export '{info['register_func']}'"
 
     @pytest.mark.parametrize("module_name", sorted(NEW_MODULES.keys()))
     def test_register_func_is_callable(self, module_name: str) -> None:
@@ -103,9 +103,7 @@ class TestNewHandlerActions:
         tree = ast.parse(source, filename=str(handler_file))
 
         defined_functions = {
-            node.name
-            for node in ast.walk(tree)
-            if isinstance(node, ast.FunctionDef)
+            node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)
         }
 
         for action in info["expected_actions"]:
@@ -132,9 +130,7 @@ class TestErrorSuggestions:
         path = _HANDLERS_DIR / "error_suggestions.py"
         source = path.read_text(encoding="utf-8")
         tree = ast.parse(source, filename=str(path))
-        funcs = {
-            node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)
-        }
+        funcs = {node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
         assert "enrich_error" in funcs
 
     def test_suggestions_dict_exists(self) -> None:
@@ -168,9 +164,7 @@ class TestToolsConfigIntegration:
         from blender_mcp.tools_config import MODULE_REGISTRY
 
         for module_name in NEW_MODULES:
-            assert module_name in MODULE_REGISTRY, (
-                f"'{module_name}' not found in MODULE_REGISTRY"
-            )
+            assert module_name in MODULE_REGISTRY, f"'{module_name}' not found in MODULE_REGISTRY"
 
     def test_describe_and_snapshot_in_core(self) -> None:
         from blender_mcp.tools_config import CORE_MODULES
@@ -202,6 +196,6 @@ class TestExecutorIntegration:
         executor_path = _REPO_ROOT / "addon" / "blender_mcp_addon" / "executor.py"
         source = executor_path.read_text(encoding="utf-8")
         # Should call enrich_error at least 3 times (handler result + error returns)
-        assert source.count("enrich_error(") >= 3, (
-            "executor.py should call enrich_error() on all return paths"
-        )
+        assert (
+            source.count("enrich_error(") >= 3
+        ), "executor.py should call enrich_error() on all return paths"

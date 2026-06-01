@@ -129,8 +129,7 @@ def handle_scene(params: dict[str, Any]) -> dict[str, Any]:
 
             # Frame
             lines.append(
-                f"**Frames:** {frame_range[0]}-{frame_range[1]} "
-                f"(current: {frame_current})"
+                f"**Frames:** {frame_range[0]}-{frame_range[1]} " f"(current: {frame_current})"
             )
 
             data["summary"] = "\n".join(lines)
@@ -297,7 +296,9 @@ def handle_object(params: dict[str, Any]) -> dict[str, Any]:
         # Modifiers
         data["modifiers"] = []
         for mod in obj.modifiers:
-            data["modifiers"].append({"name": mod.name, "type": mod.type, "show_viewport": mod.show_viewport})
+            data["modifiers"].append(
+                {"name": mod.name, "type": mod.type, "show_viewport": mod.show_viewport}
+            )
 
         # Constraints
         data["constraints"] = []
@@ -310,9 +311,7 @@ def handle_object(params: dict[str, Any]) -> dict[str, Any]:
             lines.append(
                 f"**Location:** ({data['location'][0]}, {data['location'][1]}, {data['location'][2]})"
             )
-            lines.append(
-                f"**Scale:** ({data['scale'][0]}, {data['scale'][1]}, {data['scale'][2]})"
-            )
+            lines.append(f"**Scale:** ({data['scale'][0]}, {data['scale'][1]}, {data['scale'][2]})")
             lines.append(f"**Visible:** {data['visible']}")
             lines.append("")
 

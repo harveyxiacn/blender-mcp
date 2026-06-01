@@ -339,9 +339,7 @@ def _scan_reference_pack(
     missing_required = [role for role in required_roles if role not in files_by_role]
     missing_optional = [role for role in optional_roles if role not in files_by_role]
 
-    role_summary = {
-        role: len(files_by_role[role]) for role in ROLE_ORDER if role in files_by_role
-    }
+    role_summary = {role: len(files_by_role[role]) for role in ROLE_ORDER if role in files_by_role}
     if not matched_files:
         status = "no_matches"
     elif missing_required:

@@ -111,7 +111,9 @@ def _combined_notes(character_key: str, user_notes: str) -> str:
     return " ".join(note for note in notes if note)
 
 
-def _print_summary(inspect_path: Path, brief_path: Path, audit_path: Path, setup_path: Path) -> None:
+def _print_summary(
+    inspect_path: Path, brief_path: Path, audit_path: Path, setup_path: Path
+) -> None:
     print("\nSaved outputs:")
     for path in (inspect_path, brief_path, audit_path, setup_path):
         print(f"  - {path}")
@@ -287,12 +289,16 @@ async def _run_workflow(args: argparse.Namespace) -> int:
                 "detail_scale": args.detail_scale,
                 "replace_existing": True,
                 "create_proportion_guides": args.create_guides,
-                "target_height": args.target_height
-                if args.target_height is not None
-                else CHARACTER_CONFIG[character_key]["target_height"],
-                "head_body_ratio": args.head_body_ratio
-                if args.head_body_ratio is not None
-                else CHARACTER_CONFIG[character_key]["head_body_ratio"],
+                "target_height": (
+                    args.target_height
+                    if args.target_height is not None
+                    else CHARACTER_CONFIG[character_key]["target_height"]
+                ),
+                "head_body_ratio": (
+                    args.head_body_ratio
+                    if args.head_body_ratio is not None
+                    else CHARACTER_CONFIG[character_key]["head_body_ratio"]
+                ),
                 "origin": [0.0, 0.0, 0.0],
                 "hide_select": True,
             },

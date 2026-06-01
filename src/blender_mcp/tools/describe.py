@@ -74,9 +74,7 @@ def register_describe_tools(mcp: FastMCP, server: BlenderMCPServer) -> None:
 
         Example: Describe the scene to understand what objects exist before making changes.
         """
-        result = await server.execute_command(
-            "describe", "scene", {"format": params.format.value}
-        )
+        result = await server.execute_command("describe", "scene", {"format": params.format.value})
 
         if result.get("success"):
             data = result.get("data", {})

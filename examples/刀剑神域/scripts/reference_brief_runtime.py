@@ -142,7 +142,9 @@ def _find_latest_brief(character_name: str) -> Path | None:
     if not root.exists():
         return None
 
-    candidates = sorted(root.glob("*/brief.json"), key=lambda item: item.stat().st_mtime, reverse=True)
+    candidates = sorted(
+        root.glob("*/brief.json"), key=lambda item: item.stat().st_mtime, reverse=True
+    )
     return candidates[0] if candidates else None
 
 

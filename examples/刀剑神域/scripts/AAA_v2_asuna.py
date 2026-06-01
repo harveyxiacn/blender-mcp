@@ -167,7 +167,10 @@ for side, sx in [("L", 1), ("R", -1)]:
     setup(pupil, "M_EyeBlack", ss=0, outline=0)
 
     bpy.ops.mesh.primitive_uv_sphere_add(
-        segments=8, ring_count=6, radius=A_HIGHLIGHT_RADIUS, location=(ax + sx * 0.048, -0.118, 1.598)
+        segments=8,
+        ring_count=6,
+        radius=A_HIGHLIGHT_RADIUS,
+        location=(ax + sx * 0.048, -0.118, 1.598),
     )
     hl = bpy.context.active_object
     hl.name = f"A_HL{side}"
@@ -323,11 +326,11 @@ setup(hb, "M_AsunaHair", outline=0.004)
 # 刘海 (参考图: 整齐的中分式刘海)
 a_bangs = scale_hair_entries(
     [
-    (-0.05, -0.09, 1.68, (58, 3, 12), 0.12, 0.040, 0.006),
-    (-0.02, -0.10, 1.69, (62, 0, 5), 0.13, 0.035, 0.005),
-    (0.02, -0.10, 1.69, (62, 0, -5), 0.13, 0.035, 0.005),
-    (0.05, -0.09, 1.68, (58, -3, -12), 0.12, 0.040, 0.006),
-    (0.00, -0.10, 1.70, (65, 0, 0), 0.11, 0.030, 0.004),
+        (-0.05, -0.09, 1.68, (58, 3, 12), 0.12, 0.040, 0.006),
+        (-0.02, -0.10, 1.69, (62, 0, 5), 0.13, 0.035, 0.005),
+        (0.02, -0.10, 1.69, (62, 0, -5), 0.13, 0.035, 0.005),
+        (0.05, -0.09, 1.68, (58, -3, -12), 0.12, 0.040, 0.006),
+        (0.00, -0.10, 1.70, (65, 0, 0), 0.11, 0.030, 0.004),
     ],
     length_scale=A_TUNE["bang_length_scale"],
     width_scale=A_TUNE["hair_volume_scale"],

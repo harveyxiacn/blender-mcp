@@ -312,7 +312,9 @@ class ReferenceUpdateImageInput(BaseModel):
     opacity: float | None = Field(default=None, description="New opacity", ge=0.05, le=1.0)
     scale: float | None = Field(default=None, description="New display scale", ge=0.05, le=20.0)
     hide_select: bool | None = Field(default=None, description="Whether object is selectable")
-    hide_render: bool | None = Field(default=None, description="Whether object is hidden in renders")
+    hide_render: bool | None = Field(
+        default=None, description="Whether object is hidden in renders"
+    )
 
 
 class ReferenceClearInput(BaseModel):
@@ -380,9 +382,7 @@ class ReferenceAuditInput(ReferencePackInspectInput):
         description="Capture the current Blender viewport and include it in the audit",
     )
     viewport_width: int = Field(default=1024, description="Viewport capture width", ge=64, le=3840)
-    viewport_height: int = Field(
-        default=768, description="Viewport capture height", ge=64, le=2160
-    )
+    viewport_height: int = Field(default=768, description="Viewport capture height", ge=64, le=2160)
     capture_render_preview: bool = Field(
         default=True,
         description="Capture a quick render preview and include it in the audit",
@@ -390,9 +390,7 @@ class ReferenceAuditInput(ReferencePackInspectInput):
     render_width: int = Field(
         default=768, description="Render preview width in pixels", ge=64, le=1920
     )
-    render_samples: int = Field(
-        default=16, description="Render preview samples", ge=1, le=128
-    )
+    render_samples: int = Field(default=16, description="Render preview samples", ge=1, le=128)
     max_reference_images: int = Field(
         default=6,
         description="Maximum number of reference images to send to the vision model",
@@ -538,7 +536,15 @@ def _detect_role(stem: str, aliases: list[str]) -> str | None:
             return "back"
         if suffix in {"three_quarter", "threequarter", "threeq", "3q", "34", "四分之三"}:
             return "three_quarter"
-        if suffix in {"face", "face_close", "face_closeup", "close_face", "bust", "面部特写", "脸部特写"}:
+        if suffix in {
+            "face",
+            "face_close",
+            "face_closeup",
+            "close_face",
+            "bust",
+            "面部特写",
+            "脸部特写",
+        }:
             return "face"
         if suffix.startswith("pose") or "动作" in suffix or "姿态" in suffix:
             return "pose"
@@ -638,7 +644,9 @@ def inspect_reference_pack_data(
         "aliases": alias_tokens,
         "preset": preset_key,
         "reference_dir": str(reference_path),
-        "manifest_used": bool(_manifest_character_spec(manifest, character_name=character_name, aliases=alias_tokens)),
+        "manifest_used": bool(
+            _manifest_character_spec(manifest, character_name=character_name, aliases=alias_tokens)
+        ),
         "status": status,
         "matched_files_count": len(matched_files),
         "matched_files": matched_files,
@@ -665,30 +673,46 @@ def _heuristic_reference_brief(
     ambiguities: list[str] = []
 
     if "face" in roles:
-        must_match_features.append("Use the face close-up as the authority for eye shape, bangs, and brow spacing.")
+        must_match_features.append(
+            "Use the face close-up as the authority for eye shape, bangs, and brow spacing."
+        )
         modeling_priorities.append("Lock face and head silhouette before costume micro-detail.")
     else:
         ambiguities.append("No face close-up was found, so facial proportions may drift.")
 
     if "hair" in roles:
-        must_match_features.append("Preserve the major hair masses and parting from the dedicated hair reference.")
+        must_match_features.append(
+            "Preserve the major hair masses and parting from the dedicated hair reference."
+        )
         modeling_priorities.append("Block hair clumps before adding loose strands.")
 
     if "outfit" in roles or "detail" in roles:
-        must_match_features.append("Keep the outfit layering readable and avoid collapsing armor/coat/skirt volumes into one shell.")
+        must_match_features.append(
+            "Keep the outfit layering readable and avoid collapsing armor/coat/skirt volumes into one shell."
+        )
 
     if "weapon" in roles:
-        must_match_features.append("Match the weapon silhouette, guard shape, and grip proportions from the weapon detail image.")
-        modeling_priorities.append("Model weapons as separate clean assets for posing and rendering.")
+        must_match_features.append(
+            "Match the weapon silhouette, guard shape, and grip proportions from the weapon detail image."
+        )
+        modeling_priorities.append(
+            "Model weapons as separate clean assets for posing and rendering."
+        )
 
     if "pose" in roles:
-        modeling_priorities.append("Apply the pose reference only after body proportions and weapon lengths are locked.")
+        modeling_priorities.append(
+            "Apply the pose reference only after body proportions and weapon lengths are locked."
+        )
 
     if "figure_front" in roles or "figure_side" in roles:
-        must_match_features.append("Cross-check head-to-body ratio and silhouette thickness against the figure photos.")
+        must_match_features.append(
+            "Cross-check head-to-body ratio and silhouette thickness against the figure photos."
+        )
 
     if not must_match_features:
-        must_match_features.append("Match the front and side silhouette before chasing fine details.")
+        must_match_features.append(
+            "Match the front and side silhouette before chasing fine details."
+        )
     if not modeling_priorities:
         modeling_priorities.append("Build from large silhouette to medium forms to surface detail.")
 
@@ -761,7 +785,9 @@ def _analyze_with_openai(
                 "text": f"Reference role: {item['role']} | file: {item['name']}",
             }
         )
-        content.append({"type": "input_image", "image_url": _encode_image_as_data_url(item["path"])})
+        content.append(
+            {"type": "input_image", "image_url": _encode_image_as_data_url(item["path"])}
+        )
 
     response = httpx.post(
         "https://api.openai.com/v1/responses",
@@ -814,7 +840,9 @@ def build_reference_brief(
 ) -> dict[str, Any]:
     """Build a modeling brief from the reference pack."""
 
-    report = inspect_reference_pack_data(reference_dir, character_name, aliases=aliases, preset=preset)
+    report = inspect_reference_pack_data(
+        reference_dir, character_name, aliases=aliases, preset=preset
+    )
     selected_images = _pick_reference_images(report, max_images=max_images)
     brief = _heuristic_reference_brief(report, franchise, target_style, notes, selected_images)
 
@@ -828,8 +856,12 @@ def build_reference_brief(
             model=model,
         )
         vision = brief["vision_analysis"]
-        brief["must_match_features"] = vision.get("must_match_features", brief["must_match_features"])
-        brief["modeling_priorities"] = vision.get("modeling_priorities", brief["modeling_priorities"])
+        brief["must_match_features"] = vision.get(
+            "must_match_features", brief["must_match_features"]
+        )
+        brief["modeling_priorities"] = vision.get(
+            "modeling_priorities", brief["modeling_priorities"]
+        )
         brief["ambiguities"] = vision.get("ambiguities", brief["ambiguities"])
 
     return brief
@@ -1005,7 +1037,9 @@ def _analyze_audit_with_openai(
                 "text": f"Reference image | role: {item['role']} | file: {item['name']}",
             }
         )
-        content.append({"type": "input_image", "image_url": _encode_image_as_data_url(item["path"])})
+        content.append(
+            {"type": "input_image", "image_url": _encode_image_as_data_url(item["path"])}
+        )
 
     for item in review_images:
         content.append(
@@ -1014,7 +1048,9 @@ def _analyze_audit_with_openai(
                 "text": f"Current model review image | source: {item['source']} | file: {item['name']}",
             }
         )
-        content.append({"type": "input_image", "image_url": _encode_image_as_data_url(item["path"])})
+        content.append(
+            {"type": "input_image", "image_url": _encode_image_as_data_url(item["path"])}
+        )
 
     response = httpx.post(
         "https://api.openai.com/v1/responses",
@@ -1077,7 +1113,9 @@ async def build_reference_model_audit(
 ) -> dict[str, Any]:
     """Build a reference-vs-model audit payload."""
 
-    report = inspect_reference_pack_data(reference_dir, character_name, aliases=aliases, preset=preset)
+    report = inspect_reference_pack_data(
+        reference_dir, character_name, aliases=aliases, preset=preset
+    )
     review_images = await _collect_review_images(
         server,
         review_image_paths=review_image_paths,
@@ -1534,12 +1572,11 @@ def register_reference_tools(mcp: FastMCP, server: BlenderMCPServer) -> None:
 
         if result.get("success"):
             data = result.get("data", {})
-            return (
-                f"Cleared {data.get('removed_count', 0)} reference objects"
-                + (
-                    f" from collection '{data.get('collection_name')}'."
-                    if data.get("collection_name")
-                    else "."
-                )
+            return f"Cleared {data.get('removed_count', 0)} reference objects" + (
+                f" from collection '{data.get('collection_name')}'."
+                if data.get("collection_name")
+                else "."
             )
-        return f"Failed to clear references: {result.get('error', {}).get('message', 'Unknown error')}"
+        return (
+            f"Failed to clear references: {result.get('error', {}).get('message', 'Unknown error')}"
+        )

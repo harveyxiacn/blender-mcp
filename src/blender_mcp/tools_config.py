@@ -191,7 +191,12 @@ FOCUSED_MODULES = [
 
 # Standard profile - includes more convenience features
 STANDARD_MODULES = (
-    CORE_MODULES + SMART_MODULES + MODELING_MODULES + CHARACTER_MODULES + SCENE_MODULES + AUTOMATION_MODULES
+    CORE_MODULES
+    + SMART_MODULES
+    + MODELING_MODULES
+    + CHARACTER_MODULES
+    + SCENE_MODULES
+    + AUTOMATION_MODULES
 )
 
 # Extended profile (~120 tools) - includes physics and batch processing

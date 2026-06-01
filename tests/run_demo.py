@@ -29,7 +29,9 @@ PASS = 0
 FAIL = 0
 
 
-async def send(conn: BlenderConnection, category: str, action: str, params: dict | None = None) -> dict:
+async def send(
+    conn: BlenderConnection, category: str, action: str, params: dict | None = None
+) -> dict:
     """Send a command to Blender."""
     return await conn.send_command(category, action, params or {})
 
@@ -72,15 +74,67 @@ async def demo_scene_describe(conn: BlenderConnection) -> None:
 
     # First, create some objects for a populated scene
     print("\n--- Setting up demo objects ---")
-    await test(conn, "create.cube", "object", "create", {"type": "CUBE", "name": "Demo_Table", "location": [0, 0, 0.5], "scale": [2, 1, 0.05]})
-    await test(conn, "create.sphere", "object", "create", {"type": "UV_SPHERE", "name": "Demo_Apple", "location": [0.5, 0, 1.0], "scale": [0.15, 0.15, 0.15]})
-    await test(conn, "create.cylinder", "object", "create", {"type": "CYLINDER", "name": "Demo_Vase", "location": [-0.5, 0, 1.2], "scale": [0.2, 0.2, 0.5]})
-    await test(conn, "create.light", "object", "create", {"type": "LIGHT", "name": "Demo_Light", "location": [2, -2, 3]})
-    await test(conn, "create.camera", "object", "create", {"type": "CAMERA", "name": "Demo_Camera", "location": [4, -4, 3]})
+    await test(
+        conn,
+        "create.cube",
+        "object",
+        "create",
+        {"type": "CUBE", "name": "Demo_Table", "location": [0, 0, 0.5], "scale": [2, 1, 0.05]},
+    )
+    await test(
+        conn,
+        "create.sphere",
+        "object",
+        "create",
+        {
+            "type": "UV_SPHERE",
+            "name": "Demo_Apple",
+            "location": [0.5, 0, 1.0],
+            "scale": [0.15, 0.15, 0.15],
+        },
+    )
+    await test(
+        conn,
+        "create.cylinder",
+        "object",
+        "create",
+        {
+            "type": "CYLINDER",
+            "name": "Demo_Vase",
+            "location": [-0.5, 0, 1.2],
+            "scale": [0.2, 0.2, 0.5],
+        },
+    )
+    await test(
+        conn,
+        "create.light",
+        "object",
+        "create",
+        {"type": "LIGHT", "name": "Demo_Light", "location": [2, -2, 3]},
+    )
+    await test(
+        conn,
+        "create.camera",
+        "object",
+        "create",
+        {"type": "CAMERA", "name": "Demo_Camera", "location": [4, -4, 3]},
+    )
 
     # Parent apple and vase to table
-    await test(conn, "parent.apple", "object", "set_parent", {"child_name": "Demo_Apple", "parent_name": "Demo_Table"})
-    await test(conn, "parent.vase", "object", "set_parent", {"child_name": "Demo_Vase", "parent_name": "Demo_Table"})
+    await test(
+        conn,
+        "parent.apple",
+        "object",
+        "set_parent",
+        {"child_name": "Demo_Apple", "parent_name": "Demo_Table"},
+    )
+    await test(
+        conn,
+        "parent.vase",
+        "object",
+        "set_parent",
+        {"child_name": "Demo_Vase", "parent_name": "Demo_Table"},
+    )
 
     # Now test describe tools
     print("\n--- Testing Describe Tools ---")
@@ -91,14 +145,18 @@ async def demo_scene_describe(conn: BlenderConnection) -> None:
         for line in summary.split("\n")[:20]:
             print(f"  | {line}")
 
-    result = await test(conn, "describe.hierarchy_md", "describe", "hierarchy", {"format": "markdown"})
+    result = await test(
+        conn, "describe.hierarchy_md", "describe", "hierarchy", {"format": "markdown"}
+    )
     if result.get("success"):
         print("\n  --- Hierarchy ---")
         tree = result.get("data", {}).get("tree", "")
         for line in tree.split("\n")[:15]:
             print(f"  | {line}")
 
-    result = await test(conn, "describe.object", "describe", "object", {"name": "Demo_Table", "format": "markdown"})
+    result = await test(
+        conn, "describe.object", "describe", "object", {"name": "Demo_Table", "format": "markdown"}
+    )
     if result.get("success"):
         print("\n  --- Object Deep Inspect ---")
         summary = result.get("data", {}).get("summary", "")
@@ -107,7 +165,14 @@ async def demo_scene_describe(conn: BlenderConnection) -> None:
 
     # Test error suggestion on non-existent object
     print("\n--- Testing Error Suggestions ---")
-    result = await test(conn, "describe.object_missing", "describe", "object", {"name": "NonExistent"}, check_success=False)
+    result = await test(
+        conn,
+        "describe.object_missing",
+        "describe",
+        "object",
+        {"name": "NonExistent"},
+        check_success=False,
+    )
     if not result.get("success"):
         err = result.get("error", {})
         print(f"  | Error: {err.get('message', '')}")
@@ -122,10 +187,16 @@ async def demo_checkpoint(conn: BlenderConnection) -> None:
 
     # Save checkpoint of current state
     print("\n--- Saving checkpoint ---")
-    await test(conn, "checkpoint.save", "checkpoint", "save", {
-        "name": "demo_before_changes",
-        "description": "Scene with table, apple, vase before modifications"
-    })
+    await test(
+        conn,
+        "checkpoint.save",
+        "checkpoint",
+        "save",
+        {
+            "name": "demo_before_changes",
+            "description": "Scene with table, apple, vase before modifications",
+        },
+    )
 
     # List checkpoints
     result = await test(conn, "checkpoint.list", "checkpoint", "list")
@@ -168,23 +239,37 @@ async def demo_product_shot(conn: BlenderConnection) -> None:
 
     # Create a hero object (monkey head)
     print("\n--- Creating hero object ---")
-    await test(conn, "create.monkey", "object", "create", {
-        "type": "MONKEY", "name": "Demo_Sculpture", "location": [0, 0, 0]
-    })
+    await test(
+        conn,
+        "create.monkey",
+        "object",
+        "create",
+        {"type": "MONKEY", "name": "Demo_Sculpture", "location": [0, 0, 0]},
+    )
 
     # Apply subdivision for smoothness
-    await test(conn, "add.subsurf", "modeling", "modifier_add", {
-        "object_name": "Demo_Sculpture", "modifier_type": "SUBSURF", "settings": {"levels": 2}
-    })
+    await test(
+        conn,
+        "add.subsurf",
+        "modeling",
+        "modifier_add",
+        {"object_name": "Demo_Sculpture", "modifier_type": "SUBSURF", "settings": {"levels": 2}},
+    )
 
     # Set up product shot
     print("\n--- Setting up product shot ---")
-    result = await test(conn, "quick.product_shot", "quick", "product_shot", {
-        "target_object": "Demo_Sculpture",
-        "style": "studio",
-        "render_width": 1920,
-        "render_height": 1080
-    })
+    result = await test(
+        conn,
+        "quick.product_shot",
+        "quick",
+        "product_shot",
+        {
+            "target_object": "Demo_Sculpture",
+            "style": "studio",
+            "render_width": 1920,
+            "render_height": 1080,
+        },
+    )
     if result.get("success"):
         data = result.get("data", {})
         print(f"  | Target: {data.get('target', '?')}")
@@ -200,17 +285,23 @@ async def demo_turntable(conn: BlenderConnection) -> None:
 
     # Create a torus
     print("\n--- Creating demo object ---")
-    await test(conn, "create.torus", "object", "create", {
-        "type": "TORUS", "name": "Demo_Ring", "location": [0, 0, 0]
-    })
+    await test(
+        conn,
+        "create.torus",
+        "object",
+        "create",
+        {"type": "TORUS", "name": "Demo_Ring", "location": [0, 0, 0]},
+    )
 
     # Set up turntable
     print("\n--- Creating turntable animation ---")
-    result = await test(conn, "quick.turntable", "quick", "turntable", {
-        "target_object": "Demo_Ring",
-        "frames": 120,
-        "axis": "Z"
-    })
+    result = await test(
+        conn,
+        "quick.turntable",
+        "quick",
+        "turntable",
+        {"target_object": "Demo_Ring", "frames": 120, "axis": "Z"},
+    )
     if result.get("success"):
         data = result.get("data", {})
         print(f"  | Target: {data.get('target', '?')}")
@@ -226,25 +317,36 @@ async def demo_scene_setup(conn: BlenderConnection) -> None:
 
     for style in ["studio", "dramatic", "outdoor", "minimal"]:
         print(f"\n--- Setting up '{style}' scene ---")
-        result = await test(conn, f"quick.scene_setup.{style}", "quick", "scene_setup", {
-            "style": style,
-            "clear_scene": True
-        })
+        result = await test(
+            conn,
+            f"quick.scene_setup.{style}",
+            "quick",
+            "scene_setup",
+            {"style": style, "clear_scene": True},
+        )
         if result.get("success"):
             data = result.get("data", {})
             created = data.get("created_objects", [])
             print(f"  | Created: {', '.join(created)}")
 
         # Add a demo cube to see the lighting
-        await test(conn, f"create.cube.{style}", "object", "create", {
-            "type": "CUBE", "name": f"Demo_{style.title()}_Cube", "location": [0, 0, 0.5]
-        })
+        await test(
+            conn,
+            f"create.cube.{style}",
+            "object",
+            "create",
+            {"type": "CUBE", "name": f"Demo_{style.title()}_Cube", "location": [0, 0, 0.5]},
+        )
 
     # End with studio style for the final scene
     print("\n--- Final scene: Studio with multiple objects ---")
-    await test(conn, "quick.scene_setup.final", "quick", "scene_setup", {
-        "style": "studio", "clear_scene": True
-    })
+    await test(
+        conn,
+        "quick.scene_setup.final",
+        "quick",
+        "scene_setup",
+        {"style": "studio", "clear_scene": True},
+    )
 
 
 async def demo_snapshot(conn: BlenderConnection) -> None:
@@ -254,27 +356,35 @@ async def demo_snapshot(conn: BlenderConnection) -> None:
     print("=" * 60)
 
     # First create something to look at
-    await test(conn, "create.monkey_final", "object", "create", {
-        "type": "MONKEY", "name": "Demo_Final_Head", "location": [0, 0, 0]
-    })
-    await test(conn, "quick.product_shot_final", "quick", "product_shot", {
-        "target_object": "Demo_Final_Head", "style": "dramatic"
-    })
+    await test(
+        conn,
+        "create.monkey_final",
+        "object",
+        "create",
+        {"type": "MONKEY", "name": "Demo_Final_Head", "location": [0, 0, 0]},
+    )
+    await test(
+        conn,
+        "quick.product_shot_final",
+        "quick",
+        "product_shot",
+        {"target_object": "Demo_Final_Head", "style": "dramatic"},
+    )
 
     # Capture viewport
     print("\n--- Capturing viewport snapshot ---")
-    result = await test(conn, "snapshot.viewport", "snapshot", "viewport", {
-        "width": 1280, "height": 720
-    })
+    result = await test(
+        conn, "snapshot.viewport", "snapshot", "viewport", {"width": 1280, "height": 720}
+    )
     if result.get("success"):
         path = result.get("data", {}).get("path", "?")
         print(f"  | Snapshot saved: {path}")
 
     # Capture render preview
     print("\n--- Capturing render preview ---")
-    result = await test(conn, "snapshot.render_preview", "snapshot", "render_preview", {
-        "width": 640, "samples": 32
-    })
+    result = await test(
+        conn, "snapshot.render_preview", "snapshot", "render_preview", {"width": 640, "samples": 32}
+    )
     if result.get("success"):
         path = result.get("data", {}).get("path", "?")
         print(f"  | Render preview saved: {path}")
@@ -287,56 +397,107 @@ async def demo_final_showcase(conn: BlenderConnection) -> None:
     print("=" * 60)
 
     # Clear and set up studio
-    await test(conn, "setup.studio", "quick", "scene_setup", {"style": "studio", "clear_scene": True})
+    await test(
+        conn, "setup.studio", "quick", "scene_setup", {"style": "studio", "clear_scene": True}
+    )
 
     # Create a composition of objects
     print("\n--- Creating showcase objects ---")
-    await test(conn, "create.base", "object", "create", {
-        "type": "CYLINDER", "name": "Showcase_Pedestal",
-        "location": [0, 0, 0.3], "scale": [1.5, 1.5, 0.3]
-    })
-    await test(conn, "create.main", "object", "create", {
-        "type": "MONKEY", "name": "Showcase_Head",
-        "location": [0, 0, 1.2]
-    })
-    await test(conn, "create.accent1", "object", "create", {
-        "type": "TORUS", "name": "Showcase_Ring",
-        "location": [0, 0, 1.2], "scale": [0.8, 0.8, 0.8]
-    })
-    await test(conn, "create.accent2", "object", "create", {
-        "type": "UV_SPHERE", "name": "Showcase_Orb",
-        "location": [1.5, 0, 1.0], "scale": [0.3, 0.3, 0.3]
-    })
+    await test(
+        conn,
+        "create.base",
+        "object",
+        "create",
+        {
+            "type": "CYLINDER",
+            "name": "Showcase_Pedestal",
+            "location": [0, 0, 0.3],
+            "scale": [1.5, 1.5, 0.3],
+        },
+    )
+    await test(
+        conn,
+        "create.main",
+        "object",
+        "create",
+        {"type": "MONKEY", "name": "Showcase_Head", "location": [0, 0, 1.2]},
+    )
+    await test(
+        conn,
+        "create.accent1",
+        "object",
+        "create",
+        {
+            "type": "TORUS",
+            "name": "Showcase_Ring",
+            "location": [0, 0, 1.2],
+            "scale": [0.8, 0.8, 0.8],
+        },
+    )
+    await test(
+        conn,
+        "create.accent2",
+        "object",
+        "create",
+        {
+            "type": "UV_SPHERE",
+            "name": "Showcase_Orb",
+            "location": [1.5, 0, 1.0],
+            "scale": [0.3, 0.3, 0.3],
+        },
+    )
 
     # Add subdivision to head
-    await test(conn, "mod.subsurf", "modeling", "modifier_add", {
-        "object_name": "Showcase_Head", "modifier_type": "SUBSURF", "settings": {"levels": 2}
-    })
+    await test(
+        conn,
+        "mod.subsurf",
+        "modeling",
+        "modifier_add",
+        {"object_name": "Showcase_Head", "modifier_type": "SUBSURF", "settings": {"levels": 2}},
+    )
 
     # Parent all to pedestal
     for child in ["Showcase_Head", "Showcase_Ring", "Showcase_Orb"]:
-        await test(conn, f"parent.{child}", "object", "set_parent", {
-            "child_name": child, "parent_name": "Showcase_Pedestal"
-        })
+        await test(
+            conn,
+            f"parent.{child}",
+            "object",
+            "set_parent",
+            {"child_name": child, "parent_name": "Showcase_Pedestal"},
+        )
 
     # Save checkpoint of the showcase
     print("\n--- Saving showcase checkpoint ---")
-    await test(conn, "checkpoint.save_showcase", "checkpoint", "save", {
-        "name": "showcase_complete",
-        "description": "Final showcase with pedestal, monkey head, ring, and orb"
-    })
+    await test(
+        conn,
+        "checkpoint.save_showcase",
+        "checkpoint",
+        "save",
+        {
+            "name": "showcase_complete",
+            "description": "Final showcase with pedestal, monkey head, ring, and orb",
+        },
+    )
 
     # Set up product shot
     print("\n--- Setting up product shot ---")
-    await test(conn, "quick.product_shot_showcase", "quick", "product_shot", {
-        "target_object": "Showcase_Head", "style": "dramatic"
-    })
+    await test(
+        conn,
+        "quick.product_shot_showcase",
+        "quick",
+        "product_shot",
+        {"target_object": "Showcase_Head", "style": "dramatic"},
+    )
 
     # Create turntable
     print("\n--- Creating turntable ---")
-    await test(conn, "quick.turntable_showcase", "quick", "turntable", {
-        "target_object": "Showcase_Pedestal", "frames": 180, "axis": "Z"
-    })
+    await test(
+        conn,
+        "quick.turntable_showcase",
+        "quick",
+        "turntable",
+        {"target_object": "Showcase_Pedestal", "frames": 180, "axis": "Z"},
+    )
 
     # Describe the final scene
     print("\n--- Final scene description ---")
@@ -347,7 +508,9 @@ async def demo_final_showcase(conn: BlenderConnection) -> None:
             print(f"  | {line}")
 
     # Show hierarchy
-    result = await test(conn, "describe.hierarchy_final", "describe", "hierarchy", {"format": "markdown"})
+    result = await test(
+        conn, "describe.hierarchy_final", "describe", "hierarchy", {"format": "markdown"}
+    )
     if result.get("success"):
         tree = result.get("data", {}).get("tree", "")
         for line in tree.split("\n"):
@@ -355,11 +518,15 @@ async def demo_final_showcase(conn: BlenderConnection) -> None:
 
     # Capture snapshots
     print("\n--- Capturing final snapshots ---")
-    result = await test(conn, "snapshot.final_viewport", "snapshot", "viewport", {"width": 1920, "height": 1080})
+    result = await test(
+        conn, "snapshot.final_viewport", "snapshot", "viewport", {"width": 1920, "height": 1080}
+    )
     if result.get("success"):
         print(f"  | Viewport: {result.get('data', {}).get('path', '?')}")
 
-    result = await test(conn, "snapshot.final_render", "snapshot", "render_preview", {"width": 960, "samples": 64})
+    result = await test(
+        conn, "snapshot.final_render", "snapshot", "render_preview", {"width": 960, "samples": 64}
+    )
     if result.get("success"):
         print(f"  | Render: {result.get('data', {}).get('path', '?')}")
 

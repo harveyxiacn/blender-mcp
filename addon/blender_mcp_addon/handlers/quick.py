@@ -59,12 +59,16 @@ def handle_product_shot(params: dict[str, Any]) -> dict[str, Any]:
                 "success": False,
                 "error": {
                     "code": "OBJECT_NOT_FOUND",
-                    "message": f"Target object '{target_name}' not found."
-                    if target_name
-                    else "No active object. Specify target_object.",
-                    "suggestion": f"Available mesh objects: {', '.join(all_names[:10])}"
-                    if all_names
-                    else "Create an object first with blender_object_create.",
+                    "message": (
+                        f"Target object '{target_name}' not found."
+                        if target_name
+                        else "No active object. Specify target_object."
+                    ),
+                    "suggestion": (
+                        f"Available mesh objects: {', '.join(all_names[:10])}"
+                        if all_names
+                        else "Create an object first with blender_object_create."
+                    ),
                 },
             }
 
@@ -82,7 +86,9 @@ def handle_product_shot(params: dict[str, Any]) -> dict[str, Any]:
         )
         backdrop = bpy.context.active_object
         backdrop.name = "MCP_Backdrop"
-        backdrop_mat = _create_material("MCP_Backdrop_Mat", tuple(bg_color), metallic=0.0, roughness=0.9)
+        backdrop_mat = _create_material(
+            "MCP_Backdrop_Mat", tuple(bg_color), metallic=0.0, roughness=0.9
+        )
         backdrop.data.materials.append(backdrop_mat)
         created.append(backdrop.name)
 
@@ -92,22 +98,82 @@ def handle_product_shot(params: dict[str, Any]) -> dict[str, Any]:
         # Lighting configs per style
         light_configs = {
             "studio": [
-                {"name": "MCP_Key", "type": "AREA", "energy": 200, "pos": (cam_dist, -cam_dist * 0.5, cam_dist * 0.8), "size": max_dim * 2},
-                {"name": "MCP_Fill", "type": "AREA", "energy": 80, "pos": (-cam_dist * 0.8, -cam_dist * 0.3, cam_dist * 0.5), "size": max_dim * 3},
-                {"name": "MCP_Rim", "type": "AREA", "energy": 150, "pos": (-cam_dist * 0.5, cam_dist, cam_dist * 0.6), "size": max_dim * 1.5},
+                {
+                    "name": "MCP_Key",
+                    "type": "AREA",
+                    "energy": 200,
+                    "pos": (cam_dist, -cam_dist * 0.5, cam_dist * 0.8),
+                    "size": max_dim * 2,
+                },
+                {
+                    "name": "MCP_Fill",
+                    "type": "AREA",
+                    "energy": 80,
+                    "pos": (-cam_dist * 0.8, -cam_dist * 0.3, cam_dist * 0.5),
+                    "size": max_dim * 3,
+                },
+                {
+                    "name": "MCP_Rim",
+                    "type": "AREA",
+                    "energy": 150,
+                    "pos": (-cam_dist * 0.5, cam_dist, cam_dist * 0.6),
+                    "size": max_dim * 1.5,
+                },
             ],
             "dramatic": [
-                {"name": "MCP_Key", "type": "SPOT", "energy": 500, "pos": (cam_dist, -cam_dist * 0.3, cam_dist), "size": max_dim},
-                {"name": "MCP_Rim", "type": "AREA", "energy": 200, "pos": (-cam_dist, cam_dist * 0.5, cam_dist * 0.3), "size": max_dim * 2},
+                {
+                    "name": "MCP_Key",
+                    "type": "SPOT",
+                    "energy": 500,
+                    "pos": (cam_dist, -cam_dist * 0.3, cam_dist),
+                    "size": max_dim,
+                },
+                {
+                    "name": "MCP_Rim",
+                    "type": "AREA",
+                    "energy": 200,
+                    "pos": (-cam_dist, cam_dist * 0.5, cam_dist * 0.3),
+                    "size": max_dim * 2,
+                },
             ],
             "soft": [
-                {"name": "MCP_Key", "type": "AREA", "energy": 100, "pos": (cam_dist * 0.5, -cam_dist, cam_dist), "size": max_dim * 4},
-                {"name": "MCP_Fill", "type": "AREA", "energy": 60, "pos": (-cam_dist, 0, cam_dist * 0.5), "size": max_dim * 4},
-                {"name": "MCP_Rim", "type": "AREA", "energy": 40, "pos": (0, cam_dist, cam_dist * 0.3), "size": max_dim * 3},
+                {
+                    "name": "MCP_Key",
+                    "type": "AREA",
+                    "energy": 100,
+                    "pos": (cam_dist * 0.5, -cam_dist, cam_dist),
+                    "size": max_dim * 4,
+                },
+                {
+                    "name": "MCP_Fill",
+                    "type": "AREA",
+                    "energy": 60,
+                    "pos": (-cam_dist, 0, cam_dist * 0.5),
+                    "size": max_dim * 4,
+                },
+                {
+                    "name": "MCP_Rim",
+                    "type": "AREA",
+                    "energy": 40,
+                    "pos": (0, cam_dist, cam_dist * 0.3),
+                    "size": max_dim * 3,
+                },
             ],
             "outdoor": [
-                {"name": "MCP_Sun", "type": "SUN", "energy": 5, "pos": (cam_dist, -cam_dist, cam_dist * 2), "size": 0},
-                {"name": "MCP_Fill", "type": "AREA", "energy": 30, "pos": (-cam_dist, cam_dist * 0.5, cam_dist * 0.3), "size": max_dim * 5},
+                {
+                    "name": "MCP_Sun",
+                    "type": "SUN",
+                    "energy": 5,
+                    "pos": (cam_dist, -cam_dist, cam_dist * 2),
+                    "size": 0,
+                },
+                {
+                    "name": "MCP_Fill",
+                    "type": "AREA",
+                    "energy": 30,
+                    "pos": (-cam_dist, cam_dist * 0.5, cam_dist * 0.3),
+                    "size": max_dim * 5,
+                },
             ],
         }
 
@@ -186,12 +252,16 @@ def handle_turntable(params: dict[str, Any]) -> dict[str, Any]:
                 "success": False,
                 "error": {
                     "code": "OBJECT_NOT_FOUND",
-                    "message": f"Target object '{target_name}' not found."
-                    if target_name
-                    else "No active object. Specify target_object.",
-                    "suggestion": f"Available mesh objects: {', '.join(all_names[:10])}"
-                    if all_names
-                    else "Create an object first with blender_object_create.",
+                    "message": (
+                        f"Target object '{target_name}' not found."
+                        if target_name
+                        else "No active object. Specify target_object."
+                    ),
+                    "suggestion": (
+                        f"Available mesh objects: {', '.join(all_names[:10])}"
+                        if all_names
+                        else "Create an object first with blender_object_create."
+                    ),
                 },
             }
 
@@ -279,9 +349,27 @@ def handle_scene_setup(params: dict[str, Any]) -> dict[str, Any]:
             "studio": {
                 "world_color": (0.05, 0.05, 0.05),
                 "lights": [
-                    {"name": "MCP_Key", "type": "AREA", "energy": 200, "pos": (4, -3, 5), "size": 3},
-                    {"name": "MCP_Fill", "type": "AREA", "energy": 80, "pos": (-3, -2, 3), "size": 4},
-                    {"name": "MCP_Rim", "type": "AREA", "energy": 150, "pos": (-2, 4, 3), "size": 2},
+                    {
+                        "name": "MCP_Key",
+                        "type": "AREA",
+                        "energy": 200,
+                        "pos": (4, -3, 5),
+                        "size": 3,
+                    },
+                    {
+                        "name": "MCP_Fill",
+                        "type": "AREA",
+                        "energy": 80,
+                        "pos": (-3, -2, 3),
+                        "size": 4,
+                    },
+                    {
+                        "name": "MCP_Rim",
+                        "type": "AREA",
+                        "energy": 150,
+                        "pos": (-2, 4, 3),
+                        "size": 2,
+                    },
                 ],
                 "camera": {"pos": (5, -5, 4), "lens": 50},
             },
@@ -289,22 +377,46 @@ def handle_scene_setup(params: dict[str, Any]) -> dict[str, Any]:
                 "world_color": (0.3, 0.5, 0.8),
                 "lights": [
                     {"name": "MCP_Sun", "type": "SUN", "energy": 5, "pos": (5, -5, 10), "size": 0},
-                    {"name": "MCP_Bounce", "type": "AREA", "energy": 20, "pos": (-3, 2, 1), "size": 5},
+                    {
+                        "name": "MCP_Bounce",
+                        "type": "AREA",
+                        "energy": 20,
+                        "pos": (-3, 2, 1),
+                        "size": 5,
+                    },
                 ],
                 "camera": {"pos": (6, -6, 3), "lens": 35},
             },
             "dramatic": {
                 "world_color": (0.01, 0.01, 0.01),
                 "lights": [
-                    {"name": "MCP_Key", "type": "SPOT", "energy": 500, "pos": (4, -1, 5), "size": 1},
-                    {"name": "MCP_Rim", "type": "AREA", "energy": 200, "pos": (-3, 3, 2), "size": 2},
+                    {
+                        "name": "MCP_Key",
+                        "type": "SPOT",
+                        "energy": 500,
+                        "pos": (4, -1, 5),
+                        "size": 1,
+                    },
+                    {
+                        "name": "MCP_Rim",
+                        "type": "AREA",
+                        "energy": 200,
+                        "pos": (-3, 3, 2),
+                        "size": 2,
+                    },
                 ],
                 "camera": {"pos": (4, -4, 3), "lens": 85},
             },
             "minimal": {
                 "world_color": (0.9, 0.9, 0.9),
                 "lights": [
-                    {"name": "MCP_Key", "type": "AREA", "energy": 150, "pos": (3, -3, 5), "size": 5},
+                    {
+                        "name": "MCP_Key",
+                        "type": "AREA",
+                        "energy": 150,
+                        "pos": (3, -3, 5),
+                        "size": 5,
+                    },
                 ],
                 "camera": {"pos": (5, -5, 3), "lens": 50},
             },
