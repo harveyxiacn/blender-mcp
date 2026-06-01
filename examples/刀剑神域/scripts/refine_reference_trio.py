@@ -11,6 +11,16 @@ import bpy
 from mathutils import Vector
 
 BASE_DIR = Path(r"E:\Projects\blender-mcp\examples\刀剑神域")
+REFERENCE_DIR = BASE_DIR / "references"
+
+
+def resolve_reference(*candidates: str) -> Path | None:
+    for folder in (BASE_DIR, REFERENCE_DIR):
+        for candidate in candidates:
+            path = folder / candidate
+            if path.exists():
+                return path
+    return None
 
 
 def iter_meshes(prefix):
@@ -136,13 +146,13 @@ def add_reference_images() -> None:
         bpy.context.scene.collection.children.link(ref_col)
 
     refs = [
-        ("REF_Kirito", BASE_DIR / "桐人.jpg", -2.1),
-        ("REF_Asuna", BASE_DIR / "亚丝娜.jpg", 0.0),
-        ("REF_Sachi", BASE_DIR / "幸.png", 2.1),
+        ("REF_Kirito", resolve_reference("桐人.jpg", "kirito.jpg"), -2.1),
+        ("REF_Asuna", resolve_reference("亚丝娜.jpg", "asuna.jpg"), 0.0),
+        ("REF_Sachi", resolve_reference("幸.png", "sachi.png"), 2.1),
     ]
 
     for name, path, x in refs:
-        if not path.exists():
+        if path is None or not path.exists():
             continue
 
         obj = bpy.data.objects.get(name)

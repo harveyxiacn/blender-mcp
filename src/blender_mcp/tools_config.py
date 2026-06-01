@@ -82,6 +82,8 @@ BATCH_MODULES = [
 ]
 
 # Automation pipeline tools - one-click pipelines and quality gates
+# Note: pipeline and quality_audit are server-side orchestrators; they coordinate
+# calls to existing addon handlers and do not require their own dedicated handlers.
 AUTOMATION_MODULES = [
     "pipeline",  # Automation pipeline (3 tools) - character/prop/scene
     "quality_audit",  # Quality audit (4 tools) - topology/UV/performance/overall score

@@ -44,7 +44,14 @@ SERVER_TO_ADDON_ALIASES: dict[str, str] = {
 }
 
 # Server-only modules that intentionally have no addon handler.
-# These are orchestration / meta modules that run entirely on the server.
+#
+# - pipeline: server-side orchestrator that sequences calls to character_template,
+#   style_presets, object, auto_rig, uv, scene_advanced, camera, lighting, render.
+#   No dedicated addon handler needed — it delegates to existing ones.
+# - quality_audit: uses utility.execute_python for topology analysis and calls
+#   uv.analyze and object.get_info. Same pattern — server-side aggregation only.
+# - skills: meta-tools (list/activate/deactivate) managed entirely by SkillManager
+#   on the server; the addon has no concept of skill state.
 KNOWN_SERVER_ONLY: set[str] = {"pipeline", "quality_audit", "skills"}
 
 # ---------------------------------------------------------------------------

@@ -12,9 +12,29 @@
 """
 
 import math
+import os
+import sys
+from pathlib import Path
 
 import bmesh
 import bpy
+
+SCRIPT_FILE = Path(globals().get("__file__", Path.cwd() / "AAA_v2_asuna.py")).resolve()
+SCRIPT_DIR = SCRIPT_FILE.parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from reference_brief_runtime import get_reference_tuning, scale_hair_entries, scale_loft_profiles
+
+A_TUNE = get_reference_tuning("asuna")
+print(f"[亚丝娜] Reference tuning: {A_TUNE.get('brief_path') or 'defaults'}")
+
+A_HEAD_RADIUS = 0.115 * A_TUNE["head_radius_scale"]
+A_EYE_RADIUS = 0.032 * A_TUNE["eye_scale"]
+A_IRIS_RADIUS = 0.026 * A_TUNE["eye_scale"]
+A_PUPIL_RADIUS = 0.012 * A_TUNE["eye_scale"]
+A_HIGHLIGHT_RADIUS = 0.009 * A_TUNE["eye_scale"]
+A_HAIR_BASE_RADIUS = 0.130 * A_TUNE["hair_volume_scale"]
 
 
 def loft(name, profiles, ns=16, cap_top=False, cap_bot=False):
@@ -97,7 +117,7 @@ print("\n[亚丝娜] Building...")
 
 # === 头部 ===
 bpy.ops.mesh.primitive_uv_sphere_add(
-    segments=32, ring_count=20, radius=0.115, location=(ax, 0, 1.58)
+    segments=32, ring_count=20, radius=A_HEAD_RADIUS, location=(ax, 0, 1.58)
 )
 head = bpy.context.active_object
 head.name = "A_Head"
@@ -120,7 +140,7 @@ setup(head, "M_Skin", outline=0.004)
 # === 大眼睛 (琥珀色, 比桐人更大更圆) ===
 for side, sx in [("L", 1), ("R", -1)]:
     bpy.ops.mesh.primitive_uv_sphere_add(
-        segments=16, ring_count=12, radius=0.032, location=(ax + sx * 0.038, -0.090, 1.585)
+        segments=16, ring_count=12, radius=A_EYE_RADIUS, location=(ax + sx * 0.038, -0.090, 1.585)
     )
     ew = bpy.context.active_object
     ew.name = f"A_EyeW{side}"
@@ -129,7 +149,7 @@ for side, sx in [("L", 1), ("R", -1)]:
     setup(ew, "M_EyeWhite", ss=1, outline=0)
 
     bpy.ops.mesh.primitive_uv_sphere_add(
-        segments=16, ring_count=12, radius=0.026, location=(ax + sx * 0.038, -0.105, 1.583)
+        segments=16, ring_count=12, radius=A_IRIS_RADIUS, location=(ax + sx * 0.038, -0.105, 1.583)
     )
     iris = bpy.context.active_object
     iris.name = f"A_Iris{side}"
@@ -138,7 +158,7 @@ for side, sx in [("L", 1), ("R", -1)]:
     setup(iris, "M_AsunaEye", ss=1, outline=0)
 
     bpy.ops.mesh.primitive_uv_sphere_add(
-        segments=12, ring_count=8, radius=0.012, location=(ax + sx * 0.038, -0.115, 1.580)
+        segments=12, ring_count=8, radius=A_PUPIL_RADIUS, location=(ax + sx * 0.038, -0.115, 1.580)
     )
     pupil = bpy.context.active_object
     pupil.name = f"A_Pupil{side}"
@@ -147,7 +167,7 @@ for side, sx in [("L", 1), ("R", -1)]:
     setup(pupil, "M_EyeBlack", ss=0, outline=0)
 
     bpy.ops.mesh.primitive_uv_sphere_add(
-        segments=8, ring_count=6, radius=0.009, location=(ax + sx * 0.048, -0.118, 1.598)
+        segments=8, ring_count=6, radius=A_HIGHLIGHT_RADIUS, location=(ax + sx * 0.048, -0.118, 1.598)
     )
     hl = bpy.context.active_object
     hl.name = f"A_HL{side}"
@@ -175,8 +195,7 @@ for side, sx in [("L", 1), ("R", -1)]:
 print("  Head done")
 
 # === 身体 (女性体型, 较纤细) ===
-torso = loft(
-    "A_Torso",
+torso_profiles = scale_loft_profiles(
     [
         (0.78, 0.125, 0.082, ax, 0),
         (0.85, 0.130, 0.088, ax, 0),
@@ -191,6 +210,13 @@ torso = loft(
         (1.40, 0.042, 0.040, ax, 0),
         (1.44, 0.040, 0.038, ax, 0),
     ],
+    radius_x=A_TUNE["torso_width_scale"],
+    radius_y=A_TUNE["torso_depth_scale"],
+    anchor="bottom",
+)
+torso = loft(
+    "A_Torso",
+    torso_profiles,
     ns=18,
 )
 setup(torso, "M_Skin", outline=0.003)
@@ -275,11 +301,15 @@ print("  Body done")
 # === 头发 (超长橙棕色, 到腰部) ===
 # 头发底球
 bpy.ops.mesh.primitive_uv_sphere_add(
-    segments=24, ring_count=16, radius=0.130, location=(ax, 0.012, 1.62)
+    segments=24, ring_count=16, radius=A_HAIR_BASE_RADIUS, location=(ax, 0.012, 1.62)
 )
 hb = bpy.context.active_object
 hb.name = "A_HairBase"
-hb.scale = (1.05, 1.0, 1.02)
+hb.scale = (
+    1.05 * A_TUNE["hair_volume_scale"],
+    1.0 * A_TUNE["hair_volume_scale"],
+    1.02 * A_TUNE["hair_volume_scale"],
+)
 bpy.ops.object.transform_apply(scale=True)
 bpy.ops.object.mode_set(mode="EDIT")
 bm = bmesh.from_edit_mesh(hb.data)
@@ -291,27 +321,37 @@ bpy.ops.object.mode_set(mode="OBJECT")
 setup(hb, "M_AsunaHair", outline=0.004)
 
 # 刘海 (参考图: 整齐的中分式刘海)
-a_bangs = [
+a_bangs = scale_hair_entries(
+    [
     (-0.05, -0.09, 1.68, (58, 3, 12), 0.12, 0.040, 0.006),
     (-0.02, -0.10, 1.69, (62, 0, 5), 0.13, 0.035, 0.005),
     (0.02, -0.10, 1.69, (62, 0, -5), 0.13, 0.035, 0.005),
     (0.05, -0.09, 1.68, (58, -3, -12), 0.12, 0.040, 0.006),
     (0.00, -0.10, 1.70, (65, 0, 0), 0.11, 0.030, 0.004),
-]
+    ],
+    length_scale=A_TUNE["bang_length_scale"],
+    width_scale=A_TUNE["hair_volume_scale"],
+)
 for i, (x, y, z, rot, ln, bw, tw) in enumerate(a_bangs):
     hair_strip(f"A_Bang{i}", (ax + x, y, z), rot, ln, bw, tw)
 
 # 超长后发 (参考图: 到腰部, 大片状)
-longhair_profiles = [
-    (1.62, 0.11, 0.042, ax, 0.06),
-    (1.50, 0.12, 0.048, ax, 0.07),
-    (1.35, 0.13, 0.050, ax, 0.08),
-    (1.15, 0.12, 0.048, ax, 0.07),
-    (0.95, 0.11, 0.045, ax, 0.06),
-    (0.80, 0.10, 0.040, ax, 0.05),
-    (0.65, 0.09, 0.035, ax, 0.04),
-    (0.50, 0.08, 0.028, ax, 0.03),
-]
+longhair_profiles = scale_loft_profiles(
+    [
+        (1.62, 0.11, 0.042, ax, 0.06),
+        (1.50, 0.12, 0.048, ax, 0.07),
+        (1.35, 0.13, 0.050, ax, 0.08),
+        (1.15, 0.12, 0.048, ax, 0.07),
+        (0.95, 0.11, 0.045, ax, 0.06),
+        (0.80, 0.10, 0.040, ax, 0.05),
+        (0.65, 0.09, 0.035, ax, 0.04),
+        (0.50, 0.08, 0.028, ax, 0.03),
+    ],
+    radius_x=A_TUNE["hair_volume_scale"],
+    radius_y=A_TUNE["hair_volume_scale"],
+    span_scale=A_TUNE["back_hair_length_scale"],
+    anchor="top",
+)
 lh = loft("A_LongHair", longhair_profiles, ns=12)
 setup(lh, "M_AsunaHair", outline=0.004)
 
@@ -321,31 +361,37 @@ for side, sx in [("L", 1), ("R", -1)]:
         f"A_SideHair{side}0",
         (ax + sx * 0.10, -0.03, 1.64),
         (82, sx * (-5), sx * (-20)),
-        0.28,
-        0.035,
-        0.006,
+        0.28 * A_TUNE["side_hair_length_scale"],
+        0.035 * A_TUNE["hair_volume_scale"],
+        0.006 * A_TUNE["hair_volume_scale"],
     )
     hair_strip(
         f"A_SideHair{side}1",
         (ax + sx * 0.12, 0.00, 1.62),
         (90, sx * (-3), sx * (-28)),
-        0.30,
-        0.032,
-        0.005,
+        0.30 * A_TUNE["side_hair_length_scale"],
+        0.032 * A_TUNE["hair_volume_scale"],
+        0.005 * A_TUNE["hair_volume_scale"],
     )
 
 # 编辫 (参考图: 两侧各一条粗辫子)
 for side, sx in [("L", 1), ("R", -1)]:
     braid = loft(
         f"A_Braid{side}",
-        [
-            (1.52, 0.022, 0.020, ax + sx * 0.10, 0.04),
-            (1.38, 0.025, 0.022, ax + sx * 0.11, 0.05),
-            (1.22, 0.024, 0.020, ax + sx * 0.10, 0.06),
-            (1.05, 0.022, 0.018, ax + sx * 0.09, 0.05),
-            (0.90, 0.020, 0.016, ax + sx * 0.08, 0.04),
-            (0.78, 0.015, 0.012, ax + sx * 0.07, 0.03),
-        ],
+        scale_loft_profiles(
+            [
+                (1.52, 0.022, 0.020, ax + sx * 0.10, 0.04),
+                (1.38, 0.025, 0.022, ax + sx * 0.11, 0.05),
+                (1.22, 0.024, 0.020, ax + sx * 0.10, 0.06),
+                (1.05, 0.022, 0.018, ax + sx * 0.09, 0.05),
+                (0.90, 0.020, 0.016, ax + sx * 0.08, 0.04),
+                (0.78, 0.015, 0.012, ax + sx * 0.07, 0.03),
+            ],
+            radius_x=A_TUNE["hair_volume_scale"],
+            radius_y=A_TUNE["hair_volume_scale"],
+            span_scale=max(1.0, A_TUNE["back_hair_length_scale"] * 0.92),
+            anchor="top",
+        ),
         ns=8,
     )
     setup(braid, "M_AsunaHair", ss=1, outline=0.003)
@@ -370,8 +416,7 @@ print("  Hair done")
 
 # === KoB战斗装 ===
 # 白色胸甲 (参考图: 覆盖上身的白色甲)
-chest = loft(
-    "A_ChestArmor",
+chest_profiles = scale_loft_profiles(
     [
         (0.96, 0.155, 0.102, ax, 0),
         (1.00, 0.162, 0.108, ax, 0),
@@ -381,6 +426,14 @@ chest = loft(
         (1.20, 0.162, 0.100, ax, 0),
         (1.26, 0.155, 0.092, ax, 0),
     ],
+    radius_x=A_TUNE["armor_width_scale"],
+    radius_y=max(1.0, A_TUNE["armor_width_scale"] * 0.99),
+    span_scale=A_TUNE["armor_height_scale"],
+    anchor="top",
+)
+chest = loft(
+    "A_ChestArmor",
+    chest_profiles,
     ns=18,
 )
 setup(chest, "M_AsunaWhite", outline=0.004)
@@ -426,8 +479,7 @@ for side, mx in [("L", 1), ("R", -1)]:
     setup(spt, "M_AsunaGold", ss=0, outline=0)
 
 # 红色百褶裙 (参考图: 红色外裙+白色内层)
-skirt_out = loft(
-    "A_SkirtOuter",
+outer_skirt_profiles = scale_loft_profiles(
     [
         (0.82, 0.140, 0.095, ax, 0),
         (0.78, 0.155, 0.105, ax, 0),
@@ -436,13 +488,19 @@ skirt_out = loft(
         (0.58, 0.218, 0.142, ax, 0),
         (0.52, 0.235, 0.150, ax, 0),
     ],
+    radius_x=A_TUNE["skirt_flare_scale"],
+    radius_y=A_TUNE["skirt_flare_scale"],
+    span_scale=A_TUNE["skirt_length_scale"],
+    anchor="top",
+)
+skirt_out = loft(
+    "A_SkirtOuter",
+    outer_skirt_profiles,
     ns=20,
 )
 setup(skirt_out, "M_AsunaRed", outline=0.004)
 
-# 白色内裙 (底部露出)
-skirt_in = loft(
-    "A_SkirtInner",
+inner_skirt_profiles = scale_loft_profiles(
     [
         (0.80, 0.135, 0.092, ax, 0),
         (0.74, 0.152, 0.102, ax, 0),
@@ -451,6 +509,15 @@ skirt_in = loft(
         (0.52, 0.210, 0.138, ax, 0),
         (0.48, 0.225, 0.148, ax, 0),
     ],
+    radius_x=A_TUNE["skirt_flare_scale"],
+    radius_y=A_TUNE["skirt_flare_scale"],
+    span_scale=A_TUNE["skirt_length_scale"],
+    anchor="top",
+)
+# 白色内裙 (底部露出)
+skirt_in = loft(
+    "A_SkirtInner",
+    inner_skirt_profiles,
     ns=20,
 )
 setup(skirt_in, "M_FabricWhite", ss=1, outline=0)
@@ -458,11 +525,17 @@ setup(skirt_in, "M_FabricWhite", ss=1, outline=0)
 # 裙摆金边
 skirt_trim = loft(
     "A_SkirtTrim",
-    [
-        (0.51, 0.237, 0.152, ax, 0),
-        (0.53, 0.240, 0.154, ax, 0),
-        (0.55, 0.238, 0.152, ax, 0),
-    ],
+    scale_loft_profiles(
+        [
+            (0.51, 0.237, 0.152, ax, 0),
+            (0.53, 0.240, 0.154, ax, 0),
+            (0.55, 0.238, 0.152, ax, 0),
+        ],
+        radius_x=A_TUNE["skirt_flare_scale"],
+        radius_y=A_TUNE["skirt_flare_scale"],
+        span_scale=A_TUNE["skirt_length_scale"],
+        anchor="top",
+    ),
     ns=20,
 )
 setup(skirt_trim, "M_AsunaGold", ss=0, outline=0)
@@ -543,5 +616,13 @@ print("✓ 闪光完成")
 
 # Save
 bpy.ops.object.select_all(action="DESELECT")
-bpy.ops.wm.save_mainfile(filepath=bpy.data.filepath)
+workflow_dir = Path(
+    os.environ.get(
+        "SAO_REFERENCE_WORKFLOW_DIR",
+        str(SCRIPT_DIR.parent / "outputs" / "asuna_manual_run"),
+    )
+)
+workflow_dir.mkdir(parents=True, exist_ok=True)
+output_path = workflow_dir / "asuna_reference_build.blend"
+bpy.ops.wm.save_mainfile(filepath=str(output_path))
 print(f"\nSaved. Objects: {len(bpy.data.objects)}")

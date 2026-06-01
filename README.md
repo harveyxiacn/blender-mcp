@@ -12,6 +12,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/harveyxiacn/blender-mcp.svg" alt="License: MIT"></a>
   <a href="https://github.com/harveyxiacn/blender-mcp/issues"><img src="https://img.shields.io/github/issues/harveyxiacn/blender-mcp.svg" alt="Issues"></a>
   <a href="https://github.com/harveyxiacn/blender-mcp/discussions"><img src="https://img.shields.io/github/discussions/harveyxiacn/blender-mcp" alt="Discussions"></a>
+  <a href="https://discord.gg/rurjWE45"><img src="https://img.shields.io/discord/1510824219498254456?logo=discord&logoColor=white&label=discord" alt="Discord"></a>
 </p>
 
 <p align="center">
@@ -163,7 +164,8 @@ All documentation is available in **English** and **中文 (Chinese)**.
 
 ## Community
 
-- **[GitHub Discussions](https://github.com/harveyxiacn/blender-mcp/discussions)** — questions, ideas, show & tell
+- **[Discord](https://discord.gg/rurjWE45)** — live chat, help, and show & tell
+- **[GitHub Discussions](https://github.com/harveyxiacn/blender-mcp/discussions)** — questions, ideas, long-form discussion
 - **[Issues](https://github.com/harveyxiacn/blender-mcp/issues)** — bug reports and feature requests
 - **[Contributing Guide](docs/en/CONTRIBUTING.md)** — how to add tools, fix bugs, improve docs
 
@@ -183,7 +185,6 @@ For security concerns, please see [SECURITY.md](SECURITY.md). Do **not** open a 
 
 ## Known Caveats
 
-- `pipeline` and `quality_audit` tools are **experimental** — addon handlers are still in progress
 - If `.venv` breaks after copying the repo to another machine, delete `.venv` and re-run `uv sync`
 
 ## License
@@ -261,6 +262,7 @@ IDE 配置：
 
 ### 社区
 
+- **[Discord](https://discord.gg/rurjWE45)** — 实时交流、使用帮助、作品展示
 - **[GitHub Discussions](https://github.com/harveyxiacn/blender-mcp/discussions)** — 提问、讨论、展示作品
 - **[Issues](https://github.com/harveyxiacn/blender-mcp/issues)** — 问题反馈与功能建议
 

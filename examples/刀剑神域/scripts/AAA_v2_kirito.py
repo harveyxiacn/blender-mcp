@@ -10,14 +10,34 @@
 """
 
 import math
+import os
+import sys
+from pathlib import Path
 
 import bmesh
 import bpy
+
+SCRIPT_FILE = Path(globals().get("__file__", Path.cwd() / "AAA_v2_kirito.py")).resolve()
+SCRIPT_DIR = SCRIPT_FILE.parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from reference_brief_runtime import get_reference_tuning, scale_hair_entries, scale_loft_profiles
 
 # ============ 清场 ============
 for obj in list(bpy.data.objects):
     bpy.data.objects.remove(obj, do_unlink=True)
 bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=True)
+
+K_TUNE = get_reference_tuning("kirito")
+print(f"[桐人] Reference tuning: {K_TUNE.get('brief_path') or 'defaults'}")
+
+K_HEAD_RADIUS = 0.125 * K_TUNE["head_radius_scale"]
+K_EYE_RADIUS = 0.030 * K_TUNE["eye_scale"]
+K_IRIS_RADIUS = 0.024 * K_TUNE["eye_scale"]
+K_PUPIL_RADIUS = 0.012 * K_TUNE["eye_scale"]
+K_HIGHLIGHT_RADIUS = 0.008 * K_TUNE["eye_scale"]
+K_HAIR_BASE_RADIUS = 0.145 * K_TUNE["hair_volume_scale"]
 
 
 # ============ 工具函数 ============
@@ -332,7 +352,7 @@ print("\n[桐人] Building...")
 
 # --- 头部 (更大, 更动漫化) ---
 bpy.ops.mesh.primitive_uv_sphere_add(
-    segments=32, ring_count=20, radius=0.125, location=(0, 0, 1.62)
+    segments=32, ring_count=20, radius=K_HEAD_RADIUS, location=(0, 0, 1.62)
 )
 head = bpy.context.active_object
 head.name = "K_Head"
@@ -361,7 +381,7 @@ setup(head, "M_Skin", outline=0.004)
 for side, sx in [("L", 1), ("R", -1)]:
     # 眼白
     bpy.ops.mesh.primitive_uv_sphere_add(
-        segments=16, ring_count=12, radius=0.030, location=(sx * 0.042, -0.095, 1.625)
+        segments=16, ring_count=12, radius=K_EYE_RADIUS, location=(sx * 0.042, -0.095, 1.625)
     )
     ew = bpy.context.active_object
     ew.name = f"K_EyeW{side}"
@@ -371,7 +391,7 @@ for side, sx in [("L", 1), ("R", -1)]:
 
     # 虹膜 (大)
     bpy.ops.mesh.primitive_uv_sphere_add(
-        segments=16, ring_count=12, radius=0.024, location=(sx * 0.042, -0.112, 1.622)
+        segments=16, ring_count=12, radius=K_IRIS_RADIUS, location=(sx * 0.042, -0.112, 1.622)
     )
     iris = bpy.context.active_object
     iris.name = f"K_Iris{side}"
@@ -381,7 +401,7 @@ for side, sx in [("L", 1), ("R", -1)]:
 
     # 瞳孔 (黑)
     bpy.ops.mesh.primitive_uv_sphere_add(
-        segments=12, ring_count=8, radius=0.012, location=(sx * 0.042, -0.120, 1.620)
+        segments=12, ring_count=8, radius=K_PUPIL_RADIUS, location=(sx * 0.042, -0.120, 1.620)
     )
     pupil = bpy.context.active_object
     pupil.name = f"K_Pupil{side}"
@@ -391,7 +411,7 @@ for side, sx in [("L", 1), ("R", -1)]:
 
     # 高光 (2个)
     bpy.ops.mesh.primitive_uv_sphere_add(
-        segments=8, ring_count=6, radius=0.008, location=(sx * 0.052, -0.125, 1.638)
+        segments=8, ring_count=6, radius=K_HIGHLIGHT_RADIUS, location=(sx * 0.052, -0.125, 1.638)
     )
     hl1 = bpy.context.active_object
     hl1.name = f"K_HL1{side}"
@@ -435,8 +455,7 @@ for side, sx in [("L", 1), ("R", -1)]:
 print("  Head done")
 
 # --- 躯干 (纤细, 参考图偏瘦) ---
-torso = loft(
-    "K_Torso",
+torso_profiles = scale_loft_profiles(
     [
         (0.82, 0.135, 0.088, 0, 0),
         (0.90, 0.140, 0.095, 0, 0),
@@ -449,6 +468,14 @@ torso = loft(
         (1.42, 0.055, 0.050, 0, 0),
         (1.48, 0.048, 0.045, 0, 0),
     ],
+    radius_x=K_TUNE["torso_width_scale"],
+    radius_y=K_TUNE["torso_depth_scale"],
+    span_scale=1.0,
+    anchor="bottom",
+)
+torso = loft(
+    "K_Torso",
+    torso_profiles,
     ns=20,
 )
 setup(torso, "M_Skin", outline=0.003)
@@ -531,11 +558,15 @@ print("  Body done")
 
 # 头发底层球 (比头大)
 bpy.ops.mesh.primitive_uv_sphere_add(
-    segments=24, ring_count=16, radius=0.145, location=(0, 0.015, 1.66)
+    segments=24, ring_count=16, radius=K_HAIR_BASE_RADIUS, location=(0, 0.015, 1.66)
 )
 hbase = bpy.context.active_object
 hbase.name = "K_HairBase"
-hbase.scale = (1.08, 1.0, 1.05)
+hbase.scale = (
+    1.08 * K_TUNE["hair_volume_scale"],
+    1.0 * K_TUNE["hair_volume_scale"],
+    1.05 * K_TUNE["hair_volume_scale"],
+)
 bpy.ops.object.transform_apply(scale=True)
 # 裁掉下半 (只保留头顶)
 bpy.ops.object.mode_set(mode="EDIT")
@@ -548,7 +579,8 @@ bpy.ops.object.mode_set(mode="OBJECT")
 setup(hbase, "M_KiritoHair", outline=0.004)
 
 # === 厚重刘海 (参考图: 5-6束大刘海覆盖额头, 达到眼睛上方) ===
-bang_data = [
+bang_data = scale_hair_entries(
+    [
     # (x, y, z, rot_xyz_deg, length, base_w, tip_w)
     (-0.07, -0.10, 1.73, (60, 5, 15), 0.14, 0.045, 0.008),
     (-0.03, -0.11, 1.74, (65, 0, 6), 0.15, 0.040, 0.006),
@@ -557,12 +589,16 @@ bang_data = [
     (0.10, -0.09, 1.72, (58, -5, -15), 0.13, 0.035, 0.008),
     (-0.01, -0.12, 1.75, (70, 2, 2), 0.13, 0.035, 0.005),
     (0.04, -0.11, 1.74, (66, -1, -5), 0.12, 0.030, 0.005),
-]
+    ],
+    length_scale=K_TUNE["bang_length_scale"],
+    width_scale=K_TUNE["hair_volume_scale"],
+)
 for i, (x, y, z, rot, ln, bw, tw) in enumerate(bang_data):
     hair_strip(f"K_Bang{i}", (x, y, z), rot, ln, bw, tw)
 
 # === 侧发 (参考图: 大块侧发到耳下) ===
-side_data = [
+side_data = scale_hair_entries(
+    [
     # 左侧
     (0.12, -0.03, 1.68, (80, -8, -22), 0.20, 0.045, 0.008),
     (0.14, 0.00, 1.66, (90, -5, -30), 0.22, 0.040, 0.007),
@@ -573,12 +609,16 @@ side_data = [
     (-0.14, 0.00, 1.66, (90, 5, 30), 0.22, 0.040, 0.007),
     (-0.11, -0.06, 1.70, (75, 3, 18), 0.18, 0.038, 0.008),
     (-0.13, 0.03, 1.65, (95, 5, 35), 0.20, 0.035, 0.006),
-]
+    ],
+    length_scale=K_TUNE["side_hair_length_scale"],
+    width_scale=K_TUNE["hair_volume_scale"],
+)
 for i, (x, y, z, rot, ln, bw, tw) in enumerate(side_data):
     hair_strip(f"K_Side{i}", (x, y, z), rot, ln, bw, tw)
 
 # === 后发 (参考图: 到衣领高度, 多层) ===
-back_data = [
+back_data = scale_hair_entries(
+    [
     (0.00, 0.10, 1.68, (105, 0, 0), 0.22, 0.045, 0.008),
     (-0.05, 0.09, 1.67, (100, 5, -8), 0.20, 0.040, 0.007),
     (0.05, 0.09, 1.67, (100, -5, 8), 0.20, 0.040, 0.007),
@@ -587,18 +627,25 @@ back_data = [
     (0.00, 0.08, 1.65, (98, 0, 0), 0.18, 0.038, 0.006),
     (-0.06, 0.07, 1.64, (95, 5, -12), 0.17, 0.035, 0.006),
     (0.06, 0.07, 1.64, (95, -5, 12), 0.17, 0.035, 0.006),
-]
+    ],
+    length_scale=K_TUNE["back_hair_length_scale"],
+    width_scale=K_TUNE["hair_volume_scale"],
+)
 for i, (x, y, z, rot, ln, bw, tw) in enumerate(back_data):
     hair_strip(f"K_Back{i}", (x, y, z), rot, ln, bw, tw)
 
 # === 头顶翘发 (参考图: 几束向上/向后翘的发束) ===
-top_data = [
+top_data = scale_hair_entries(
+    [
     (0.00, -0.02, 1.78, (25, 0, 0), 0.10, 0.035, 0.005),
     (-0.04, 0.00, 1.79, (15, 5, -10), 0.09, 0.030, 0.004),
     (0.04, 0.00, 1.79, (15, -5, 10), 0.09, 0.030, 0.004),
     (-0.02, 0.04, 1.78, (0, 5, -5), 0.08, 0.028, 0.004),
     (0.02, 0.04, 1.78, (0, -5, 5), 0.08, 0.028, 0.004),
-]
+    ],
+    length_scale=K_TUNE["top_hair_length_scale"],
+    width_scale=K_TUNE["hair_volume_scale"],
+)
 for i, (x, y, z, rot, ln, bw, tw) in enumerate(top_data):
     hair_strip(f"K_Top{i}", (x, y, z), rot, ln, bw, tw)
 
@@ -610,23 +657,30 @@ print("  Hair done")
 # ============================================================
 
 # 风衣主体
+coat_profiles = scale_loft_profiles(
+    [
+        (1.44, 0.062, 0.056, 0, 0),
+        (1.40, 0.095, 0.070, 0, 0),
+        (1.36, 0.170, 0.098, 0, 0),
+        (1.28, 0.190, 0.115, 0, 0),
+        (1.18, 0.195, 0.120, 0, 0),
+        (1.08, 0.185, 0.115, 0, 0),
+        (0.98, 0.170, 0.108, 0, 0),
+        (0.88, 0.165, 0.105, 0, 0),
+        (0.75, 0.185, 0.112, 0, 0),
+        (0.60, 0.215, 0.120, 0, 0),
+        (0.45, 0.245, 0.130, 0, 0),
+        (0.32, 0.275, 0.140, 0, 0),
+        (0.22, 0.290, 0.145, 0, 0),
+    ],
+    radius_x=K_TUNE["coat_flare_scale"],
+    radius_y=max(0.96, K_TUNE["coat_flare_scale"]),
+    span_scale=K_TUNE["coat_length_scale"],
+    anchor="top",
+)
 coat = loft(
     "K_Coat",
-    [
-        (1.44, 0.062, 0.056, 0, 0),  # 领口
-        (1.40, 0.095, 0.070, 0, 0),  # 领
-        (1.36, 0.170, 0.098, 0, 0),  # 肩
-        (1.28, 0.190, 0.115, 0, 0),  # 上胸
-        (1.18, 0.195, 0.120, 0, 0),  # 胸
-        (1.08, 0.185, 0.115, 0, 0),  # 下胸
-        (0.98, 0.170, 0.108, 0, 0),  # 腰
-        (0.88, 0.165, 0.105, 0, 0),  # 腰带
-        (0.75, 0.185, 0.112, 0, 0),  # 臀
-        (0.60, 0.215, 0.120, 0, 0),  # 大腿
-        (0.45, 0.245, 0.130, 0, 0),  # 膝
-        (0.32, 0.275, 0.140, 0, 0),  # 膝下
-        (0.22, 0.290, 0.145, 0, 0),  # 下摆
-    ],
+    coat_profiles,
     ns=24,
 )
 setup(coat, "M_KiritoBlack", outline=0.005)
@@ -634,8 +688,7 @@ setup(coat, "M_KiritoBlack", outline=0.005)
 # === 银色镶边线 (风衣的标志性特征) ===
 # 前襟左右边线 (从领到下摆的竖线)
 for side, sx in [("L", 1), ("R", -1)]:
-    trim_front = loft(
-        f"K_TrimFront{side}",
+    trim_profiles = scale_loft_profiles(
         [
             (1.40, 0.006, 0.003, sx * 0.060, -0.072),
             (1.28, 0.006, 0.003, sx * 0.065, -0.118),
@@ -649,6 +702,12 @@ for side, sx in [("L", 1), ("R", -1)]:
             (0.32, 0.006, 0.003, sx * 0.070, -0.142),
             (0.22, 0.006, 0.003, sx * 0.075, -0.148),
         ],
+        span_scale=K_TUNE["coat_length_scale"],
+        anchor="top",
+    )
+    trim_front = loft(
+        f"K_TrimFront{side}",
+        trim_profiles,
         ns=6,
     )
     setup(trim_front, "M_KiritoTrim", ss=0, outline=0)
@@ -656,11 +715,17 @@ for side, sx in [("L", 1), ("R", -1)]:
 # 下摆边线 (环形)
 trim_hem = loft(
     "K_TrimHem",
-    [
-        (0.21, 0.292, 0.147, 0, 0),
-        (0.23, 0.294, 0.148, 0, 0),
-        (0.25, 0.292, 0.147, 0, 0),
-    ],
+    scale_loft_profiles(
+        [
+            (0.21, 0.292, 0.147, 0, 0),
+            (0.23, 0.294, 0.148, 0, 0),
+            (0.25, 0.292, 0.147, 0, 0),
+        ],
+        radius_x=K_TUNE["coat_flare_scale"],
+        radius_y=max(0.96, K_TUNE["coat_flare_scale"]),
+        span_scale=K_TUNE["coat_length_scale"],
+        anchor="top",
+    ),
     ns=24,
 )
 setup(trim_hem, "M_KiritoTrim", ss=0, outline=0)
@@ -772,7 +837,14 @@ print("✓ 桐人完成")
 # 保存
 # ============================================================
 bpy.ops.object.select_all(action="DESELECT")
-fp = r"E:\Projects\blender-mcp\examples\sao_xianjian_demo.blend"
-bpy.ops.wm.save_mainfile(filepath=fp)
+workflow_dir = Path(
+    os.environ.get(
+        "SAO_REFERENCE_WORKFLOW_DIR",
+        str(SCRIPT_DIR.parent / "outputs" / "kirito_manual_run"),
+    )
+)
+workflow_dir.mkdir(parents=True, exist_ok=True)
+fp = workflow_dir / "kirito_reference_build.blend"
+bpy.ops.wm.save_mainfile(filepath=str(fp))
 print(f"\nSaved: {fp}")
 print(f"Objects: {len(bpy.data.objects)}")

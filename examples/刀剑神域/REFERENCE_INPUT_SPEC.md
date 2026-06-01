@@ -43,10 +43,12 @@
 
 ## 5. 交付后我会做的事
 
-- 用 MCP 自动比对当前模型与参考图
-- 调整头身比例、发束、服装结构和武器轮廓
-- 细化动作关键帧（桐人斩击 + 亚丝娜刺击）
+- 先用 `blender_reference_pack_inspect` 检查参考图是否齐全
+- 再用 `blender_reference_pack_setup` 在 Blender 里自动布置参考板和比例导线
+- 需要结构化角色要点时，用 `blender_reference_brief_generate`
+- 需要对当前模型做看图纠形时，用 `blender_reference_model_audit`
+- 根据审计结果调整头身比例、发束、服装结构和武器轮廓
+- 最后细化动作关键帧（桐人斩击 + 亚丝娜刺击）
 - 输出新文件：
   - `examples/sao_kirito_asuna_action_refined.blend`
   - `examples/sao_kirito_asuna_action_refined_f24.png`
-
