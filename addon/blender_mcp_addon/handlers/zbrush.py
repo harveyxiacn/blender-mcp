@@ -79,7 +79,9 @@ def handle_export(params: dict[str, Any]) -> dict[str, Any]:
             mod = obj.modifiers.new(name="Subdiv_ZBrush", type="SUBSURF")
             mod.levels = subdivisions
             mod.render_levels = subdivisions
-            bpy.ops.object.modifier_apply(modifier=mod.name)
+            from blender_mcp_addon.handlers.modeling import _apply_modifier
+
+            _apply_modifier(obj, mod.name)
 
         # Determine export path
         if not filepath:
@@ -371,7 +373,9 @@ def handle_decimate_export(params: dict[str, Any]) -> dict[str, Any]:
             # Add decimate modifier
             mod = decimated_obj.modifiers.new(name="Decimate", type="DECIMATE")
             mod.ratio = ratio
-            bpy.ops.object.modifier_apply(modifier=mod.name)
+            from blender_mcp_addon.handlers.modeling import _apply_modifier
+
+            _apply_modifier(obj, mod.name)
 
         # Export
         if not filepath:

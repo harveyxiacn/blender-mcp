@@ -245,7 +245,9 @@ def handle_remesh(params: dict[str, Any]) -> dict[str, Any]:
         mod.voxel_size = voxel_size
         mod.use_smooth_shade = smooth_normals
 
-        bpy.ops.object.modifier_apply(modifier=mod.name)
+        from blender_mcp_addon.handlers.modeling import _apply_modifier
+
+        _apply_modifier(obj, mod.name)
 
     return {
         "success": True,

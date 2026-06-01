@@ -9,6 +9,35 @@ from typing import Any
 import bpy
 
 
+def _apply_modifier(obj: "bpy.types.Object", modifier_name: str) -> str | None:
+    """Apply a modifier using the depsgraph data API (no bpy.ops, Blender 5.x safe).
+
+    Returns None on success, or an error string on failure.
+    """
+    mod = obj.modifiers.get(modifier_name)
+    if not mod:
+        return f"Modifier not found: {modifier_name}"
+
+    try:
+        # Evaluate the object with all modifiers applied up to this one
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        eval_obj = obj.evaluated_get(depsgraph)
+        new_mesh = bpy.data.meshes.new_from_object(eval_obj, depsgraph=depsgraph)
+
+        # Swap the mesh data and remove the modifier
+        old_mesh = obj.data
+        obj.data = new_mesh
+        obj.modifiers.remove(mod)
+
+        # Clean up orphan mesh if nothing else uses it
+        if old_mesh.users == 0:
+            bpy.data.meshes.remove(old_mesh)
+
+        return None
+    except Exception as e:
+        return str(e)
+
+
 def handle_edit_mode(params: dict[str, Any]) -> dict[str, Any]:
     """Enter/exit edit mode"""
     object_name = params.get("object_name")
@@ -209,12 +238,9 @@ def handle_modifier_apply(params: dict[str, Any]) -> dict[str, Any]:
             },
         }
 
-    # Ensure in object mode
-    bpy.context.view_layer.objects.active = obj
-    if bpy.context.mode != "OBJECT":
-        bpy.ops.object.mode_set(mode="OBJECT")
-
-    bpy.ops.object.modifier_apply(modifier=modifier_name)
+    error = _apply_modifier(obj, modifier_name)
+    if error:
+        return {"success": False, "error": {"code": "MODIFIER_APPLY_FAILED", "message": error}}
 
     return {"success": True, "data": {}}
 
@@ -279,15 +305,22 @@ def handle_boolean(params: dict[str, Any]) -> dict[str, Any]:
 
     # Apply modifier
     if apply:
-        bpy.context.view_layer.objects.active = obj
-        bpy.ops.object.modifier_apply(modifier=mod.name)
+        error = _apply_modifier(obj, mod.name)
+        if error:
+            return {
+                "success": False,
+                "error": {
+                    "code": "BOOLEAN_APPLY_FAILED",
+                    "message": f"Boolean apply failed: {error}. The mesh may be non-manifold.",
+                },
+            }
 
     # Hide target
     if hide_target:
         target.hide_viewport = True
         target.hide_render = True
 
-    return {"success": True, "data": {}}
+    return {"success": True, "data": {"modifier_applied": apply}}
 
 
 # ==================== Shape Keys Functions ====================
@@ -987,10 +1020,7 @@ def handle_mesh_optimize(params: dict[str, Any]) -> dict[str, Any]:
         decimate.symmetry_axis = "X"
 
     # Apply modifier
-    bpy.context.view_layer.objects.active = obj
-    if bpy.context.mode != "OBJECT":
-        bpy.ops.object.mode_set(mode="OBJECT")
-    bpy.ops.object.modifier_apply(modifier=decimate.name)
+    _apply_modifier(obj, decimate.name)
 
     # Calculate optimized triangle count
     optimized_triangles = sum(len(p.vertices) - 2 for p in obj.data.polygons)
@@ -1246,8 +1276,7 @@ def handle_lod_generate(params: dict[str, Any]) -> dict[str, Any]:
         decimate.ratio = current_ratio
 
         # Apply modifier
-        bpy.context.view_layer.objects.active = lod_obj
-        bpy.ops.object.modifier_apply(modifier=decimate.name)
+        _apply_modifier(lod_obj, decimate.name)
 
         # Calculate triangle count
         lod_triangles = sum(len(p.vertices) - 2 for p in lod_obj.data.polygons)
