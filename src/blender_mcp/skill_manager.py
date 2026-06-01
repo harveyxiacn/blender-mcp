@@ -170,16 +170,20 @@ Used for PBR_REALISTIC and AAA style texture creation.
     ),
     "character": SkillInfo(
         name="character",
-        description="Character creation - chibi character templates, rigging, auto-rigging",
-        modules=["character_templates", "rigging", "auto_rig"],
-        estimated_tools=23,
+        description="Character creation - reference setup, character templates, rigging, auto-rigging",
+        modules=["character_templates", "reference", "rigging", "auto_rig"],
+        estimated_tools=27,
         tags=["character", "rigging", "template"],
         workflow_guide="""## Character Skill Workflow Guide
 
-### Quick Chibi Character Creation:
-1. blender_create_character_template -> select body preset (chibi/standard/realistic)
-2. Adjust proportion parameters (head_ratio, body_width, etc.)
-3. Add clothing and accessories
+### Reference-Driven Character Workflow:
+1. Inspect a folder first with `blender_reference_pack_inspect` to confirm missing front/side/back/face/detail inputs
+2. Build a modeling board with `blender_reference_pack_setup` or manually place images with `blender_reference_image_load`
+3. Run `blender_reference_brief_generate` to turn the pack into modeling priorities and must-match features
+4. Create a base character with `blender_character_template_create`
+5. Adjust face proportions, hair, clothing, and accessories to match the reference board + brief
+6. Run `blender_reference_model_audit` with snapshot/render images to get prioritized mismatch fixes
+7. Use core `blender_snapshot_viewport` or `blender_snapshot_render_preview` for visual review loops in multimodal clients
 
 ### Rigging Workflow:
 1. Create Armature -> add bone hierarchy
@@ -188,6 +192,10 @@ Used for PBR_REALISTIC and AAA style texture creation.
 
 ### Tips:
 - Chibi characters: head_ratio recommended 2.5-3.0
+- Keep references in a dedicated collection so they can be hidden or cleared cleanly
+- `preset="SAO"` expects front/side/back + face close-up + outfit/weapon detail sheets
+- With `OPENAI_API_KEY`, `blender_reference_brief_generate` can produce an image-aware modeling brief
+- With `OPENAI_API_KEY`, `blender_reference_model_audit` can compare current model screenshots against the references
 - Ensure correct mesh normals before auto-rigging
 - Bone naming follows Left/Right convention for mirror support
 """,

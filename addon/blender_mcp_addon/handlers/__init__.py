@@ -60,6 +60,11 @@ HANDLER_MODULES = {
     "mesh_edit_advanced": "mesh_edit_advanced",
     "style_presets": "style_presets",
     "procedural_materials": "procedural_materials",
+    "reference": "reference",
+    "snapshot": "snapshot",
+    "describe": "describe",
+    "checkpoint": "checkpoint",
+    "quick": "quick",
 }
 
 # Lazy loading cache

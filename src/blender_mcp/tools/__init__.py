@@ -36,13 +36,18 @@ from blender_mcp.tools.pipeline import register_pipeline_tools
 from blender_mcp.tools.preferences import register_preferences_tools
 from blender_mcp.tools.procedural_materials import register_procedural_material_tools
 from blender_mcp.tools.quality_audit import register_quality_audit_tools
+from blender_mcp.tools.reference import register_reference_tools
 from blender_mcp.tools.render import register_render_tools
 from blender_mcp.tools.rigging import register_rigging_tools
 from blender_mcp.tools.scene import register_scene_tools
 from blender_mcp.tools.scene_advanced import register_scene_advanced_tools
 from blender_mcp.tools.sculpting import register_sculpting_tools
 from blender_mcp.tools.simulation import register_simulation_tools
+from blender_mcp.tools.checkpoint import register_checkpoint_tools
+from blender_mcp.tools.describe import register_describe_tools
+from blender_mcp.tools.quick import register_quick_tools
 from blender_mcp.tools.skills import register_skill_tools
+from blender_mcp.tools.snapshot import register_snapshot_tools
 from blender_mcp.tools.style_presets import register_style_preset_tools
 from blender_mcp.tools.substance import register_substance_tools
 from blender_mcp.tools.texture_painting import register_texture_painting_tools
@@ -103,5 +108,10 @@ __all__ = [
     "register_procedural_material_tools",
     "register_pipeline_tools",
     "register_quality_audit_tools",
+    "register_reference_tools",
     "register_skill_tools",
+    "register_snapshot_tools",
+    "register_describe_tools",
+    "register_checkpoint_tools",
+    "register_quick_tools",
 ]

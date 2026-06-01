@@ -49,9 +49,15 @@ def test_no_duplicate_modules_in_full() -> None:
 def test_automation_modules_in_registry() -> None:
     assert MODULE_REGISTRY["pipeline"] == "register_pipeline_tools"
     assert MODULE_REGISTRY["quality_audit"] == "register_quality_audit_tools"
+    assert MODULE_REGISTRY["reference"] == "register_reference_tools"
 
 
 def test_automation_modules_in_major_profiles() -> None:
     for profile_modules in (FOCUSED_MODULES, STANDARD_MODULES, FULL_MODULES):
         assert "pipeline" in profile_modules
         assert "quality_audit" in profile_modules
+
+
+def test_reference_module_in_character_profiles() -> None:
+    for profile_modules in (FOCUSED_MODULES, STANDARD_MODULES, FULL_MODULES):
+        assert "reference" in profile_modules

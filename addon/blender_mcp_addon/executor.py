@@ -5,20 +5,26 @@ Parses and executes MCP commands, invoking the corresponding Blender operations.
 Uses lazy loading to avoid circular imports at startup.
 """
 
+import importlib
 import traceback
 from typing import Any
 
 import bpy
 
+from . import handlers as _handlers_pkg
 from .handlers import get_handler
+from .handlers.error_suggestions import enrich_error
 
 
 class CommandExecutor:
     """Command executor - uses lazy loading to import handler modules on demand"""
 
     def __init__(self) -> None:
-        """Initialize the executor"""
-        pass
+        """Initialize the executor, ensuring handler registry is up-to-date."""
+        # Force reimport of handler registry to pick up new modules
+        # (needed when addon is re-enabled without restarting Blender)
+        importlib.reload(_handlers_pkg)
+        _handlers_pkg._loaded_handlers.clear()
 
     def execute(self, category: str, action: str, params: dict[str, Any]) -> dict[str, Any]:
         """Execute a command
@@ -29,7 +35,7 @@ class CommandExecutor:
             params: Action parameters
 
         Returns:
-            Execution result
+            Execution result (enriched with error suggestions on failure)
         """
         try:
             # System commands are handled internally
@@ -37,47 +43,49 @@ class CommandExecutor:
                 method_name = f"handle_{action}"
                 method = getattr(self, method_name, None)
                 if method is None:
-                    return {
+                    return enrich_error({
                         "success": False,
                         "error": {
                             "code": "UNKNOWN_ACTION",
                             "message": f"Unknown action: system.{action}",
                         },
-                    }
-                return method(params)
+                    })
+                return enrich_error(method(params))
 
             # Lazy load the handler
             handler = get_handler(category)
             if handler is None:
-                return {
+                return enrich_error({
                     "success": False,
                     "error": {
                         "code": "UNKNOWN_CATEGORY",
                         "message": f"Unknown command category: {category}",
                     },
-                }
+                })
 
             # Get the action method
             method_name = f"handle_{action}"
             method = getattr(handler, method_name, None)
 
             if method is None:
-                return {
+                return enrich_error({
                     "success": False,
                     "error": {
                         "code": "UNKNOWN_ACTION",
                         "message": f"Unknown action: {category}.{action}",
                     },
-                }
+                })
 
-            # Execute the action
+            # Execute the action and enrich errors with suggestions
             result = method(params)
 
-            return result
+            return enrich_error(result)
 
         except Exception as e:
             traceback.print_exc()
-            return {"success": False, "error": {"code": "EXECUTION_ERROR", "message": str(e)}}
+            return enrich_error(
+                {"success": False, "error": {"code": "EXECUTION_ERROR", "message": str(e)}}
+            )
 
     # System command handlers
     def handle_get_info(self, params: dict[str, Any]) -> dict[str, Any]:
@@ -109,8 +117,10 @@ class CommandExecutor:
             return {"success": False, "error": {"code": "SAFETY_CHECK_FAILED", "message": warning}}
 
         try:
+            import builtins as _builtins_mod
+
             local_vars = {"bpy": bpy, "result": None}
-            exec(code, {"__builtins__": __builtins__, "bpy": bpy}, local_vars)
+            exec(code, {"__builtins__": _builtins_mod, "bpy": bpy}, local_vars)
             return {"success": True, "data": {"result": str(local_vars.get("result", "OK"))}}
         except Exception as e:
             traceback.print_exc()

@@ -4,37 +4,64 @@ All notable changes to Blender MCP will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] - 2026-03-13
+## [0.3.0] - 2026-05-31
 
 ### Added
+
+- **Smart Tools v2 — Visual Feedback & Workflow Safety**
+  - `blender_snapshot_viewport` — capture the 3D viewport as PNG for multimodal AI review loops
+  - `blender_snapshot_render_preview` — quick low-sample render preview (maintains aspect ratio)
+  - `blender_describe_scene` — structured scene summary (object counts, materials, camera, render settings)
+  - `blender_describe_hierarchy` — full parent-child object tree as markdown or JSON
+  - `blender_describe_object` — deep object inspection (topology stats, modifier stack, constraints, bbox)
+  - `blender_checkpoint_save` — named save-point before risky operations
+  - `blender_checkpoint_restore` — restore scene from a named checkpoint
+  - `blender_checkpoint_list` — list all checkpoints with timestamps and object counts
+  - `blender_checkpoint_delete` — delete a checkpoint to free disk space
+  - `blender_quick_product_shot` — one-call product visualization (3-point lighting + camera + backdrop)
+  - `blender_quick_turntable` — one-call 360° rotation animation
+  - `blender_quick_scene_setup` — one-click scene setup with style presets (studio/outdoor/dramatic/minimal)
+
+- **Error suggestions system**
+  - `addon/blender_mcp_addon/handlers/error_suggestions.py` — `enrich_error()` enriches all error responses with actionable fix suggestions
+  - All executor error paths now route through `enrich_error()`
+
+- **Project logo and branding**
+  - Added official Blender MCP logo (`docs/assets/logo.jpg`)
+  - Logo embedded in README header
 
 - **Comprehensive live integration test suite**
   - `tests/run_live_test.py`: 121 tests covering all 50+ handler categories against live Blender
   - `tests/create_style_scenes.py`: 264-command demo creating 3 complete scenes (AAA Gaming, Anime, Pixel Art)
-  - Tests exercise: scene, object, modeling, material, lighting, camera, animation, render, curves, UV, physics, constraints, nodes, rigging, character_template, export, batch, assets, style_presets, procedural_materials, sport_character, world, compositor, sculpt, grease pencil, hair, simulation, and more
+  - `tests/test_new_tools.py`: unit tests for Smart Tools v2 imports, handler actions, and config integration
+
+- **Community infrastructure**
+  - GitHub Discussions enabled
+  - GitHub Topics added for discoverability
+  - FUNDING.yml for GitHub Sponsors
+  - CODEOWNERS for PR reviewer assignment
 
 ### Changed
 
+- **Version bump**: 0.1.0 → 0.3.0, Development Status Alpha → Beta
 - **Blender 5.x compatibility fixes (50+ handler files)**
   - Fixed EEVEE engine name: `BLENDER_EEVEE_NEXT` → `BLENDER_EEVEE` with version-aware compat layer (`handlers/compat.py`)
-  - Fixed `bpy.data.objects.get(None)` crash in object, lighting, camera handlers (Blender 5.x raises exception)
+  - Fixed `bpy.data.objects.get(None)` crash in object, lighting, camera handlers
   - Fixed `Action.fcurves` removal in animation handler (layered action system in 5.x)
   - Fixed `ClothSettings.collision_settings` relocation in physics handler
   - Fixed `bpy_prop_collection.__contains__` type check in nodes handler
-  - Added default points for curve creation (curves handler)
-  - Added None key handling in preferences handler
+  - Added default points for curve creation; added None key handling in preferences handler
   - Black-formatted 151 files for consistency
+- **tools/__init__.py**: added missing exports for `snapshot`, `describe`, `checkpoint`, `quick`
 
 ### Fixed
 
 - **CI pipeline fully green**
-  - Fixed 6696 ruff lint errors (auto-fix + per-file-ignores for addon/examples/tests)
-  - Fixed 141 black formatting issues across codebase
-  - Fixed 414 mypy type errors (relaxed config for addon code, TYPE_CHECKING imports)
+  - Fixed 6696 ruff lint errors, 141 black formatting issues, 414 mypy type errors
   - Excluded live test files from pytest collection (require running Blender)
   - Removed deprecated ruff rules (ANN101, ANN102)
 
-## [Unreleased] - 2026-03-04
+## [0.2.1] - 2026-03-04
 
 ### Added
 
@@ -115,7 +142,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Python execution safety**
   - Added empty-code validation, code size limit, and dangerous-pattern checks for `execute_python`
 
-## [0.2.0] - 2026-02-11
+## [0.2.0] - 2026-02-24
 
 ### Added
 

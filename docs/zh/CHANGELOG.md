@@ -4,14 +4,60 @@ Blender MCP 的所有重要变更记录。
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 
-## [Unreleased] - 2026-03-13
+## [0.3.0] - 2026-05-31
 
 ### 新增
+
+- **Smart Tools v2 — 视觉反馈与工作流安全**
+  - `blender_snapshot_viewport` — 将 3D 视口捕获为 PNG，用于多模态 AI 审查循环
+  - `blender_snapshot_render_preview` — 快速低采样渲染预览（保持宽高比）
+  - `blender_describe_scene` — 结构化场景摘要（对象数量、材质、相机、渲染设置）
+  - `blender_describe_hierarchy` — 完整的父子对象层级树（Markdown 或 JSON）
+  - `blender_describe_object` — 深度对象检查（拓扑统计、修改器堆栈、约束、包围盒）
+  - `blender_checkpoint_save` — 高风险操作前的命名存档点
+  - `blender_checkpoint_restore` — 从命名存档点还原场景
+  - `blender_checkpoint_list` — 列出所有存档点及时间戳和对象数量
+  - `blender_checkpoint_delete` — 删除存档点以释放磁盘空间
+  - `blender_quick_product_shot` — 一键产品可视化（三点布光 + 相机 + 背景板）
+  - `blender_quick_turntable` — 一键 360° 旋转动画
+  - `blender_quick_scene_setup` — 一键场景设置（工作室/户外/戏剧/极简）
+
+- **错误建议系统**
+  - 新增 `enrich_error()` — 为所有错误响应附加可操作的修复建议
+  - 所有执行器错误路径均通过 `enrich_error()` 处理
+
+- **项目 Logo 与品牌形象**
+  - 新增官方 Blender MCP Logo（`docs/assets/logo.jpg`）
+  - Logo 已嵌入 README 头部
 
 - **全面的实时集成测试套件**
   - `tests/run_live_test.py`: 121个测试覆盖所有50+处理器类别，针对实时Blender实例
   - `tests/create_style_scenes.py`: 264条命令演示，创建3个完整场景（3A游戏、动漫、像素风格）
-  - 测试覆盖：场景、对象、建模、材质、灯光、相机、动画、渲染、曲线、UV、物理、约束、节点、骨骼、角色模板、导出、批处理、资产、风格预设、程序化材质、运动角色、世界环境、合成器、雕刻、油笔、毛发、模拟等
+  - `tests/test_new_tools.py`: Smart Tools v2 模块导入、处理器动作和配置集成的单元测试
+
+- **社区基础设施**
+  - 启用 GitHub Discussions
+  - 添加 GitHub Topics 提升可发现性
+  - 新增 FUNDING.yml（GitHub 赞助按钮）
+  - 新增 CODEOWNERS（PR 自动分配审核人）
+
+### 变更
+
+- **版本升级**：0.1.0 → 0.3.0，开发状态 Alpha → Beta
+- **Blender 5.x 兼容性修复（50+ 处理器文件）**
+  - 修复 EEVEE 引擎名称：增加版本感知兼容层（`handlers/compat.py`）
+  - 修复 `bpy.data.objects.get(None)` 在 Blender 5.x 中的崩溃问题
+  - 修复动画处理器中 `Action.fcurves` 的删除问题（5.x 分层动作系统）
+  - 修复物理处理器中 `ClothSettings.collision_settings` 的位置变更
+  - Black 格式化 151 个文件保持一致性
+- **tools/__init__.py**：补充 `snapshot`、`describe`、`checkpoint`、`quick` 的缺失导出
+
+### 修复
+
+- **CI 流水线全绿**
+  - 修复 6696 个 ruff lint 错误，141 个 black 格式问题，414 个 mypy 类型错误
+  - 从 pytest 收集中排除实时测试文件（需要运行中的 Blender）
+  - 移除已弃用的 ruff 规则（ANN101、ANN102）
 
 ### 变更
 

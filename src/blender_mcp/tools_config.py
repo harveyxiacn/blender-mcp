@@ -29,6 +29,14 @@ CORE_MODULES = [
     "object",  # Object operations (15 tools)
     "utility",  # Utility tools (8 tools) - includes execute_python
     "export",  # Export tools (4 tools)
+    "describe",  # Scene describe & hierarchy (3 tools) - AI scene understanding
+    "snapshot",  # Viewport snapshot & render preview (2 tools) - visual feedback
+]
+
+# Smart workflow tools - checkpoint safety and compound actions
+SMART_MODULES = [
+    "checkpoint",  # Checkpoint save/restore (4 tools) - undo safety net
+    "quick",  # Quick compound tools (3 tools) - product shot, turntable, scene setup
 ]
 
 # Modeling tools - create and edit 3D models
@@ -45,6 +53,7 @@ MODELING_MODULES = [
 # Character tools - character creation and animation
 CHARACTER_MODULES = [
     "character_templates",  # Character templates (8 tools)
+    "reference",  # Reference image setup for character/prop modeling
     "rigging",  # Rigging (10 tools)
     "auto_rig",  # Auto rigging (5 tools)
     "animation",  # Animation tools (12 tools)
@@ -159,12 +168,16 @@ FOCUSED_MODULES = [
     "procedural_materials",  # Procedural materials: 50+ presets/wear effects
     # Character templates (6 tools)
     "character_templates",  # Character templates - quick chibi character creation
+    "reference",  # Reference image setup - front/side/back/detail sheets
     # Sport character (7 tools)
     "sport_character",  # Sport character - athlete modeling, gear, sportswear, poses, web optimization
     # Training system (11 tools)
     "training",  # Training system - interactive learning and project exercises
     "pipeline",  # End-to-end automation pipeline
     "quality_audit",  # Production quality audit
+    # Smart workflow (7 tools)
+    "checkpoint",  # Checkpoint save/restore - undo safety net
+    "quick",  # Quick compound tools - product shot, turntable, scene setup
 ]
 # Total: ~89 tools
 #
@@ -174,17 +187,18 @@ FOCUSED_MODULES = [
 # - procedural_materials: 50+ procedural material presets (metal/wood/stone/fabric/nature/skin/effects/toon), wear effects
 # Note: animation, lighting, render features can be achieved via utility.execute_python
 
-# Standard profile (~153 tools) - includes more convenience features
+# Standard profile - includes more convenience features
 STANDARD_MODULES = (
-    CORE_MODULES + MODELING_MODULES + CHARACTER_MODULES + SCENE_MODULES + AUTOMATION_MODULES
+    CORE_MODULES + SMART_MODULES + MODELING_MODULES + CHARACTER_MODULES + SCENE_MODULES + AUTOMATION_MODULES
 )
 
 # Extended profile (~120 tools) - includes physics and batch processing
 EXTENDED_MODULES = STANDARD_MODULES + PHYSICS_MODULES + BATCH_MODULES
 
-# Full profile (~326 tools) - all features
+# Full profile - all features
 FULL_MODULES = (
     CORE_MODULES
+    + SMART_MODULES
     + MODELING_MODULES
     + CHARACTER_MODULES
     + SCENE_MODULES
@@ -292,6 +306,11 @@ MODULE_REGISTRY = {
     "procedural_materials": "register_procedural_material_tools",
     "pipeline": "register_pipeline_tools",
     "quality_audit": "register_quality_audit_tools",
+    "reference": "register_reference_tools",
+    "snapshot": "register_snapshot_tools",
+    "describe": "register_describe_tools",
+    "checkpoint": "register_checkpoint_tools",
+    "quick": "register_quick_tools",
 }
 
 # The skills module does not use the standard mapping in MODULE_REGISTRY

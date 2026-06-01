@@ -94,16 +94,19 @@ def _make_restricted_builtins() -> dict:
         "exec",
         "eval",
         "compile",
-        "__import__",  # use the explicit allowlist in exec_globals instead
         "breakpoint",
         "exit",
         "quit",
     }
-    return {
+    allowed = {
         name: getattr(builtins, name)
         for name in dir(builtins)
         if not name.startswith("_") and name not in blocked
     }
+    # __import__ is needed for 'import' statements to work in exec'd code.
+    # Safety is enforced by _check_code_safety() which blocks dangerous modules.
+    allowed["__import__"] = builtins.__import__
+    return allowed
 
 
 def handle_execute_python(params: dict[str, Any]) -> dict[str, Any]:

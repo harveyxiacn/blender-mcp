@@ -29,6 +29,10 @@ class TestSkillDefinitions:
         assert "pipeline" in info.modules
         assert "quality_audit" in info.modules
 
+    def test_character_skill_includes_reference_tools(self) -> None:
+        info = SKILL_DEFINITIONS["character"]
+        assert "reference" in info.modules
+
     def test_all_skill_modules_in_registry(self) -> None:
         from blender_mcp.tools_config import MODULE_REGISTRY
 

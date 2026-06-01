@@ -4,7 +4,7 @@
 
 This document describes all tools provided by Blender MCP. Tools are exposed via the MCP protocol and can be used from any MCP-compatible IDE.
 
-Status note (2026-03-10): the repository now contains 51 tool modules and 359 total tool registrations. This reference remains strongest for the stable/core tool families. Newer modules such as `training`, `sport_character`, `style_presets`, `procedural_materials`, and the experimental automation surface should be cross-checked with source and the project review until this reference is expanded.
+This reference covers all stable tool families as of v0.3.0 (51 modules, 359 tools). Smart Tools v2 (`snapshot`, `describe`, `checkpoint`, `quick`) are fully documented below. Experimental modules (`pipeline`, `quality_audit`) are documented at the end.
 
 ## Tool Naming Convention
 
@@ -98,6 +98,74 @@ PATH, TEXT, EMPTY, ARMATURE, LATTICE, CAMERA, LIGHT
 | `blender_export_gltf` | Export as glTF/GLB | `filepath`, `export_format`, `include_animation` |
 | `blender_export_fbx` | Export as FBX | `filepath`, `apply_modifiers`, `include_animation` |
 | `blender_export_obj` | Export as OBJ | `filepath`, `apply_modifiers`, `export_materials` |
+
+### 5. Snapshot Tools (Visual Feedback)
+
+Capture viewport and render images for multimodal AI review loops. Both tools are read-only and restore all render settings after capture.
+
+| Tool | Description | Key Parameters |
+|------|-------------|----------------|
+| `blender_snapshot_viewport` | Capture 3D viewport as PNG | `width` (64–3840, default 800), `height` (64–2160, default 600), `output_path` |
+| `blender_snapshot_render_preview` | Quick render at reduced resolution | `width` (64–1920, default 512), `samples` (1–128, default 16), `output_path` |
+
+Both tools return the output file path. Use the path with a multimodal AI to analyze scene layout, materials, and composition.
+
+```
+# Example AI workflow:
+1. blender_snapshot_viewport()              → /tmp/blender_viewport_20260531_120000.png
+2. [AI inspects image] → "the lighting is flat"
+3. blender_activate_skill("scene_setup")
+4. blender_lighting_add(type="SPOT", ...)
+5. blender_snapshot_render_preview(samples=32)  → /tmp/blender_render_preview_...png
+```
+
+### 6. Describe Tools (Scene Understanding)
+
+Structured scene introspection for AI context building. All tools support `format: "markdown"` (default) or `"json"`.
+
+| Tool | Description | Key Parameters |
+|------|-------------|----------------|
+| `blender_describe_scene` | Scene summary: object counts, materials, lights, camera, render settings, frame range | `format` |
+| `blender_describe_hierarchy` | Full parent-child object tree | `format` |
+| `blender_describe_object` | Deep object inspection | `name` (required), `format` |
+
+**`blender_describe_object` returns:**
+- Topology stats: vertex count, edge count, face count, n-gon count
+- Material slots and assigned materials
+- Modifier stack (name, type, enabled status)
+- Constraints list
+- Parent chain
+- Bounding box dimensions
+
+### 7. Checkpoint Tools (Undo Safety Net)
+
+Named save-points stored as `.blend` files on disk. Use before risky operations to enable structured rollback.
+
+| Tool | Description | Key Parameters |
+|------|-------------|----------------|
+| `blender_checkpoint_save` | Save named checkpoint of current scene | `name` (required, max 100 chars), `description` |
+| `blender_checkpoint_restore` | Restore scene from checkpoint | `name` (required) — **replaces current scene** |
+| `blender_checkpoint_list` | List all checkpoints with metadata | — |
+| `blender_checkpoint_delete` | Delete a checkpoint | `name` (required) |
+
+**Typical workflow:**
+```
+blender_checkpoint_save(name="before_rigging", description="base mesh complete")
+blender_activate_skill("character")
+blender_auto_rig(...)               # risky operation
+# If it goes wrong:
+blender_checkpoint_restore(name="before_rigging")
+```
+
+### 8. Quick Compound Tools
+
+One-call workflow tools that chain multiple operations.
+
+| Tool | Description | Key Parameters |
+|------|-------------|----------------|
+| `blender_quick_product_shot` | 3-point lighting + camera + backdrop in one call | `target_object`, `style` (studio/dramatic/soft/outdoor), `background_color`, `render_width`, `render_height` |
+| `blender_quick_turntable` | 360° rotation animation | `target_object`, `frames` (24–1000, default 120), `axis` (X/Y/Z) |
+| `blender_quick_scene_setup` | Full scene setup with style preset | `style` (studio/outdoor/dramatic/minimal), `clear_scene` |
 
 ---
 
