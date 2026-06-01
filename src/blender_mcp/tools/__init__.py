@@ -15,11 +15,13 @@ from blender_mcp.tools.batch import register_batch_tools
 from blender_mcp.tools.camera import register_camera_tools
 from blender_mcp.tools.character import register_character_tools
 from blender_mcp.tools.character_templates import register_character_template_tools
+from blender_mcp.tools.checkpoint import register_checkpoint_tools
 from blender_mcp.tools.cloud_render import register_cloud_render_tools
 from blender_mcp.tools.collaboration import register_collaboration_tools
 from blender_mcp.tools.compositor import register_compositor_tools
 from blender_mcp.tools.constraints import register_constraint_tools
 from blender_mcp.tools.curves import register_curve_tools
+from blender_mcp.tools.describe import register_describe_tools
 from blender_mcp.tools.export import register_export_tools
 from blender_mcp.tools.external import register_external_tools
 from blender_mcp.tools.grease_pencil import register_grease_pencil_tools
@@ -36,6 +38,7 @@ from blender_mcp.tools.pipeline import register_pipeline_tools
 from blender_mcp.tools.preferences import register_preferences_tools
 from blender_mcp.tools.procedural_materials import register_procedural_material_tools
 from blender_mcp.tools.quality_audit import register_quality_audit_tools
+from blender_mcp.tools.quick import register_quick_tools
 from blender_mcp.tools.reference import register_reference_tools
 from blender_mcp.tools.render import register_render_tools
 from blender_mcp.tools.rigging import register_rigging_tools
@@ -43,9 +46,6 @@ from blender_mcp.tools.scene import register_scene_tools
 from blender_mcp.tools.scene_advanced import register_scene_advanced_tools
 from blender_mcp.tools.sculpting import register_sculpting_tools
 from blender_mcp.tools.simulation import register_simulation_tools
-from blender_mcp.tools.checkpoint import register_checkpoint_tools
-from blender_mcp.tools.describe import register_describe_tools
-from blender_mcp.tools.quick import register_quick_tools
 from blender_mcp.tools.skills import register_skill_tools
 from blender_mcp.tools.snapshot import register_snapshot_tools
 from blender_mcp.tools.style_presets import register_style_preset_tools
