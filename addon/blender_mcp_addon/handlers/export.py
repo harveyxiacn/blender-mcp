@@ -56,26 +56,26 @@ def handle_fbx(params: dict[str, Any]) -> dict[str, Any]:
         object_types = ["MESH", "EMPTY"]
     object_types_set = set(object_types) if object_types else None
 
-    fbx_kwargs = dict(
-        filepath=filepath,
-        use_selection=params.get("selected_only", False),
-        global_scale=params.get("global_scale", 1.0),
-        apply_unit_scale=apply_unit_scale,
-        apply_scale_options=params.get("apply_scale", "FBX_SCALE_ALL"),
-        use_space_transform=use_space_transform,
-        bake_space_transform=bake_space_transform,
-        axis_forward=axis_forward,
-        axis_up=axis_up,
-        mesh_smooth_type=mesh_smooth_type,
-        use_mesh_modifiers=params.get("use_mesh_modifiers", True),
-        use_armature_deform_only=params.get("use_armature_deform_only", False),
-        add_leaf_bones=params.get("add_leaf_bones", False),
-        primary_bone_axis=params.get("primary_bone_axis", "Y"),
-        secondary_bone_axis=params.get("secondary_bone_axis", "X"),
-        bake_anim=params.get("include_animation", True),
-        bake_anim_use_all_actions=params.get("bake_animation", False),
-        path_mode=params.get("path_mode", "AUTO"),
-    )
+    fbx_kwargs = {
+        "filepath": filepath,
+        "use_selection": params.get("selected_only", False),
+        "global_scale": params.get("global_scale", 1.0),
+        "apply_unit_scale": apply_unit_scale,
+        "apply_scale_options": params.get("apply_scale", "FBX_SCALE_ALL"),
+        "use_space_transform": use_space_transform,
+        "bake_space_transform": bake_space_transform,
+        "axis_forward": axis_forward,
+        "axis_up": axis_up,
+        "mesh_smooth_type": mesh_smooth_type,
+        "use_mesh_modifiers": params.get("use_mesh_modifiers", True),
+        "use_armature_deform_only": params.get("use_armature_deform_only", False),
+        "add_leaf_bones": params.get("add_leaf_bones", False),
+        "primary_bone_axis": params.get("primary_bone_axis", "Y"),
+        "secondary_bone_axis": params.get("secondary_bone_axis", "X"),
+        "bake_anim": params.get("include_animation", True),
+        "bake_anim_use_all_actions": params.get("bake_animation", False),
+        "path_mode": params.get("path_mode", "AUTO"),
+    }
     if object_types_set:
         fbx_kwargs["object_types"] = object_types_set
 
