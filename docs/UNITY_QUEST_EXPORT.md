@@ -61,6 +61,15 @@ blender_export_fbx(
 2. **Apply all transforms** — scale = (1,1,1), rotation = (0,0,0). Bake any
    per-part rotations into the mesh before export (e.g. join, then
    `transform_apply`).
+   - ⚠️ **Object `.location` must be (0,0,0) at export time.** Under
+     `bake_space_transform=True` a non-zero `.location` is carried into the FBX,
+     so the prop imports into Unity offset by metres (NOT at Transform 0,0,0) and
+     "Bake Axis Conversion" will *not* remove it (that flag only strips the −90°
+     rotation, never a translation). **`blender_export_fbx` guards this
+     automatically**: `zero_transform_for_export` (default `True`) zeros each
+     exported object's `.location` for the export and restores it afterward, and
+     warns on unapplied rotation/scale. Set it `False` only if you deliberately
+     want layout offsets baked in.
 3. **Set the origin** per use:
    - floor-standing props (seat, sofa, table, trophy) → **bottom-centre** (Z=0)
    - wall props (screen frame, picture, window) → **geometric centre**
@@ -114,3 +123,27 @@ A robust pipeline for each model — drive Blender via `blender_execute_python`
 
 Batching this loop over a model list lets you regenerate a whole kit
 deterministically from a spec.
+
+---
+
+## 5. Self-verify each export
+
+Two built-ins let a modeling agent catch transform/budget defects at the source
+instead of after delivering dozens of files:
+
+- **Pre-flight** — `blender_get_object_info(name=..., include_transform_check=True)`
+  returns a `unity_ready` block: `world_translation`, `location_is_zero`,
+  `rotation_is_identity`, `scale_is_one`, `will_import_at_origin`, and `notes`.
+  Catches a non-zero `.location` (baked-translation footgun) that `mesh_stats`
+  cannot reveal.
+
+- **Post-export** — `blender_verify_fbx(filepath=..., tri_budget=N)` re-imports
+  the file you just wrote and asserts: world origin at (0,0,0), triangle budget,
+  one mesh object per file, and reports materials / emissive slots. Returns
+  PASS/FAIL with a per-object report. It cleans up the imported datablocks, so
+  it has no side effects on your scene.
+
+```python
+blender_export_fbx(filepath="…/PROP_Name.fbx", selected_only=True, unity_static_preset=True)
+blender_verify_fbx(filepath="…/PROP_Name.fbx", tri_budget=800)  # -> PASS / FAIL
+```

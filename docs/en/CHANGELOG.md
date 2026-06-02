@@ -19,6 +19,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   backward-compatible (Blender FBX defaults) unless the preset/params are set.
 - **docs/UNITY_QUEST_EXPORT.md** — mobile-VR (Quest) export checklist: poly budgets,
   origin/axis rules, the static preset, and tri-count verification.
+- **Zero-Transform export guard** — `blender_export_fbx` now auto-zeros each
+  exported object's `.location` under `bake_space_transform` (then restores it)
+  so props import into Unity at (0,0,0), and warns on unapplied rotation/scale.
+  Controlled by `zero_transform_for_export` (default True). The export result
+  reports `zeroed_for_export` and `warnings`. Prevents a baked-translation
+  defect class where layout-positioned objects imported metres off-origin.
+- **`blender_verify_fbx`** — re-imports an exported FBX and asserts game-engine
+  readiness: world origin (0,0,0), triangle budget, one-object-per-file,
+  material/emissive report. Returns PASS/FAIL so a modeling agent can
+  self-verify each export instead of post-hoc bulk QA.
+- **`blender_get_object_info(include_transform_check=True)`** — adds a
+  `unity_ready` block (world translation, location/rotation/scale identity
+  flags, `will_import_at_origin`, notes) that reveals a baked-translation
+  footgun `mesh_stats` can't.
 - **automation skill** workflow guide: added a "Game-engine export (Unity / Quest VR)"
   section.
 

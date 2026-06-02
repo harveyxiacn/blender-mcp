@@ -53,6 +53,30 @@ class ExportFBXInput(BaseModel):
         default=None, description="FBX object types, e.g. ['MESH','EMPTY']; None = all"
     )
     path_mode: str = Field(default="AUTO", description="Texture path mode: AUTO/COPY/RELATIVE")
+    zero_transform_for_export: bool = Field(
+        default=True,
+        description=(
+            "Under bake_space_transform, auto-zero each exported object's .location "
+            "for the export then restore it, so the prop imports into Unity at (0,0,0). "
+            "Also warns on unapplied rotation/scale. Set False to export as-is."
+        ),
+    )
+
+
+class VerifyFBXInput(BaseModel):
+    """FBX verification input"""
+
+    filepath: str = Field(..., description="Path to the FBX to verify")
+    tri_budget: int | None = Field(
+        default=None, description="Max allowed total triangles (None = no check)"
+    )
+    expect_origin: bool = Field(
+        default=True, description="Assert every object imports at world origin (0,0,0)"
+    )
+    expect_single_object: bool = Field(
+        default=True, description="Assert exactly one mesh object per file"
+    )
+    origin_epsilon: float = Field(default=1e-4, description="Tolerance for origin == (0,0,0)")
 
 
 class ExportGLTFInput(BaseModel):
@@ -134,11 +158,20 @@ def register_export_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "mesh_smooth_type": params.mesh_smooth_type,
                 "object_types": params.object_types,
                 "path_mode": params.path_mode,
+                "zero_transform_for_export": params.zero_transform_for_export,
             },
         )
 
         if result.get("success"):
-            return f"Successfully exported FBX to: {params.filepath}"
+            data = result.get("data") or {}
+            extra = ""
+            zeroed = data.get("zeroed_for_export") or []
+            warns = data.get("warnings") or []
+            if zeroed:
+                extra += f" | zeroed .location for: {', '.join(zeroed)}"
+            if warns:
+                extra += " | WARNINGS: " + "; ".join(warns)
+            return f"Successfully exported FBX to: {params.filepath}{extra}"
         else:
             return f"Export failed: {result.get('error', {}).get('message', 'Unknown error')}"
 
@@ -213,3 +246,54 @@ def register_export_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
             return f"Successfully exported OBJ to: {params.filepath}"
         else:
             return f"Export failed: {result.get('error', {}).get('message', 'Unknown error')}"
+
+    @mcp.tool(
+        name="blender_verify_fbx",
+        annotations={
+            "title": "Verify FBX (engine-readiness QA)",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def blender_verify_fbx(params: VerifyFBXInput) -> str:
+        """Re-import an exported FBX and assert game-engine readiness.
+
+        Checks world origin == (0,0,0), triangle budget, one-object-per-file,
+        and reports materials / emissive slots. Use after blender_export_fbx to
+        self-verify each export instead of post-hoc bulk QA.
+
+        Returns:
+            PASS/FAIL with the per-object report.
+        """
+        result = await server.execute_command(
+            "export",
+            "verify_fbx",
+            {
+                "filepath": params.filepath,
+                "tri_budget": params.tri_budget,
+                "expect_origin": params.expect_origin,
+                "expect_single_object": params.expect_single_object,
+                "origin_epsilon": params.origin_epsilon,
+            },
+        )
+
+        if not result.get("success"):
+            return f"Verification error: {result.get('error', {}).get('message', 'Unknown error')}"
+
+        data = result.get("data") or {}
+        status = "PASS" if data.get("passed") else "FAIL"
+        lines = [
+            f"{status}: {params.filepath}",
+            f"  objects={data.get('object_count')} total_triangles={data.get('total_triangles')}",
+        ]
+        for o in data.get("objects", []):
+            emis = f" emissive={o['emissive_materials']}" if o.get("emissive_materials") else ""
+            lines.append(
+                f"  - {o['name']}: origin={o['world_origin']} tris={o['triangles']} "
+                f"mats={o['materials']}{emis}"
+            )
+        for f in data.get("failures", []):
+            lines.append(f"  ✗ {f}")
+        return "\n".join(lines)

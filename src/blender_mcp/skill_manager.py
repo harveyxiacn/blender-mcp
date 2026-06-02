@@ -278,6 +278,11 @@ Used for PBR_REALISTIC and AAA style texture creation.
   set primary_bone_axis=Y, secondary_bone_axis=X, add_leaf_bones=False.
 - Verify triangle budget via `blender_get_object_info(include_mesh_stats=True)` →
   `mesh_stats.triangles`. Mobile/Quest stylized props are typically a few hundred tris.
+- Pre-flight transforms with `blender_get_object_info(include_transform_check=True)`
+  (`unity_ready.will_import_at_origin`); the export auto-zeros a layout `.location`
+  under bake_space_transform and restores it (`zero_transform_for_export`).
+- Self-verify each file with `blender_verify_fbx(filepath=..., tri_budget=N)` —
+  re-imports and asserts origin (0,0,0) + budget + one-object-per-file (PASS/FAIL).
 - See docs/UNITY_QUEST_EXPORT.md for the full mobile-VR export checklist.
 
 ### Tips:
