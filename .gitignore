@@ -120,3 +120,8 @@ htmlcov/
 .coverage
 .coverage.*
 coverage.xml
+
+# --- Project-specific model build pipeline (not part of the released package) ---
+# Drives this server to build the AmblyopiaTreatment 6.5 model set; contains
+# absolute paths to that private project + preview renders. Kept local.
+amblyopia_build/
