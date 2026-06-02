@@ -266,6 +266,20 @@ Used for PBR_REALISTIC and AAA style texture creation.
 - UV: Average score >= 80, minimize overlapping faces
 - Performance: Stay within target platform triangles/draw calls budget
 
+### Game-engine export (Unity / Quest VR):
+- Use `blender_export_fbx(filepath=..., selected_only=True, unity_static_preset=True)`
+  for non-rigged props/environments. The preset bakes the space transform so the
+  mesh imports into Unity with a zeroed Transform (no residual -90deg X rotation),
+  uses -Z forward / Y up, Face smoothing, and Mesh/Empty object types only.
+- Before export: apply all transforms (scale=1, rot=0) and set the origin per use
+  (floor props = bottom-centre, wall props = geometric centre). Model "front" faces
+  -Y in Blender (= +Z forward in Unity).
+- For rigged characters keep `unity_static_preset=False` (do not bake space transform);
+  set primary_bone_axis=Y, secondary_bone_axis=X, add_leaf_bones=False.
+- Verify triangle budget via `blender_get_object_info(include_mesh_stats=True)` →
+  `mesh_stats.triangles`. Mobile/Quest stylized props are typically a few hundred tris.
+- See docs/UNITY_QUEST_EXPORT.md for the full mobile-VR export checklist.
+
 ### Tips:
 - This skill focuses on "auto-generate + auto-audit", ideal for batch asset production and iteration
 - For manual fine-tuning, activate modeling/materials/advanced_3d skills as needed
