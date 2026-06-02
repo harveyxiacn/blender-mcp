@@ -153,6 +153,14 @@ class ObjectGetInfoInput(BaseModel):
     include_mesh_stats: bool = Field(default=True, description="Include mesh statistics")
     include_modifiers: bool = Field(default=True, description="Include modifier info")
     include_materials: bool = Field(default=True, description="Include material info")
+    include_transform_check: bool = Field(
+        default=False,
+        description=(
+            "Include a 'unity_ready' block: world translation, whether "
+            "location/rotation/scale are zeroed/identity, and will_import_at_origin "
+            "(catches the bake_space_transform offset footgun)."
+        ),
+    )
 
 
 class ObjectRenameInput(BaseModel):
@@ -495,6 +503,7 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "include_mesh_stats": params.include_mesh_stats,
                 "include_modifiers": params.include_modifiers,
                 "include_materials": params.include_materials,
+                "include_transform_check": params.include_transform_check,
             },
         )
 
@@ -534,6 +543,20 @@ def register_object_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 lines.append("## Materials")
                 for mat in mats:
                     lines.append(f"- {mat}")
+
+        if params.include_transform_check and "unity_ready" in data:
+            ur = data["unity_ready"]
+            lines.append("")
+            lines.append("## Unity readiness")
+            lines.append(f"- World translation: {ur.get('world_translation')}")
+            lines.append(f"- Will import at origin: {ur.get('will_import_at_origin')}")
+            lines.append(
+                f"- location_zero={ur.get('location_is_zero')} "
+                f"rotation_identity={ur.get('rotation_is_identity')} "
+                f"scale_one={ur.get('scale_is_one')}"
+            )
+            for note in ur.get("notes", []):
+                lines.append(f"- ⚠️ {note}")
 
         return "\n".join(lines)
 

@@ -79,9 +79,38 @@ def handle_fbx(params: dict[str, Any]) -> dict[str, Any]:
     if object_types_set:
         fbx_kwargs["object_types"] = object_types_set
 
+    # --- Zero-Transform contract guard (see UNITY_QUEST_EXPORT.md) ---
+    # Under bake_space_transform, a non-zero object .location is carried into
+    # the FBX node => the prop imports into Unity offset by metres, NOT at
+    # (0,0,0). Auto-zero each exported object's .location for the export and
+    # restore it after; warn (do not auto-apply) on unapplied rotation/scale,
+    # which also bakes into the mesh.
+    zero_tx = params.get("zero_transform_for_export", True)
+    use_selection = params.get("selected_only", False)
+    if use_selection:
+        targets = list(bpy.context.selected_objects)
+    else:
+        targets = list(bpy.context.scene.objects)
+
+    warnings = []
+    saved_locations = {}
+    eps = 1e-6
+    for o in targets:
+        if o.type not in {"MESH", "EMPTY", "ARMATURE", "CURVE", "SURFACE", "FONT"}:
+            continue
+        rot = tuple(o.rotation_euler)
+        scl = tuple(o.scale)
+        if any(abs(a) > 1e-5 for a in rot) or any(abs(a - 1.0) > 1e-5 for a in scl):
+            warnings.append(
+                f"{o.name}: unapplied rotation/scale will bake into the FBX "
+                f"(rotation={[round(a, 4) for a in rot]}, scale={[round(a, 4) for a in scl]})"
+            )
+        if zero_tx and bake_space_transform and any(abs(a) > eps for a in o.location):
+            saved_locations[o.name] = tuple(o.location)
+            o.location = (0.0, 0.0, 0.0)
+
     try:
         bpy.ops.export_scene.fbx(**fbx_kwargs)
-
         return {
             "success": True,
             "data": {
@@ -90,11 +119,17 @@ def handle_fbx(params: dict[str, Any]) -> dict[str, Any]:
                 "axis_forward": axis_forward,
                 "axis_up": axis_up,
                 "bake_space_transform": bake_space_transform,
+                "zeroed_for_export": list(saved_locations.keys()),
+                "warnings": warnings,
             },
         }
-
     except Exception as e:
         return {"success": False, "error": {"code": "EXPORT_ERROR", "message": str(e)}}
+    finally:
+        for nm, loc in saved_locations.items():
+            ob = bpy.data.objects.get(nm)
+            if ob is not None:
+                ob.location = loc
 
 
 def handle_gltf(params: dict[str, Any]) -> dict[str, Any]:
@@ -167,3 +202,100 @@ def handle_obj(params: dict[str, Any]) -> dict[str, Any]:
 
     except Exception as e:
         return {"success": False, "error": {"code": "EXPORT_ERROR", "message": str(e)}}
+
+
+def handle_verify_fbx(params: dict[str, Any]) -> dict[str, Any]:
+    """Re-import an exported FBX and assert game-engine readiness.
+
+    Imports the file into the current .blend (then removes the imported
+    datablocks), and checks the contract a modeling agent cares about:
+    world origin at (0,0,0), triangle budget, one-object-per-file, material
+    count, emissive slots. Returns pass/fail so an agent can self-verify each
+    export instead of doing 45-file post-hoc QA. See UNITY_QUEST_EXPORT.md.
+    """
+    filepath = params.get("filepath")
+    if not filepath or not os.path.exists(filepath):
+        return {
+            "success": False,
+            "error": {"code": "FILE_NOT_FOUND", "message": f"FBX not found: {filepath}"},
+        }
+
+    tri_budget = params.get("tri_budget")
+    expect_origin = params.get("expect_origin", True)
+    expect_single = params.get("expect_single_object", True)
+    origin_eps = params.get("origin_epsilon", 1e-4)
+
+    before_obj = {o.name for o in bpy.data.objects}
+    before_mesh = {m.name for m in bpy.data.meshes}
+    before_mat = {m.name for m in bpy.data.materials}
+    before_img = {i.name for i in bpy.data.images}
+
+    try:
+        bpy.ops.import_scene.fbx(filepath=filepath)
+    except Exception as e:
+        return {"success": False, "error": {"code": "IMPORT_ERROR", "message": str(e)}}
+
+    new_objs = [o for o in bpy.data.objects if o.name not in before_obj]
+    meshes = [o for o in new_objs if o.type == "MESH"]
+
+    objects_report = []
+    total_tris = 0
+    for o in meshes:
+        wt = o.matrix_world.translation
+        tcount = sum(len(p.vertices) - 2 for p in o.data.polygons)
+        total_tris += tcount
+        mats = [s.material.name for s in o.material_slots if s.material]
+        emissive = []
+        for s in o.material_slots:
+            m = s.material
+            if not m or not m.use_nodes:
+                continue
+            for n in m.node_tree.nodes:
+                if n.type == "BSDF_PRINCIPLED":
+                    es = n.inputs.get("Emission Strength")
+                    if es is not None and es.default_value > 1e-4:
+                        emissive.append(m.name)
+        objects_report.append(
+            {
+                "name": o.name,
+                "world_origin": [round(v, 5) for v in wt],
+                "triangles": tcount,
+                "materials": mats,
+                "emissive_materials": emissive,
+            }
+        )
+
+    failures = []
+    if expect_single and len(meshes) != 1:
+        failures.append(f"expected 1 mesh object, found {len(meshes)}")
+    if expect_origin:
+        for r in objects_report:
+            if any(abs(v) > origin_eps for v in r["world_origin"]):
+                failures.append(f"{r['name']} world origin {r['world_origin']} != (0,0,0)")
+    if tri_budget is not None and total_tris > tri_budget:
+        failures.append(f"triangles {total_tris} > budget {tri_budget}")
+
+    # Clean up everything the import created so verification has no side effects.
+    for o in new_objs:
+        bpy.data.objects.remove(o, do_unlink=True)
+    for m in [mm for mm in bpy.data.meshes if mm.name not in before_mesh]:
+        bpy.data.meshes.remove(m)
+    for m in [mm for mm in bpy.data.materials if mm.name not in before_mat]:
+        bpy.data.materials.remove(m)
+    for im in [ii for ii in bpy.data.images if ii.name not in before_img]:
+        try:
+            bpy.data.images.remove(im)
+        except Exception:
+            pass
+
+    return {
+        "success": True,
+        "data": {
+            "filepath": filepath,
+            "passed": len(failures) == 0,
+            "failures": failures,
+            "object_count": len(meshes),
+            "total_triangles": total_tris,
+            "objects": objects_report,
+        },
+    }

@@ -377,6 +377,36 @@ def handle_get_info(params: dict[str, Any]) -> dict[str, Any]:
             slot.material.name if slot.material else None for slot in obj.material_slots
         ]
 
+    # Unity-readiness / Transform check: surfaces a baked-translation footgun
+    # that mesh_stats can't reveal (under bake_space_transform a non-zero
+    # .location imports into Unity offset, not at (0,0,0)).
+    if params.get("include_transform_check", False):
+        eps = 1e-5
+        loc = obj.location
+        rot = obj.rotation_euler
+        scl = obj.scale
+        loc_zero = all(abs(v) < eps for v in loc)
+        rot_id = all(abs(v) < eps for v in rot)
+        scl_one = all(abs(v - 1.0) < eps for v in scl)
+        notes = []
+        if not loc_zero:
+            notes.append(
+                "object .location is non-zero; under bake_space_transform it bakes "
+                "into the FBX as a translation (imports offset, not at 0,0,0)"
+            )
+        if not rot_id:
+            notes.append("unapplied rotation will bake into the mesh on export")
+        if not scl_one:
+            notes.append("unapplied scale will bake into the mesh on export")
+        data["unity_ready"] = {
+            "world_translation": [round(v, 5) for v in obj.matrix_world.translation],
+            "location_is_zero": loc_zero,
+            "rotation_is_identity": rot_id,
+            "scale_is_one": scl_one,
+            "will_import_at_origin": loc_zero,
+            "notes": notes,
+        }
+
     return {"success": True, "data": data}
 
 
