@@ -8,6 +8,8 @@ from typing import Any
 
 import bpy
 
+from .compat import select_only
+
 
 def _apply_modifier(obj: "bpy.types.Object", modifier_name: str) -> str | None:
     """Apply a modifier using the depsgraph data API (no bpy.ops, Blender 5.x safe).
@@ -273,12 +275,24 @@ def handle_modifier_remove(params: dict[str, Any]) -> dict[str, Any]:
 
 
 def handle_boolean(params: dict[str, Any]) -> dict[str, Any]:
-    """Boolean operation"""
+    """Boolean operation via the BOOLEAN modifier.
+
+    apply=False (default): adds the modifier with viewport display disabled.
+      This is non-destructive and, crucially, avoids Blender evaluating the
+      boolean on the next viewport redraw — live boolean evaluation against a
+      heavy scene can crash/stall Blender 5.x. Enable show_viewport manually
+      in Blender when you want to preview it.
+
+    apply=True: evaluates and bakes the result into the mesh via the depsgraph
+      data API (no bpy.ops). Suitable for simple/manifold inputs; can be slow
+      on very heavy scenes.
+    """
     object_name = params.get("object_name")
     target_name = params.get("target_name")
     operation = params.get("operation", "DIFFERENCE")
-    apply = params.get("apply", True)
-    hide_target = params.get("hide_target", True)
+    apply = params.get("apply", False)
+    hide_target = params.get("hide_target", apply)
+    solver = params.get("solver", "EXACT")
 
     obj = bpy.data.objects.get(object_name)
     target = bpy.data.objects.get(target_name)
@@ -288,7 +302,11 @@ def handle_boolean(params: dict[str, Any]) -> dict[str, Any]:
             "success": False,
             "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {object_name}"},
         }
-
+    if obj.type != "MESH":
+        return {
+            "success": False,
+            "error": {"code": "INVALID_TYPE", "message": f"'{object_name}' is not a mesh"},
+        }
     if not target:
         return {
             "success": False,
@@ -297,30 +315,58 @@ def handle_boolean(params: dict[str, Any]) -> dict[str, Any]:
                 "message": f"Target object not found: {target_name}",
             },
         }
+    if target.type != "MESH":
+        return {
+            "success": False,
+            "error": {"code": "INVALID_TYPE", "message": f"'{target_name}' is not a mesh"},
+        }
 
-    # Add boolean modifier
+    op_upper = operation.upper()
+    if op_upper not in ("DIFFERENCE", "UNION", "INTERSECT"):
+        op_upper = "DIFFERENCE"
+
     mod = obj.modifiers.new(name="Boolean", type="BOOLEAN")
-    mod.operation = operation
+    mod.operation = op_upper
     mod.object = target
+    if hasattr(mod, "solver"):
+        mod.solver = solver
 
-    # Apply modifier
-    if apply:
-        error = _apply_modifier(obj, mod.name)
-        if error:
-            return {
-                "success": False,
-                "error": {
-                    "code": "BOOLEAN_APPLY_FAILED",
-                    "message": f"Boolean apply failed: {error}. The mesh may be non-manifold.",
-                },
-            }
+    if not apply:
+        # Disable viewport evaluation to avoid crash-on-redraw in heavy scenes.
+        mod.show_viewport = False
+        return {
+            "success": True,
+            "data": {
+                "modifier_name": mod.name,
+                "modifier_applied": False,
+                "operation": op_upper,
+                "note": "Modifier added with viewport display off; enable it to preview.",
+            },
+        }
 
-    # Hide target
+    error = _apply_modifier(obj, mod.name)
+    if error:
+        return {
+            "success": False,
+            "error": {
+                "code": "BOOLEAN_APPLY_FAILED",
+                "message": f"Boolean apply failed: {error}. The mesh may be non-manifold.",
+            },
+        }
+
     if hide_target:
         target.hide_viewport = True
         target.hide_render = True
 
-    return {"success": True, "data": {"modifier_applied": apply}}
+    return {
+        "success": True,
+        "data": {
+            "operation": op_upper,
+            "modifier_applied": True,
+            "vertices": len(obj.data.vertices),
+            "faces": len(obj.data.polygons),
+        },
+    }
 
 
 # ==================== Shape Keys Functions ====================
@@ -1415,10 +1461,8 @@ def handle_auto_smooth(params: dict[str, Any]) -> dict[str, Any]:
             "error": {"code": "INVALID_TYPE", "message": "Only mesh objects are supported"},
         }
 
-    # Select object
-    bpy.ops.object.select_all(action="DESELECT")
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
+    # Select object (Blender 5.x safe: ensures OBJECT mode + view-layer membership)
+    select_only(obj)
 
     blender_version = bpy.app.version
     method_used = "unknown"

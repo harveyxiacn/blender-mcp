@@ -8,6 +8,8 @@ from typing import Any
 
 import bpy
 
+from .compat import select_only
+
 
 def handle_armature_create(params: dict[str, Any]) -> dict[str, Any]:
     """Create armature"""
@@ -21,8 +23,8 @@ def handle_armature_create(params: dict[str, Any]) -> dict[str, Any]:
     arm_obj = bpy.data.objects.new(name=name, object_data=arm_data)
     arm_obj.location = location
 
-    # Link to scene
-    bpy.context.collection.objects.link(arm_obj)
+    # Link to the scene master collection (always part of the active view layer)
+    bpy.context.scene.collection.objects.link(arm_obj)
 
     return {"success": True, "data": {"armature_name": arm_obj.name}}
 
@@ -46,8 +48,8 @@ def handle_bone_add(params: dict[str, Any]) -> dict[str, Any]:
             },
         }
 
-    # Switch to edit mode
-    bpy.context.view_layer.objects.active = obj
+    # Switch to edit mode (select_only ensures armature is in the view layer)
+    select_only(obj)
     bpy.ops.object.mode_set(mode="EDIT")
 
     # Create bone

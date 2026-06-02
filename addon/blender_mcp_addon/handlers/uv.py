@@ -9,6 +9,8 @@ from typing import Any
 
 import bpy
 
+from .compat import select_only
+
 
 def handle_unwrap(params: dict[str, Any]) -> dict[str, Any]:
     """UV unwrap"""
@@ -25,9 +27,7 @@ def handle_unwrap(params: dict[str, Any]) -> dict[str, Any]:
         }
 
     # Select object and enter edit mode
-    bpy.ops.object.select_all(action="DESELECT")
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
+    select_only(obj)
     bpy.ops.object.mode_set(mode="EDIT")
 
     # Select all faces
@@ -55,9 +55,7 @@ def handle_project(params: dict[str, Any]) -> dict[str, Any]:
         }
 
     # Select object and enter edit mode
-    bpy.ops.object.select_all(action="DESELECT")
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
+    select_only(obj)
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
 
@@ -91,9 +89,7 @@ def handle_smart_project(params: dict[str, Any]) -> dict[str, Any]:
         }
 
     # Select object and enter edit mode
-    bpy.ops.object.select_all(action="DESELECT")
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
+    select_only(obj)
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
 
@@ -121,9 +117,7 @@ def handle_pack(params: dict[str, Any]) -> dict[str, Any]:
         }
 
     # Select object and enter edit mode
-    bpy.ops.object.select_all(action="DESELECT")
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
+    select_only(obj)
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
 
@@ -150,9 +144,7 @@ def handle_seam(params: dict[str, Any]) -> dict[str, Any]:
         }
 
     # Select object and enter edit mode
-    bpy.ops.object.select_all(action="DESELECT")
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
+    select_only(obj)
     bpy.ops.object.mode_set(mode="EDIT")
 
     if from_sharp:
@@ -412,9 +404,7 @@ def handle_optimize(params: dict[str, Any]) -> dict[str, Any]:
     old_data = old_analysis.get("data", {})
 
     # Select object and enter edit mode
-    bpy.ops.object.select_all(action="DESELECT")
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
+    select_only(obj)
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
 
@@ -472,9 +462,7 @@ def handle_density_normalize(params: dict[str, Any]) -> dict[str, Any]:
         }
 
     # Select object and enter edit mode
-    bpy.ops.object.select_all(action="DESELECT")
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
+    select_only(obj)
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
 
@@ -594,9 +582,7 @@ def handle_auto_seam(params: dict[str, Any]) -> dict[str, Any]:
         }
 
     # Select object and enter edit mode
-    bpy.ops.object.select_all(action="DESELECT")
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
+    select_only(obj)
     bpy.ops.object.mode_set(mode="EDIT")
 
     # Clear existing seams

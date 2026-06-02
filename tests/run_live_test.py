@@ -52,10 +52,11 @@ async def main():
         print("Make sure Blender is running with the MCP addon enabled.")
         return 1
 
-    # Get Blender version
+    # Get Blender version and current scene name
     r = await send(conn, "system", "get_info")
     ver = r.get("data", {}).get("version_string", "?")
-    print(f"Connected to Blender {ver}\n")
+    original_scene = r.get("data", {}).get("scene", "Scene")
+    print(f"Connected to Blender {ver} (scene: {original_scene})\n")
 
     # ====== SYSTEM ======
     print("=== System ===")
@@ -88,7 +89,7 @@ async def main():
     await test(conn, "scene.get_info", "scene", "get_info")
     await test(conn, "scene.create", "scene", "create", {"name": "TestScene_Live"})
     await test(conn, "scene.switch", "scene", "switch", {"scene_name": "TestScene_Live"})
-    await test(conn, "scene.switch back", "scene", "switch", {"scene_name": "Scene"})
+    await test(conn, "scene.switch back", "scene", "switch", {"scene_name": original_scene})
     await test(conn, "scene.set_settings", "scene", "set_settings", {"settings": {"fps": 30}})
     await test(conn, "scene.set_frame_range", "scene", "set_frame_range", {"start": 1, "end": 120})
     await test(conn, "scene.delete", "scene", "delete", {"scene_name": "TestScene_Live"})
@@ -210,7 +211,12 @@ async def main():
         "modeling.boolean",
         "modeling",
         "boolean",
-        {"object_name": "T_Cube", "target_name": "T_Sphere", "operation": "DIFFERENCE"},
+        {
+            "object_name": "T_Cube",
+            "target_name": "T_Sphere",
+            "operation": "DIFFERENCE",
+            "apply": False,
+        },
     )
     await test(conn, "modeling.mesh_analyze", "modeling", "mesh_analyze", {"object_name": "T_Cube"})
     await test(

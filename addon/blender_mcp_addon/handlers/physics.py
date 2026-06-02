@@ -9,6 +9,8 @@ from typing import Any
 
 import bpy
 
+from .compat import select_only
+
 # Enhanced cloth preset configuration
 CLOTH_PRESETS = {
     # Basic fabrics
@@ -245,10 +247,8 @@ def handle_cloth_add(params: dict[str, Any]) -> dict[str, Any]:
             "error": {"code": "MESH_NOT_FOUND", "message": f"Mesh not found: {object_name}"},
         }
 
-    # Select object
-    bpy.ops.object.select_all(action="DESELECT")
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
+    # Select object (Blender 5.x safe)
+    select_only(obj)
 
     # Add cloth modifier
     cloth_mod = obj.modifiers.new(name="Cloth", type="CLOTH")
@@ -481,10 +481,8 @@ def handle_rigid_body_add(params: dict[str, Any]) -> dict[str, Any]:
     if not bpy.context.scene.rigidbody_world:
         bpy.ops.rigidbody.world_add()
 
-    # Select object
-    bpy.ops.object.select_all(action="DESELECT")
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
+    # Select object (Blender 5.x safe)
+    select_only(obj)
 
     # Add rigid body
     bpy.ops.rigidbody.object_add()
@@ -513,8 +511,13 @@ def handle_collision_add(params: dict[str, Any]) -> dict[str, Any]:
             "error": {"code": "MESH_NOT_FOUND", "message": f"Mesh not found: {object_name}"},
         }
 
-    # Add collision modifier
-    collision_mod = obj.modifiers.new(name="Collision", type="COLLISION")
+    # Reuse an existing collision modifier if present, otherwise create one.
+    # COLLISION settings are only populated after the object is in the view
+    # layer and the depsgraph updates, so select it first.
+    select_only(obj)
+    collision_mod = next((m for m in obj.modifiers if m.type == "COLLISION"), None)
+    if collision_mod is None:
+        collision_mod = obj.modifiers.new(name="Collision", type="COLLISION")
     if collision_mod is None:
         return {
             "success": False,
@@ -523,7 +526,17 @@ def handle_collision_add(params: dict[str, Any]) -> dict[str, Any]:
                 "message": f"Failed to add Collision modifier to {object_name}",
             },
         }
+
+    # settings may be None until the depsgraph evaluates the new modifier
     collision = collision_mod.settings
+    if collision is None:
+        bpy.context.view_layer.update()
+        collision = collision_mod.settings
+    if collision is None:
+        return {
+            "success": True,
+            "data": {"note": "Collision modifier added; settings will populate on next update"},
+        }
 
     collision.damping = damping
     collision.thickness_outer = thickness

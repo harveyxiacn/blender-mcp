@@ -10,6 +10,8 @@ from typing import Any
 import bpy
 import mathutils
 
+from .compat import select_only
+
 
 def _create_mesh_primitive(obj_type: str, mp: dict[str, Any]) -> None:
     """Create a mesh primitive based on type and mesh_params"""
@@ -209,8 +211,8 @@ def handle_duplicate(params: dict[str, Any]) -> dict[str, Any]:
         obj.location.z + offset[2],
     )
 
-    # Link to scene
-    bpy.context.collection.objects.link(new_obj)
+    # Link to the scene master collection (always part of the active view layer)
+    bpy.context.scene.collection.objects.link(new_obj)
 
     return {"success": True, "data": {"new_object_name": new_obj.name}}
 
@@ -483,19 +485,35 @@ def handle_join(params: dict[str, Any]) -> dict[str, Any]:
     return {"success": True, "data": {"result_object": bpy.context.active_object.name}}
 
 
-def handle_set_origin(params: dict[str, Any]) -> dict[str, Any]:
-    """Set object origin
+def _set_origin_to_point(obj: "bpy.types.Object", new_origin_world: "mathutils.Vector") -> None:
+    """Relocate the object's origin to new_origin_world (world space).
 
-    Args:
-        params:
-            - name: Object name
-            - origin_type: Origin type
-                - GEOMETRY: Origin to geometry center
-                - CURSOR: Origin to 3D cursor
-                - BOTTOM: Origin to bottom center (feet)
-                - CENTER_OF_MASS: Origin to center of mass
-                - CENTER_OF_VOLUME: Origin to center of volume
-            - center: Geometry center calculation method (MEDIAN, BOUNDS)
+    Shifts mesh vertices by the inverse offset so geometry stays in place,
+    then moves obj.location to the new origin. No bpy.ops needed.
+    """
+    # Offset in world space
+    offset_world = new_origin_world - obj.matrix_world.translation
+
+    # Convert offset to object-local space for vertex adjustment
+    offset_local = obj.matrix_world.inverted().to_3x3() @ offset_world
+
+    if obj.type == "MESH" and obj.data:
+        for v in obj.data.vertices:
+            v.co += offset_local
+        obj.data.update()
+
+    # Move object location to compensate
+    obj.matrix_world.translation += offset_world
+
+
+def handle_set_origin(params: dict[str, Any]) -> dict[str, Any]:
+    """Set object origin without bpy.ops (Blender 5.x safe).
+
+    origin_type options:
+      GEOMETRY  — centroid of all vertices (MEDIAN) or bounding-box centre (BOUNDS)
+      CURSOR    — current 3D-cursor position
+      BOTTOM    — bottom-centre of the world-space bounding box (useful for characters)
+      CENTER_OF_MASS — same as GEOMETRY/MEDIAN for meshes
     """
     name = params.get("name")
     origin_type = params.get("origin_type", "GEOMETRY")
@@ -508,58 +526,43 @@ def handle_set_origin(params: dict[str, Any]) -> dict[str, Any]:
             "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {name}"},
         }
 
-    # Save current selection and active object
-    original_active = bpy.context.view_layer.objects.active
-    original_selected = list(bpy.context.selected_objects)
-
-    # Select target object
-    bpy.ops.object.select_all(action="DESELECT")
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
-
     try:
-        if origin_type == "GEOMETRY":
-            # Origin to geometry center
-            bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY", center=center)
-        elif origin_type == "CURSOR":
-            # Origin to 3D cursor
-            bpy.ops.object.origin_set(type="ORIGIN_CURSOR")
-        elif origin_type == "BOTTOM":
-            # Origin to bottom center (for characters, feet)
-            if obj.type == "MESH":
-                # Get object bounding box
-                bbox = [obj.matrix_world @ mathutils.Vector(corner) for corner in obj.bound_box]
-                # Find lowest point
-                min_z = min(v.z for v in bbox)
-                # Calculate bottom center
-                center_x = sum(v.x for v in bbox) / 8
-                center_y = sum(v.y for v in bbox) / 8
-
-                # Save current cursor position
-                cursor_loc = bpy.context.scene.cursor.location.copy()
-
-                # Move cursor to bottom center
-                bpy.context.scene.cursor.location = (center_x, center_y, min_z)
-
-                # Set origin to cursor
-                bpy.ops.object.origin_set(type="ORIGIN_CURSOR")
-
-                # Restore cursor position
-                bpy.context.scene.cursor.location = cursor_loc
-            else:
+        if origin_type in ("GEOMETRY", "CENTER_OF_MASS"):
+            if obj.type != "MESH" or not obj.data or not obj.data.vertices:
                 return {
                     "success": False,
-                    "error": {
-                        "code": "INVALID_TYPE",
-                        "message": "BOTTOM origin type only supports mesh objects",
-                    },
+                    "error": {"code": "INVALID_TYPE", "message": "Object has no mesh vertices"},
                 }
-        elif origin_type == "CENTER_OF_MASS":
-            # Origin to center of mass (surface)
-            bpy.ops.object.origin_set(type="ORIGIN_CENTER_OF_MASS", center="MEDIAN")
-        elif origin_type == "CENTER_OF_VOLUME":
-            # Origin to center of volume
-            bpy.ops.object.origin_set(type="ORIGIN_CENTER_OF_VOLUME", center="MEDIAN")
+            verts_world = [obj.matrix_world @ v.co for v in obj.data.vertices]
+            if center == "BOUNDS":
+                xs = [v.x for v in verts_world]
+                ys = [v.y for v in verts_world]
+                zs = [v.z for v in verts_world]
+                new_origin = mathutils.Vector(
+                    ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, (min(zs) + max(zs)) / 2)
+                )
+            else:  # MEDIAN
+                n = len(verts_world)
+                new_origin = mathutils.Vector(
+                    (
+                        sum(v.x for v in verts_world) / n,
+                        sum(v.y for v in verts_world) / n,
+                        sum(v.z for v in verts_world) / n,
+                    )
+                )
+            _set_origin_to_point(obj, new_origin)
+
+        elif origin_type == "CURSOR":
+            cursor_world = mathutils.Vector(bpy.context.scene.cursor.location)
+            _set_origin_to_point(obj, cursor_world)
+
+        elif origin_type == "BOTTOM":
+            bbox_world = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
+            min_z = min(v.z for v in bbox_world)
+            cx = sum(v.x for v in bbox_world) / 8
+            cy = sum(v.y for v in bbox_world) / 8
+            _set_origin_to_point(obj, mathutils.Vector((cx, cy, min_z)))
+
         else:
             return {
                 "success": False,
@@ -568,14 +571,6 @@ def handle_set_origin(params: dict[str, Any]) -> dict[str, Any]:
                     "message": f"Unsupported origin type: {origin_type}",
                 },
             }
-
-        # Restore selection
-        bpy.ops.object.select_all(action="DESELECT")
-        for o in original_selected:
-            if o:
-                o.select_set(True)
-        if original_active:
-            bpy.context.view_layer.objects.active = original_active
 
         return {
             "success": True,
@@ -611,16 +606,49 @@ def handle_apply_transform(params: dict[str, Any]) -> dict[str, Any]:
             "error": {"code": "OBJECT_NOT_FOUND", "message": f"Object not found: {name}"},
         }
 
-    # Select object
-    bpy.ops.object.select_all(action="DESELECT")
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
+    if obj.type != "MESH" or obj.data is None:
+        return {
+            "success": False,
+            "error": {
+                "code": "INVALID_TYPE",
+                "message": "apply_transform currently supports mesh objects only",
+            },
+        }
 
+    # Pure data-API transform apply (no bpy.ops, Blender 5.x safe).
+    # Decompose the local matrix and bake the requested components into the mesh.
     try:
-        bpy.ops.object.transform_apply(
-            location=apply_location, rotation=apply_rotation, scale=apply_scale
-        )
+        loc, rot, scale = obj.matrix_basis.decompose()
 
-        return {"success": True, "data": {"object_name": obj.name}}
+        bake = mathutils.Matrix.Identity(4)
+        if apply_location:
+            bake = mathutils.Matrix.Translation(loc) @ bake
+        if apply_rotation:
+            bake = bake @ rot.to_matrix().to_4x4()
+        if apply_scale:
+            bake = bake @ mathutils.Matrix.Diagonal(scale.to_4d())
+
+        # Apply baked matrix to mesh vertices, then reset those components.
+        obj.data.transform(bake)
+        obj.data.update()
+
+        if apply_location:
+            obj.location = (0.0, 0.0, 0.0)
+        if apply_rotation:
+            obj.rotation_euler = (0.0, 0.0, 0.0)
+        if apply_scale:
+            obj.scale = (1.0, 1.0, 1.0)
+
+        return {
+            "success": True,
+            "data": {
+                "object_name": obj.name,
+                "applied": {
+                    "location": apply_location,
+                    "rotation": apply_rotation,
+                    "scale": apply_scale,
+                },
+            },
+        }
     except Exception as e:
         return {"success": False, "error": {"code": "APPLY_TRANSFORM_ERROR", "message": str(e)}}
