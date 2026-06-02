@@ -4,6 +4,24 @@ All notable changes to Blender MCP will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- **Unity / Quest game-engine FBX export** — `blender_export_fbx` now exposes full
+  axis/transform control and a `unity_static_preset` flag for non-rigged
+  props/environments. The preset applies the settings required for a clean Unity
+  import (`axis_forward=-Z`, `axis_up=Y`, `use_space_transform`,
+  `bake_space_transform` so the mesh imports with a zeroed Transform / no residual
+  -90deg X rotation, `mesh_smooth_type=FACE`, Mesh/Empty object types). New params:
+  `axis_forward`, `axis_up`, `use_space_transform`, `bake_space_transform`,
+  `apply_unit_scale`, `mesh_smooth_type`, `object_types`, `path_mode`. Defaults are
+  backward-compatible (Blender FBX defaults) unless the preset/params are set.
+- **docs/UNITY_QUEST_EXPORT.md** — mobile-VR (Quest) export checklist: poly budgets,
+  origin/axis rules, the static preset, and tri-count verification.
+- **automation skill** workflow guide: added a "Game-engine export (Unity / Quest VR)"
+  section.
+
 ## [0.3.1] - 2026-06-02
 
 ### Fixed

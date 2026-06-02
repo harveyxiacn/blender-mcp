@@ -30,6 +30,29 @@ class ExportFBXInput(BaseModel):
     primary_bone_axis: str = Field(default="Y", description="Primary bone axis")
     secondary_bone_axis: str = Field(default="X", description="Secondary bone axis")
     apply_scale: str = Field(default="FBX_SCALE_ALL", description="Scale apply method")
+    # --- Engine axis / transform control (Unity-oriented) ---
+    unity_static_preset: bool = Field(
+        default=False,
+        description=(
+            "Apply Unity static-prop settings: bake space transform (zeroed "
+            "Transform on import, no -90deg X), Face smoothing, Mesh/Empty types. "
+            "Use for non-rigged props/environments."
+        ),
+    )
+    axis_forward: str = Field(default="-Z", description="Forward axis (Unity: -Z)")
+    axis_up: str = Field(default="Y", description="Up axis (Unity: Y)")
+    use_space_transform: bool = Field(default=True, description="Use space transform")
+    bake_space_transform: bool = Field(
+        default=False, description="Bake (apply) space transform; on by default under unity preset"
+    )
+    apply_unit_scale: bool = Field(default=True, description="Apply unit scale")
+    mesh_smooth_type: str = Field(
+        default="OFF", description="Smoothing: OFF/FACE/EDGE (preset uses FACE)"
+    )
+    object_types: list[str] | None = Field(
+        default=None, description="FBX object types, e.g. ['MESH','EMPTY']; None = all"
+    )
+    path_mode: str = Field(default="AUTO", description="Texture path mode: AUTO/COPY/RELATIVE")
 
 
 class ExportGLTFInput(BaseModel):
@@ -102,6 +125,15 @@ def register_export_tools(mcp: FastMCP, server: "BlenderMCPServer") -> None:
                 "primary_bone_axis": params.primary_bone_axis,
                 "secondary_bone_axis": params.secondary_bone_axis,
                 "apply_scale": params.apply_scale,
+                "unity_static_preset": params.unity_static_preset,
+                "axis_forward": params.axis_forward,
+                "axis_up": params.axis_up,
+                "use_space_transform": params.use_space_transform,
+                "bake_space_transform": params.bake_space_transform,
+                "apply_unit_scale": params.apply_unit_scale,
+                "mesh_smooth_type": params.mesh_smooth_type,
+                "object_types": params.object_types,
+                "path_mode": params.path_mode,
             },
         )
 
