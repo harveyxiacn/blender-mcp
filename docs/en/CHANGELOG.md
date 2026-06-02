@@ -4,6 +4,24 @@ All notable changes to Blender MCP will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.1] - 2026-06-02
+
+### Fixed
+
+- **Blender 5.x hard-crash and view-layer fixes** (verified: live suite now 121/121 against Blender 5.0.1)
+  - `modifier_apply`, `boolean`, decimate: replaced `bpy.ops.object.modifier_apply`
+    (hard-crashes from the addon server thread in 5.x) with a depsgraph
+    `new_from_object` data-API helper
+  - `boolean`: BOOLEAN modifier now added with viewport display off by default
+    to avoid crash-on-redraw in heavy scenes; depsgraph apply when `apply=True`
+  - `set_origin` and `apply_transform`: rewritten to pure vertex/matrix math
+    (no `bpy.ops`), fixing crashes and view-layer errors
+  - Added `select_only()` / `ensure_object_mode()` helpers in `handlers/compat.py`
+    that link objects to the scene master collection and select via the data
+    API; applied across `uv`, `physics`, `rigging`, `modeling` handlers
+  - `armature_create` and object `duplicate` now link to the scene master
+    collection so new objects are always in the active view layer
+
 ## [0.3.0] - 2026-05-31
 
 ### Added
