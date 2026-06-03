@@ -37,3 +37,10 @@ jobs:
           generate_release_notes: true
           files: |
             dist/*
+
+      - name: Announce changelog on Discord
+        if: success()
+        continue-on-error: true
+        env:
+          DISCORD_CHANGELOG_WEBHOOK: ${{ secrets.DISCORD_CHANGELOG_WEBHOOK }}
+        run: python scripts/discord_changelog.py
