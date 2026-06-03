@@ -101,7 +101,12 @@ def post(webhook: str, payload: dict[str, object]) -> None:
     req = urllib.request.Request(  # noqa: S310 - webhook is a trusted https secret
         webhook,
         data=data,
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            # Discord is behind Cloudflare, which 403s (error 1010) the default
+            # "Python-urllib" agent — a real User-Agent is required.
+            "User-Agent": "blender-mcp-changelog/1.0 (+https://github.com/harveyxiacn/blender-mcp)",
+        },
         method="POST",
     )
     try:
