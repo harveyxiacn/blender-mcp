@@ -122,7 +122,11 @@ def main() -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # emoji-safe on any console
 
-    tag = (os.environ.get("GITHUB_REF_NAME") or (sys.argv[1] if len(sys.argv) > 1 else "")).strip()
+    # Explicit argv wins over GITHUB_REF_NAME: on workflow_dispatch the latter is
+    # the branch ("main"), but release.yml (tag push) has no argv so it uses the tag.
+    tag = (
+        (sys.argv[1] if len(sys.argv) > 1 else "") or os.environ.get("GITHUB_REF_NAME", "")
+    ).strip()
     if not tag:
         print("No tag (GITHUB_REF_NAME / argv) provided; skipping.")
         return 0
